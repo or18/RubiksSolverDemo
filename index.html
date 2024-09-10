@@ -4,7 +4,8 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Rubiks Cube solver</title>
+	<title>Rubiks Cube Cross solver</title>
+	<script src="min2phase.js/min2phase.js"></script>
 	<script async src="https://www.googletagmanager.com/gtag/js?id=G-MXJH30352W"></script>
 	<script>
 	  window.dataLayer = window.dataLayer || [];
@@ -123,7 +124,7 @@
 	<h1>Rubiks Cube Solver Demo</h1>
 	<h2>This is demo solver for Rubik's cube cross, xcross, xxcross, xxxcross, xxxxcross, last layer substeps, last layer with realtime output. Pre-rotation, solution length, solution count, and other options can be changed as you like. </h2>
 	<a href="https://github.com/or18/RubiksSolverDemo">Source</a><br>
-	<a href="https://or18.github.io/Rubiks-cube-xcross-solver/">Former Demo</a>
+	<a href="https://or18.github.io/Rubiks-cube-xcross-solver/">Old Demo</a>
 	<h2>Solver</h2>
 	<select id="solver" onchange="change()">
 		<option value="F2L" selected>F2L Lite</option>
@@ -131,7 +132,8 @@
 		<option value="LL">LL Lite</option>
 		<option value="LU">LL & AUF Lite</option>
 	</select><br>
-	<textarea id="scr" rows="10" cols="10" placeholder="Input scramble here. Use U, U', U2, D, D2, D', L, L2, L', R, R2, R', F, F2, F', B, B2, B'. "></textarea>
+	<textarea id="scr" rows="10" cols="10" placeholder="Input scramble here. Use U, U', U2, D, D2, D', L, L2, L', R, R2, R', F, F2, F', B, B2, B'. "></textarea><br>
+	<button id="gen" onclick="genscr()">Generate Scramble</button>
 	<h2>Rotation Option</h2>
 	<select id="rot">
 		<option value="">None</option>
@@ -206,9 +208,9 @@
 	</select>
 </div>
     <h2>Max Solution Length</h2>
-    <input type="number" id="len" value="10" min="1" required>
+    <input type="number" id="len" value="20" min="1" required>
     <h2>Max Solution Count</h2>
-    <input type="number" id="num" value="10" min=1 required>
+    <input type="number" id="num" value="20" min=1 required>
     <h2>Face Restrict</h2>
     <input type="text" id="res" value="UDLRFB" required><br>
 	<button id="solveButton" onclick="startWorker()">Start Search</button>
@@ -270,6 +272,12 @@
 			}else if(selectedValue==="LS"){
 				document.getElementById("option_for_LS").classList.remove("hidden");
 			}
+		}
+
+		function genscr(){
+			var cube = min2phase.randomCube();
+			var solution = min2phase.solve(cube);
+			document.getElementById('scr').textContent = solution;
 		}
 		window.onload = function() {
             change();
