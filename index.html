@@ -277,7 +277,7 @@
 		function genscr(){
 			var cube = min2phase.randomCube();
 			var solution = min2phase.solve(cube);
-			document.getElementById('scr').textContent = solution;
+			document.getElementById('scr').value = solution;
 		}
 		window.onload = function() {
             change();
