@@ -4,15 +4,8 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Rubiks Cube Cross solver</title>
+	<title>HighMemory Solver1</title>
 	<script src="min2phase.js/min2phase.js"></script>
-	<script async src="https://www.googletagmanager.com/gtag/js?id=G-MXJH30352W"></script>
-	<script>
-	  window.dataLayer = window.dataLayer || [];
-	  function gtag(){dataLayer.push(arguments);}
-	  gtag('js', new Date());
-	  gtag('config', 'G-MXJH30352W');
-	</script>
 	<style>
 		body {
 			font-family: Arial, sans-serif;
@@ -121,17 +114,17 @@
 </head>
 
 <body>
-	<h1>Rubiks Cube Solver Demo</h1>
-	<h2>This is demo solver for Rubik's cube cross, xcross, xxcross, xxxcross, xxxxcross, last layer substeps, last layer with realtime output. Pre-rotation, solution length, solution count, and other options can be changed as you like. </h2>
+	<h1>HighMemory Solver</h1>
+	<h2>Require 1.5 GB Memory. </h2>
 	<a href="https://github.com/or18/RubiksSolverDemo">Source</a><br>
 	<a href="https://or18.github.io/Rubiks-cube-xcross-solver/">Old Demo</a><br>
-	<a href="https://or18.github.io/RubiksSolverDemo/highMemory.html">High Memory Solver</a>
+	<a href="https://or18.github.io/RubiksSolverDemo/">Lite version</a>
 	<h2>Solver</h2>
 	<select id="solver" onchange="change()">
-		<option value="F2L" selected>F2L Lite</option>
-		<option value="LS">LL Substeps Lite</option>
-		<option value="LL">LL Lite</option>
-		<option value="LU">LL & AUF Lite</option>
+		<option value="F2L" selected>F2L</option>
+		<option value="LS">LL Substeps</option>
+		<option value="LL">LL</option>
+		<option value="LU">LL & AUF</option>
 	</select><br>
 	<textarea id="scr" rows="10" cols="10" placeholder="Input scramble here. Use U, U', U2, D, D2, D', L, L2, L', R, R2, R', F, F2, F', B, B2, B'. "></textarea><br>
 	<button id="gen" onclick="genscr()">Generate Scramble</button>
@@ -231,7 +224,7 @@
 			if(worker){
 				worker.terminate();
 			}
-			worker = new Worker('worker.js');
+			worker = new Worker('worker2.js');
 			worker.onmessage = function(event){
 				appendSol(event.data);
 			};
