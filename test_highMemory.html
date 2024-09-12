@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>HighMemory Solver1</title>
+	<script src="min2phase.js/min2phase.js"></script>
+	<style>
+		body {
+			font-family: Arial, sans-serif;
+			margin: 20px;
+			padding: 0;
+			background-color: #121212;
+		}
+
+		h1 {
+			font-family: Arial, sans-serif;
+			font-size: 24px;
+			text-align: center;
+			color: #ffffff;
+		}
+
+		h2, label {
+			font-family: Arial, sans-serif;
+			font-size: 20px;
+			text-align: left;
+			color: #ffffff;
+		}
+
+		textarea {
+			font-family: Arial, sans-serif;
+			width: 100%;
+			max-width: 600px;
+			height: 150px;
+			font-size: 20px;
+			padding: 10px;
+			margin-bottom: 10px;
+			border: 1px solid #41417f;
+			border-radius: 4px;
+			box-sizing: border-box;
+			background-color: #1e1e1e;
+			color: #ffffff;
+		}
+
+		input {
+			font-family: Arial, sans-serif;
+			width: 100%;
+			max-width: 120px;
+			height: 40px;
+			font-size: 20px;
+			padding: 10px;
+			margin-bottom: 10px;
+			border: 1px solid #41417f;
+			border-radius: 4px;
+			box-sizing: border-box;
+			background-color: #1e1e1e;
+			color: #ffffff;
+		}
+
+		select {
+			font-family: Arial, sans-serif;
+			width: 100%;
+			max-width: 200px;
+			font-size: 20px;
+			padding: 10px;
+			margin-bottom: 10px;
+			border: 1px solid #ffffff;
+			border-radius: 4px;
+			box-sizing: border-box;
+			background-color: #1e1e1e;
+			color: #ffffff;
+		}
+
+		button {
+			font-family: Arial, sans-serif;
+			width: 100%;
+			max-width: 200px;
+			font-size: 20px;
+			padding: 10px;
+			background-color: #56567c;
+			color: #ffffff;
+			border: none;
+			border-radius: 4px;
+			cursor: pointer;
+		}
+
+		button:hover {
+			background-color: #4a4a6d;
+		}
+
+		pre {
+			font-family: Arial, sans-serif;
+			background-color: #1e1e1e;
+			padding: 10px;
+			font-size: 20px;
+			border: 1px solid #41417f;
+			border-radius: 4px;
+			white-space: pre-wrap;
+			word-wrap: break-word;
+			color: #ffffff;
+			height: 400px;
+			overflow-y: scroll;
+		}
+		.hidden {
+            display: none;
+        }
+		a {
+			color: #ffffff;
+			font-family: Arial, sans-serif;
+			font-size: 20px;
+		}
+	</style>
+</head>
+
+<body>
+	<h1>HighMemory Solver</h1>
+	<h2>Require 1.5 GB Memory. </h2>
+	<a href="https://github.com/or18/RubiksSolverDemo">Source</a><br>
+	<a href="https://or18.github.io/Rubiks-cube-xcross-solver/">Old Demo</a><br>
+	<a href="https://or18.github.io/RubiksSolverDemo/">Lite version</a>
+	<h2>Solver</h2>
+	<select id="solver" onchange="change()">
+		<option value="F2L" selected>F2L</option>
+		<option value="LS">LL Substeps</option>
+		<option value="LL">LL</option>
+		<option value="LU">LL & AUF</option>
+	</select><br>
+	<textarea id="scr" rows="10" cols="10" placeholder="Input scramble here. Use U, U', U2, D, D2, D', L, L2, L', R, R2, R', F, F2, F', B, B2, B'. "></textarea><br>
+	<button id="gen" onclick="genscr()">Generate Scramble</button>
+	<h2>Rotation Option</h2>
+	<select id="rot">
+		<option value="">None</option>
+		<option value="y">y</option>
+		<option value="y2">y2</option>
+		<option value="y'">y'</option>
+		<option value="z2">z2</option>
+		<option value="z2 y">z2 y</option>
+		<option value="z2 y2">z2 y2</option>
+		<option value="z2 y'">z2 y'</option>
+		<option value="z'">z'</option>
+		<option value="z' y">z' y</option>
+		<option value="z' y2">z' y2</option>
+		<option value="z' y'">z' y'</option>
+		<option value="z">z</option>
+		<option value="z y">z y</option>
+		<option value="z y2">z y2</option>
+		<option value="z y'">z y'</option>
+		<option value="x'">x'</option>
+		<option value="x' y">x' y</option>
+		<option value="x' y2">x' y2</option>
+		<option value="x' y'">x' y'</option>
+		<option value="x2">x2</option>
+		<option value="x2 y">x2 y</option>
+		<option value="x2 y2">x2 y2</option>
+		<option value="x2 y'">x2 y'</option>
+		<option value="x">x</option>
+		<option value="x y">x y</option>
+		<option value="x y2">x y2</option>
+		<option value="x y'">x y'</option>
+	</select>
+	<div id="option_for_F2L" class="hidden">
+	<h2>Slot Option</h2>
+	<select id="slot">
+		<option value="">None</option>
+		<option value="BL">BL</option>
+		<option value="BR">BR</option>
+		<option value="FR">FR</option>
+		<option value="FL">FL</option>
+		<option value="BL BR">BL BR</option>
+		<option value="BL FR">BL FR</option>
+		<option value="BL FL">BL FL</option>
+		<option value="BR FR">BR FR</option>
+		<option value="BR FL">BR FL</option>
+		<option value="FR FL">FR FL</option>
+		<option value="BL BR FR">BL BR FR</option>
+		<option value="BL BR FL">BL BR FL</option>
+		<option value="BL FR FL">BL FR FL</option>
+		<option value="BR FR FL">BR FR FL</option>
+		<option value="BL BR FR FL">BL BR FR FL</option>
+	</select>
+</div>
+<div id="option_for_LS" class="hidden">
+	<h2>LL Option</h2>
+	<select id="ll">
+		<option value="">None</option>
+		<option value="CP">CP</option>
+		<option value="CO">CO</option>
+		<option value="EP">EP</option>
+		<option value="EO">EO</option>
+		<option value="CP CO">CP CO</option>
+		<option value="CP EP">CP EP</option>
+		<option value="CP EO">CP EO</option>
+		<option value="CO EP">CO EP</option>
+		<option value="CO EO">CO EO</option>
+		<option value="EP EO">EP EO</option>
+		<option value="CP CO EP">CP CO EP</option>
+		<option value="CP CO EO">CP CO EO</option>
+		<option value="CP EO EP">CP EO EP</option>
+		<option value="CO EP EO">CO EP EO</option>
+		<option value="CP CO EP EO">CP CO EP EO</option>
+	</select>
+</div>
+    <h2>Max Solution Length</h2>
+    <input type="number" id="len" value="20" min="1" required>
+    <h2>Max Solution Count</h2>
+    <input type="number" id="num" value="20" min=1 required>
+    <h2>Face Restrict</h2>
+    <input type="text" id="res" value="UDLRFB" required><br>
+	<button id="solveButton" onclick="startWorker()">Start Search</button>
+	<button id="stopButton" onclick="stopWorker()">End Search</button><br>
+	<label for="countLine">Number of solutions: </label>
+	<input type="text" id="countLine" value="0" readonly>
+	<pre id="result"></pre>
+
+	<script>
+		let worker;
+		let messageCount = 0;
+
+		function startWorker(){
+			document.getElementById("countLine").value = 0;
+			messageCount = 0;
+			document.getElementById("result").textContent = "";
+			if(worker){
+				worker.terminate();
+			}
+			worker = new Worker('test_highMemory_worker.js');
+			worker.onmessage = function(event){
+				appendSol(event.data);
+			};
+			const solver = document.getElementById('solver').value;
+			const scr = document.getElementById('scr').value;
+			const rot = document.getElementById('rot').value;
+			const slot = document.getElementById('slot').value;
+			const ll = document.getElementById('ll').value
+            const num = document.getElementById('num').value;
+            const len = document.getElementById('len').value;
+            const restrict = document.getElementById('res').value;
+
+			const args = {solver: solver, scr: scr, rot: rot, slot: slot, ll: ll, num: num, len: len, restrict: restrict};
+			worker.postMessage(args);
+		}
+
+		function appendSol(sol){
+			const element = document.getElementById('result');
+			if(sol=="Search finished." || sol=="Already solved."){
+				stopWorker();
+			}else{
+			element.textContent += sol + "\n";
+			element.scrollTop = element.scrollHeight;
+			messageCount++;
+			document.getElementById("countLine").value = messageCount;
+			}
+
+		}
+
+		function stopWorker(){
+			if(worker){
+				worker.terminate();
+				worker=null;const element = document.getElementById('result');
+				element.textContent += "Search terminated\n";
+			}
+		}
+
+		function change(){
+            document.getElementById("option_for_F2L").classList.add("hidden");
+            document.getElementById("option_for_LS").classList.add("hidden");
+			const selectedValue = document.getElementById("solver").value;
+			if(selectedValue==="F2L"){
+				document.getElementById("option_for_F2L").classList.remove("hidden");
+			}else if(selectedValue==="LS"){
+				document.getElementById("option_for_LS").classList.remove("hidden");
+			}
+		}
+
+		function genscr(){
+			var cube = min2phase.randomCube();
+			var solution = min2phase.solve(cube);
+			document.getElementById('scr').value = solution;
+		}
+		window.onload = function() {
+            change();
+        };
+	</script>
+</body>ae 
+
+</html>
