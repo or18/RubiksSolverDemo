@@ -4,7 +4,7 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Rubiks Cube solver</title>
+	<title>Rubiks Cube Cross solver</title>
 	<script src="min2phase.js/min2phase.js"></script>
 	<script async src="https://www.googletagmanager.com/gtag/js?id=G-MXJH30352W"></script>
 	<script>
@@ -109,10 +109,19 @@
 			height: 400px;
 			overflow-y: scroll;
 		}
+
+		.analyzer_result {
+			color: #ffffff;
+		}
 		.hidden {
             display: none;
         }
 		a {
+			color: #ffffff;
+			font-family: Arial, sans-serif;
+			font-size: 20px;
+		}
+		th, td {
 			color: #ffffff;
 			font-family: Arial, sans-serif;
 			font-size: 20px;
@@ -135,6 +144,15 @@
 	</select><br>
 	<textarea id="scr" rows="10" cols="10" placeholder="Input scramble here. Use U, U', U2, D, D2, D', L, L2, L', R, R2, R', F, F2, F', B, B2, B'. "></textarea><br>
 	<button id="gen" onclick="genscr()">Generate Scramble</button>
+	<h2>Cross Analyzer Option</h2>
+	<select id="analyzer_option">
+		<option value="cross">cross</option>
+		<option value="xcross">xcross</option>
+		<option value="xxcross">xxcross</option>
+		<option value="xxxcross">xxxcross</option>
+	</select>
+	<button id="analyzer" onclick="analyze()">analyze</button>
+	<div id="table"></div>
 	<h2>Rotation Option</h2>
 	<select id="rot">
 		<option value="">None</option>
@@ -222,6 +240,7 @@
 
 	<script>
 		let worker;
+		let worker2;
 		let messageCount = 0;
 
 		function startWorker(){
@@ -272,9 +291,13 @@
 		function change(){
             document.getElementById("option_for_F2L").classList.add("hidden");
             document.getElementById("option_for_LS").classList.add("hidden");
+            document.getElementById("table").classList.add("hidden");
+            document.getElementById("analyzer").classList.add("hidden");
 			const selectedValue = document.getElementById("solver").value;
 			if(selectedValue==="F2L"){
 				document.getElementById("option_for_F2L").classList.remove("hidden");
+				document.getElementById("table").classList.remove("hidden");
+				document.getElementById("analyzer").classList.remove("hidden");
 			}else if(selectedValue==="LS"){
 				document.getElementById("option_for_LS").classList.remove("hidden");
 			}
@@ -285,10 +308,47 @@
 			var solution = min2phase.solve(cube);
 			document.getElementById('scr').value = solution;
 		}
+
+		function analyze(){
+			document.getElementById('table').innerHTML='';
+			const scramble = document.getElementById('scr').value;
+			const option = document.getElementById('analyzer_option').value;
+			if(worker2){
+				worker2.terminate();
+			}
+			worker2 = new Worker('worker_analyzer.js');
+			worker2.onmessage = function(event){
+				document.getElementById('table').innerHTML=event.data;
+			};
+			let cross = false;
+			let xcross = false;
+			let xxcross = false;
+			let xxxcross = false; 
+			if(option==="cross"){
+				cross = true;
+			}else if(option==="xcross"){
+				xcross = true;
+			}else if(option==="xxcross"){
+				xxcross = true;
+			}else if(option==="xxxcross"){
+				xxxcross = true;
+			}
+			const args = {scramble: scramble, cross: cross, x: xcross, xx: xxcross, xxx: xxxcross};
+			worker2.postMessage(args);
+		}
+
+		function solve(slot_option, rotation_option){
+			document.getElementById('rot').value = rotation_option;
+			document.getElementById('slot').value = slot_option;
+            document.getElementById('num').value = 10;
+            document.getElementById('len').value = 20;
+            document.getElementById('res').value = "UDLRFB";
+			startWorker();
+		}
 		window.onload = function() {
             change();
         };
 	</script>
-</body>ae 
+</body>
 
 </html>
