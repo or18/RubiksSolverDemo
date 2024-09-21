@@ -144,6 +144,7 @@
 	</select><br>
 	<textarea id="scr" rows="10" cols="10" placeholder="Input scramble here. Use U, U', U2, D, D2, D', L, L2, L', R, R2, R', F, F2, F', B, B2, B'. "></textarea><br>
 	<button id="gen" onclick="genscr()">Generate Scramble</button>
+	<div id="analyze">
 	<h2>Cross Analyzer Option</h2>
 	<select id="analyzer_option">
 		<option value="cross">cross</option>
@@ -153,6 +154,7 @@
 	</select>
 	<button id="analyzer" onclick="analyze()">analyze</button>
 	<div id="table"></div>
+</div>
 	<h2>Rotation Option</h2>
 	<select id="rot">
 		<option value="">None</option>
@@ -291,13 +293,11 @@
 		function change(){
             document.getElementById("option_for_F2L").classList.add("hidden");
             document.getElementById("option_for_LS").classList.add("hidden");
-            document.getElementById("table").classList.add("hidden");
-            document.getElementById("analyzer").classList.add("hidden");
+            document.getElementById("analyze").classList.add("hidden");
 			const selectedValue = document.getElementById("solver").value;
 			if(selectedValue==="F2L"){
 				document.getElementById("option_for_F2L").classList.remove("hidden");
-				document.getElementById("table").classList.remove("hidden");
-				document.getElementById("analyzer").classList.remove("hidden");
+				document.getElementById("analyze").classList.remove("hidden");
 			}else if(selectedValue==="LS"){
 				document.getElementById("option_for_LS").classList.remove("hidden");
 			}
