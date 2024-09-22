@@ -319,6 +319,7 @@
 			worker2 = new Worker('worker_analyzer.js');
 			worker2.onmessage = function(event){
 				document.getElementById('table').innerHTML=event.data;
+				worker2.terminate();
 			};
 			let cross = false;
 			let xcross = false;
