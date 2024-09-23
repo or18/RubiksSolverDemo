@@ -4,7 +4,7 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Rubiks Cube solver</title>
+	<title>Rubiks Cube Solver</title>
 	<script src="min2phase.js/min2phase.js"></script>
 	<script async src="https://www.googletagmanager.com/gtag/js?id=G-MXJH30352W"></script>
 	<script>
@@ -130,7 +130,7 @@
 </head>
 
 <body>
-	<h1>Rubiks Cube Solver Demo</h1>
+	<h1>Rubiks Cube Solver</h1>
 	<h2>This is demo solver for Rubik's cube cross, xcross, xxcross, xxxcross, xxxxcross, last layer substeps, last layer with realtime output. Pre-rotation, solution length, solution count, and other options can be changed as you like. </h2>
 	<a href="https://github.com/or18/RubiksSolverDemo">Source</a><br>
 	<a href="https://or18.github.io/Rubiks-cube-xcross-solver/">Old Demo</a><br>
@@ -151,6 +151,9 @@
 		<option value="xcross">xcross</option>
 		<option value="xxcross">xxcross</option>
 		<option value="xxxcross">xxxcross</option>
+		<option value="2x">cross, x</option>
+		<option value="3x">cross, x, xx</option>
+		<option value="4x">cross, x, xx, xxx</option>
 	</select>
 	<button id="analyzer" onclick="analyze()">analyze</button>
 	<div id="table"></div>
@@ -325,13 +328,16 @@
 			let xcross = false;
 			let xxcross = false;
 			let xxxcross = false; 
-			if(option==="cross"){
+			if(option==="cross" || option=="2x" || option==="3x" || option==="4x"){
 				cross = true;
-			}else if(option==="xcross"){
+			}
+			if(option==="xcross" || option=="2x" || option==="3x" || option==="4x"){
 				xcross = true;
-			}else if(option==="xxcross"){
+			}
+			if(option==="xxcross" || option==="3x" || option==="4x"){
 				xxcross = true;
-			}else if(option==="xxxcross"){
+			}
+			if(option==="xxxcross" || option==="4x"){
 				xxxcross = true;
 			}
 			const args = {scramble: scramble, cross: cross, x: xcross, xx: xxcross, xxx: xxxcross};
@@ -341,7 +347,7 @@
 		function solve(slot_option, rotation_option){
 			document.getElementById('rot').value = rotation_option;
 			document.getElementById('slot').value = slot_option;
-            document.getElementById('num').value = 10;
+            document.getElementById('num').value = 20;
             document.getElementById('len').value = 20;
             document.getElementById('res').value = "UDLRFB";
 			startWorker();
