@@ -6,6 +6,7 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>Rubiks Cube Solver</title>
 	<script src="min2phase.js/min2phase.js"></script>
+	<script src="functions.js"></script>
 	<script async src="https://www.googletagmanager.com/gtag/js?id=G-MXJH30352W"></script>
 	<script>
 	  window.dataLayer = window.dataLayer || [];
@@ -79,10 +80,9 @@
 			color: #ffffff;
 		}
 
-		button {
+		.button {
 			font-family: Arial, sans-serif;
 			width: 100%;
-			max-width: 200px;
 			font-size: 20px;
 			padding: 10px;
 			background-color: #56567c;
@@ -90,6 +90,14 @@
 			border: none;
 			border-radius: 4px;
 			cursor: pointer;
+		}
+
+		.large {
+			max-width: 200px;
+		}
+
+		.medium {
+			max-width: 100px;
 		}
 
 		button:hover {
@@ -142,8 +150,11 @@
 		<option value="LL">LL Lite</option>
 		<option value="LU">LL & AUF Lite</option>
 	</select><br>
+	
 	<textarea id="scr" rows="10" cols="10" placeholder="Input scramble here. Use U, U', U2, D, D2, D', L, L2, L', R, R2, R', F, F2, F', B, B2, B'. "></textarea><br>
-	<button id="gen" onclick="genscr()">Generate Scramble</button>
+	<button id="gen" class="button medium" onclick="genscr()">Random</button>
+	<button id="reverse" class="button medium" onclick="reverse()">Reverse</button>
+	<button id="mirror" class="button medium" onclick="mirror()">Mirror</button>
 	<div id="analyze">
 	<h2>Cross Analyzer Option</h2>
 	<select id="analyzer_option">
@@ -155,7 +166,7 @@
 		<option value="3x">cross, x, xx</option>
 		<option value="4x">cross, x, xx, xxx</option>
 	</select>
-	<button id="analyzer" onclick="analyze()">analyze</button>
+	<button id="analyzer" class="button medium" onclick="analyze()">Analyze</button>
 	<div id="table"></div>
 </div>
 	<h2>Rotation Option</h2>
@@ -237,8 +248,8 @@
     <input type="number" id="num" value="20" min=1 required>
     <h2>Face Restrict</h2>
     <input type="text" id="res" value="UDLRFB" required><br>
-	<button id="solveButton" onclick="startWorker()">Start Search</button>
-	<button id="stopButton" onclick="stopWorker()">End Search</button><br>
+	<button id="solveButton" class="button medium" onclick="startWorker()">Start</button>
+	<button id="stopButton" class="button medium" onclick="stopWorker()">End</button><br>
 	<label for="countLine">Number of solutions: </label>
 	<input type="text" id="countLine" value="0" readonly>
 	<pre id="result"></pre>
@@ -352,6 +363,20 @@
             document.getElementById('res').value = "UDLRFB";
 			startWorker();
 		}
+
+        Module.onRuntimeInitialized = function () {
+			document.getElementById('reverse').onclick = function () {
+				const scr = document.getElementById('scr').value;
+				const result = Module.scr_reverse(scr);
+				document.getElementById('scr').value = result;
+			};
+			document.getElementById('mirror').onclick = function () {
+				const scr = document.getElementById('scr').value;
+				const result = Module.scr_mirror(scr);
+				document.getElementById('scr').value = result;
+			};
+		};
+
 		window.onload = function() {
             change();
         };
