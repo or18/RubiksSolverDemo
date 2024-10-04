@@ -138,13 +138,16 @@
 	<h2>This is demo solver for Rubik's cube cross, xcross, xxcross, xxxcross, xxxxcross, last layer substeps, last layer.</h2>
 	<a href="https://github.com/or18/RubiksSolverDemo">Source</a><br>
 	<a href="https://or18.github.io/Rubiks-cube-xcross-solver/">Old Demo</a><br>
-	<a href="https://or18.github.io/RubiksSolverDemo/highMemory.html">High Memory Solver</a>
 	<h2>Solver</h2>
 	<select id="solver" onchange="change()">
 		<option value="F2L" selected>F2L Lite</option>
 		<option value="LS">LL Substeps Lite</option>
 		<option value="LL">LL Lite</option>
 		<option value="LU">LL & AUF Lite</option>
+		<option value="F2L2">F2L</option>
+		<option value="LS2">LL Substeps</option>
+		<option value="LL2">LL</option>
+		<option value="LU2">LL & AUF</option>
 	</select><br>
 	
 	<textarea id="scr" rows="10" cols="10" placeholder="Input scramble here. Use U, U', U2, D, D2, D', L, L2, L', R, R2, R', F, F2, F', B, B2, B', u, u2, u', d, d2, d', l, l2, l', r, r2, r', f, f2, f', b, b2, b', M, M2, M', E, E2, E', S, S2, S', x, x2, x', y, y2, y', z, z2, z'. "></textarea><br>
@@ -263,10 +266,6 @@
 			if(worker){
 				worker.terminate();
 			}
-			worker = new Worker('worker.js');
-			worker.onmessage = function(event){
-				appendSol(event.data);
-			};
 			const solver = document.getElementById('solver').value;
 			const scr = document.getElementById('scr').value;
 			const rot = document.getElementById('rot').value;
@@ -276,8 +275,18 @@
             const len = document.getElementById('len').value;
             const restrict = document.getElementById('res').value;
 
-			const args = {solver: solver, scr: convert(scr), rot: rot, slot: slot, ll: ll, num: num, len: len, restrict: restrict};
-			worker.postMessage(args);
+			if(solver==="F2L" || solver==="LS" || solver==="LL" || solver=="LU"){
+				const args = {solver: solver, scr: convert(scr), rot: rot, slot: slot, ll: ll, num: num, len: len, restrict: restrict};
+				worker = new Worker('worker.js');
+				worker.postMessage(args);
+		    }else if(solver==="F2L2" || solver==="LS2" || solver==="LL2" || solver=="LU2"){
+				const args = {solver: solver, scr: convert(scr), rot: rot, slot: slot, ll: ll, num: num, len: len, restrict: restrict};
+				worker = new Worker('worker2.js');
+				worker.postMessage(args);
+		    }
+			worker.onmessage = function(event){
+				appendSol(event.data);
+			};
 		}
 
 		function appendSol(sol){
@@ -302,14 +311,17 @@
 		}
 
 		function change(){
+			const selectedValue = document.getElementById("solver").value;
+			if(selectedValue==="F2L2" || selectedValue==="LS2" || selectedValue==="LL2" || selectedValue=="LU2"){
+				alert("Warning: Requires up to 1.7 GB of memory")
+			}
             document.getElementById("option_for_F2L").classList.add("hidden");
             document.getElementById("option_for_LS").classList.add("hidden");
             document.getElementById("analyze").classList.add("hidden");
-			const selectedValue = document.getElementById("solver").value;
-			if(selectedValue==="F2L"){
+			if(selectedValue==="F2L" || selectedValue==="F2L2"){
 				document.getElementById("option_for_F2L").classList.remove("hidden");
 				document.getElementById("analyze").classList.remove("hidden");
-			}else if(selectedValue==="LS"){
+			}else if(selectedValue==="LS" || selectedValue==="LS2"){
 				document.getElementById("option_for_LS").classList.remove("hidden");
 			}
 		}
@@ -353,6 +365,7 @@
 		}
 
 		function solve(slot_option, rotation_option){
+			document.getElementById("solver").value = "F2L";
 			document.getElementById('rot').value = rotation_option;
 			document.getElementById('slot').value = slot_option;
             document.getElementById('num').value = 20;

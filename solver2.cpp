@@ -12,7 +12,7 @@ cd emsdk
 ./emsdk_env.bat
 Set-ExecutionPolicy RemoteSigned -Scope Process -force
 ./emsdk activate latest
-em++ solver2.cpp -o solver2.js -O3 -s TOTAL_MEMORY=1500MB -s WASM=1 --bind
+em++ solver2.cpp -o solver2.js -O3 -s TOTAL_MEMORY=1700MB -s WASM=1 --bind
 */
 
 EM_JS(void, update, (const char *str), {
@@ -2200,19 +2200,19 @@ void solve_LL_AUF(std::string scramble, std::string rotation, std::string sol_nu
 void controller(std::string solver, std::string scr, std::string rot, std::string slot, std::string ll, std::string num, std::string len, std::string restrict)
 {
 	std::cout << solver;
-	if (solver == "F2L")
+	if (solver == "F2L2")
 	{
 		solve_F2L(scr, rot, slot, num, len, restrict);
 	}
-	else if (solver == "LS")
+	else if (solver == "LS2")
 	{
 		solve_LL_substeps(scr, rot, ll, num, len, restrict);
 	}
-	else if (solver == "LL")
+	else if (solver == "LL2")
 	{
 		solve_LL(scr, rot, num, len, restrict);
 	}
-	else if (solver == "LU")
+	else if (solver == "LU2")
 	{
 		solve_LL_AUF(scr, rot, num, len, restrict);
 	}
