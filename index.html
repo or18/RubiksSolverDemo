@@ -92,10 +92,6 @@
 			cursor: pointer;
 		}
 
-		.large {
-			max-width: 200px;
-		}
-
 		.medium {
 			max-width: 100px;
 		}
@@ -139,7 +135,7 @@
 
 <body>
 	<h1>Rubiks Cube Solver</h1>
-	<h2>This is demo solver for Rubik's cube cross, xcross, xxcross, xxxcross, xxxxcross, last layer substeps, last layer with realtime output. Pre-rotation, solution length, solution count, and other options can be changed as you like. </h2>
+	<h2>This is demo solver for Rubik's cube cross, xcross, xxcross, xxxcross, xxxxcross, last layer substeps, last layer.</h2>
 	<a href="https://github.com/or18/RubiksSolverDemo">Source</a><br>
 	<a href="https://or18.github.io/Rubiks-cube-xcross-solver/">Old Demo</a><br>
 	<a href="https://or18.github.io/RubiksSolverDemo/highMemory.html">High Memory Solver</a>
@@ -151,10 +147,11 @@
 		<option value="LU">LL & AUF Lite</option>
 	</select><br>
 	
-	<textarea id="scr" rows="10" cols="10" placeholder="Input scramble here. Use U, U', U2, D, D2, D', L, L2, L', R, R2, R', F, F2, F', B, B2, B'. "></textarea><br>
+	<textarea id="scr" rows="10" cols="10" placeholder="Input scramble here. Use U, U', U2, D, D2, D', L, L2, L', R, R2, R', F, F2, F', B, B2, B', u, u2, u', d, d2, d', l, l2, l', r, r2, r', f, f2, f', b, b2, b', M, M2, M', E, E2, E', S, S2, S', x, x2, x', y, y2, y', z, z2, z'. "></textarea><br>
 	<button id="gen" class="button medium" onclick="genscr()">Random</button>
 	<button id="reverse" class="button medium" onclick="reverse()">Reverse</button>
 	<button id="mirror" class="button medium" onclick="mirror()">Mirror</button>
+
 	<div id="analyze">
 	<h2>Cross Analyzer Option</h2>
 	<select id="analyzer_option">
@@ -279,7 +276,7 @@
             const len = document.getElementById('len').value;
             const restrict = document.getElementById('res').value;
 
-			const args = {solver: solver, scr: scr, rot: rot, slot: slot, ll: ll, num: num, len: len, restrict: restrict};
+			const args = {solver: solver, scr: convert(scr), rot: rot, slot: slot, ll: ll, num: num, len: len, restrict: restrict};
 			worker.postMessage(args);
 		}
 
@@ -351,7 +348,7 @@
 			if(option==="xxxcross" || option==="4x"){
 				xxxcross = true;
 			}
-			const args = {scramble: scramble, cross: cross, x: xcross, xx: xxcross, xxx: xxxcross};
+			const args = {scramble: convert(scramble), cross: cross, x: xcross, xx: xxcross, xxx: xxxcross};
 			worker2.postMessage(args);
 		}
 
@@ -374,6 +371,10 @@
 				const scr = document.getElementById('scr').value;
 				const result = Module.scr_mirror(scr);
 				document.getElementById('scr').value = result;
+			};
+			window.convert = function(scramble){
+				const result = Module.scr_converter(scramble);
+				return result;
 			};
 		};
 
