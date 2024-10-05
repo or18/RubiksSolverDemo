@@ -95,6 +95,9 @@
 		.medium {
 			max-width: 100px;
 		}
+		.small {
+			max-width: 40px;
+		}
 
 		button:hover {
 			background-color: #4a4a6d;
@@ -148,9 +151,12 @@
 		<option value="LS2">LL Substeps</option>
 		<option value="LL2">LL</option>
 		<option value="LU2">LL & AUF</option>
-	</select><br>
+	</select>
 	
-	<textarea id="scr" rows="10" cols="10" placeholder="Input scramble here. Use U, U', U2, D, D2, D', L, L2, L', R, R2, R', F, F2, F', B, B2, B', u, u2, u', d, d2, d', l, l2, l', r, r2, r', f, f2, f', b, b2, b', M, M2, M', E, E2, E', S, S2, S', x, x2, x', y, y2, y', z, z2, z'. "></textarea><br>
+	<button id="undo" class="button small" onclick="undo()">←</button>
+	<button id="redo" class="button small" onclick="redo()">→</button><br>
+	<textarea id="scr" rows="10" cols="10" placeholder="Input scramble here. All notation available. Recognition format is also available. 
+Note that if the input contains a string that is not a Rubik's Cube notation, it will be lost if reversed or mirrored. Line breaks are also lost." onchange="save()"></textarea><br>
 	<button id="gen" class="button medium" onclick="genscr()">Random</button>
 	<button id="reverse" class="button medium" onclick="reverse()">Reverse</button>
 	<button id="mirror" class="button medium" onclick="mirror()">Mirror</button>
@@ -299,7 +305,6 @@
 			messageCount++;
 			document.getElementById("countLine").value = messageCount;
 			}
-
 		}
 
 		function stopWorker(){
@@ -326,10 +331,27 @@
 			}
 		}
 
+		const textarea = document.getElementById('scr');
+        const undoButton = document.getElementById('undo');
+        const redoButton = document.getElementById('redo');
+		let history = [];
+        let currentIndex = -1;
+		
+		function save() {
+            if (currentIndex < history.length - 1) {
+                history = history.slice(0, currentIndex + 1);
+            }
+            history.push(textarea.value);
+            currentIndex++;
+			console.log(textarea.value);
+            updateButtons();
+        }
+
 		function genscr(){
 			var cube = min2phase.randomCube();
 			var solution = min2phase.solve(cube);
 			document.getElementById('scr').value = solution;
+			save();
 		}
 
 		function analyze(){
@@ -379,17 +401,40 @@
 				const scr = document.getElementById('scr').value;
 				const result = Module.scr_reverse(scr);
 				document.getElementById('scr').value = result;
+				save();
 			};
 			document.getElementById('mirror').onclick = function () {
 				const scr = document.getElementById('scr').value;
 				const result = Module.scr_mirror(scr);
 				document.getElementById('scr').value = result;
+				save();
 			};
 			window.convert = function(scramble){
 				const result = Module.scr_converter(scramble);
 				return result;
 			};
 		};
+
+		function undo(){
+			if (currentIndex > 0) {
+                currentIndex--;
+                textarea.value = history[currentIndex];
+                updateButtons();
+            }
+		}
+
+		function redo(){
+			if (currentIndex < history.length - 1) {
+                currentIndex++;
+                textarea.value = history[currentIndex];
+                updateButtons();
+            }
+		}
+
+		function updateButtons() {
+            undoButton.disabled = currentIndex <= 0;
+            redoButton.disabled = currentIndex >= history.length - 1;
+        }
 
 		window.onload = function() {
             change();
