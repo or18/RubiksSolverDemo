@@ -120,6 +120,16 @@
 		.analyzer_result {
 			color: #ffffff;
 		}
+
+		.panalyzer_result {
+			color: #ffffff;
+		}
+
+		th, td {
+            text-align: left;
+            white-space: nowrap;
+        }
+		
 		.hidden {
             display: none;
         }
@@ -138,12 +148,13 @@
 
 <body>
 	<h1>Rubiks Cube Solver</h1>
-	<h2>This is demo solver for Rubik's cube cross, xcross, xxcross, xxxcross, xxxxcross, last layer substeps, last layer.</h2>
+	<h2>This is demo solver for Rubik's cube cross, xcross, xxcross, xxxcross, xxxxcross, last layer substeps, last layer. Pseudo cross, xcross, xxcross, xxxcross solver is also available.</h2>
 	<a href="https://github.com/or18/RubiksSolverDemo">Source</a><br>
 	<a href="https://or18.github.io/Rubiks-cube-xcross-solver/">Old Demo</a><br>
 	<h2>Solver</h2>
 	<select id="solver" onchange="change()">
 		<option value="F2L" selected>F2L Lite</option>
+		<option value="PF2L">Pseudo F2L Lite</option>
 		<option value="LS">LL Substeps Lite</option>
 		<option value="LL">LL Lite</option>
 		<option value="LU">LL & AUF Lite</option>
@@ -174,6 +185,21 @@ Note that if the input contains a string that is not a Rubik's Cube notation, it
 	</select>
 	<button id="analyzer" class="button medium" onclick="analyze()">Analyze</button>
 	<div id="table"></div>
+</div>
+
+<div id="panalyze">
+	<h2>Pseudo Cross Analyzer Option</h2>
+	<select id="panalyzer_option">
+		<option value="cross">cross</option>
+		<option value="xcross">xcross</option>
+		<option value="xxcross">xxcross</option>
+		<option value="xxxcross">xxxcross</option>
+		<option value="2x">cross, x</option>
+		<option value="3x">cross, x, xx</option>
+		<option value="4x">cross, x, xx, xxx</option>
+	</select>
+	<button id="panalyzer" class="button medium" onclick="panalyze()">Analyze</button>
+	<div id="ptable"></div>
 </div>
 	<h2>Rotation Option</h2>
 	<select id="rot">
@@ -227,6 +253,34 @@ Note that if the input contains a string that is not a Rubik's Cube notation, it
 		<option value="BL BR FR FL">BL BR FR FL</option>
 	</select>
 </div>
+<div id="option_for_PF2L" class="hidden">
+	<div id="option_for_PF2LE">
+		<h2>Pseudo Slot Edge Option</h2>
+		<select id="pslot_edge" onchange="updateDropdown()">
+			<option value="">None</option>
+			<option value="BL">BL</option>
+			<option value="BR">BR</option>
+			<option value="FR">FR</option>
+			<option value="FL">FL</option>
+			<option value="BL BR">BL BR</option>
+			<option value="BL FR">BL FR</option>
+			<option value="BL FL">BL FL</option>
+			<option value="BR FR">BR FR</option>
+			<option value="BR FL">BR FL</option>
+			<option value="FR FL">FR FL</option>
+			<option value="BL BR FR">BL BR FR</option>
+			<option value="BL BR FL">BL BR FL</option>
+			<option value="BL FR FL">BL FR FL</option>
+			<option value="BR FR FL">BR FR FL</option>
+		</select>
+	</div>
+	<div id="option_for_PF2LC" class="hidden">
+		<h2>Pseudo Slot Corner Option</h2>
+		<select id="pslot_corner">
+		</select>
+	</div>
+</div>
+
 <div id="option_for_LS" class="hidden">
 	<h2>LL Option</h2>
 	<select id="ll">
@@ -263,6 +317,7 @@ Note that if the input contains a string that is not a Rubik's Cube notation, it
 	<script>
 		let worker;
 		let worker2;
+		let worker3;
 		let messageCount = 0;
 
 		function startWorker(){
@@ -276,6 +331,8 @@ Note that if the input contains a string that is not a Rubik's Cube notation, it
 			const scr = document.getElementById('scr').value;
 			const rot = document.getElementById('rot').value;
 			const slot = document.getElementById('slot').value;
+			const pslot_e = document.getElementById('pslot_edge').value;
+			const pslot_c = document.getElementById('pslot_corner').value;
 			const ll = document.getElementById('ll').value
             const num = document.getElementById('num').value;
             const len = document.getElementById('len').value;
@@ -289,7 +346,11 @@ Note that if the input contains a string that is not a Rubik's Cube notation, it
 				const args = {solver: solver, scr: convert(scr), rot: rot, slot: slot, ll: ll, num: num, len: len, restrict: restrict};
 				worker = new Worker('worker2.js');
 				worker.postMessage(args);
-		    }
+		    }else if(solver==="PF2L"){
+				const args = {solver: solver, scr: convert(scr), rot: rot, slot: pslot_e, pslot: pslot_c, num: num, len: len, restrict: restrict};
+				worker = new Worker('worker3.js');
+				worker.postMessage(args);
+			}
 			worker.onmessage = function(event){
 				appendSol(event.data);
 			};
@@ -323,11 +384,16 @@ Note that if the input contains a string that is not a Rubik's Cube notation, it
             document.getElementById("option_for_F2L").classList.add("hidden");
             document.getElementById("option_for_LS").classList.add("hidden");
             document.getElementById("analyze").classList.add("hidden");
+            document.getElementById("panalyze").classList.add("hidden");
+            document.getElementById("option_for_PF2L").classList.add("hidden");
 			if(selectedValue==="F2L" || selectedValue==="F2L2"){
 				document.getElementById("option_for_F2L").classList.remove("hidden");
 				document.getElementById("analyze").classList.remove("hidden");
 			}else if(selectedValue==="LS" || selectedValue==="LS2"){
 				document.getElementById("option_for_LS").classList.remove("hidden");
+			}else if(selectedValue==="PF2L"){
+				document.getElementById("option_for_PF2L").classList.remove("hidden");
+				document.getElementById("panalyze").classList.remove("hidden");
 			}
 		}
 
@@ -343,7 +409,6 @@ Note that if the input contains a string that is not a Rubik's Cube notation, it
             }
             history.push(textarea.value);
             currentIndex++;
-			console.log(textarea.value);
             updateButtons();
         }
 
@@ -436,8 +501,101 @@ Note that if the input contains a string that is not a Rubik's Cube notation, it
             redoButton.disabled = currentIndex >= history.length - 1;
         }
 
+		function updateDropdown() {
+			const dropdownA = document.getElementById("pslot_edge");
+            const dropdownB = document.getElementById("pslot_corner");
+			document.getElementById("option_for_PF2LC").classList.add("hidden");
+            const selectedValue = dropdownA.value; 
+			dropdownB.innerHTML = "";
+			let options = [];
+            if (selectedValue === "") {
+                options = [
+                    { value: "", text: "" },
+                ];
+            } else if (selectedValue === "BL" || selectedValue === "BR" || selectedValue === "FR" || selectedValue === "FL") {
+                options = [
+                    { value: "BL", text: "BL" },
+                    { value: "BR", text: "BR" },
+                    { value: "FR", text: "FR" }, 
+                    { value: "FL", text: "FL" }
+                ];
+            } else if (selectedValue === "BL BR" || selectedValue === "BL FR" || selectedValue === "BL FL" || selectedValue === "BR FR" || selectedValue === "BR FL" || selectedValue === "FR FL") {
+                options = [
+                    { value: "BL BR", text: "BL BR" },
+                    { value: "BL FR", text: "BL FR" },
+                    { value: "BL FL", text: "BL FL" },
+                    { value: "BR FR", text: "BR FR" },
+                    { value: "BR FL", text: "BR FL" },
+                    { value: "FR FL", text: "FR FL" }
+                ];
+            } else if (selectedValue === "BL BR FR" || selectedValue === "BL BR FL" || selectedValue === "BL FR FL" || selectedValue === "BR FR FL") {
+                options = [
+                    { value: "BL BR FR", text: "BL BR FR" },
+                    { value: "BL BR FL", text: "BL BR FL" },
+                    { value: "BL FR FL", text: "BL FR FL" },
+                    { value: "BR FR FL", text: "BR FR FL" }
+                ];
+            }
+
+            options.forEach(option => {
+                const newOption = document.createElement("option");
+                newOption.value = option.value; 
+                newOption.textContent = option.text; 
+                dropdownB.appendChild(newOption);
+            });
+
+			if(selectedValue!==""){
+				document.getElementById("option_for_PF2LC").classList.remove("hidden");
+			}
+		}
+
+		function panalyze(){
+			document.getElementById('ptable').innerHTML='';
+			const scramble = document.getElementById('scr').value;
+			const option = document.getElementById('panalyzer_option').value;
+			if(worker3){
+				worker3.terminate();
+			}
+			worker3 = new Worker('worker_panalyzer.js');
+			worker3.onmessage = function(event){
+				document.getElementById('ptable').innerHTML=event.data;
+				worker3.terminate();
+			};
+			let cross = false;
+			let xcross = false;
+			let xxcross = false;
+			let xxxcross = false; 
+			if(option==="cross" || option=="2x" || option==="3x" || option==="4x"){
+				cross = true;
+			}
+			if(option==="xcross" || option=="2x" || option==="3x" || option==="4x"){
+				xcross = true;
+			}
+			if(option==="xxcross" || option==="3x" || option==="4x"){
+				xxcross = true;
+			}
+			if(option==="xxxcross" || option==="4x"){
+				xxxcross = true;
+			}
+			const args = {scramble: convert(scramble), cross: cross, x: xcross, xx: xxcross, xxx: xxxcross};
+			worker3.postMessage(args);
+		}
+
+		function psolve(slot_option, pslot_option, rotation_option){
+			document.getElementById("solver").value = "PF2L";
+			document.getElementById('rot').value = rotation_option;
+			document.getElementById('pslot_edge').value = slot_option;
+			updateDropdown();
+			document.getElementById('pslot_corner').value = pslot_option;
+            document.getElementById('num').value = 20;
+            document.getElementById('len').value = 20;
+            document.getElementById('res').value = "UDLRFB";
+			startWorker();
+		}
+
 		window.onload = function() {
             change();
+			updateDropdown();
         };
 	</script>
 </body>
