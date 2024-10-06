@@ -1213,10 +1213,10 @@ struct xcross_analyzer2
 		ret += start_search_3(scramble, 0, 1, 2, 0, 2, 3, std::ref(prune_table1), std::ref(prune_table3), std::ref(prune_table4), "BL BR FR", "BL FR FL") + "\n";
 		ret += start_search_3(scramble, 0, 1, 2, 1, 2, 3, std::ref(prune_table2), std::ref(prune_table3), std::ref(prune_table4), "BL BR FR", "BR FR FL") + "\n";
 
-		ret += start_search_3(scramble, 0, 1, 3, 0, 1, 2, std::ref(prune_table1), std::ref(prune_table2), std::ref(prune_table3), "BR BR FR", "BL BR FR") + "\n";
-		ret += start_search_3(scramble, 0, 1, 3, 0, 1, 3, std::ref(prune_table1), std::ref(prune_table2), std::ref(prune_table4), "BR BR FR", "BL BR FL") + "\n";
-		ret += start_search_3(scramble, 0, 1, 3, 0, 2, 3, std::ref(prune_table1), std::ref(prune_table3), std::ref(prune_table4), "BR BR FR", "BL FR FL") + "\n";
-		ret += start_search_3(scramble, 0, 1, 3, 1, 2, 3, std::ref(prune_table2), std::ref(prune_table3), std::ref(prune_table4), "BR BR FR", "BR FR FL") + "\n";
+		ret += start_search_3(scramble, 0, 1, 3, 0, 1, 2, std::ref(prune_table1), std::ref(prune_table2), std::ref(prune_table3), "BL BR FL", "BL BR FR") + "\n";
+		ret += start_search_3(scramble, 0, 1, 3, 0, 1, 3, std::ref(prune_table1), std::ref(prune_table2), std::ref(prune_table4), "BL BR FL", "BL BR FL") + "\n";
+		ret += start_search_3(scramble, 0, 1, 3, 0, 2, 3, std::ref(prune_table1), std::ref(prune_table3), std::ref(prune_table4), "BL BR FL", "BL FR FL") + "\n";
+		ret += start_search_3(scramble, 0, 1, 3, 1, 2, 3, std::ref(prune_table2), std::ref(prune_table3), std::ref(prune_table4), "BL BR FL", "BR FR FL") + "\n";
 		
 		ret += start_search_3(scramble, 0, 2, 3, 0, 1, 2, std::ref(prune_table1), std::ref(prune_table2), std::ref(prune_table3), "BL FR FL", "BL BR FR") + "\n";
 		ret += start_search_3(scramble, 0, 2, 3, 0, 1, 3, std::ref(prune_table1), std::ref(prune_table2), std::ref(prune_table4), "BL FR FL", "BL BR FL") + "\n";
