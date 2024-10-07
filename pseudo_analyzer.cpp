@@ -954,7 +954,7 @@ struct xcross_analyzer2
 		sol_num = 10;
 		restrict = move_names;
 		std::vector<std::string> rotations = {"", "z2", "z'", "z", "x'", "x"};
-		std::string result = "<tr><th>" + name + "</th><th>" + name + "</th>";
+		std::string result = "<tr><th>" + name + "</th><th>" + name2 + "</th>";
 		std::vector<int> edge_index = {187520, 187520, 187520, 187520};
 		std::vector<int> single_edge_index = {0, 2, 4, 6};
 		std::vector<int> corner_index = {12, 15, 18, 21};
