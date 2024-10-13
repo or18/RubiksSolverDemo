@@ -7,13 +7,13 @@
     <title>Rubiks Cube Solver</title>
     <script src="min2phase.js/min2phase.js"></script>
     <script src="functions.js"></script>
-    <!-- <script async src="https://www.googletagmanager.com/gtag/js?id=G-MXJH30352W"></script>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-MXJH30352W"></script>
     <script>
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
       gtag('config', 'G-MXJH30352W');
-    </script> -->
+    </script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -103,20 +103,6 @@
             background-color: #4a4a6d;
         }
 
-        pre {
-            font-family: Arial, sans-serif;
-            background-color: #1e1e1e;
-            padding: 10px;
-            font-size: 20px;
-            border: 1px solid #41417f;
-            border-radius: 4px;
-            white-space: pre-wrap;
-            word-wrap: break-word;
-            color: #ffffff;
-            height: 400px;
-            overflow-y: scroll;
-        }
-
         summary {
             display: block;
             font-family: Arial, sans-serif;
@@ -140,17 +126,15 @@
         th, td {
             text-align: left;
             white-space: nowrap;
+            color: #ffffff;
+            font-family: Arial, sans-serif;
+            font-size: 20px;
         }
         
         .hidden {
             display: none;
         }
         a {
-            color: #ffffff;
-            font-family: Arial, sans-serif;
-            font-size: 20px;
-        }
-        th, td {
             color: #ffffff;
             font-family: Arial, sans-serif;
             font-size: 20px;
@@ -646,10 +630,10 @@ import { TwistyPlayer } from "https://cdn.cubing.net/v0/js/cubing/twisty";
             startWorker();
         }
 
-		function add(s){
-			document.getElementById('scr').value += s + "\n";
-			save();
-		}
+	function add(s){
+		document.getElementById('scr').value += s + "\n";
+		save();
+	}
 
         window.onload = function() {
             change();
