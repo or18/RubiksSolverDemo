@@ -619,11 +619,11 @@ struct cross_search
 					count += 1;
 					if (rotation == "")
 					{
-						tmp = std::to_string(count) + ": " + AlgToString(sol);
+						tmp = AlgToString(sol);
 					}
 					else
 					{
-						tmp = std::to_string(count) + ": " + rotation + " " + AlgToString(sol);
+						tmp = rotation + " " + AlgToString(sol);
 					}
 					update(tmp.c_str());
 					if (count == sol_num)
@@ -743,11 +743,11 @@ struct xcross_search
 					count += 1;
 					if (rotation == "")
 					{
-						tmp = std::to_string(count) + ": " + AlgToString(sol);
+						tmp = AlgToString(sol);
 					}
 					else
 					{
-						tmp = std::to_string(count) + ": " + rotation + " " + AlgToString(sol);
+						tmp = rotation + " " + AlgToString(sol);
 					}
 					update(tmp.c_str());
 					if (count == sol_num)
@@ -896,11 +896,11 @@ struct xxcross_search
 					count += 1;
 					if (rotation == "")
 					{
-						tmp = std::to_string(count) + ": " + AlgToString(sol);
+						tmp = AlgToString(sol);
 					}
 					else
 					{
-						tmp = std::to_string(count) + ": " + rotation + " " + AlgToString(sol);
+						tmp = rotation + " " + AlgToString(sol);
 					}
 					update(tmp.c_str());
 					if (count == sol_num)
@@ -1082,11 +1082,11 @@ struct xxxcross_search
 					count += 1;
 					if (rotation == "")
 					{
-						tmp = std::to_string(count) + ": " + AlgToString(sol);
+						tmp = AlgToString(sol);
 					}
 					else
 					{
-						tmp = std::to_string(count) + ": " + rotation + " " + AlgToString(sol);
+						tmp = rotation + " " + AlgToString(sol);
 					}
 					update(tmp.c_str());
 					if (count == sol_num)

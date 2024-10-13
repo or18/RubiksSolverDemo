@@ -12,7 +12,9 @@ cd emsdk
 ./emsdk_env.bat
 Set-ExecutionPolicy RemoteSigned -Scope Process -force
 ./emsdk activate latest
-em++ solver.cpp -o solver.js -O3 -s TOTAL_MEMORY=150MB -s WASM=1 --bind
+cd ../desktop/cpp/html_realtime
+em++ functions.cpp -o functions.js -O3 -s WASM=1 --bind
+
 */
 
 EM_JS(void, update, (const char *str), {
@@ -657,11 +659,11 @@ struct cross_search
 					count += 1;
 					if (rotation == "")
 					{
-						tmp = std::to_string(count) + ": " + AlgToString(sol);
+						tmp = AlgToString(sol);
 					}
 					else
 					{
-						tmp = std::to_string(count) + ": " + rotation + " " + AlgToString(sol);
+						tmp = rotation + " " + AlgToString(sol);
 					}
 					update(tmp.c_str());
 					if (count == sol_num)
@@ -780,11 +782,11 @@ struct xcross_search
 					count += 1;
 					if (rotation == "")
 					{
-						tmp = std::to_string(count) + ": " + AlgToString(sol);
+						tmp = AlgToString(sol);
 					}
 					else
 					{
-						tmp = std::to_string(count) + ": " + rotation + " " + AlgToString(sol);
+						tmp = rotation + " " + AlgToString(sol);
 					}
 					update(tmp.c_str());
 					if (count == sol_num)
@@ -930,11 +932,11 @@ struct xxcross_search
 					count += 1;
 					if (rotation == "")
 					{
-						tmp = std::to_string(count) + ": " + AlgToString(sol);
+						tmp = AlgToString(sol);
 					}
 					else
 					{
-						tmp = std::to_string(count) + ": " + rotation + " " + AlgToString(sol);
+						tmp = rotation + " " + AlgToString(sol);
 					}
 					update(tmp.c_str());
 					if (count == sol_num)
@@ -1111,11 +1113,11 @@ struct xxxcross_search
 					count += 1;
 					if (rotation == "")
 					{
-						tmp = std::to_string(count) + ": " + AlgToString(sol);
+						tmp = AlgToString(sol);
 					}
 					else
 					{
-						tmp = std::to_string(count) + ": " + rotation + " " + AlgToString(sol);
+						tmp = rotation + " " + AlgToString(sol);
 					}
 					update(tmp.c_str());
 					if (count == sol_num)
@@ -1315,11 +1317,11 @@ struct xxxxcross_search
 					count += 1;
 					if (rotation == "")
 					{
-						tmp = std::to_string(count) + ": " + AlgToString(sol);
+						tmp = AlgToString(sol);
 					}
 					else
 					{
-						tmp = std::to_string(count) + ": " + rotation + " " + AlgToString(sol);
+						tmp = rotation + " " + AlgToString(sol);
 					}
 					update(tmp.c_str());
 					if (count == sol_num)
@@ -1560,11 +1562,11 @@ struct LL_substeps_search
 					count += 1;
 					if (rotation == "")
 					{
-						tmp = std::to_string(count) + ": " + AlgToString(sol);
+						tmp = AlgToString(sol);
 					}
 					else
 					{
-						tmp = std::to_string(count) + ": " + rotation + " " + AlgToString(sol);
+						tmp = rotation + " " + AlgToString(sol);
 					}
 					update(tmp.c_str());
 					if (count == sol_num)
@@ -1813,11 +1815,11 @@ struct LL_search
 					count += 1;
 					if (rotation == "")
 					{
-						tmp = std::to_string(count) + ": " + AlgToString(sol);
+						tmp = AlgToString(sol);
 					}
 					else
 					{
-						tmp = std::to_string(count) + ": " + rotation + " " + AlgToString(sol);
+						tmp = rotation + " " + AlgToString(sol);
 					}
 					update(tmp.c_str());
 					if (count == sol_num)
@@ -2062,11 +2064,11 @@ struct LL_AUF_search
 					count += 1;
 					if (rotation == "")
 					{
-						tmp = std::to_string(count) + ": " + AlgToString(sol);
+						tmp = AlgToString(sol);
 					}
 					else
 					{
-						tmp = std::to_string(count) + ": " + rotation + " " + AlgToString(sol);
+						tmp = rotation + " " + AlgToString(sol);
 					}
 					update(tmp.c_str());
 					if (count == sol_num)
