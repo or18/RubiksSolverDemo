@@ -303,7 +303,23 @@ Note that if the input contains a string that is not a Rubik's Cube notation, it
     <h2>Max Solution Count</h2>
     <input type="number" id="num" value="20" min=1 required>
     <h2>Face Restrict</h2>
-    <input type="text" id="res" value="UDLRFB" required><br>
+    <select id="res_drop" onchange="res_change()">
+        <option value="UDLRFB">UDLRFB</option>
+        <option value="UDRF">UDRF</option>
+        <option value="UDLF">UDLF</option>
+        <option value="UDLR">UDLR</option>
+        <option value="UDFB">UDFB</option>
+        <option value="URF">URF</option>
+        <option value="ULF">ULF</option>
+        <option value="URB">URB</option>
+        <option value="ULB">ULB</option>
+        <option value="UDR">UDR</option>
+        <option value="UDL">UDL</option>
+        <option value="UR">UR</option>
+        <option value="UL">UL</option>
+        <option value="custom">Custom</option>
+    </select>
+    <input type="text" id="res" value="UDLRFB" class="hidden" required><br>
     <button id="solveButton" class="button medium" onclick="startWorker()">Start</button>
     <button id="stopButton" class="button medium" onclick="stopWorker()">End</button><br>
     <label for="countLine">Number of solutions: </label>
@@ -352,7 +368,10 @@ import { TwistyPlayer } from "https://cdn.cubing.net/v0/js/cubing/twisty";
             const ll = document.getElementById('ll').value
             const num = document.getElementById('num').value;
             const len = document.getElementById('len').value;
-            const restrict = document.getElementById('res').value;
+            var restrict = document.getElementById('res_drop').value;
+            if(restrict==="custom"){
+                restrict=document.getElementById('res').value;
+            }
 
             if(solver==="F2L" || solver==="LS" || solver==="LL" || solver=="LU"){
                 const args = {solver: solver, scr: convert(scr), rot: rot, slot: slot, ll: ll, num: num, len: len, restrict: restrict};
@@ -428,6 +447,14 @@ import { TwistyPlayer } from "https://cdn.cubing.net/v0/js/cubing/twisty";
             }
         }
 
+        function res_change(){
+            document.getElementById("res").classList.add("hidden");
+            const selectedValue = document.getElementById("res_drop").value;
+            if(selectedValue==="custom"){
+                document.getElementById("res").classList.remove("hidden");
+            }
+        }
+
         const textarea = document.getElementById('scr');
         const undoButton = document.getElementById('undo');
         const redoButton = document.getElementById('redo');
@@ -488,7 +515,8 @@ import { TwistyPlayer } from "https://cdn.cubing.net/v0/js/cubing/twisty";
             document.getElementById('slot').value = slot_option;
             document.getElementById('num').value = 20;
             document.getElementById('len').value = 20;
-            document.getElementById('res').value = "UDLRFB";
+            document.getElementById('res_drop').value = "UDLRFB";
+            res_change();
             startWorker();
         }
 
@@ -626,7 +654,8 @@ import { TwistyPlayer } from "https://cdn.cubing.net/v0/js/cubing/twisty";
             document.getElementById('pslot_corner').value = pslot_option;
             document.getElementById('num').value = 20;
             document.getElementById('len').value = 20;
-            document.getElementById('res').value = "UDLRFB";
+            document.getElementById('res_drop').value = "UDLRFB";
+            res_change();
             startWorker();
         }
 
