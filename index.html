@@ -556,6 +556,10 @@ import { TwistyPlayer } from "https://cdn.cubing.net/v0/js/cubing/twisty";
                 currentIndex--;
                 textarea.value = history[currentIndex];
                 updateButtons();
+                document.getElementById('show').innerHTML='';
+                const sim = createPlayer(textarea.value, '');
+                sim.controlPanel = "none";
+                document.getElementById('show').appendChild(sim);
             }
         }
 
@@ -564,6 +568,10 @@ import { TwistyPlayer } from "https://cdn.cubing.net/v0/js/cubing/twisty";
                 currentIndex++;
                 textarea.value = history[currentIndex];
                 updateButtons();
+                document.getElementById('show').innerHTML='';
+                const sim = createPlayer(textarea.value, '');
+                sim.controlPanel = "none";
+                document.getElementById('show').appendChild(sim);
             }
         }
 
