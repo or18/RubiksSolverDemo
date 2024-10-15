@@ -166,7 +166,8 @@
 Note that if the input contains a string that is not a Rubik's Cube notation, it will be lost if reversed or mirrored. Line breaks are also lost. " onchange="save()"></textarea><br>
     <button id="gen" class="button medium" onclick="genscr()">Random</button>
     <button id="reverse" class="button medium" onclick="reverse()">Reverse</button>
-    <button id="mirror" class="button medium" onclick="mirror()">Mirror</button>
+    <button id="mirror" class="button medium" onclick="mirror()">Mirror</button><br><br>
+    <div id="show"></div>
 
     <div id="analyze">
     <h2>Cross Analyzer Option</h2>
@@ -468,6 +469,8 @@ import { TwistyPlayer } from "https://cdn.cubing.net/v0/js/cubing/twisty";
             history.push(textarea.value);
             currentIndex++;
             updateButtons();
+            document.getElementById('show').innerHTML='';
+            document.getElementById('show').appendChild(createPlayer(textarea.value, ''));
         }
 
         function genscr(){
