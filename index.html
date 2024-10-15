@@ -471,7 +471,9 @@ import { TwistyPlayer } from "https://cdn.cubing.net/v0/js/cubing/twisty";
             currentIndex++;
             updateButtons();
             document.getElementById('show').innerHTML='';
-            document.getElementById('show').appendChild(createPlayer(textarea.value, ''));
+            const sim = createPlayer(textarea.value, '');
+            sim.controlPanel = "none";
+            document.getElementById('show').appendChild(sim);
         }
 
         function genscr(){
