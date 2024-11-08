@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rubiks Cube Solver</title>
+    <script src="src/min2phase.js/min2phase.js"></script>
+    <script src="src/functions/functions.js"></script>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-MXJH30352W"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
+        gtag('config', 'G-MXJH30352W');
+    </script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            padding: 0;
+            background-color: #121212;
+        }
+
+        h1 {
+            font-family: Arial, sans-serif;
+            font-size: 24px;
+            text-align: center;
+            color: #ffffff;
+        }
+
+        h2,
+        label {
+            font-family: Arial, sans-serif;
+            font-size: 20px;
+            text-align: left;
+            color: #ffffff;
+        }
+
+        textarea {
+            font-family: Arial, sans-serif;
+            width: 100%;
+            max-width: 600px;
+            height: 150px;
+            font-size: 20px;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #41417f;
+            border-radius: 4px;
+            box-sizing: border-box;
+            background-color: #1e1e1e;
+            color: #ffffff;
+        }
+
+        input {
+            font-family: Arial, sans-serif;
+            width: 100%;
+            max-width: 120px;
+            height: 40px;
+            font-size: 20px;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #41417f;
+            border-radius: 4px;
+            box-sizing: border-box;
+            background-color: #1e1e1e;
+            color: #ffffff;
+        }
+
+        select {
+            font-family: Arial, sans-serif;
+            width: 100%;
+            max-width: 200px;
+            font-size: 20px;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ffffff;
+            border-radius: 4px;
+            box-sizing: border-box;
+            background-color: #1e1e1e;
+            color: #ffffff;
+        }
+
+        .button {
+            font-family: Arial, sans-serif;
+            width: 100%;
+            font-size: 20px;
+            padding: 10px;
+            background-color: #56567c;
+            color: #ffffff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .medium {
+            max-width: 100px;
+        }
+
+        .small {
+            max-width: 40px;
+        }
+
+        button:hover {
+            background-color: #4a4a6d;
+        }
+
+        summary {
+            display: block;
+            font-family: Arial, sans-serif;
+            background-color: #1e1e1e;
+            padding: 10px;
+            font-size: 20px;
+            border: 1px solid #41417f;
+            border-radius: 4px;
+            word-wrap: break-word;
+            color: #ffffff;
+        }
+
+        .analyzer_result {
+            color: #ffffff;
+        }
+
+        .panalyzer_result {
+            color: #ffffff;
+        }
+
+        th,
+        td {
+            text-align: left;
+            white-space: nowrap;
+            color: #ffffff;
+            font-family: Arial, sans-serif;
+            font-size: 20px;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        a {
+            color: #ffffff;
+            font-family: Arial, sans-serif;
+            font-size: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Rubiks Cube Solver</h1>
+    <h2>This is demo solver for Rubik's cube cross, xcross, xxcross, xxxcross, xxxxcross, last layer substeps, last
+        layer. Pseudo cross, xcross, xxcross, xxxcross solver is also available.</h2>
+    <a href="https://github.com/or18/RubiksSolverDemo">Source</a><br>
+    <a href="https://or18.github.io/Rubiks-cube-xcross-solver/">Old Demo</a><br>
+    <h2>Solver</h2>
+    <select id="solver" onchange="change()">
+        <option value="F2L" selected>F2L Lite</option>
+        <option value="PF2L">Pseudo F2L Lite</option>
+        <option value="LS">LL Substeps Lite</option>
+        <option value="LL">LL Lite</option>
+        <option value="LU">LL & AUF Lite</option>
+        <option value="F2L2">F2L</option>
+        <option value="LS2">LL Substeps</option>
+        <option value="LL2">LL</option>
+        <option value="LU2">LL & AUF</option>
+    </select>
+
+    <button id="undo" class="button small" onclick="undo()">←</button>
+    <button id="redo" class="button small" onclick="redo()">→</button><br>
+    <textarea id="scr" rows="10" cols="10"
+        placeholder="Input scramble here. All notation available. Note that if there is no space or line break between each notation, it will be ignored.
+Note that if the input contains a string that is not a Rubik's Cube notation, it will be lost if reversed or mirrored. Line breaks are also lost. "
+        onchange="save()"></textarea><br>
+    <button id="gen" class="button medium" onclick="genscr()">Random</button>
+    <button id="reverse" class="button medium" onclick="reverse()">Reverse</button>
+    <button id="mirror" class="button medium" onclick="mirror()">Mirror</button><br><br>
+    <div id="show"></div>
+
+    <div id="analyze">
+        <h2>Cross Analyzer Option</h2>
+        <select id="analyzer_option">
+            <option value="cross">cross</option>
+            <option value="xcross">xcross</option>
+            <option value="xxcross">xxcross</option>
+            <option value="xxxcross">xxxcross</option>
+            <option value="2x">cross, x</option>
+            <option value="3x">cross, x, xx</option>
+            <option value="4x">cross, x, xx, xxx</option>
+        </select>
+        <button id="analyzer" class="button medium" onclick="analyze()">Analyze</button>
+        <div id="table"></div>
+    </div>
+
+    <div id="panalyze">
+        <h2>Pseudo Cross Analyzer Option</h2>
+        <select id="panalyzer_option">
+            <option value="cross">cross</option>
+            <option value="xcross">xcross</option>
+            <option value="xxcross">xxcross</option>
+            <option value="xxxcross">xxxcross</option>
+            <option value="2x">cross, x</option>
+            <option value="3x">cross, x, xx</option>
+            <option value="4x">cross, x, xx, xxx</option>
+        </select>
+        <button id="panalyzer" class="button medium" onclick="panalyze()">Analyze</button>
+        <div id="ptable"></div>
+    </div>
+    <h2>Rotation Option</h2>
+    <select id="rot">
+        <option value="">None</option>
+        <option value="y">y</option>
+        <option value="y2">y2</option>
+        <option value="y'">y'</option>
+        <option value="z2">z2</option>
+        <option value="z2 y">z2 y</option>
+        <option value="z2 y2">z2 y2</option>
+        <option value="z2 y'">z2 y'</option>
+        <option value="z'">z'</option>
+        <option value="z' y">z' y</option>
+        <option value="z' y2">z' y2</option>
+        <option value="z' y'">z' y'</option>
+        <option value="z">z</option>
+        <option value="z y">z y</option>
+        <option value="z y2">z y2</option>
+        <option value="z y'">z y'</option>
+        <option value="x'">x'</option>
+        <option value="x' y">x' y</option>
+        <option value="x' y2">x' y2</option>
+        <option value="x' y'">x' y'</option>
+        <option value="x2">x2</option>
+        <option value="x2 y">x2 y</option>
+        <option value="x2 y2">x2 y2</option>
+        <option value="x2 y'">x2 y'</option>
+        <option value="x">x</option>
+        <option value="x y">x y</option>
+        <option value="x y2">x y2</option>
+        <option value="x y'">x y'</option>
+    </select>
+    <div id="option_for_F2L" class="hidden">
+        <h2>Slot Option</h2>
+        <select id="slot">
+            <option value="">None</option>
+            <option value="BL">BL</option>
+            <option value="BR">BR</option>
+            <option value="FR">FR</option>
+            <option value="FL">FL</option>
+            <option value="BL BR">BL BR</option>
+            <option value="BL FR">BL FR</option>
+            <option value="BL FL">BL FL</option>
+            <option value="BR FR">BR FR</option>
+            <option value="BR FL">BR FL</option>
+            <option value="FR FL">FR FL</option>
+            <option value="BL BR FR">BL BR FR</option>
+            <option value="BL BR FL">BL BR FL</option>
+            <option value="BL FR FL">BL FR FL</option>
+            <option value="BR FR FL">BR FR FL</option>
+            <option value="BL BR FR FL">BL BR FR FL</option>
+        </select>
+    </div>
+    <div id="option_for_PF2L" class="hidden">
+        <div id="option_for_PF2LE">
+            <h2>Pseudo Slot Edge Option</h2>
+            <select id="pslot_edge" onchange="updateDropdown()">
+                <option value="">None</option>
+                <option value="BL">BL</option>
+                <option value="BR">BR</option>
+                <option value="FR">FR</option>
+                <option value="FL">FL</option>
+                <option value="BL BR">BL BR</option>
+                <option value="BL FR">BL FR</option>
+                <option value="BL FL">BL FL</option>
+                <option value="BR FR">BR FR</option>
+                <option value="BR FL">BR FL</option>
+                <option value="FR FL">FR FL</option>
+                <option value="BL BR FR">BL BR FR</option>
+                <option value="BL BR FL">BL BR FL</option>
+                <option value="BL FR FL">BL FR FL</option>
+                <option value="BR FR FL">BR FR FL</option>
+            </select>
+        </div>
+        <div id="option_for_PF2LC" class="hidden">
+            <h2>Pseudo Slot Corner Option</h2>
+            <select id="pslot_corner">
+            </select>
+        </div>
+    </div>
+
+    <div id="option_for_LS" class="hidden">
+        <h2>LL Option</h2>
+        <select id="ll">
+            <option value="">None</option>
+            <option value="CP">CP</option>
+            <option value="CO">CO</option>
+            <option value="EP">EP</option>
+            <option value="EO">EO</option>
+            <option value="CP CO">CP CO</option>
+            <option value="CP EP">CP EP</option>
+            <option value="CP EO">CP EO</option>
+            <option value="CO EP">CO EP</option>
+            <option value="CO EO">CO EO</option>
+            <option value="EP EO">EP EO</option>
+            <option value="CP CO EP">CP CO EP</option>
+            <option value="CP CO EO">CP CO EO</option>
+            <option value="CP EO EP">CP EO EP</option>
+            <option value="CO EP EO">CO EP EO</option>
+            <option value="CP CO EP EO">CP CO EP EO</option>
+        </select>
+    </div>
+    <h2>Max Solution Length</h2>
+    <input type="number" id="len" value="20" min="1" required>
+    <h2>Max Solution Count</h2>
+    <input type="number" id="num" value="20" min=1 required>
+    <h2>Face Restrict</h2>
+    <select id="res_drop" onchange="res_change()">
+        <option value="UDLRFB">UDLRFB</option>
+        <option value="UDRF">UDRF</option>
+        <option value="UDLF">UDLF</option>
+        <option value="UDLR">UDLR</option>
+        <option value="UDFB">UDFB</option>
+        <option value="URF">URF</option>
+        <option value="ULF">ULF</option>
+        <option value="URB">URB</option>
+        <option value="ULB">ULB</option>
+        <option value="UDR">UDR</option>
+        <option value="UDL">UDL</option>
+        <option value="ULR">ULR</option>
+        <option value="UR">UR</option>
+        <option value="UL">UL</option>
+        <option value="custom">Custom</option>
+    </select>
+    <input type="text" id="res" value="UDLRFB" class="hidden" required><br><br>
+    <button id="solveButton" class="button medium" onclick="startWorker()">Start</button>
+    <button id="stopButton" class="button medium" onclick="stopWorker()">End</button><br>
+    <label for="countLine">Number of solutions: </label>
+    <input type="text" id="countLine" value="0" readonly>
+    <div id="result"></div>
+
+    <script type="module">
+        import { TwistyPlayer } from "https://cdn.cubing.net/v0/js/cubing/twisty";
+        function createPlayer(setup, sol) {
+            const player = new TwistyPlayer({
+                puzzle: "3x3x3",
+                experimentalSetupAlg: setup,
+                alg: sol,
+                background: "none"
+            });
+            return player;
+        }
+        window.createPlayer = createPlayer;
+    </script>
+
+    <script>
+        let worker;
+        let worker2;
+        let worker3;
+        let messageCount = 0;
+
+        function startWorker() {
+            document.getElementById("countLine").value = 0;
+            messageCount = 0;
+            document.getElementById("result").innerHTML = "";
+            if (worker) {
+                worker.terminate();
+            }
+            const solver = document.getElementById('solver').value;
+            const scr = document.getElementById('scr').value;
+            if (scr === "") {
+                const element = document.getElementById('result');
+                const content = document.createElement('a');
+                content.textContent = "Input scramble";
+                element.appendChild(content);
+                return;
+            }
+            const rot = document.getElementById('rot').value;
+            const slot = document.getElementById('slot').value;
+            const pslot_e = document.getElementById('pslot_edge').value;
+            const pslot_c = document.getElementById('pslot_corner').value;
+            const ll = document.getElementById('ll').value
+            const num = document.getElementById('num').value;
+            const len = document.getElementById('len').value;
+            var restrict = document.getElementById('res_drop').value;
+            if (restrict === "custom") {
+                restrict = document.getElementById('res').value;
+            }
+
+            if (solver === "F2L" || solver === "LS" || solver === "LL" || solver == "LU") {
+                const args = { solver: solver, scr: convert(scr), rot: rot, slot: slot, ll: ll, num: num, len: len, restrict: restrict };
+                worker = new Worker('src/crossSolver/worker.js');
+                worker.postMessage(args);
+            } else if (solver === "F2L2" || solver === "LS2" || solver === "LL2" || solver == "LU2") {
+                const args = { solver: solver, scr: convert(scr), rot: rot, slot: slot, ll: ll, num: num, len: len, restrict: restrict };
+                worker = new Worker('src/highMemorySolver/worker2.js');
+                worker.postMessage(args);
+            } else if (solver === "PF2L") {
+                const args = { solver: solver, scr: convert(scr), rot: rot, slot: pslot_e, pslot: pslot_c, num: num, len: len, restrict: restrict };
+                worker = new Worker('src/pseudoCrossSolver/worker3.js');
+                worker.postMessage(args);
+            }
+            worker.onmessage = function (event) {
+                appendSol(scr, event.data);
+            };
+        }
+
+        function appendSol(scr, sol) {
+            const element = document.getElementById('result');
+            if (sol == "Search finished." || sol == "Already solved.") {
+                stopWorker();
+            } else {
+                messageCount++;
+                const details = document.createElement('details');
+                const summary = document.createElement('summary');
+                summary.textContent = messageCount + ": " + sol;
+                const textNode = document.createTextNode(messageCount + ": " + sol);
+                const button = document.createElement('button');
+                button.classList.add('button', 'small');
+                button.textContent = '+';
+                button.onclick = function () {
+                    add(sol);
+                };
+                summary.appendChild(button);
+                details.appendChild(summary);
+                const sim = createPlayer(scr, sol);
+                details.appendChild(sim);
+                element.appendChild(details);
+                document.getElementById("countLine").value = messageCount;
+            }
+        }
+
+        function stopWorker() {
+            if (worker) {
+                worker.terminate();
+                worker = null; const element = document.getElementById('result');
+                const content = document.createElement('a');
+                content.textContent = "Search terminated";
+                element.appendChild(content);
+            }
+        }
+
+        function change() {
+            const selectedValue = document.getElementById("solver").value;
+            if (selectedValue === "F2L2" || selectedValue === "LS2" || selectedValue === "LL2" || selectedValue == "LU2") {
+                alert("Warning: Requires up to 1.7 GB of memory")
+            }
+            document.getElementById("option_for_F2L").classList.add("hidden");
+            document.getElementById("option_for_LS").classList.add("hidden");
+            document.getElementById("analyze").classList.add("hidden");
+            document.getElementById("panalyze").classList.add("hidden");
+            document.getElementById("option_for_PF2L").classList.add("hidden");
+            if (selectedValue === "F2L" || selectedValue === "F2L2") {
+                document.getElementById("option_for_F2L").classList.remove("hidden");
+                document.getElementById("analyze").classList.remove("hidden");
+            } else if (selectedValue === "LS" || selectedValue === "LS2") {
+                document.getElementById("option_for_LS").classList.remove("hidden");
+            } else if (selectedValue === "PF2L") {
+                document.getElementById("option_for_PF2L").classList.remove("hidden");
+                document.getElementById("panalyze").classList.remove("hidden");
+            }
+        }
+
+        function res_change() {
+            document.getElementById("res").classList.add("hidden");
+            const selectedValue = document.getElementById("res_drop").value;
+            if (selectedValue === "custom") {
+                document.getElementById("res").classList.remove("hidden");
+            }
+        }
+
+        const textarea = document.getElementById('scr');
+        const undoButton = document.getElementById('undo');
+        const redoButton = document.getElementById('redo');
+        let history = [];
+        let currentIndex = -1;
+
+        function save() {
+            if (currentIndex < history.length - 1) {
+                history = history.slice(0, currentIndex + 1);
+            }
+            history.push(textarea.value);
+            currentIndex++;
+            updateButtons();
+            document.getElementById('show').innerHTML = '';
+            const sim = createPlayer(textarea.value, '');
+            sim.controlPanel = "none";
+            document.getElementById('show').appendChild(sim);
+        }
+
+        function genscr() {
+            var cube = min2phase.randomCube();
+            var solution = min2phase.solve(cube);
+            document.getElementById('scr').value = solution + "\n";
+            save();
+        }
+
+        function analyze() {
+            document.getElementById('table').innerHTML = '';
+            const scramble = document.getElementById('scr').value;
+            const option = document.getElementById('analyzer_option').value;
+            if (worker2) {
+                worker2.terminate();
+            }
+            worker2 = new Worker('src/crossAnalyzer/worker_analyzer.js');
+            worker2.onmessage = function (event) {
+                document.getElementById('table').innerHTML = event.data;
+                worker2.terminate();
+            };
+            let cross = false;
+            let xcross = false;
+            let xxcross = false;
+            let xxxcross = false;
+            if (option === "cross" || option == "2x" || option === "3x" || option === "4x") {
+                cross = true;
+            }
+            if (option === "xcross" || option == "2x" || option === "3x" || option === "4x") {
+                xcross = true;
+            }
+            if (option === "xxcross" || option === "3x" || option === "4x") {
+                xxcross = true;
+            }
+            if (option === "xxxcross" || option === "4x") {
+                xxxcross = true;
+            }
+            const args = { scramble: convert(scramble), cross: cross, x: xcross, xx: xxcross, xxx: xxxcross };
+            worker2.postMessage(args);
+        }
+
+        function solve(slot_option, rotation_option) {
+            document.getElementById("solver").value = "F2L";
+            document.getElementById('rot').value = rotation_option;
+            document.getElementById('slot').value = slot_option;
+            document.getElementById('num').value = 20;
+            document.getElementById('len').value = 20;
+            document.getElementById('res_drop').value = "UDLRFB";
+            res_change();
+            startWorker();
+        }
+
+        Module.onRuntimeInitialized = function () {
+            document.getElementById('reverse').onclick = function () {
+                const scr = document.getElementById('scr').value;
+                if (scr === "") {
+                    return;
+                }
+                const result = Module.scr_reverse(scr);
+                document.getElementById('scr').value = result + "\n";
+                save();
+            };
+            document.getElementById('mirror').onclick = function () {
+                const scr = document.getElementById('scr').value;
+                if (scr === "") {
+                    return;
+                }
+                const result = Module.scr_mirror(scr);
+                document.getElementById('scr').value = result + "\n";
+                save();
+            };
+            window.convert = function (scramble) {
+                const result = Module.scr_converter(scramble);
+                return result;
+            };
+        };
+
+        function undo() {
+            if (currentIndex > 0) {
+                currentIndex--;
+                textarea.value = history[currentIndex];
+                updateButtons();
+                document.getElementById('show').innerHTML = '';
+                const sim = createPlayer(textarea.value, '');
+                sim.controlPanel = "none";
+                document.getElementById('show').appendChild(sim);
+            }
+        }
+
+        function redo() {
+            if (currentIndex < history.length - 1) {
+                currentIndex++;
+                textarea.value = history[currentIndex];
+                updateButtons();
+                document.getElementById('show').innerHTML = '';
+                const sim = createPlayer(textarea.value, '');
+                sim.controlPanel = "none";
+                document.getElementById('show').appendChild(sim);
+            }
+        }
+
+        function updateButtons() {
+            undoButton.disabled = currentIndex <= 0;
+            redoButton.disabled = currentIndex >= history.length - 1;
+        }
+
+        function updateDropdown() {
+            const dropdownA = document.getElementById("pslot_edge");
+            const dropdownB = document.getElementById("pslot_corner");
+            document.getElementById("option_for_PF2LC").classList.add("hidden");
+            const selectedValue = dropdownA.value;
+            dropdownB.innerHTML = "";
+            let options = [];
+            if (selectedValue === "") {
+                options = [
+                    { value: "", text: "" },
+                ];
+            } else if (selectedValue === "BL" || selectedValue === "BR" || selectedValue === "FR" || selectedValue === "FL") {
+                options = [
+                    { value: "BL", text: "BL" },
+                    { value: "BR", text: "BR" },
+                    { value: "FR", text: "FR" },
+                    { value: "FL", text: "FL" }
+                ];
+            } else if (selectedValue === "BL BR" || selectedValue === "BL FR" || selectedValue === "BL FL" || selectedValue === "BR FR" || selectedValue === "BR FL" || selectedValue === "FR FL") {
+                options = [
+                    { value: "BL BR", text: "BL BR" },
+                    { value: "BL FR", text: "BL FR" },
+                    { value: "BL FL", text: "BL FL" },
+                    { value: "BR FR", text: "BR FR" },
+                    { value: "BR FL", text: "BR FL" },
+                    { value: "FR FL", text: "FR FL" }
+                ];
+            } else if (selectedValue === "BL BR FR" || selectedValue === "BL BR FL" || selectedValue === "BL FR FL" || selectedValue === "BR FR FL") {
+                options = [
+                    { value: "BL BR FR", text: "BL BR FR" },
+                    { value: "BL BR FL", text: "BL BR FL" },
+                    { value: "BL FR FL", text: "BL FR FL" },
+                    { value: "BR FR FL", text: "BR FR FL" }
+                ];
+            }
+
+            options.forEach(option => {
+                const newOption = document.createElement("option");
+                newOption.value = option.value;
+                newOption.textContent = option.text;
+                dropdownB.appendChild(newOption);
+            });
+
+            if (selectedValue !== "") {
+                document.getElementById("option_for_PF2LC").classList.remove("hidden");
+            }
+        }
+
+        function panalyze() {
+            document.getElementById('ptable').innerHTML = '';
+            const scramble = document.getElementById('scr').value;
+            const option = document.getElementById('panalyzer_option').value;
+            if (worker3) {
+                worker3.terminate();
+            }
+            worker3 = new Worker('src/pseudoCrossAnalyzer/worker_panalyzer.js');
+            worker3.onmessage = function (event) {
+                document.getElementById('ptable').innerHTML = event.data;
+                worker3.terminate();
+            };
+            let cross = false;
+            let xcross = false;
+            let xxcross = false;
+            let xxxcross = false;
+            if (option === "cross" || option == "2x" || option === "3x" || option === "4x") {
+                cross = true;
+            }
+            if (option === "xcross" || option == "2x" || option === "3x" || option === "4x") {
+                xcross = true;
+            }
+            if (option === "xxcross" || option === "3x" || option === "4x") {
+                xxcross = true;
+            }
+            if (option === "xxxcross" || option === "4x") {
+                xxxcross = true;
+            }
+            const args = { scramble: convert(scramble), cross: cross, x: xcross, xx: xxcross, xxx: xxxcross };
+            worker3.postMessage(args);
+        }
+
+        function psolve(slot_option, pslot_option, rotation_option) {
+            document.getElementById("solver").value = "PF2L";
+            document.getElementById('rot').value = rotation_option;
+            document.getElementById('pslot_edge').value = slot_option;
+            updateDropdown();
+            document.getElementById('pslot_corner').value = pslot_option;
+            document.getElementById('num').value = 20;
+            document.getElementById('len').value = 20;
+            document.getElementById('res_drop').value = "UDLRFB";
+            res_change();
+            startWorker();
+        }
+
+        function add(s) {
+            document.getElementById('scr').value += "\n" + s;
+            save();
+        }
+
+        window.onload = function () {
+            change();
+            updateDropdown();
+        };
+    </script>
+</body>
+
+</html>
