@@ -433,6 +433,9 @@ Note that if the input contains a string that is not a Rubik's Cube notation, it
             } else {
                 messageCount++;
                 const details = document.createElement('details');
+                if (messageCount === 1) {
+                    details.setAttribute('open', '');
+                }
                 const summary = document.createElement('summary');
                 summary.textContent = messageCount + ": " + sol;
                 const textNode = document.createTextNode(messageCount + ": " + sol);
