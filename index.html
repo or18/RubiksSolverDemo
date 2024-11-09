@@ -106,6 +106,7 @@
         }
 
         summary {
+            box-sizing: border-box;
             display: block;
             font-family: Arial, sans-serif;
             background-color: #1e1e1e;
@@ -115,14 +116,26 @@
             border-radius: 4px;
             word-wrap: break-word;
             color: #ffffff;
+            width: 100%;
+            max-width: 600px;
         }
 
         .analyzer_result {
             color: #ffffff;
+
         }
 
         .panalyzer_result {
             color: #ffffff;
+        }
+
+        table,
+        ptable {
+            width: 100%;
+            max-width: 600px;
+            max-height: 400px;
+            overflow-x: auto;
+            display: block;
         }
 
         th,
@@ -143,12 +156,18 @@
             font-family: Arial, sans-serif;
             font-size: 20px;
         }
+
+        twisty-player {
+            margin: 0;
+            width: 100%;
+            max-width: 600px;
+        }
     </style>
 </head>
 
 <body>
     <h1>Rubiks Cube Solver</h1>
-    <h2>This is demo solver for Rubik's cube cross, xcross, xxcross, xxxcross, xxxxcross, last layer substeps, last
+    <h2>This is online solver for Rubik's cube cross, xcross, xxcross, xxxcross, xxxxcross, last layer substeps, last
         layer. Pseudo cross, xcross, xxcross, xxxcross solver is also available.</h2>
     <a href="https://github.com/or18/RubiksSolverDemo">Source</a><br>
     <a href="https://or18.github.io/Rubiks-cube-xcross-solver/">Old Demo</a><br>
