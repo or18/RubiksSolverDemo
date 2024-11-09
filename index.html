@@ -79,6 +79,7 @@
             box-sizing: border-box;
             background-color: #1e1e1e;
             color: #ffffff;
+            cursor: pointer;
         }
 
         .button {
@@ -118,6 +119,7 @@
             color: #ffffff;
             width: 100%;
             max-width: 600px;
+            cursor: pointer;
         }
 
         .analyzer_result {
@@ -145,6 +147,10 @@
             color: #ffffff;
             font-family: Arial, sans-serif;
             font-size: 20px;
+        }
+
+        td {
+            cursor: pointer;
         }
 
         .hidden {
@@ -177,15 +183,16 @@
         <option value="PF2L">Pseudo F2L Lite</option>
         <option value="LS">LL Substeps Lite</option>
         <option value="LL">LL Lite</option>
-        <option value="LU">LL & AUF Lite</option>
+        <option value="LU">LL AUF Lite</option>
         <option value="F2L2">F2L</option>
         <option value="LS2">LL Substeps</option>
         <option value="LL2">LL</option>
-        <option value="LU2">LL & AUF</option>
+        <option value="LU2">LL AUF</option>
     </select>
 
     <button id="undo" class="button small" onclick="undo()">←</button>
     <button id="redo" class="button small" onclick="redo()">→</button><br>
+    <h2>Scramble</h2>
     <textarea id="scr" rows="10" cols="10"
         placeholder="Input scramble here. All notation available. Note that if there is no space or line break between each notation, it will be ignored.
 Note that if the input contains a string that is not a Rubik's Cube notation, it will be lost if reversed or mirrored. Line breaks are also lost. "
@@ -431,12 +438,12 @@ Note that if the input contains a string that is not a Rubik's Cube notation, it
                 summary.textContent = messageCount + ": " + sol;
                 const textNode = document.createTextNode(messageCount + ": " + sol);
                 const button = document.createElement('button');
-                button.classList.add('button', 'small');
-                button.textContent = '+';
+                button.classList.add('button', 'medium');
+                button.textContent = 'Add alg';
                 button.onclick = function () {
                     add(sol);
                 };
-                summary.appendChild(button);
+                details.appendChild(button);
                 details.appendChild(summary);
                 const sim = createPlayer(scr, sol);
                 details.appendChild(sim);
