@@ -447,8 +447,18 @@ Note that if the input contains a string that is not a Rubik's Cube notation, it
                 };
                 details.appendChild(button);
                 details.appendChild(summary);
-                const sim = createPlayer(scr, sol);
-                details.appendChild(sim);
+                try{
+                    const sim = createPlayer(scr, sol);
+                    details.appendChild(sim);
+                }catch(e){
+                    if(messageCount===1){
+                        const lineBreak = document.createElement('br');
+                        details.appendChild(lineBreak);
+                        const content = document.createElement('a');
+                        content.textContent = "Warning: Failed to create TwistyPlayer.";
+                        details.appendChild(content);
+                    }
+                }
                 element.appendChild(details);
                 document.getElementById("countLine").value = messageCount;
             }
@@ -506,10 +516,16 @@ Note that if the input contains a string that is not a Rubik's Cube notation, it
             history.push(textarea.value);
             currentIndex++;
             updateButtons();
-            document.getElementById('show').innerHTML = '';
-            const sim = createPlayer(textarea.value, '');
-            sim.controlPanel = "none";
-            document.getElementById('show').appendChild(sim);
+            try{
+                document.getElementById('show').innerHTML = '';
+                const sim = createPlayer(textarea.value, '');
+                sim.controlPanel = "none";
+                document.getElementById('show').appendChild(sim);
+            }catch(e){
+                    const content = document.createElement('a');
+                    content.textContent = "Warning: Failed to create TwistyPlayer.";
+                    document.getElementById('show').appendChild(content);
+            }
         }
 
         function genscr() {
@@ -520,6 +536,7 @@ Note that if the input contains a string that is not a Rubik's Cube notation, it
         }
 
         function analyze() {
+            const content = "<a>Hint: You can start searching by clicking a cell in the table.</a><br>";
             document.getElementById('table').innerHTML = '';
             const scramble = document.getElementById('scr').value;
             const option = document.getElementById('analyzer_option').value;
@@ -528,7 +545,7 @@ Note that if the input contains a string that is not a Rubik's Cube notation, it
             }
             worker2 = new Worker('src/crossAnalyzer/worker_analyzer.js');
             worker2.onmessage = function (event) {
-                document.getElementById('table').innerHTML = event.data;
+                document.getElementById('table').innerHTML = content+event.data;
                 worker2.terminate();
             };
             let cross = false;
@@ -592,10 +609,16 @@ Note that if the input contains a string that is not a Rubik's Cube notation, it
                 currentIndex--;
                 textarea.value = history[currentIndex];
                 updateButtons();
-                document.getElementById('show').innerHTML = '';
-                const sim = createPlayer(textarea.value, '');
-                sim.controlPanel = "none";
-                document.getElementById('show').appendChild(sim);
+                try{
+                    document.getElementById('show').innerHTML = '';
+                    const sim = createPlayer(textarea.value, '');
+                    sim.controlPanel = "none";
+                    document.getElementById('show').appendChild(sim);
+                }catch(e){
+                        const content = document.createElement('a');
+                        content.textContent = "Warning: Failed to create TwistyPlayer.";
+                        document.getElementById('show').appendChild(content);
+                }
             }
         }
 
@@ -604,10 +627,16 @@ Note that if the input contains a string that is not a Rubik's Cube notation, it
                 currentIndex++;
                 textarea.value = history[currentIndex];
                 updateButtons();
-                document.getElementById('show').innerHTML = '';
-                const sim = createPlayer(textarea.value, '');
-                sim.controlPanel = "none";
-                document.getElementById('show').appendChild(sim);
+                try{
+                    document.getElementById('show').innerHTML = '';
+                    const sim = createPlayer(textarea.value, '');
+                    sim.controlPanel = "none";
+                    document.getElementById('show').appendChild(sim);
+                }catch(e){
+                        const content = document.createElement('a');
+                        content.textContent = "Warning: Failed to create TwistyPlayer.";
+                        document.getElementById('show').appendChild(content);
+                }
             }
         }
 
@@ -665,6 +694,7 @@ Note that if the input contains a string that is not a Rubik's Cube notation, it
         }
 
         function panalyze() {
+            const content = "<a>Hint: You can start searching by clicking a cell in the table.</a><br>";
             document.getElementById('ptable').innerHTML = '';
             const scramble = document.getElementById('scr').value;
             const option = document.getElementById('panalyzer_option').value;
@@ -673,7 +703,7 @@ Note that if the input contains a string that is not a Rubik's Cube notation, it
             }
             worker3 = new Worker('src/pseudoCrossAnalyzer/worker_panalyzer.js');
             worker3.onmessage = function (event) {
-                document.getElementById('ptable').innerHTML = event.data;
+                document.getElementById('ptable').innerHTML = content+event.data;
                 worker3.terminate();
             };
             let cross = false;
