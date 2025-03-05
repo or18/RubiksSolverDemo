@@ -10,6 +10,8 @@
 #include <cmath>
 #include <functional>
 
+int analyzer_count = 0;
+
 EM_JS(void, update, (const char *str), {
 	postMessage(UTF8ToString(str));
 });
@@ -638,14 +640,25 @@ struct cross_analyzer
 		return rotations_js[std::distance(rotations.begin(), it)];
 	}
 
-	std::string start_search(std::string arg_scramble, std::string name, std::string name2)
+	std::string converter_face(std::string input)
+	{
+		std::vector<std::string> rotations = {"", "z2", "z'", "z", "x'", "x"};
+		std::vector<std::string> rotations_js = {"'D'", "'U'", "'L'", "'R'", "'F'", "'B'"};
+		auto it = std::find(rotations.begin(), rotations.end(), input);
+		return rotations_js[std::distance(rotations.begin(), it)];
+	}
+
+
+	void start_search(std::string arg_scramble, std::string name, std::string name2, int arg_sol_num)
 	{
 		scramble = arg_scramble;
 		max_length = 20;
-		sol_num = 10;
+		sol_num = arg_sol_num;
 		restrict = move_names;
 		std::vector<std::string> rotations = {"", "z2", "z'", "z", "x'", "x"};
-		std::string result = "<tr><th>None</th><th>None</th>";
+		analyzer_count++;
+		std::string count_string = std::to_string(analyzer_count);
+		std::string result = "<tr><th class=\"No\">" + count_string + "</th><th class=\"slot\">None</th><th class=\"pslot\">None</th>";
 		move_restrict.clear();
 		for (std::string name : restrict)
 		{
@@ -670,7 +683,7 @@ struct cross_analyzer
 			prune_tmp = prune_table[index1 * 528 + index2];
 			if (prune_tmp == 0)
 			{
-				result += "<td>0</td>";
+				result += "<td class="+converter_face(rot)+">0</td>";
 			}
 			else
 			{
@@ -684,11 +697,15 @@ struct cross_analyzer
 					}
 				}
 				std::ostringstream oss;
-				oss << "<td onclick=\"psolve(\'" << name << "\', \'" << name2 << "\', " << converter(rot) << ")\">" << sol_len[0] << "<br>(" << static_cast<double>(total_length) / 10.0 << ")</td>";
+				if(arg_sol_num>1){
+				    oss << "<td onclick=\"psolve(\'" << name << "\', \'" << name2 << "\', " << converter(rot) << ")\">" << sol_len[0] << "<br>(" << static_cast<double>(total_length) / double(sol_num)<< ")</td>";
+				}else{
+					oss << "<td class="<<converter_face(rot)<<" onclick=\"psolve(\'" << name << "\', \'" << name2 << "\', " << converter(rot) << ")\">" << sol_len[0] << "</td>";
+				}
 				result += oss.str();
 			}
 		}
-		return result + "</tr>";
+		update((result+ "</tr>").c_str());
 	}
 };
 
@@ -805,17 +822,27 @@ struct xcross_analyzer2
 		return rotations_js[std::distance(rotations.begin(), it)];
 	}
 
-	std::string start_search_1(std::string arg_scramble, int arg_slot1, int arg_pslot1, std::vector<int> &prune1, std::string name, std::string name2)
+	std::string converter_face(std::string input)
+	{
+		std::vector<std::string> rotations = {"", "z2", "z'", "z", "x'", "x"};
+		std::vector<std::string> rotations_js = {"'D'", "'U'", "'L'", "'R'", "'F'", "'B'"};
+		auto it = std::find(rotations.begin(), rotations.end(), input);
+		return rotations_js[std::distance(rotations.begin(), it)];
+	}
+
+	void start_search_1(std::string arg_scramble, int arg_slot1, int arg_pslot1, std::vector<int> &prune1, std::string name, std::string name2, int arg_sol_num)
 	{
 		move_restrict.clear();
 		scramble = arg_scramble;
 		slot1 = arg_slot1;
 		pslot1 = arg_pslot1;
 		max_length = 20;
-		sol_num = 10;
+		sol_num = arg_sol_num;
 		restrict = move_names;
 		std::vector<std::string> rotations = {"", "z2", "z'", "z", "x'", "x"};
-		std::string result = "<tr><th>" + name + "</th><th>" + name2 + "</th>";
+		analyzer_count++;
+		std::string count_string = std::to_string(analyzer_count);
+		std::string result = "<tr><th class=\"No\">" + count_string + "</th><th class=\"slot\">" + name + "</th><th class=\"pslot\">" + name2 + "</th>";
 		std::vector<int> edge_index = {187520, 187520, 187520, 187520};
 		std::vector<int> single_edge_index = {0, 2, 4, 6};
 		std::vector<int> corner_index = {12, 15, 18, 21};
@@ -845,7 +872,7 @@ struct xcross_analyzer2
 			prune1_tmp = prune1[index1 + index2];
 			if (prune1_tmp == 0 && index3 == edge_solved1)
 			{
-				result += "<td>0</td>";
+				result += "<td class="+converter_face(rot)+">0</td>";
 			}
 			else
 			{
@@ -859,36 +886,40 @@ struct xcross_analyzer2
 					}
 				}
 				std::ostringstream oss;
-				oss << "<td onclick=\"psolve(\'" << name << "\', \'" << name2 << "\', " << converter(rot) << ")\">" << sol_len[0] << "<br>(" << static_cast<double>(total_length) / 10.0 << ")</td>";
+				if(arg_sol_num>1){
+				    oss << "<td onclick=\"psolve(\'" << name << "\', \'" << name2 << "\', " << converter(rot) << ")\">" << sol_len[0] << "<br>(" << static_cast<double>(total_length) / double(sol_num)<< ")</td>";
+				}else{
+					oss << "<td class="<<converter_face(rot)<<" onclick=\"psolve(\'" << name << "\', \'" << name2 << "\', " << converter(rot) << ")\">" << sol_len[0] << "</td>";
+				}
 				result += oss.str();
 			}
 		}
-		return result;
+		update((result+ "</tr>").c_str());
 	}
 
-	std::string xcross_analyze(std::string scramble)
+	void xcross_analyze(std::string scramble, int arg_sol_num)
 	{
-		std::string ret = "";
-		ret += start_search_1(scramble, 0, 0, std::ref(prune_table1), "BL", "BL") + "\n";
-		ret += start_search_1(scramble, 0, 1, std::ref(prune_table2), "BL", "BR") + "\n";
-		ret += start_search_1(scramble, 0, 2, std::ref(prune_table3), "BL", "FR") + "\n";
-		ret += start_search_1(scramble, 0, 3, std::ref(prune_table4), "BL", "FL") + "\n";
+		
+		start_search_1(scramble, 0, 0, std::ref(prune_table1), "BL", "BL", arg_sol_num);
+		start_search_1(scramble, 0, 1, std::ref(prune_table2), "BL", "BR", arg_sol_num);
+		start_search_1(scramble, 0, 2, std::ref(prune_table3), "BL", "FR", arg_sol_num);
+		start_search_1(scramble, 0, 3, std::ref(prune_table4), "BL", "FL", arg_sol_num);
 
-		ret += start_search_1(scramble, 1, 0, std::ref(prune_table1), "BR", "BL") + "\n";
-		ret += start_search_1(scramble, 1, 1, std::ref(prune_table2), "BR", "BR") + "\n";
-		ret += start_search_1(scramble, 1, 2, std::ref(prune_table3), "BR", "FR") + "\n";
-		ret += start_search_1(scramble, 1, 3, std::ref(prune_table4), "BR", "FL") + "\n";
+		start_search_1(scramble, 1, 0, std::ref(prune_table1), "BR", "BL", arg_sol_num);
+		start_search_1(scramble, 1, 1, std::ref(prune_table2), "BR", "BR", arg_sol_num);
+		start_search_1(scramble, 1, 2, std::ref(prune_table3), "BR", "FR", arg_sol_num);
+		start_search_1(scramble, 1, 3, std::ref(prune_table4), "BR", "FL", arg_sol_num);
 
-		ret += start_search_1(scramble, 2, 0, std::ref(prune_table1), "FR", "BL") + "\n";
-		ret += start_search_1(scramble, 2, 1, std::ref(prune_table2), "FR", "BR") + "\n";
-		ret += start_search_1(scramble, 2, 2, std::ref(prune_table3), "FR", "FR") + "\n";
-		ret += start_search_1(scramble, 2, 3, std::ref(prune_table4), "FR", "FL") + "\n";
+		start_search_1(scramble, 2, 0, std::ref(prune_table1), "FR", "BL", arg_sol_num);
+		start_search_1(scramble, 2, 1, std::ref(prune_table2), "FR", "BR", arg_sol_num);
+		start_search_1(scramble, 2, 2, std::ref(prune_table3), "FR", "FR", arg_sol_num);
+		start_search_1(scramble, 2, 3, std::ref(prune_table4), "FR", "FL", arg_sol_num);
 
-		ret += start_search_1(scramble, 3, 0, std::ref(prune_table1), "FL", "BL") + "\n";
-		ret += start_search_1(scramble, 3, 1, std::ref(prune_table2), "FL", "BR") + "\n";
-		ret += start_search_1(scramble, 3, 2, std::ref(prune_table3), "FL", "FR") + "\n";
-		ret += start_search_1(scramble, 3, 3, std::ref(prune_table4), "FL", "FL") + "\n";
-		return ret + "</tr>";
+		start_search_1(scramble, 3, 0, std::ref(prune_table1), "FL", "BL", arg_sol_num);
+		start_search_1(scramble, 3, 1, std::ref(prune_table2), "FL", "BR", arg_sol_num);
+		start_search_1(scramble, 3, 2, std::ref(prune_table3), "FL", "FR", arg_sol_num);
+		start_search_1(scramble, 3, 3, std::ref(prune_table4), "FL", "FL", arg_sol_num);
+		
 	}
 
 	bool depth_limited_search_2(int arg_index1, int arg_index2, int arg_index3, int arg_index4, int arg_index5, int arg_index6, int depth, int prev, std::vector<int> &prune1, std::vector<int> &prune2)
@@ -938,7 +969,7 @@ struct xcross_analyzer2
 		return false;
 	}
 
-	std::string start_search_2(std::string arg_scramble, int arg_slot1, int arg_slot2, int arg_pslot1, int arg_pslot2, std::vector<int> &prune1, std::vector<int> &prune2, std::string name, std::string name2)
+	void start_search_2(std::string arg_scramble, int arg_slot1, int arg_slot2, int arg_pslot1, int arg_pslot2, std::vector<int> &prune1, std::vector<int> &prune2, std::string name, std::string name2, int arg_sol_num)
 	{
 		move_restrict.clear();
 		scramble = arg_scramble;
@@ -947,10 +978,12 @@ struct xcross_analyzer2
 		pslot1 = arg_pslot1;
 		pslot2 = arg_pslot2;
 		max_length = 20;
-		sol_num = 10;
+		sol_num = arg_sol_num;
 		restrict = move_names;
 		std::vector<std::string> rotations = {"", "z2", "z'", "z", "x'", "x"};
-		std::string result = "<tr><th>" + name + "</th><th>" + name2 + "</th>";
+		analyzer_count++;
+		std::string count_string = std::to_string(analyzer_count);
+		std::string result = "<tr><th class=\"No\">" + count_string + "</th><th class=\"slot\">" + name + "</th><th class=\"pslot\">" + name2 + "</th>";
 		std::vector<int> edge_index = {187520, 187520, 187520, 187520};
 		std::vector<int> single_edge_index = {0, 2, 4, 6};
 		std::vector<int> corner_index = {12, 15, 18, 21};
@@ -989,7 +1022,7 @@ struct xcross_analyzer2
 			prune2_tmp = prune2[index3 + index4];
 			if (prune1_tmp == 0 && prune2_tmp == 0 && index5 == edge_solved1 && index6 == edge_solved2)
 			{
-				result += "<td>0</td>";
+				result += "<td class="+converter_face(rot)+">0</td>";
 			}
 			else
 			{
@@ -1005,58 +1038,62 @@ struct xcross_analyzer2
 					}
 				}
 				std::ostringstream oss;
-				oss << "<td onclick=\"psolve(\'" << name << "\', \'" << name2 << "\', " << converter(rot) << ")\">" << sol_len[0] << "<br>(" << static_cast<double>(total_length) / 10.0 << ")</td>";
+				if(arg_sol_num>1){
+				    oss << "<td onclick=\"psolve(\'" << name << "\', \'" << name2 << "\', " << converter(rot) << ")\">" << sol_len[0] << "<br>(" << static_cast<double>(total_length) / double(sol_num)<< ")</td>";
+				}else{
+					oss << "<td class="<<converter_face(rot)<<" onclick=\"psolve(\'" << name << "\', \'" << name2 << "\', " << converter(rot) << ")\">" << sol_len[0] << "</td>";
+				}
 				result += oss.str();
 			}
 		}
-		return result;
+		update((result+ "</tr>").c_str());
 	}
 
-	std::string xxcross_analyze(std::string scramble)
+	void xxcross_analyze(std::string scramble, int arg_sol_num)
 	{
-		std::string ret = "";
-		ret += start_search_2(scramble, 0, 1, 0, 1, std::ref(prune_table1), std::ref(prune_table2), "BL BR", "BL BR") + "\n";
-		ret += start_search_2(scramble, 0, 1, 0, 2, std::ref(prune_table1), std::ref(prune_table3), "BL BR", "BL FR") + "\n";
-		ret += start_search_2(scramble, 0, 1, 0, 3, std::ref(prune_table1), std::ref(prune_table4), "BL BR", "BL FL") + "\n";
-		ret += start_search_2(scramble, 0, 1, 1, 2, std::ref(prune_table2), std::ref(prune_table3), "BL BR", "BR FR") + "\n";
-		ret += start_search_2(scramble, 0, 1, 1, 3, std::ref(prune_table2), std::ref(prune_table4), "BL BR", "BR FL") + "\n";
-		ret += start_search_2(scramble, 0, 1, 2, 3, std::ref(prune_table3), std::ref(prune_table4), "BL BR", "FR FL") + "\n";
+		
+		start_search_2(scramble, 0, 1, 0, 1, std::ref(prune_table1), std::ref(prune_table2), "BL BR", "BL BR", arg_sol_num);
+		start_search_2(scramble, 0, 1, 0, 2, std::ref(prune_table1), std::ref(prune_table3), "BL BR", "BL FR", arg_sol_num);
+		start_search_2(scramble, 0, 1, 0, 3, std::ref(prune_table1), std::ref(prune_table4), "BL BR", "BL FL", arg_sol_num);
+		start_search_2(scramble, 0, 1, 1, 2, std::ref(prune_table2), std::ref(prune_table3), "BL BR", "BR FR", arg_sol_num);
+		start_search_2(scramble, 0, 1, 1, 3, std::ref(prune_table2), std::ref(prune_table4), "BL BR", "BR FL", arg_sol_num);
+		start_search_2(scramble, 0, 1, 2, 3, std::ref(prune_table3), std::ref(prune_table4), "BL BR", "FR FL", arg_sol_num);
 
-		ret += start_search_2(scramble, 0, 2, 0, 1, std::ref(prune_table1), std::ref(prune_table2), "BL FR", "BL BR") + "\n";
-		ret += start_search_2(scramble, 0, 2, 0, 2, std::ref(prune_table1), std::ref(prune_table3), "BL FR", "BL FR") + "\n";
-		ret += start_search_2(scramble, 0, 2, 0, 3, std::ref(prune_table1), std::ref(prune_table4), "BL FR", "BL FL") + "\n";
-		ret += start_search_2(scramble, 0, 2, 1, 2, std::ref(prune_table2), std::ref(prune_table3), "BL FR", "BR FR") + "\n";
-		ret += start_search_2(scramble, 0, 2, 1, 3, std::ref(prune_table2), std::ref(prune_table4), "BL FR", "BR FL") + "\n";
-		ret += start_search_2(scramble, 0, 2, 2, 3, std::ref(prune_table3), std::ref(prune_table4), "BL FR", "FR FL") + "\n";
+		start_search_2(scramble, 0, 2, 0, 1, std::ref(prune_table1), std::ref(prune_table2), "BL FR", "BL BR", arg_sol_num);
+		start_search_2(scramble, 0, 2, 0, 2, std::ref(prune_table1), std::ref(prune_table3), "BL FR", "BL FR", arg_sol_num);
+		start_search_2(scramble, 0, 2, 0, 3, std::ref(prune_table1), std::ref(prune_table4), "BL FR", "BL FL", arg_sol_num);
+		start_search_2(scramble, 0, 2, 1, 2, std::ref(prune_table2), std::ref(prune_table3), "BL FR", "BR FR", arg_sol_num);
+		start_search_2(scramble, 0, 2, 1, 3, std::ref(prune_table2), std::ref(prune_table4), "BL FR", "BR FL", arg_sol_num);
+		start_search_2(scramble, 0, 2, 2, 3, std::ref(prune_table3), std::ref(prune_table4), "BL FR", "FR FL", arg_sol_num);
 
-		ret += start_search_2(scramble, 0, 3, 0, 1, std::ref(prune_table1), std::ref(prune_table2), "BL FL", "BL BR") + "\n";
-		ret += start_search_2(scramble, 0, 3, 0, 2, std::ref(prune_table1), std::ref(prune_table3), "BL FL", "BL FR") + "\n";
-		ret += start_search_2(scramble, 0, 3, 0, 3, std::ref(prune_table1), std::ref(prune_table4), "BL FL", "BL FL") + "\n";
-		ret += start_search_2(scramble, 0, 3, 1, 2, std::ref(prune_table2), std::ref(prune_table3), "BL FL", "BR FR") + "\n";
-		ret += start_search_2(scramble, 0, 3, 1, 3, std::ref(prune_table2), std::ref(prune_table4), "BL FL", "BR FL") + "\n";
-		ret += start_search_2(scramble, 0, 3, 2, 3, std::ref(prune_table3), std::ref(prune_table4), "BL FL", "FR FL") + "\n";
+		start_search_2(scramble, 0, 3, 0, 1, std::ref(prune_table1), std::ref(prune_table2), "BL FL", "BL BR", arg_sol_num);
+		start_search_2(scramble, 0, 3, 0, 2, std::ref(prune_table1), std::ref(prune_table3), "BL FL", "BL FR", arg_sol_num);
+		start_search_2(scramble, 0, 3, 0, 3, std::ref(prune_table1), std::ref(prune_table4), "BL FL", "BL FL", arg_sol_num);
+		start_search_2(scramble, 0, 3, 1, 2, std::ref(prune_table2), std::ref(prune_table3), "BL FL", "BR FR", arg_sol_num);
+		start_search_2(scramble, 0, 3, 1, 3, std::ref(prune_table2), std::ref(prune_table4), "BL FL", "BR FL", arg_sol_num);
+		start_search_2(scramble, 0, 3, 2, 3, std::ref(prune_table3), std::ref(prune_table4), "BL FL", "FR FL", arg_sol_num);
 
-		ret += start_search_2(scramble, 1, 2, 0, 1, std::ref(prune_table1), std::ref(prune_table2), "BR FR", "BL BR") + "\n";
-		ret += start_search_2(scramble, 1, 2, 0, 2, std::ref(prune_table1), std::ref(prune_table3), "BR FR", "BL FR") + "\n";
-		ret += start_search_2(scramble, 1, 2, 0, 3, std::ref(prune_table1), std::ref(prune_table4), "BR FR", "BL FL") + "\n";
-		ret += start_search_2(scramble, 1, 2, 1, 2, std::ref(prune_table2), std::ref(prune_table3), "BR FR", "BR FR") + "\n";
-		ret += start_search_2(scramble, 1, 2, 1, 3, std::ref(prune_table2), std::ref(prune_table4), "BR FR", "BR FL") + "\n";
-		ret += start_search_2(scramble, 1, 2, 2, 3, std::ref(prune_table3), std::ref(prune_table4), "BR FR", "FR FL") + "\n";
+		start_search_2(scramble, 1, 2, 0, 1, std::ref(prune_table1), std::ref(prune_table2), "BR FR", "BL BR", arg_sol_num);
+		start_search_2(scramble, 1, 2, 0, 2, std::ref(prune_table1), std::ref(prune_table3), "BR FR", "BL FR", arg_sol_num);
+		start_search_2(scramble, 1, 2, 0, 3, std::ref(prune_table1), std::ref(prune_table4), "BR FR", "BL FL", arg_sol_num);
+		start_search_2(scramble, 1, 2, 1, 2, std::ref(prune_table2), std::ref(prune_table3), "BR FR", "BR FR", arg_sol_num);
+		start_search_2(scramble, 1, 2, 1, 3, std::ref(prune_table2), std::ref(prune_table4), "BR FR", "BR FL", arg_sol_num);
+		start_search_2(scramble, 1, 2, 2, 3, std::ref(prune_table3), std::ref(prune_table4), "BR FR", "FR FL", arg_sol_num);
 
-		ret += start_search_2(scramble, 1, 3, 0, 1, std::ref(prune_table1), std::ref(prune_table2), "BR FL", "BL BR") + "\n";
-		ret += start_search_2(scramble, 1, 3, 0, 2, std::ref(prune_table1), std::ref(prune_table3), "BR FL", "BL FR") + "\n";
-		ret += start_search_2(scramble, 1, 3, 0, 3, std::ref(prune_table1), std::ref(prune_table4), "BR FL", "BL FL") + "\n";
-		ret += start_search_2(scramble, 1, 3, 1, 2, std::ref(prune_table2), std::ref(prune_table3), "BR FL", "BR FR") + "\n";
-		ret += start_search_2(scramble, 1, 3, 1, 3, std::ref(prune_table2), std::ref(prune_table4), "BR FL", "BR FL") + "\n";
-		ret += start_search_2(scramble, 1, 3, 2, 3, std::ref(prune_table3), std::ref(prune_table4), "BR FL", "FR FL") + "\n";
+		start_search_2(scramble, 1, 3, 0, 1, std::ref(prune_table1), std::ref(prune_table2), "BR FL", "BL BR", arg_sol_num);
+		start_search_2(scramble, 1, 3, 0, 2, std::ref(prune_table1), std::ref(prune_table3), "BR FL", "BL FR", arg_sol_num);
+		start_search_2(scramble, 1, 3, 0, 3, std::ref(prune_table1), std::ref(prune_table4), "BR FL", "BL FL", arg_sol_num);
+		start_search_2(scramble, 1, 3, 1, 2, std::ref(prune_table2), std::ref(prune_table3), "BR FL", "BR FR", arg_sol_num);
+		start_search_2(scramble, 1, 3, 1, 3, std::ref(prune_table2), std::ref(prune_table4), "BR FL", "BR FL", arg_sol_num);
+		start_search_2(scramble, 1, 3, 2, 3, std::ref(prune_table3), std::ref(prune_table4), "BR FL", "FR FL", arg_sol_num);
 
-		ret += start_search_2(scramble, 2, 3, 0, 1, std::ref(prune_table1), std::ref(prune_table2), "FR FL", "BL BR") + "\n";
-		ret += start_search_2(scramble, 2, 3, 0, 2, std::ref(prune_table1), std::ref(prune_table3), "FR FL", "BL FR") + "\n";
-		ret += start_search_2(scramble, 2, 3, 0, 3, std::ref(prune_table1), std::ref(prune_table4), "FR FL", "BL FL") + "\n";
-		ret += start_search_2(scramble, 2, 3, 1, 2, std::ref(prune_table2), std::ref(prune_table3), "FR FL", "BR FR") + "\n";
-		ret += start_search_2(scramble, 2, 3, 1, 3, std::ref(prune_table2), std::ref(prune_table4), "FR FL", "BR FL") + "\n";
-		ret += start_search_2(scramble, 2, 3, 2, 3, std::ref(prune_table3), std::ref(prune_table4), "FR FL", "FR FL") + "\n";
-		return ret + "</tr>";
+		start_search_2(scramble, 2, 3, 0, 1, std::ref(prune_table1), std::ref(prune_table2), "FR FL", "BL BR", arg_sol_num);
+		start_search_2(scramble, 2, 3, 0, 2, std::ref(prune_table1), std::ref(prune_table3), "FR FL", "BL FR", arg_sol_num);
+		start_search_2(scramble, 2, 3, 0, 3, std::ref(prune_table1), std::ref(prune_table4), "FR FL", "BL FL", arg_sol_num);
+		start_search_2(scramble, 2, 3, 1, 2, std::ref(prune_table2), std::ref(prune_table3), "FR FL", "BR FR", arg_sol_num);
+		start_search_2(scramble, 2, 3, 1, 3, std::ref(prune_table2), std::ref(prune_table4), "FR FL", "BR FL", arg_sol_num);
+		start_search_2(scramble, 2, 3, 2, 3, std::ref(prune_table3), std::ref(prune_table4), "FR FL", "FR FL", arg_sol_num);
+		
 	}
 
 	bool depth_limited_search_3(int arg_index1, int arg_index2, int arg_index3, int arg_index4, int arg_index5, int arg_index6, int arg_index7, int arg_index8, int arg_index9, int depth, int prev, std::vector<int> &prune1, std::vector<int> &prune2, std::vector<int> &prune3)
@@ -1114,7 +1151,7 @@ struct xcross_analyzer2
 		return false;
 	}
 
-	std::string start_search_3(std::string arg_scramble, int arg_slot1, int arg_slot2, int arg_slot3, int arg_pslot1, int arg_pslot2, int arg_pslot3, std::vector<int> &prune1, std::vector<int> &prune2, std::vector<int> &prune3, std::string name, std::string name2)
+	void start_search_3(std::string arg_scramble, int arg_slot1, int arg_slot2, int arg_slot3, int arg_pslot1, int arg_pslot2, int arg_pslot3, std::vector<int> &prune1, std::vector<int> &prune2, std::vector<int> &prune3, std::string name, std::string name2, int arg_sol_num)
 	{
 		move_restrict.clear();
 		scramble = arg_scramble;
@@ -1125,10 +1162,12 @@ struct xcross_analyzer2
 		pslot2 = arg_pslot2;
 		pslot3 = arg_pslot3;
 		max_length = 20;
-		sol_num = 10;
+		sol_num = arg_sol_num;
 		restrict = move_names;
 		std::vector<std::string> rotations = {"", "z2", "z'", "z", "x'", "x"};
-		std::string result = "<tr><th>" + name + "</th><th>" + name2 + "</th>";
+		analyzer_count++;
+		std::string count_string = std::to_string(analyzer_count);
+		std::string result = "<tr><th class=\"No\">" + count_string + "</th><th class=\"slot\">" + name + "</th><th class=\"pslot\">" + name2 + "</th>";
 		std::vector<int> edge_index = {187520, 187520, 187520, 187520};
 		std::vector<int> single_edge_index = {0, 2, 4, 6};
 		std::vector<int> corner_index = {12, 15, 18, 21};
@@ -1176,7 +1215,7 @@ struct xcross_analyzer2
 			prune3_tmp = prune3[index5 + index6];
 			if (prune1_tmp == 0 && prune2_tmp == 0 && prune3_tmp == 0 && index7 == edge_solved1 && index8 == edge_solved2 && index9 == edge_solved3)
 			{
-				result += "<td>0</td>";
+				result += "<td class="+converter_face(rot)+">0</td>";
 			}
 			else
 			{
@@ -1194,65 +1233,84 @@ struct xcross_analyzer2
 					}
 				}
 				std::ostringstream oss;
-				oss << "<td onclick=\"psolve(\'" << name << "\', \'" << name2 << "\', " << converter(rot) << ")\">" << sol_len[0] << "<br>(" << static_cast<double>(total_length) / 10.0 << ")</td>";
+				if(arg_sol_num>1){
+				    oss << "<td onclick=\"psolve(\'" << name << "\', \'" << name2 << "\', " << converter(rot) << ")\">" << sol_len[0] << "<br>(" << static_cast<double>(total_length) / double(sol_num)<< ")</td>";
+				}else{
+					oss << "<td class="<<converter_face(rot)<<" onclick=\"psolve(\'" << name << "\', \'" << name2 << "\', " << converter(rot) << ")\">" << sol_len[0] << "</td>";
+				}
 				result += oss.str();
 			}
 		}
-		return result + "</tr>";
+		update((result+ "</tr>").c_str());
 	}
 
-	std::string xxxcross_analyze(std::string scramble)
+	void xxxcross_analyze(std::string scramble, int arg_sol_num)
 	{
-		std::string ret = "";
-		ret += start_search_3(scramble, 0, 1, 2, 0, 1, 2, std::ref(prune_table1), std::ref(prune_table2), std::ref(prune_table3), "BL BR FR", "BL BR FR") + "\n";
-		ret += start_search_3(scramble, 0, 1, 2, 0, 1, 3, std::ref(prune_table1), std::ref(prune_table2), std::ref(prune_table4), "BL BR FR", "BL BR FL") + "\n";
-		ret += start_search_3(scramble, 0, 1, 2, 0, 2, 3, std::ref(prune_table1), std::ref(prune_table3), std::ref(prune_table4), "BL BR FR", "BL FR FL") + "\n";
-		ret += start_search_3(scramble, 0, 1, 2, 1, 2, 3, std::ref(prune_table2), std::ref(prune_table3), std::ref(prune_table4), "BL BR FR", "BR FR FL") + "\n";
+		
+		start_search_3(scramble, 0, 1, 2, 0, 1, 2, std::ref(prune_table1), std::ref(prune_table2), std::ref(prune_table3), "BL BR FR", "BL BR FR", arg_sol_num);
+		start_search_3(scramble, 0, 1, 2, 0, 1, 3, std::ref(prune_table1), std::ref(prune_table2), std::ref(prune_table4), "BL BR FR", "BL BR FL", arg_sol_num);
+		start_search_3(scramble, 0, 1, 2, 0, 2, 3, std::ref(prune_table1), std::ref(prune_table3), std::ref(prune_table4), "BL BR FR", "BL FR FL", arg_sol_num);
+		start_search_3(scramble, 0, 1, 2, 1, 2, 3, std::ref(prune_table2), std::ref(prune_table3), std::ref(prune_table4), "BL BR FR", "BR FR FL", arg_sol_num);
 
-		ret += start_search_3(scramble, 0, 1, 3, 0, 1, 2, std::ref(prune_table1), std::ref(prune_table2), std::ref(prune_table3), "BL BR FL", "BL BR FR") + "\n";
-		ret += start_search_3(scramble, 0, 1, 3, 0, 1, 3, std::ref(prune_table1), std::ref(prune_table2), std::ref(prune_table4), "BL BR FL", "BL BR FL") + "\n";
-		ret += start_search_3(scramble, 0, 1, 3, 0, 2, 3, std::ref(prune_table1), std::ref(prune_table3), std::ref(prune_table4), "BL BR FL", "BL FR FL") + "\n";
-		ret += start_search_3(scramble, 0, 1, 3, 1, 2, 3, std::ref(prune_table2), std::ref(prune_table3), std::ref(prune_table4), "BL BR FL", "BR FR FL") + "\n";
+		start_search_3(scramble, 0, 1, 3, 0, 1, 2, std::ref(prune_table1), std::ref(prune_table2), std::ref(prune_table3), "BL BR FL", "BL BR FR", arg_sol_num);
+		start_search_3(scramble, 0, 1, 3, 0, 1, 3, std::ref(prune_table1), std::ref(prune_table2), std::ref(prune_table4), "BL BR FL", "BL BR FL", arg_sol_num);
+		start_search_3(scramble, 0, 1, 3, 0, 2, 3, std::ref(prune_table1), std::ref(prune_table3), std::ref(prune_table4), "BL BR FL", "BL FR FL", arg_sol_num);
+		start_search_3(scramble, 0, 1, 3, 1, 2, 3, std::ref(prune_table2), std::ref(prune_table3), std::ref(prune_table4), "BL BR FL", "BR FR FL", arg_sol_num);
 
-		ret += start_search_3(scramble, 0, 2, 3, 0, 1, 2, std::ref(prune_table1), std::ref(prune_table2), std::ref(prune_table3), "BL FR FL", "BL BR FR") + "\n";
-		ret += start_search_3(scramble, 0, 2, 3, 0, 1, 3, std::ref(prune_table1), std::ref(prune_table2), std::ref(prune_table4), "BL FR FL", "BL BR FL") + "\n";
-		ret += start_search_3(scramble, 0, 2, 3, 0, 2, 3, std::ref(prune_table1), std::ref(prune_table3), std::ref(prune_table4), "BL FR FL", "BL FR FL") + "\n";
-		ret += start_search_3(scramble, 0, 2, 3, 1, 2, 3, std::ref(prune_table2), std::ref(prune_table3), std::ref(prune_table4), "BL FR FL", "BR FR FL") + "\n";
+		start_search_3(scramble, 0, 2, 3, 0, 1, 2, std::ref(prune_table1), std::ref(prune_table2), std::ref(prune_table3), "BL FR FL", "BL BR FR", arg_sol_num);
+		start_search_3(scramble, 0, 2, 3, 0, 1, 3, std::ref(prune_table1), std::ref(prune_table2), std::ref(prune_table4), "BL FR FL", "BL BR FL", arg_sol_num);
+		start_search_3(scramble, 0, 2, 3, 0, 2, 3, std::ref(prune_table1), std::ref(prune_table3), std::ref(prune_table4), "BL FR FL", "BL FR FL", arg_sol_num);
+		start_search_3(scramble, 0, 2, 3, 1, 2, 3, std::ref(prune_table2), std::ref(prune_table3), std::ref(prune_table4), "BL FR FL", "BR FR FL", arg_sol_num);
 
-		ret += start_search_3(scramble, 1, 2, 3, 0, 1, 2, std::ref(prune_table1), std::ref(prune_table2), std::ref(prune_table3), "BR FR FL", "BL BR FR") + "\n";
-		ret += start_search_3(scramble, 1, 2, 3, 0, 1, 3, std::ref(prune_table1), std::ref(prune_table2), std::ref(prune_table4), "BR FR FL", "BL BR FL") + "\n";
-		ret += start_search_3(scramble, 1, 2, 3, 0, 2, 3, std::ref(prune_table1), std::ref(prune_table3), std::ref(prune_table4), "BR FR FL", "BL FR FL") + "\n";
-		ret += start_search_3(scramble, 1, 2, 3, 1, 2, 3, std::ref(prune_table2), std::ref(prune_table3), std::ref(prune_table4), "BR FR FL", "BR FR FL") + "\n";
-		return ret + "</tr>";
+		start_search_3(scramble, 1, 2, 3, 0, 1, 2, std::ref(prune_table1), std::ref(prune_table2), std::ref(prune_table3), "BR FR FL", "BL BR FR", arg_sol_num);
+		start_search_3(scramble, 1, 2, 3, 0, 1, 3, std::ref(prune_table1), std::ref(prune_table2), std::ref(prune_table4), "BR FR FL", "BL BR FL", arg_sol_num);
+		start_search_3(scramble, 1, 2, 3, 0, 2, 3, std::ref(prune_table1), std::ref(prune_table3), std::ref(prune_table4), "BR FR FL", "BL FR FL", arg_sol_num);
+		start_search_3(scramble, 1, 2, 3, 1, 2, 3, std::ref(prune_table2), std::ref(prune_table3), std::ref(prune_table4), "BR FR FL", "BR FR FL", arg_sol_num);
+		
 	}
 };
 
-void analyzer(std::string scramble, bool cross, bool x, bool xx, bool xxx)
+void analyzer(std::string scramble, bool cross, bool x, bool xx, bool xxx, std::string num)
 {
-	std::string table = "<br><table border=\"2\" id=\"panalyzer_result\"><tr><th>PSE</th><th>PSC</th><th>None</th><th>z2</th><th>z'</th><th>z</th><th>x'</th><th>x</th></tr>";
+	std::string table = "<br><table border=\"2\" id=\"panalyzer_result\"><thead><tr><th class=\"sort\" data-sort=\"No\">No</th><th class=\"sort\" data-sort=\"slot\">PSE</th><th class=\"sort\" data-sort=\"pslot\">PSC</th><th class=\"sort\" data-sort=\"D\">None</th><th class=\"sort\" data-sort=\"U\">z2</th><th class=\"sort\" data-sort=\"L\">z'</th><th class=\"sort\" data-sort=\"R\">z</th><th class=\"sort\" data-sort=\"F\">x'</th><th class=\"sort\" data-sort=\"B\">x</th></tr></thead><tbody class=\"list\"></tbody></table>";
+	update(table.c_str());
+	int sol_num = std::stoi(num);
+	int count = 0;
+	if(cross){
+		count += 1;
+	}
+	if(x){
+		count += 16;
+	}
+	if(xx){
+		count += 36;
+	}
+	if(xxx){
+		count += 16;
+	}
+	update((std::to_string(count)).c_str());
 	if (cross)
 	{
 		cross_analyzer cs;
-		table += cs.start_search(scramble, "", "") + "\n";
+		cs.start_search(scramble, "", "", sol_num);
 	}
 	if (x || xx || xxx)
 	{
 		xcross_analyzer2 xcs;
 		if (x)
 		{
-			table += xcs.xcross_analyze(scramble) + "\n";
+			xcs.xcross_analyze(scramble, sol_num);
 		}
 		if (xx)
 		{
-			table += xcs.xxcross_analyze(scramble) + "\n";
+			xcs.xxcross_analyze(scramble, sol_num);
 		}
 		if (xxx)
 		{
-			table += xcs.xxxcross_analyze(scramble) + "\n";
+			xcs.xxxcross_analyze(scramble, sol_num);
 		}
 	}
-	table += "</table>\n";
-	update(table.c_str());
+	update("Finished.");
 }
 
 EMSCRIPTEN_BINDINGS(my_module)
