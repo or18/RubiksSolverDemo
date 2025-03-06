@@ -703,6 +703,11 @@ The string after // on each line is recognized as a comment." onchange="save()">
             } else if (solver === "tp") {
                 const sol = min2phase.solve(generateTwoPhaseInput(convert(scr+" "+rot)));
                 appendSol(scr, rot+" "+sol);
+                const element = document.getElementById('result');
+                const content = document.createElement('a');
+                content.textContent = "Search terminated";
+                element.appendChild(content);
+                document.getElementById("solveButton").textContent = "Start";
             }
             worker.onmessage = function (event) {
                 appendSol(scr, event.data);
