@@ -183,19 +183,19 @@
         }
 
         .custom-checkbox {
-            display: none; 
+            display: none;
         }
 
-        .custom-checkbox + label {
+        .custom-checkbox+label {
             position: relative;
             padding-left: 33px;
             cursor: pointer;
-            font-size: 20px; 
-            color: #ffffff; 
-            margin-right: 10x; 
+            font-size: 20px;
+            color: #ffffff;
+            margin-right: 10x;
         }
 
-        .custom-checkbox + label:before {
+        .custom-checkbox+label:before {
             content: '';
             position: absolute;
             left: 0;
@@ -203,25 +203,25 @@
             transform: translateY(-50%);
             width: 20px;
             height: 20px;
-            border: 2px solid #41417f; 
-            background-color: #1e1e1e; 
+            border: 2px solid #41417f;
+            background-color: #1e1e1e;
         }
 
-        .custom-checkbox:checked + label:before {
-            background-color: #41417f; 
-            border-color: #41417f; 
+        .custom-checkbox:checked+label:before {
+            background-color: #41417f;
+            border-color: #41417f;
         }
 
-        .custom-checkbox:checked + label:after {
+        .custom-checkbox:checked+label:after {
             content: '';
             position: absolute;
-            left: 9px; 
-            top: 5px; 
-            width: 5px; 
-            height: 10px; 
+            left: 9px;
+            top: 5px;
+            width: 5px;
+            height: 10px;
             border: solid white;
-            border-width: 0 2px 2px 0; 
-            transform: rotate(45deg); 
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg);
         }
 
         fieldset {
@@ -230,7 +230,6 @@
             padding: 10px;
             background-color: #121212;
         }
-
     </style>
 </head>
 
@@ -249,6 +248,7 @@
         <option value="LS">LL Substeps Lite</option>
         <option value="LL">LL Lite</option>
         <option value="LU">LL AUF Lite</option>
+        <option value="tp">Two Phase</option>
         <option value="F2L2">F2L</option>
         <option value="LS2">LL Substeps</option>
         <option value="LL2">LL</option>
@@ -257,16 +257,15 @@
     <button id="undo" class="button small" onclick="undo()">←</button>
     <button id="redo" class="button small" onclick="redo()">→</button><br>
 
-    <textarea id="scr" rows="10" cols="10"
-        placeholder="Input scramble here. All notation available. Note that if there is no space or line break between each notation, it will be ignored.
-Note that if the input contains a string that is not a Rubik's Cube notation, it will be lost if reversed or mirrored. Line breaks are also lost. "
-        onchange="save()"></textarea><br>
+    <textarea id="scr" rows="10" cols="10" placeholder="Input scramble here. All notation available. 
+Note that if there is no space or line break between each notation, it will be ignored. 
+The string after // on each line is recognized as a comment." onchange="save()"></textarea><br>
     <button id="gen" class="button medium" onclick="genscr()">Random</button>
     <button id="reverse" class="button medium" onclick="reverse()">Reverse</button>
     <button id="mirror" class="button medium" onclick="mirror()">Mirror</button><br><br>
     <div id="show"></div>
 
-    <div id="analyze">    
+    <div id="analyze">
         <label for="analyzer_rotation_option">Analyzer Options</label>
         <fieldset id="analyzer_rotation_option">
             <input type="checkbox" id="checkboxD_analyzer" class="custom-checkbox analyzer" value="D" checked>
@@ -356,7 +355,8 @@ Note that if the input contains a string that is not a Rubik's Cube notation, it
     <div id="pair_panalyze">
         <label for="pair_panalyzer_rotation_option">Analyzer Options</label>
         <fieldset id="pair_panalyzer_rotation_option">
-            <input type="checkbox" id="checkboxD_pair_panalyzer" class="custom-checkbox pair_panalyzer" value="D" checked>
+            <input type="checkbox" id="checkboxD_pair_panalyzer" class="custom-checkbox pair_panalyzer" value="D"
+                checked>
             <label for="checkboxD_pair_panalyzer">D</label>
             <input type="checkbox" id="checkboxU_pair_panalyzer" class="custom-checkbox pair_panalyzer" value="U">
             <label for="checkboxU_pair_panalyzer">U</label>
@@ -564,29 +564,32 @@ Note that if the input contains a string that is not a Rubik's Cube notation, it
             <option value="CP CO EP EO">CP CO EP EO</option>
         </select>
     </div>
-    <label for="len">Max Length: </label>
-    <input type="number" id="len" value="20" min="1" required><br>
-    <label for="num">Max Count: </label>
-    <input type="number" id="num" value="20" min=1 required><br>
-    <label for="res_drop">Restrict: </label>
-    <select id="res_drop" onchange="res_change()">
-        <option value="UDLRFB">UDLRFB</option>
-        <option value="UDRF">UDRF</option>
-        <option value="UDLF">UDLF</option>
-        <option value="UDLR">UDLR</option>
-        <option value="UDFB">UDFB</option>
-        <option value="URF">URF</option>
-        <option value="ULF">ULF</option>
-        <option value="URB">URB</option>
-        <option value="ULB">ULB</option>
-        <option value="UDR">UDR</option>
-        <option value="UDL">UDL</option>
-        <option value="ULR">ULR</option>
-        <option value="UR">UR</option>
-        <option value="UL">UL</option>
-        <option value="custom">Custom</option>
-    </select>
-    <input type="text" id="res" value="UDLRFB" class="hidden" required><br><br>
+    <div id="basic input">
+        <label for="len">Max Length: </label>
+        <input type="number" id="len" value="20" min="1" required><br>
+        <label for="num">Max Count: </label>
+        <input type="number" id="num" value="20" min=1 required><br>
+        <label for="res_drop">Restrict: </label>
+        <select id="res_drop" onchange="res_change()">
+            <option value="UDLRFB">UDLRFB</option>
+            <option value="UDRF">UDRF</option>
+            <option value="UDLF">UDLF</option>
+            <option value="UDLR">UDLR</option>
+            <option value="UDFB">UDFB</option>
+            <option value="URF">URF</option>
+            <option value="ULF">ULF</option>
+            <option value="URB">URB</option>
+            <option value="ULB">ULB</option>
+            <option value="UDR">UDR</option>
+            <option value="UDL">UDL</option>
+            <option value="ULR">ULR</option>
+            <option value="UR">UR</option>
+            <option value="UL">UL</option>
+            <option value="custom">Custom</option>
+        </select>
+        <input type="text" id="res" value="UDLRFB" class="hidden" required><br>
+    </div>
+    <a class="hidden" id="tp_alert">Two Phase Solver output 1 solution.</a><br>
     <button id="solveButton" class="button medium" onclick="startWorker()">Start</button><br>
     <label for="countLine">Number of solutions: </label>
     <input type="text" id="countLine" value="0" readonly>
@@ -626,6 +629,15 @@ Note that if the input contains a string that is not a Rubik's Cube notation, it
         let list_pair_table;
         let list_pair_ptable;
 
+        function scr_fix() {
+            const scr = document.getElementById('scr').value;
+            const output = scr.split('\n')
+                .map(line => line.split('//')[0].trim())
+                .filter(line => line.length > 0)
+                .join('\n');
+            return output;
+        }
+
         function startWorker() {
             if (worker) {
                 worker.terminate();
@@ -641,7 +653,7 @@ Note that if the input contains a string that is not a Rubik's Cube notation, it
             document.getElementById("result").innerHTML = "";
             messageCount = 0;
             const solver = document.getElementById('solver').value;
-            const scr = document.getElementById('scr').value;
+            const scr = scr_fix();
             if (scr === "") {
                 const element = document.getElementById('result');
                 const content = document.createElement('a');
@@ -688,6 +700,9 @@ Note that if the input contains a string that is not a Rubik's Cube notation, it
                 const args = { scr: convert(scr), rot: rot, slot: pslot_e2, pslot: pslot_c2, a_slot: pair_pslot_e, a_pslot: pair_pslot_c, num: num, len: len, restrict: restrict };
                 worker = new Worker('src/pseudoPairingSolver/workerPseudoPairing.js');
                 worker.postMessage(args);
+            } else if (solver === "tp") {
+                const sol = min2phase.solve(generateTwoPhaseInput(convert(scr)));
+                appendSol(scr, sol);
             }
             worker.onmessage = function (event) {
                 appendSol(scr, event.data);
@@ -746,6 +761,8 @@ Note that if the input contains a string that is not a Rubik's Cube notation, it
             if (selectedValue === "F2L2" || selectedValue === "LS2" || selectedValue === "LL2" || selectedValue == "LU2") {
                 alert("Warning: Requires up to 1.7 GB of memory")
             }
+            document.getElementById("basic input").classList.remove("hidden");
+            document.getElementById("tp_alert").classList.add("hidden");
             document.getElementById("option_for_F2L").classList.add("hidden");
             document.getElementById("option_for_F2L2").classList.add("hidden");
             document.getElementById("option_for_LS").classList.add("hidden");
@@ -757,6 +774,7 @@ Note that if the input contains a string that is not a Rubik's Cube notation, it
             document.getElementById("option_for_pair_PF2L").classList.add("hidden");
             document.getElementById("pair_analyze").classList.add("hidden");
             document.getElementById("pair_panalyze").classList.add("hidden");
+            document.getElementById("tp_alert").classList.add("hidden");
             if (selectedValue === "F2L" || selectedValue === "F2L2") {
                 document.getElementById("option_for_F2L").classList.remove("hidden");
                 document.getElementById("analyze").classList.remove("hidden");
@@ -773,6 +791,10 @@ Note that if the input contains a string that is not a Rubik's Cube notation, it
                 document.getElementById("option_for_PF2L2").classList.remove("hidden");
                 document.getElementById("option_for_pair_PF2L").classList.remove("hidden");
                 document.getElementById("pair_panalyze").classList.remove("hidden");
+                document.getElementById("basic input").classList.add("hidden");
+            } else if (selectedValue === "tp") {
+                document.getElementById("tp_alert").classList.remove("hidden");
+                document.getElementById("basic input").classList.add("hidden");
             }
         }
 
@@ -829,11 +851,11 @@ Note that if the input contains a string that is not a Rubik's Cube notation, it
             }
             const content = "<a>Hint: You can start searching by clicking a cell in the table. You can sort the table by clicking on the headers.</a><br>";
             document.getElementById('table').innerHTML = content;
-            const scramble = document.getElementById('scr').value;
+            const scramble = scr_fix();
             const option = document.getElementById('analyzer_option').value;
             const checkboxes = document.querySelectorAll('#analyzer_rotation_option .analyzer');
             const values = [];
-            checkboxes.forEach(function(checkbox) {
+            checkboxes.forEach(function (checkbox) {
                 if (checkbox.checked) {
                     values.push(checkbox.value);
                 }
@@ -915,8 +937,20 @@ Note that if the input contains a string that is not a Rubik's Cube notation, it
                 if (scr === "") {
                     return;
                 }
-                const result = Module.scr_reverse(scr);
-                document.getElementById('scr').value = result + "\n";
+                const lines = scr.split('\n');
+                const processedLines = [];
+                for (let i = lines.length - 1; i >= 0; i--) {
+                    const line = lines[i];
+                    const [alg, comment] = line.split('//');
+                    const alg_revresed = Module.scr_reverse(alg.trim());
+                    if (comment) {
+                        processedLines.push(`${alg_revresed} // ${comment.trim()}`);
+                    } else {
+                        processedLines.push(alg_revresed);
+                    }
+                }
+                const result = processedLines.join('\n');
+                document.getElementById('scr').value = result.trim() + "\n";
                 save();
             };
             document.getElementById('mirror').onclick = function () {
@@ -924,14 +958,30 @@ Note that if the input contains a string that is not a Rubik's Cube notation, it
                 if (scr === "") {
                     return;
                 }
-                const result = Module.scr_mirror(scr);
-                document.getElementById('scr').value = result + "\n";
+                const lines = scr.split('\n');
+                const processedLines = [];
+                for (let i = 0; i < lines.length; i++) {
+                    const line = lines[i];
+                    const [alg, comment] = line.split('//');
+                    const alg_mirrored = Module.scr_mirror(alg.trim());
+                    if (comment) {
+                        processedLines.push(`${alg_mirrored} // ${comment.trim()}`);
+                    } else {
+                        processedLines.push(alg_mirrored);
+                    }
+                }
+                const result = processedLines.join('\n');
+                document.getElementById('scr').value = result.trim() + "\n";
                 save();
             };
             window.convert = function (scramble) {
                 const result = Module.scr_converter(scramble);
                 return result;
             };
+            window.generateTwoPhaseInput = function (scramble) {
+                const result = Module.ScrambleToState(scramble);
+                return result;
+            }
         };
 
         function undo() {
@@ -1145,11 +1195,11 @@ Note that if the input contains a string that is not a Rubik's Cube notation, it
             }
             const content = "<a>Hint: You can start searching by clicking a cell in the table. You can sort the table by clicking on the headers.</a><br>";
             document.getElementById('ptable').innerHTML = content;
-            const scramble = document.getElementById('scr').value;
+            const scramble = scr_fix();
             const option = document.getElementById('panalyzer_option').value;
             const checkboxes = document.querySelectorAll('#panalyzer_rotation_option .panalyzer');
             const values = [];
-            checkboxes.forEach(function(checkbox) {
+            checkboxes.forEach(function (checkbox) {
                 if (checkbox.checked) {
                     values.push(checkbox.value);
                 }
@@ -1210,7 +1260,7 @@ Note that if the input contains a string that is not a Rubik's Cube notation, it
             if (option === "xxxcross" || option === "4x") {
                 xxxcross = true;
             }
-            const args = { scramble: convert(scramble), cross: cross, x: xcross, xx: xxcross, xxx: xxxcross, n: "1", rot_set: rot_set  };
+            const args = { scramble: convert(scramble), cross: cross, x: xcross, xx: xxcross, xxx: xxxcross, n: "1", rot_set: rot_set };
             worker3.postMessage(args);
         }
 
@@ -1241,11 +1291,11 @@ Note that if the input contains a string that is not a Rubik's Cube notation, it
             }
             const content = "<a>Hint: You can start searching by clicking a cell in the table. You can sort the table by clicking on the headers.</a><br>";
             document.getElementById('pair_table').innerHTML = content;
-            const scramble = document.getElementById('scr').value;
+            const scramble = scr_fix();
             const option = document.getElementById('pair_analyzer_option').value;
             const checkboxes = document.querySelectorAll('#pair_analyzer_rotation_option .pair_analyzer');
             const values = [];
-            checkboxes.forEach(function(checkbox) {
+            checkboxes.forEach(function (checkbox) {
                 if (checkbox.checked) {
                     values.push(checkbox.value);
                 }
@@ -1306,7 +1356,7 @@ Note that if the input contains a string that is not a Rubik's Cube notation, it
             if (option === "xxxcross" || option === "4x") {
                 xxxcross = true;
             }
-            const args = { scramble: convert(scramble), cross: cross, x: xcross, xx: xxcross, xxx: xxxcross, n: "1", rot_set: rot_set  };
+            const args = { scramble: convert(scramble), cross: cross, x: xcross, xx: xxcross, xxx: xxxcross, n: "1", rot_set: rot_set };
             worker4.postMessage(args);
         }
 
@@ -1336,11 +1386,11 @@ Note that if the input contains a string that is not a Rubik's Cube notation, it
             }
             const content = "<a>Hint: You can start searching by clicking a cell in the table. You can sort the table by clicking on the headers.</a><br>";
             document.getElementById('pair_ptable').innerHTML = content;
-            const scramble = document.getElementById('scr').value;
+            const scramble = scr_fix();
             const option = document.getElementById('pair_panalyzer_option').value;
             const checkboxes = document.querySelectorAll('#pair_panalyzer_rotation_option .pair_panalyzer');
             const values = [];
-            checkboxes.forEach(function(checkbox) {
+            checkboxes.forEach(function (checkbox) {
                 if (checkbox.checked) {
                     values.push(checkbox.value);
                 }
@@ -1405,7 +1455,7 @@ Note that if the input contains a string that is not a Rubik's Cube notation, it
             if (option === "xxxcross" || option === "4x") {
                 xxxcross = true;
             }
-            const args = { scramble: convert(scramble), cross: cross, x: xcross, xx: xxcross, xxx: xxxcross, n: "1", rot_set: rot_set  };
+            const args = { scramble: convert(scramble), cross: cross, x: xcross, xx: xxcross, xxx: xxxcross, n: "1", rot_set: rot_set };
             worker5.postMessage(args);
         }
 
