@@ -701,8 +701,8 @@ The string after // on each line is recognized as a comment." onchange="save()">
                 worker = new Worker('src/pseudoPairingSolver/workerPseudoPairing.js');
                 worker.postMessage(args);
             } else if (solver === "tp") {
-                const sol = min2phase.solve(generateTwoPhaseInput(convert(scr)));
-                appendSol(scr, sol);
+                const sol = min2phase.solve(generateTwoPhaseInput(convert(scr+" "+rot)));
+                appendSol(scr, rot+" "+sol);
             }
             worker.onmessage = function (event) {
                 appendSol(scr, event.data);
