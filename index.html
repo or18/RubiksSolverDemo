@@ -1049,7 +1049,6 @@ Note that if the input contains a string that is not a Rubik's Cube notation, it
             worker3 = new Worker('src/pseudoCrossAnalyzer/worker_panalyzer.js');
             document.getElementById("panalyzer").textContent = "End";
             worker3.onmessage = function (event) {
-                console.log(event.data);
                 if (messageCount_panalyzer === -2) {
                     messageCount_panalyzer++;
                     document.getElementById('ptable').innerHTML += event.data;
