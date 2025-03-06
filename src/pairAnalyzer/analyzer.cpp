@@ -903,7 +903,7 @@ struct xcross_analyzer2
 		std::vector<std::string> rotations = {"", "z2", "z'", "z", "x'", "x"};
 		analyzer_count++;
 		std::string count_string = std::to_string(analyzer_count);
-		std::string result = "<tr><th class=\"No\">" + count_string + "</th><th class=\"slot\">" + name + "</th><th class=\"pslot\">" + name2 + "</th>";
+		std::string result = "<tr><th class=\"No\">" + count_string + "</th><th class=\"slot\">None</th><th class=\"pslot\">" + name2 + "</th>";
 		std::vector<int> edge_index = {187520, 187520, 187520, 187520};
 		std::vector<int> single_edge_index = {0, 2, 4, 6};
 		std::vector<int> corner_index = {12, 15, 18, 21};
