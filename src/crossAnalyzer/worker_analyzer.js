@@ -1,8 +1,8 @@
 importScripts('analyzer.js');
 
 self.onmessage = function(event){
-	const {scramble, cross, x, xx, xxx, n} = event.data;
+	const {scramble, cross, x, xx, xxx, n, rot_set} = event.data;
 	Module.onRuntimeInitialized = function(){
-		Module.analyze(scramble, cross, x, xx, xxx, n);
+		Module.analyze(scramble, cross, x, xx, xxx, n, rot_set);
 	};
 };

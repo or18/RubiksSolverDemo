@@ -181,6 +181,57 @@
             width: 100%;
             max-width: 600px;
         }
+
+        .custom-checkbox {
+            display: none; /* デフォルトのチェックボックスを非表示にする */
+        }
+
+        .custom-checkbox + label {
+            position: relative;
+            padding-left: 33px; /* チェックボックスのスペースを作る */
+            cursor: pointer;
+            font-size: 20px; /* フォントサイズを統一 */
+            color: #ffffff; /* テキストの色 */
+            margin-right: 10x; /* チェックボックス間のスペースを詰める */
+        }
+
+        .custom-checkbox + label:before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 20px; /* チェックボックスの幅 */
+            height: 20px; /* チェックボックスの高さ */
+            border: 2px solid #41417f; /* チェックボックスの枠線 */
+            background-color: #1e1e1e; /* 背景色 */
+        }
+
+        .custom-checkbox:checked + label:before {
+            background-color: #41417f; /* チェックボックスが選択されたときの背景色 */
+            border-color: #41417f; /* 枠線の色 */
+        }
+
+        .custom-checkbox:checked + label:after {
+            content: '';
+            position: absolute;
+            left: 9px; /* チェックマークの位置を調整 */
+            top: 5px; /* チェックマークの位置を調整 */
+            width: 5px; /* チェックマークの幅 */
+            height: 10px; /* チェックマークの高さ */
+            border: solid white; /* チェックマークの色 */
+            border-width: 0 2px 2px 0; /* チェックマークの形状 */
+            transform: rotate(45deg); /* チェックマークを回転 */
+        }
+
+        /* fieldsetのスタイル */
+        fieldset {
+            border: 1px solid #121212; /* 枠線の色をbodyと同じにする */
+            border-radius: 4px;
+            padding: 10px;
+            background-color: #121212; /* 背景色をbodyと同じにする */
+        }
+
     </style>
 </head>
 
@@ -216,7 +267,22 @@ Note that if the input contains a string that is not a Rubik's Cube notation, it
     <button id="mirror" class="button medium" onclick="mirror()">Mirror</button><br><br>
     <div id="show"></div>
 
-    <div id="analyze">
+    <div id="analyze">    
+        <label for="analyzer_rotation_option">Analyzer Face Option</label>
+        <fieldset id="analyzer_rotation_option">
+            <input type="checkbox" id="checkboxD_analyzer" class="custom-checkbox analyzer" value="D" checked>
+            <label for="checkboxD_analyzer">D</label>
+            <input type="checkbox" id="checkboxU_analyzer" class="custom-checkbox analyzer" value="U">
+            <label for="checkboxU_analyzer">U</label>
+            <input type="checkbox" id="checkboxL_analyzer" class="custom-checkbox analyzer" value="L">
+            <label for="checkboxL_analyzer">L</label>
+            <input type="checkbox" id="checkboxR_analyzer" class="custom-checkbox analyzer" value="R">
+            <label for="checkboxR_analyzer">R</label>
+            <input type="checkbox" id="checkboxF_analyzer" class="custom-checkbox analyzer" value="F">
+            <label for="checkboxF_analyzer">F</label>
+            <input type="checkbox" id="checkboxB_analyzer" class="custom-checkbox analyzer" value="B">
+            <label for="checkboxB_analyzer">B</label>
+        </fieldset>
         <label for="analyzer_option">Analyzer Option</label><br>
         <select id="analyzer_option">
             <option value="cross">cross</option>
@@ -232,6 +298,21 @@ Note that if the input contains a string that is not a Rubik's Cube notation, it
     </div>
 
     <div id="panalyze">
+        <label for="panalyzer_rotation_option">Analyzer Face Option</label>
+        <fieldset id="panalyzer_rotation_option">
+            <input type="checkbox" id="checkboxD_panalyzer" class="custom-checkbox panalyzer" value="D" checked>
+            <label for="checkboxD_panalyzer">D</label>
+            <input type="checkbox" id="checkboxU_panalyzer" class="custom-checkbox panalyzer" value="U">
+            <label for="checkboxU_panalyzer">U</label>
+            <input type="checkbox" id="checkboxL_panalyzer" class="custom-checkbox panalyzer" value="L">
+            <label for="checkboxL_panalyzer">L</label>
+            <input type="checkbox" id="checkboxR_panalyzer" class="custom-checkbox panalyzer" value="R">
+            <label for="checkboxR_panalyzer">R</label>
+            <input type="checkbox" id="checkboxF_panalyzer" class="custom-checkbox panalyzer" value="F">
+            <label for="checkboxF_panalyzer">F</label>
+            <input type="checkbox" id="checkboxB_panalyzer" class="custom-checkbox panalyzer" value="B">
+            <label for="checkboxB_panalyzer">B</label>
+        </fieldset>
         <label for="panalyzer_option">Analyzer Option</label><br>
         <select id="panalyzer_option">
             <option value="cross">cross</option>
@@ -247,6 +328,21 @@ Note that if the input contains a string that is not a Rubik's Cube notation, it
     </div>
 
     <div id="pair_analyze">
+        <label for="pair_analyzer_rotation_option">Analyzer Face Option</label>
+        <fieldset id="pair_analyzer_rotation_option">
+            <input type="checkbox" id="checkboxD_pair_analyzer" class="custom-checkbox pair_analyzer" value="D" checked>
+            <label for="checkboxD_pair_analyzer">D</label>
+            <input type="checkbox" id="checkboxU_pair_analyzer" class="custom-checkbox pair_analyzer" value="U">
+            <label for="checkboxU_pair_analyzer">U</label>
+            <input type="checkbox" id="checkboxL_pair_analyzer" class="custom-checkbox pair_analyzer" value="L">
+            <label for="checkboxL_pair_analyzer">L</label>
+            <input type="checkbox" id="checkboxR_pair_analyzer" class="custom-checkbox pair_analyzer" value="R">
+            <label for="checkboxR_pair_analyzer">R</label>
+            <input type="checkbox" id="checkboxF_pair_analyzer" class="custom-checkbox pair_analyzer" value="F">
+            <label for="checkboxF_pair_analyzer">F</label>
+            <input type="checkbox" id="checkboxB_pair_analyzer" class="custom-checkbox pair_analyzer" value="B">
+            <label for="checkboxB_pair_analyzer">B</label>
+        </fieldset>
         <label for="pair_analyzer_option">Analyzer Option<br>Note: Requires about 150 MB of memory</label><br>
         <select id="pair_analyzer_option">
             <option value="cross">cross</option>
@@ -262,6 +358,21 @@ Note that if the input contains a string that is not a Rubik's Cube notation, it
     </div>
 
     <div id="pair_panalyze">
+        <label for="pair_panalyzer_rotation_option">Analyzer Face Option</label>
+        <fieldset id="pair_panalyzer_rotation_option">
+            <input type="checkbox" id="checkboxD_pair_panalyzer" class="custom-checkbox pair_panalyzer" value="D" checked>
+            <label for="checkboxD_pair_panalyzer">D</label>
+            <input type="checkbox" id="checkboxU_pair_panalyzer" class="custom-checkbox pair_panalyzer" value="U">
+            <label for="checkboxU_pair_panalyzer">U</label>
+            <input type="checkbox" id="checkboxL_pair_panalyzer" class="custom-checkbox pair_panalyzer" value="L">
+            <label for="checkboxL_pair_panalyzer">L</label>
+            <input type="checkbox" id="checkboxR_pair_panalyzer" class="custom-checkbox pair_panalyzer" value="R">
+            <label for="checkboxR_pair_panalyzer">R</label>
+            <input type="checkbox" id="checkboxF_pair_panalyzer" class="custom-checkbox pair_panalyzer" value="F">
+            <label for="checkboxF_pair_panalyzer">F</label>
+            <input type="checkbox" id="checkboxB_pair_panalyzer" class="custom-checkbox pair_panalyzer" value="B">
+            <label for="checkboxB_pair_panalyzer">B</label>
+        </fieldset>
         <label for="pair_panalyzer_memory_option">Analyzer Memory Option</label><br>
         <select id="pair_panalyzer_memory_option">
             <option value="model1">&lt; 400 MB</option>
@@ -725,6 +836,14 @@ Note that if the input contains a string that is not a Rubik's Cube notation, it
             document.getElementById('table').innerHTML = content;
             const scramble = document.getElementById('scr').value;
             const option = document.getElementById('analyzer_option').value;
+            const checkboxes = document.querySelectorAll('#analyzer_rotation_option .analyzer');
+            const values = [];
+            checkboxes.forEach(function(checkbox) {
+                if (checkbox.checked) {
+                    values.push(checkbox.value);
+                }
+            });
+            const rot_set = values.join('');
             messageCount_analyzer = -2;
             document.getElementById('table').innerHTML += "<a>Solved: </a>";
             const input = document.createElement('input');
@@ -780,7 +899,7 @@ Note that if the input contains a string that is not a Rubik's Cube notation, it
             if (option === "xxxcross" || option === "4x") {
                 xxxcross = true;
             }
-            const args = { scramble: convert(scramble), cross: cross, x: xcross, xx: xxcross, xxx: xxxcross, n: "1" };
+            const args = { scramble: convert(scramble), cross: cross, x: xcross, xx: xxcross, xxx: xxxcross, n: "1", rot_set: rot_set };
             worker2.postMessage(args);
         }
 
@@ -1033,6 +1152,14 @@ Note that if the input contains a string that is not a Rubik's Cube notation, it
             document.getElementById('ptable').innerHTML = content;
             const scramble = document.getElementById('scr').value;
             const option = document.getElementById('panalyzer_option').value;
+            const checkboxes = document.querySelectorAll('#panalyzer_rotation_option .panalyzer');
+            const values = [];
+            checkboxes.forEach(function(checkbox) {
+                if (checkbox.checked) {
+                    values.push(checkbox.value);
+                }
+            });
+            const rot_set = values.join('');
             messageCount_panalyzer = -2;
             document.getElementById('ptable').innerHTML += "<a>Solved: </a>";
             const input = document.createElement('input');
@@ -1088,7 +1215,7 @@ Note that if the input contains a string that is not a Rubik's Cube notation, it
             if (option === "xxxcross" || option === "4x") {
                 xxxcross = true;
             }
-            const args = { scramble: convert(scramble), cross: cross, x: xcross, xx: xxcross, xxx: xxxcross, n: "1" };
+            const args = { scramble: convert(scramble), cross: cross, x: xcross, xx: xxcross, xxx: xxxcross, n: "1", rot_set: rot_set  };
             worker3.postMessage(args);
         }
 
@@ -1121,6 +1248,14 @@ Note that if the input contains a string that is not a Rubik's Cube notation, it
             document.getElementById('pair_table').innerHTML = content;
             const scramble = document.getElementById('scr').value;
             const option = document.getElementById('pair_analyzer_option').value;
+            const checkboxes = document.querySelectorAll('#pair_analyzer_rotation_option .pair_analyzer');
+            const values = [];
+            checkboxes.forEach(function(checkbox) {
+                if (checkbox.checked) {
+                    values.push(checkbox.value);
+                }
+            });
+            const rot_set = values.join('');
             messageCount_pair_analyzer = -2;
             document.getElementById('pair_table').innerHTML += "<a>Solved: </a>";
             const input = document.createElement('input');
@@ -1176,7 +1311,7 @@ Note that if the input contains a string that is not a Rubik's Cube notation, it
             if (option === "xxxcross" || option === "4x") {
                 xxxcross = true;
             }
-            const args = { scramble: convert(scramble), cross: cross, x: xcross, xx: xxcross, xxx: xxxcross, n: "1" };
+            const args = { scramble: convert(scramble), cross: cross, x: xcross, xx: xxcross, xxx: xxxcross, n: "1", rot_set: rot_set  };
             worker4.postMessage(args);
         }
 
@@ -1208,6 +1343,14 @@ Note that if the input contains a string that is not a Rubik's Cube notation, it
             document.getElementById('pair_ptable').innerHTML = content;
             const scramble = document.getElementById('scr').value;
             const option = document.getElementById('pair_panalyzer_option').value;
+            const checkboxes = document.querySelectorAll('#pair_panalyzer_rotation_option .pair_panalyzer');
+            const values = [];
+            checkboxes.forEach(function(checkbox) {
+                if (checkbox.checked) {
+                    values.push(checkbox.value);
+                }
+            });
+            const rot_set = values.join('');
             messageCount_pair_panalyzer = -2;
             document.getElementById('pair_ptable').innerHTML += "<a>Solved: </a>";
             const input = document.createElement('input');
@@ -1267,7 +1410,7 @@ Note that if the input contains a string that is not a Rubik's Cube notation, it
             if (option === "xxxcross" || option === "4x") {
                 xxxcross = true;
             }
-            const args = { scramble: convert(scramble), cross: cross, x: xcross, xx: xxcross, xxx: xxxcross, n: "1" };
+            const args = { scramble: convert(scramble), cross: cross, x: xcross, xx: xxcross, xxx: xxxcross, n: "1", rot_set: rot_set  };
             worker5.postMessage(args);
         }
 
