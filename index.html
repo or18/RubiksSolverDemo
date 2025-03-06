@@ -183,16 +183,16 @@
         }
 
         .custom-checkbox {
-            display: none; /* デフォルトのチェックボックスを非表示にする */
+            display: none; 
         }
 
         .custom-checkbox + label {
             position: relative;
-            padding-left: 33px; /* チェックボックスのスペースを作る */
+            padding-left: 33px;
             cursor: pointer;
-            font-size: 20px; /* フォントサイズを統一 */
-            color: #ffffff; /* テキストの色 */
-            margin-right: 10x; /* チェックボックス間のスペースを詰める */
+            font-size: 20px; 
+            color: #ffffff; 
+            margin-right: 10x; 
         }
 
         .custom-checkbox + label:before {
@@ -201,35 +201,34 @@
             left: 0;
             top: 50%;
             transform: translateY(-50%);
-            width: 20px; /* チェックボックスの幅 */
-            height: 20px; /* チェックボックスの高さ */
-            border: 2px solid #41417f; /* チェックボックスの枠線 */
-            background-color: #1e1e1e; /* 背景色 */
+            width: 20px;
+            height: 20px;
+            border: 2px solid #41417f; 
+            background-color: #1e1e1e; 
         }
 
         .custom-checkbox:checked + label:before {
-            background-color: #41417f; /* チェックボックスが選択されたときの背景色 */
-            border-color: #41417f; /* 枠線の色 */
+            background-color: #41417f; 
+            border-color: #41417f; 
         }
 
         .custom-checkbox:checked + label:after {
             content: '';
             position: absolute;
-            left: 9px; /* チェックマークの位置を調整 */
-            top: 5px; /* チェックマークの位置を調整 */
-            width: 5px; /* チェックマークの幅 */
-            height: 10px; /* チェックマークの高さ */
-            border: solid white; /* チェックマークの色 */
-            border-width: 0 2px 2px 0; /* チェックマークの形状 */
-            transform: rotate(45deg); /* チェックマークを回転 */
+            left: 9px; 
+            top: 5px; 
+            width: 5px; 
+            height: 10px; 
+            border: solid white;
+            border-width: 0 2px 2px 0; 
+            transform: rotate(45deg); 
         }
 
-        /* fieldsetのスタイル */
         fieldset {
-            border: 1px solid #121212; /* 枠線の色をbodyと同じにする */
+            border: 1px solid #121212;
             border-radius: 4px;
             padding: 10px;
-            background-color: #121212; /* 背景色をbodyと同じにする */
+            background-color: #121212;
         }
 
     </style>
