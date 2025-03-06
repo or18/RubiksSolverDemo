@@ -934,7 +934,7 @@ struct xcross_analyzer2
 			edge_prune1_tmp = edge_prune1[index3 * 24 + index2];
 			if (prune1_tmp == 0 && edge_prune1_tmp == 0)
 			{
-				result += "<td class="+converter_face(rot)+">0</td>";
+				result += "<td class=" + converter_face(rot) + ">0</td>";
 			}
 			else
 			{
@@ -954,15 +954,16 @@ struct xcross_analyzer2
 				}
 				else
 				{
-					oss << "<td class="<<converter_face(rot)<<" onclick=\"pair_solve(\'" << name << "\', \'" << name2 << "\', " << converter(rot) << ")\">" << sol_len[0] << "</td>";
+					oss << "<td class=" << converter_face(rot) << " onclick=\"pair_solve(\'" << name << "\', \'" << name2 << "\', " << converter(rot) << ")\">" << sol_len[0] << "</td>";
 				}
 				result += oss.str();
 			}
 		}
-		update((result+ "</tr>").c_str());
+		update((result + "</tr>").c_str());
 	}
 
-	void xcross_analyze(std::string scramble, int arg_sol_num){
+	void xcross_analyze(std::string scramble, int arg_sol_num)
+	{
 		start_search_1(scramble, 0, std::ref(prune_table1_x), std::ref(edge_corner_prune_table1), "", "BL", arg_sol_num);
 		start_search_1(scramble, 1, std::ref(prune_table2_x), std::ref(edge_corner_prune_table2), "", "BR", arg_sol_num);
 		start_search_1(scramble, 2, std::ref(prune_table3_x), std::ref(edge_corner_prune_table3), "", "FR", arg_sol_num);
@@ -1070,10 +1071,10 @@ struct xcross_analyzer2
 			}
 			prune1_tmp = prune1[index1 + index2];
 			prune2_tmp = prune2[index3 + index4];
-			edge_prune1_tmp = edge_corner_prune_table1[index5 * 24 + index2];
+			edge_prune1_tmp = edge_prune[index5 * 24 + index2];
 			if (prune1_tmp == 0 && prune2_tmp == 0 && edge_prune1_tmp == 0 && index6 == edge_solved2)
 			{
-				result += "<td class="+converter_face(rot)+">0</td>";
+				result += "<td class=" + converter_face(rot) + ">0</td>";
 			}
 			else
 			{
@@ -1095,12 +1096,12 @@ struct xcross_analyzer2
 				}
 				else
 				{
-					oss << "<td class="<<converter_face(rot)<<" onclick=\"pair_solve(\'" << name << "\', \'" << name2 << "\', " << converter(rot) << ")\">" << sol_len[0] << "</td>";
+					oss << "<td class=" << converter_face(rot) << " onclick=\"pair_solve(\'" << name << "\', \'" << name2 << "\', " << converter(rot) << ")\">" << sol_len[0] << "</td>";
 				}
 				result += oss.str();
 			}
 		}
-		update((result+ "</tr>").c_str());
+		update((result + "</tr>").c_str());
 	}
 
 	void xxcross_analyze(std::string scramble, int arg_sol_num)
@@ -1244,7 +1245,7 @@ struct xcross_analyzer2
 			edge_prune1_tmp = edge_prune[index7 * 24 + index2];
 			if (prune1_tmp == 0 && prune2_tmp == 0 && prune3_tmp == 0 && edge_prune1_tmp == 0 && index8 == edge_solved2 && index9 == edge_solved3)
 			{
-				result += "<td class="+converter_face(rot)+">0</td>";
+				result += "<td class=" + converter_face(rot) + ">0</td>";
 			}
 			else
 			{
@@ -1268,12 +1269,12 @@ struct xcross_analyzer2
 				}
 				else
 				{
-					oss << "<td class="<<converter_face(rot)<<" onclick=\"pair_solve(\'" << name << "\', \'" << name2 << "\', " << converter(rot) << ")\">" << sol_len[0] << "</td>";
+					oss << "<td class=" << converter_face(rot) << " onclick=\"pair_solve(\'" << name << "\', \'" << name2 << "\', " << converter(rot) << ")\">" << sol_len[0] << "</td>";
 				}
 				result += oss.str();
 			}
 		}
-		update((result+ "</tr>").c_str());
+		update((result + "</tr>").c_str());
 	}
 
 	void xxxcross_analyze(std::string scramble, int arg_sol_num)
@@ -1437,7 +1438,7 @@ struct xcross_analyzer2
 			edge_prune1_tmp = edge_prune[index9 * 24 + index2];
 			if (prune1_tmp == 0 && prune2_tmp == 0 && prune3_tmp == 0 && prune4_tmp == 0 && edge_prune1_tmp == 0 && index10 == edge_solved2 && index11 == edge_solved3 && index12 == edge_solved4)
 			{
-				result += "<td class="+converter_face(rot)+">0</td>";
+				result += "<td class=" + converter_face(rot) + ">0</td>";
 			}
 			else
 			{
@@ -1463,12 +1464,12 @@ struct xcross_analyzer2
 				}
 				else
 				{
-					oss << "<td class="<<converter_face(rot)<<" onclick=\"pair_solve(\'" << name << "\', \'" << name2 << "\', " << converter(rot) << ")\">" << sol_len[0] << "</td>";
+					oss << "<td class=" << converter_face(rot) << " onclick=\"pair_solve(\'" << name << "\', \'" << name2 << "\', " << converter(rot) << ")\">" << sol_len[0] << "</td>";
 				}
 				result += oss.str();
 			}
 		}
-		update((result+ "</tr>").c_str());
+		update((result + "</tr>").c_str());
 	}
 
 	void xxxxcross_analyze(std::string scramble, int arg_sol_num)
@@ -1486,16 +1487,20 @@ void analyzer(std::string scramble, bool cross, bool x, bool xx, bool xxx, std::
 	update(table.c_str());
 	int sol_num = std::stoi(num);
 	int count = 0;
-	if(cross){
+	if (cross)
+	{
 		count += 4;
 	}
-	if(x){
+	if (x)
+	{
 		count += 12;
 	}
-	if(xx){
+	if (xx)
+	{
 		count += 12;
 	}
-	if(xxx){
+	if (xxx)
+	{
 		count += 4;
 	}
 	update((std::to_string(count)).c_str());

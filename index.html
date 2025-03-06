@@ -181,13 +181,13 @@
             width: 100%;
             max-width: 600px;
         }
-        
     </style>
 </head>
 
 <body>
     <h1>Rubik's Cube Solver</h1>
-    <h2>This is online solver for Rubik's cube cross, xcross, xxcross, xxxcross, xxxxcross, last layer substeps, last layer, F2L pairing. Pseudo F2L solver is also available. </h2>
+    <h2>This is online solver for Rubik's cube cross, xcross, xxcross, xxxcross, xxxxcross, last layer substeps, last
+        layer, F2L pairing. Pseudo F2L solver is also available. </h2>
     <a href="https://github.com/or18/RubiksSolverDemo">Source</a><br>
     <a href="https://or18.github.io/Rubiks-cube-xcross-solver/">Old Demo</a><br><br>
     <label for="solver">Solver</label><br>
@@ -247,7 +247,7 @@ Note that if the input contains a string that is not a Rubik's Cube notation, it
     </div>
 
     <div id="pair_analyze">
-        <label for="pair_analyzer_option">Analyzer Option</label><br>
+        <label for="pair_analyzer_option">Analyzer Option<br>Note: Requires about 150 MB of memory</label><br>
         <select id="pair_analyzer_option">
             <option value="cross">cross</option>
             <option value="xcross">xcross</option>
@@ -262,6 +262,11 @@ Note that if the input contains a string that is not a Rubik's Cube notation, it
     </div>
 
     <div id="pair_panalyze">
+        <label for="pair_panalyzer_memory_option">Analyzer Memory Option</label><br>
+        <select id="pair_panalyzer_memory_option">
+            <option value="model1">&lt; 400 MB</option>
+            <option value="model2">&lt; 100 MB</option>
+        </select><br>
         <label for="pair_panalyzer_option">Analyzer Option</label><br>
         <select id="pair_panalyzer_option">
             <option value="cross">cross</option>
@@ -1217,7 +1222,11 @@ Note that if the input contains a string that is not a Rubik's Cube notation, it
             document.getElementById('pair_ptable').appendChild(input);
             document.getElementById('pair_ptable').innerHTML += "<a>/</a>";
             document.getElementById('pair_ptable').appendChild(input2);
-            worker5 = new Worker('src/pseudoPairAnalyzer/worker_analyzer.js');
+            if (document.getElementById("pair_panalyzer_memory_option").value === "model1") {
+                worker5 = new Worker('src/pseudoPairAnalyzer/worker_analyzer.js');
+            } else {
+                worker5 = new Worker('src/pseudoPairAnalyzer_lite/worker_analyzer.js');
+            }
             document.getElementById("pair_panalyzer").textContent = "End";
             worker5.onmessage = function (event) {
                 if (messageCount_pair_panalyzer === -2) {
