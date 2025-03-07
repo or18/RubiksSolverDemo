@@ -813,7 +813,7 @@
                         details.appendChild(content);
                     }
                 }
-                const { link1, link2 } = getLink(scr + "\n" + sol);
+                const { URL1: link1, URL2: link2 } = getLink(scr + "\n" + sol);
                 var link_element1 = document.createElement('a');
                 link_element1.href = link1;
                 link_element1.target = '_blank';
@@ -1107,7 +1107,7 @@
             redoButton.disabled = currentIndex >= history.length - 1;
             if (currentIndex >= 0) {
                 const scr = document.getElementById("scr").value;
-                const { link1, link2 } = getLink(scr);
+                const { URL1: link1, URL2: link2 } = getLink(scr);
                 document.getElementById("link_alg_cubing").href = link1;
                 document.getElementById("link_cubedb").href = link2;
                 document.getElementById("links").classList.remove("hidden");
