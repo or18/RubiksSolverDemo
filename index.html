@@ -41,8 +41,8 @@
         textarea {
             font-family: Arial, sans-serif;
             width: 100%;
-            max-width: 650px;
-            height: 150px;
+            max-width: 700px;
+            height: 200px;
             font-size: 20px;
             padding: 10px;
             margin-bottom: 10px;
@@ -118,7 +118,7 @@
             word-wrap: break-word;
             color: #ffffff;
             width: 100%;
-            max-width: 600px;
+            max-width: 700px;
             cursor: pointer;
         }
 
@@ -170,7 +170,8 @@
             display: none;
         }
 
-        a {
+        a,
+        pre {
             color: #ffffff;
             font-family: Arial, sans-serif;
             font-size: 20px;
@@ -257,13 +258,13 @@
     <button id="undo" class="button small" onclick="undo()">←</button>
     <button id="redo" class="button small" onclick="redo()">→</button><br>
 
-    <textarea id="scr" rows="10" cols="10" placeholder="Input scramble here. All notation available. 
-Note that if there is no space or line break between each notation, it will be ignored. 
-The string after // on each line is recognized as a comment." onchange="save()"></textarea><br>
+    <textarea id="scr" rows="10" cols="10" placeholder="The string after // on each line is recognized as a comment. Write the //setup comment in the appropriate position when viewing on alg.cubing.net or cubedb.net." onchange="save()"></textarea><br>
     <button id="gen" class="button medium" onclick="genscr()">Random</button>
     <button id="reverse" class="button medium" onclick="reverse()">Reverse</button>
     <button id="mirror" class="button medium" onclick="mirror()">Mirror</button><br><br>
     <div id="show"></div>
+    <pre id="links"
+        class="hidden"><a id="link_alg_cubing" href="https://alg.cubing.net/" target="_blank" rel="noopener noreferrer">alg.cubing</a>  <a id="link_cubedb" href="https://cubedb.net/?puzzle=3x3" target="_blank" rel="noopener noreferrer">cubedb</a></pre>
 
     <div id="analyze">
         <label for="analyzer_rotation_option">Analyzer Options</label>
@@ -629,13 +630,67 @@ The string after // on each line is recognized as a comment." onchange="save()">
         let list_pair_table;
         let list_pair_ptable;
 
-        function scr_fix() {
-            const scr = document.getElementById('scr').value;
-            const output = scr.split('\n')
+        function scr_fix(scr) {
+            const fixed_scr = scr_fix2(scr);
+            const output = fixed_scr.split('\n')
                 .map(line => line.split('//')[0].trim())
                 .filter(line => line.length > 0)
                 .join('\n');
             return output;
+        }
+
+        function scr_fix2(scr) {
+            const outputString = scr.split('\n').map(line => {
+                const commentIndex = line.indexOf('//');
+                if (commentIndex !== -1) {
+                    const beforeComment = insertSpaces(line.slice(0, commentIndex));
+                    const comment = line.slice(commentIndex);
+                    return beforeComment + ' ' + comment.trim();
+                } else {
+                    return insertSpaces(line);
+                }
+            }).join('\n');
+            return outputString;
+        }
+
+        function insertSpaces(input) {
+            const keys = ["U", "U2", "U2'", "U'", "D", "D2", "D2'", "D'", "L", "L2", "L2'", "L'", "R", "R2", "R2'", "R'", "F", "F2", "F2'", "F'", "B", "B2", "B2'", "B'", "u", "u2", "u2'", "u'", "d", "d2", "d2'", "d'", "l", "l2", "l2'", "l'", "r", "r2", "r2'", "r'", "f", "f2", "f2'", "f'", "b", "b2", "b2'", "b'", "Uw", "Uw2", "Uw2'", "Uw'", "Dw", "Dw2", "Dw2'", "Dw'", "Lw", "Lw2", "Lw2'", "Lw'", "Rw", "Rw2", "Rw2'", "Rw'", "Fw", "Fw2", "Fw2'", "Fw'", "Bw", "Bw2", "Bw2'", "Bw'", "M", "M2", "M2'", "M'", "S", "S2", "S2'", "S'", "E", "E2", "E2'", "E'", "x", "x2", "x2'", "x'", "y", "y2", "y2'", "y'", "z", "z2", "z2'", "z'"];
+            const regex = new RegExp(`(${keys.join('|')})`, 'g');
+            return input.replace(regex, ' $1').trim()
+                .replace(/\s+/g, ' ');
+        }
+
+        function replaceCharacters(input) {
+            return input
+                .replace(/'/g, '-')
+                .replace(/\n/g, '%0A')
+                .replace(/\//g, '%2F')
+                .replace(/ /g, '_');
+        }
+
+        function splitAtLastScramble(input) {
+            const scrambleRegex = /\/\/\s*setup/g;
+            let match;
+            const index = input.search(scrambleRegex);
+            if (index !== -1) {
+                const scrambleLineEnd = input.indexOf('\n', index);
+                const scrambleLine = input.slice(index, scrambleLineEnd !== -1 ? scrambleLineEnd : undefined).trim();
+                const aboveScramble = input.slice(0, scrambleLineEnd !== -1 ? scrambleLineEnd : input.length).trim();
+                const belowScramble = input.slice(index + scrambleLine.length).trim();
+                return { aboveScramble, belowScramble };
+            } else {
+                return { aboveScramble: input.trim(), belowScramble: '' };
+            }
+        }
+
+        function getLink(scr) {
+            const fixed_scr = scr_fix2(scr);
+            const { aboveScramble, belowScramble } = splitAtLastScramble(fixed_scr);
+            const transformedAbove = replaceCharacters(aboveScramble);
+            const transformedBelow = replaceCharacters(belowScramble);
+            const URL1 = "https://cubedb.net/?puzzle=3x3&scramble=" + transformedAbove + "&alg=" + transformedBelow;
+            const URL2 = "https://alg.cubing.net/?setup=" + transformedAbove + "&alg=" + transformedBelow + "&puzzle=3x3x3";
+            return { URL1, URL2 };
         }
 
         function startWorker() {
@@ -653,7 +708,9 @@ The string after // on each line is recognized as a comment." onchange="save()">
             document.getElementById("result").innerHTML = "";
             messageCount = 0;
             const solver = document.getElementById('solver').value;
-            const scr = scr_fix();
+            let scr_val = document.getElementById("scr").value;
+            scr = scr_fix(scr_val);
+            let scr2 = scr_fix2(scr_val);
             if (scr === "") {
                 const element = document.getElementById('result');
                 const content = document.createElement('a');
@@ -701,8 +758,8 @@ The string after // on each line is recognized as a comment." onchange="save()">
                 worker = new Worker('src/pseudoPairingSolver/workerPseudoPairing.js');
                 worker.postMessage(args);
             } else if (solver === "tp") {
-                const sol = min2phase.solve(generateTwoPhaseInput(convert(scr+" "+rot)));
-                appendSol(scr, rot+" "+sol);
+                const sol = min2phase.solve(generateTwoPhaseInput(convert(scr + " " + rot)));
+                appendSol(scr, rot + " " + sol);
                 const element = document.getElementById('result');
                 const content = document.createElement('a');
                 content.textContent = "Search terminated";
@@ -710,7 +767,7 @@ The string after // on each line is recognized as a comment." onchange="save()">
                 document.getElementById("solveButton").textContent = "Start";
             }
             worker.onmessage = function (event) {
-                appendSol(scr, event.data);
+                appendSol(scr2, event.data);
             };
         }
 
@@ -745,7 +802,7 @@ The string after // on each line is recognized as a comment." onchange="save()">
                 details.appendChild(button);
                 details.appendChild(summary);
                 try {
-                    const sim = createPlayer(scr, sol);
+                    const sim = createPlayer(scr_fix(scr), sol);
                     details.appendChild(sim);
                 } catch (e) {
                     if (messageCount === 1) {
@@ -756,6 +813,23 @@ The string after // on each line is recognized as a comment." onchange="save()">
                         details.appendChild(content);
                     }
                 }
+                const { link1, link2 } = getLink(scr + "\n" + sol);
+                var link_element1 = document.createElement('a');
+                link_element1.href = link1;
+                link_element1.target = '_blank';
+                link_element1.rel = 'noopener noreferrer';
+                link_element1.textContent = 'alg.cubing.net';
+                details.appendChild(link_element1);
+                var spaceElement = document.createElement('a');
+                spaceElement.innerHTML = "&nbsp;&nbsp;";
+                details.appendChild(spaceElement);
+                var link_element2 = document.createElement('a');
+                link_element2.href = link2;
+                link_element2.target = '_blank';
+                link_element2.rel = 'noopener noreferrer';
+                link_element2.textContent = 'cubedb.net';
+                details.appendChild(link_element2);
+                details.style.marginBottom = '10px';
                 element.appendChild(details);
                 document.getElementById("countLine").value = messageCount;
             }
@@ -839,7 +913,7 @@ The string after // on each line is recognized as a comment." onchange="save()">
         function genscr() {
             var cube = min2phase.randomCube();
             var solution = min2phase.solve(cube);
-            document.getElementById('scr').value = solution + "\n";
+            document.getElementById('scr').value = solution + "//setup\n";
             save();
         }
 
@@ -856,7 +930,8 @@ The string after // on each line is recognized as a comment." onchange="save()">
             }
             const content = "<a>Hint: You can start searching by clicking a cell in the table. You can sort the table by clicking on the headers.</a><br>";
             document.getElementById('table').innerHTML = content;
-            const scramble = scr_fix();
+            let scr = document.getElementById("scr").value;
+            const scramble = scr_fix(scr);
             const option = document.getElementById('analyzer_option').value;
             const checkboxes = document.querySelectorAll('#analyzer_rotation_option .analyzer');
             const values = [];
@@ -939,10 +1014,11 @@ The string after // on each line is recognized as a comment." onchange="save()">
         Module.onRuntimeInitialized = function () {
             document.getElementById('reverse').onclick = function () {
                 const scr = document.getElementById('scr').value;
+                const scr_fixed = scr_fix2(scr);
                 if (scr === "") {
                     return;
                 }
-                const lines = scr.split('\n');
+                const lines = scr_fixed.split('\n');
                 const processedLines = [];
                 for (let i = lines.length - 1; i >= 0; i--) {
                     const line = lines[i];
@@ -960,10 +1036,11 @@ The string after // on each line is recognized as a comment." onchange="save()">
             };
             document.getElementById('mirror').onclick = function () {
                 const scr = document.getElementById('scr').value;
+                const scr_fixed = scr_fix2(scr);
                 if (scr === "") {
                     return;
                 }
-                const lines = scr.split('\n');
+                const lines = scr_fixed.split('\n');
                 const processedLines = [];
                 for (let i = 0; i < lines.length; i++) {
                     const line = lines[i];
@@ -1028,6 +1105,13 @@ The string after // on each line is recognized as a comment." onchange="save()">
         function updateButtons() {
             undoButton.disabled = currentIndex <= 0;
             redoButton.disabled = currentIndex >= history.length - 1;
+            if (currentIndex >= 0) {
+                const scr = document.getElementById("scr").value;
+                const { link1, link2 } = getLink(scr);
+                document.getElementById("link_alg_cubing").href = link1;
+                document.getElementById("link_cubedb").href = link2;
+                document.getElementById("links").classList.remove("hidden");
+            }
         }
 
         function updateDropdown() {
@@ -1200,7 +1284,8 @@ The string after // on each line is recognized as a comment." onchange="save()">
             }
             const content = "<a>Hint: You can start searching by clicking a cell in the table. You can sort the table by clicking on the headers.</a><br>";
             document.getElementById('ptable').innerHTML = content;
-            const scramble = scr_fix();
+            let scr = document.getElementById("scr").value;
+            const scramble = scr_fix(scr);
             const option = document.getElementById('panalyzer_option').value;
             const checkboxes = document.querySelectorAll('#panalyzer_rotation_option .panalyzer');
             const values = [];
@@ -1296,7 +1381,8 @@ The string after // on each line is recognized as a comment." onchange="save()">
             }
             const content = "<a>Hint: You can start searching by clicking a cell in the table. You can sort the table by clicking on the headers.</a><br>";
             document.getElementById('pair_table').innerHTML = content;
-            const scramble = scr_fix();
+            let scr = document.getElementById("scr").value;
+            const scramble = scr_fix(scr);
             const option = document.getElementById('pair_analyzer_option').value;
             const checkboxes = document.querySelectorAll('#pair_analyzer_rotation_option .pair_analyzer');
             const values = [];
@@ -1391,7 +1477,8 @@ The string after // on each line is recognized as a comment." onchange="save()">
             }
             const content = "<a>Hint: You can start searching by clicking a cell in the table. You can sort the table by clicking on the headers.</a><br>";
             document.getElementById('pair_ptable').innerHTML = content;
-            const scramble = scr_fix();
+            let scr = document.getElementById("scr").value;
+            const scramble = scr_fix(scr);
             const option = document.getElementById('pair_panalyzer_option').value;
             const checkboxes = document.querySelectorAll('#pair_panalyzer_rotation_option .pair_panalyzer');
             const values = [];
