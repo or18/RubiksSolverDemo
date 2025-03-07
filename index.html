@@ -688,8 +688,8 @@
             const { aboveScramble, belowScramble } = splitAtLastScramble(fixed_scr);
             const transformedAbove = replaceCharacters(aboveScramble);
             const transformedBelow = replaceCharacters(belowScramble);
-            const URL1 = "https://alg.cubing.net/?setup=" + transformedAbove + "&alg=" + transformedBelow + "&puzzle=3x3x3";
-            const URL2 = "https://cubedb.net/?puzzle=3x3&scramble=" + transformedAbove + "&alg=" + transformedBelow;
+            const URL1 = "https://alg.cubing.net/?setup=" + transformedAbove + "&alg=" + transformedBelow + "%0A&puzzle=3x3x3";
+            const URL2 = "https://cubedb.net/?puzzle=3x3&scramble=" + transformedAbove + "&alg=" + transformedBelow + "%0A";
             return { URL1, URL2 };
         }
 
