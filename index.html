@@ -759,7 +759,7 @@
                 worker.postMessage(args);
             } else if (solver === "tp") {
                 const sol = min2phase.solve(generateTwoPhaseInput(convert(scr + " " + rot)));
-                appendSol(scr, rot + " " + sol);
+                appendSol(scr2, rot + " " + sol);
                 const element = document.getElementById('result');
                 const content = document.createElement('a');
                 content.textContent = "Search terminated";
