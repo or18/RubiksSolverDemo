@@ -749,12 +749,7 @@
                 document.getElementById("solveButton").textContent = "End";
 
                 if (solver === "F2L" || solver === "LS" || solver === "LL" || solver == "LU") {
-                    try{
                     const args = { solver: solver, scr: window.convert(scr), rot: rot, slot: slot, ll: ll, num: num, len: len, restrict: restrict };
-                    }catch(e){
-                        document.getElementById("error").value += e.message();
-                        return;
-                    }
                     worker = new Worker('src/crossSolver/worker.js');
                     worker.postMessage(args);
                 } else if (solver === "F2L2" || solver === "LS2" || solver === "LL2" || solver == "LU2") {
@@ -1131,6 +1126,9 @@
                     document.getElementById('scr').value = result.trim() + "\n";
                     save();
                 };
+                    if (typeof Module.scr_converter === 'function'){
+                        document.getElementById("error") += "scr_converter is not a function";
+                    }
                 window.convert = function (scramble) {
                     const result = Module.scr_converter(scramble);
                     return result;
