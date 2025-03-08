@@ -2449,7 +2449,6 @@ void solve_LL_AUF(std::string scramble, std::string rotation, std::string sol_nu
 
 void controller(std::string solver, std::string scr, std::string rot, std::string slot, std::string ll, std::string num, std::string len, std::string restrict)
 {
-	std::cout << solver;
 	if (solver == "F2L2")
 	{
 		solve_F2L(scr, rot, slot, num, len, restrict);

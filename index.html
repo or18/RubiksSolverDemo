@@ -258,7 +258,9 @@
     <button id="undo" class="button small" onclick="undo()">←</button>
     <button id="redo" class="button small" onclick="redo()">→</button><br>
 
-    <textarea id="scr" rows="10" cols="10" placeholder="The string after // on each line is recognized as a comment. Write the //setup comment in the appropriate position when viewing on alg.cubing.net or cubedb.net." onchange="save()"></textarea><br>
+    <textarea id="scr" rows="10" cols="10"
+        placeholder="The string after // on each line is recognized as a comment. Write the //setup comment in the appropriate position when viewing on alg.cubing.net or cubedb.net."
+        onchange="save()"></textarea><br>
     <button id="gen" class="button medium" onclick="genscr()">Random</button>
     <button id="reverse" class="button medium" onclick="reverse()">Reverse</button>
     <button id="mirror" class="button medium" onclick="mirror()">Mirror</button><br><br>
@@ -618,7 +620,7 @@
         let worker5;
         let messageCount = 0;
         let messageCount_analyzer = 0;
-        let messageCount_panalyze = 0;
+        let messageCount_panalyzer = 0;
         let messageCount_pair_analyzer = 0;
         let messageCount_pair_panalyze = 0;
         let option_table;
@@ -694,96 +696,116 @@
         }
 
         function startWorker() {
-            if (worker) {
-                worker.terminate();
-                worker = null;
-                const element = document.getElementById('result');
-                const content = document.createElement('a');
-                content.textContent = "Search terminated";
-                element.appendChild(content);
-                document.getElementById("solveButton").textContent = "Start";
-                return;
-            }
-            document.getElementById("countLine").value = 0;
-            document.getElementById("result").innerHTML = "";
-            messageCount = 0;
-            const solver = document.getElementById('solver').value;
-            let scr_val = document.getElementById("scr").value;
-            scr = scr_fix(scr_val);
-            let scr2 = scr_fix2(scr_val);
-            if (scr === "") {
-                const element = document.getElementById('result');
-                const content = document.createElement('a');
-                content.textContent = "Input scramble";
-                element.appendChild(content);
-                return;
-            }
-            const rot = document.getElementById('rot').value;
-            const slot = document.getElementById('slot').value;
-            const slot2 = document.getElementById('slot2').value;
-            const pair_slot = document.getElementById('pair_slot').value;
-            const pslot_e = document.getElementById('pslot_edge').value;
-            const pslot_c = document.getElementById('pslot_corner').value;
-            const pslot_e2 = document.getElementById('pslot_edge2').value;
-            const pslot_c2 = document.getElementById('pslot_corner2').value;
-            const pair_pslot_e = document.getElementById('pair_pslot_edge').value;
-            const pair_pslot_c = document.getElementById('pair_pslot_corner').value;
-            const ll = document.getElementById('ll').value
-            const num = document.getElementById('num').value;
-            const len = document.getElementById('len').value;
-            var restrict = document.getElementById('res_drop').value;
-            if (restrict === "custom") {
-                restrict = document.getElementById('res').value;
-            }
-            document.getElementById("solveButton").textContent = "End";
-
-            if (solver === "F2L" || solver === "LS" || solver === "LL" || solver == "LU") {
-                const args = { solver: solver, scr: convert(scr), rot: rot, slot: slot, ll: ll, num: num, len: len, restrict: restrict };
-                worker = new Worker('src/crossSolver/worker.js');
-                worker.postMessage(args);
-            } else if (solver === "F2L2" || solver === "LS2" || solver === "LL2" || solver == "LU2") {
-                const args = { solver: solver, scr: convert(scr), rot: rot, slot: slot, ll: ll, num: num, len: len, restrict: restrict };
-                worker = new Worker('src/highMemorySolver/worker2.js');
-                worker.postMessage(args);
-            } else if (solver === "PF2L") {
-                const args = { solver: solver, scr: convert(scr), rot: rot, slot: pslot_e, pslot: pslot_c, num: num, len: len, restrict: restrict };
-                worker = new Worker('src/pseudoCrossSolver/worker3.js');
-                worker.postMessage(args);
-            } else if (solver === "F2L_pair") {
-                const args = { scr: convert(scr), rot: rot, slot: slot2, pslot: pair_slot, num: num, len: len, restrict: restrict };
-                worker = new Worker('src/F2L_PairingSolver/worker_pairing.js');
-                worker.postMessage(args);
-            } else if (solver === "PF2L_pair") {
-                const args = { scr: convert(scr), rot: rot, slot: pslot_e2, pslot: pslot_c2, a_slot: pair_pslot_e, a_pslot: pair_pslot_c, num: num, len: len, restrict: restrict };
-                worker = new Worker('src/pseudoPairingSolver/workerPseudoPairing.js');
-                worker.postMessage(args);
-            } else if (solver === "tp") {
-                const sol = min2phase.solve(generateTwoPhaseInput(convert(scr + " " + rot)));
-                appendSol(scr2, rot + " " + sol);
-                const element = document.getElementById('result');
-                const content = document.createElement('a');
-                content.textContent = "Search terminated";
-                element.appendChild(content);
-                document.getElementById("solveButton").textContent = "Start";
-            }
-            worker.onmessage = function (event) {
-                appendSol(scr2, event.data);
-            };
-        }
-
-        function appendSol(scr, sol) {
-            const element = document.getElementById('result');
-            if (sol == "Search finished." || sol == "Already solved.") {
+            try {
                 if (worker) {
                     worker.terminate();
                     worker = null;
                     const element = document.getElementById('result');
                     const content = document.createElement('a');
-                    content.textContent = "Search terminated";
+                    content.textContent = "Search terminated.";
                     element.appendChild(content);
                     document.getElementById("solveButton").textContent = "Start";
                     return;
                 }
+                document.getElementById("countLine").value = 0;
+                document.getElementById("result").innerHTML = "";
+                messageCount = 0;
+                const solver = document.getElementById('solver').value;
+                let scr_val = document.getElementById("scr").value;
+                scr = scr_fix(scr_val);
+                let scr2 = scr_fix2(scr_val);
+                if (scr === "") {
+                    const element = document.getElementById('result');
+                    const content = document.createElement('a');
+                    content.textContent = "Input scramble";
+                    element.appendChild(content);
+                    return;
+                }
+                const rot = document.getElementById('rot').value;
+                const slot = document.getElementById('slot').value;
+                const slot2 = document.getElementById('slot2').value;
+                const pair_slot = document.getElementById('pair_slot').value;
+                const pslot_e = document.getElementById('pslot_edge').value;
+                const pslot_c = document.getElementById('pslot_corner').value;
+                const pslot_e2 = document.getElementById('pslot_edge2').value;
+                const pslot_c2 = document.getElementById('pslot_corner2').value;
+                const pair_pslot_e = document.getElementById('pair_pslot_edge').value;
+                const pair_pslot_c = document.getElementById('pair_pslot_corner').value;
+                const ll = document.getElementById('ll').value
+                const num = document.getElementById('num').value;
+                const len = document.getElementById('len').value;
+                var restrict = document.getElementById('res_drop').value;
+                if (restrict === "custom") {
+                    restrict = document.getElementById('res').value;
+                }
+                document.getElementById("solveButton").textContent = "End";
+
+                if (solver === "F2L" || solver === "LS" || solver === "LL" || solver == "LU") {
+                    const args = { solver: solver, scr: convert(scr), rot: rot, slot: slot, ll: ll, num: num, len: len, restrict: restrict };
+                    worker = new Worker('src/crossSolver/worker.js');
+                    worker.postMessage(args);
+                } else if (solver === "F2L2" || solver === "LS2" || solver === "LL2" || solver == "LU2") {
+                    const args = { solver: solver, scr: convert(scr), rot: rot, slot: slot, ll: ll, num: num, len: len, restrict: restrict };
+                    worker = new Worker('src/highMemorySolver/worker2.js');
+                    worker.postMessage(args);
+                } else if (solver === "PF2L") {
+                    const args = { solver: solver, scr: convert(scr), rot: rot, slot: pslot_e, pslot: pslot_c, num: num, len: len, restrict: restrict };
+                    worker = new Worker('src/pseudoCrossSolver/worker3.js');
+                    worker.postMessage(args);
+                } else if (solver === "F2L_pair") {
+                    const args = { scr: convert(scr), rot: rot, slot: slot2, pslot: pair_slot, num: num, len: len, restrict: restrict };
+                    worker = new Worker('src/F2L_PairingSolver/worker_pairing.js');
+                    worker.postMessage(args);
+                } else if (solver === "PF2L_pair") {
+                    const args = { scr: convert(scr), rot: rot, slot: pslot_e2, pslot: pslot_c2, a_slot: pair_pslot_e, a_pslot: pair_pslot_c, num: num, len: len, restrict: restrict };
+                    worker = new Worker('src/pseudoPairingSolver/workerPseudoPairing.js');
+                    worker.postMessage(args);
+                } else if (solver === "tp") {
+                    const sol = min2phase.solve(generateTwoPhaseInput(convert(scr + " " + rot)));
+                    appendSol(scr2, rot + " " + sol);
+                    const element = document.getElementById('result');
+                    const content = document.createElement('a');
+                    content.textContent = "Search terminated.";
+                    element.appendChild(content);
+                    document.getElementById("solveButton").textContent = "Start";
+                }
+                if (worker) {
+                    worker.onmessage = function (event) {
+                        appendSol(scr2, event.data);
+                    };
+                }
+            } catch (e) {
+                console.log(e.message);
+                if (worker) {
+                    worker.terminate();
+                }
+                worker = null;
+                const element = document.getElementById('result');
+                const content = document.createElement('a');
+                content.textContent = "Search terminated due an error.";
+                element.appendChild(content);
+                document.getElementById("solveButton").textContent = "Start";
+                return;
+            }
+        }
+
+        function appendSol(scr, sol) {
+            const element = document.getElementById('result');
+            if (sol == "Search finished." || sol == "Already solved." || sol == "Error") {
+                if (worker) {
+                    worker.terminate();
+                }
+                worker = null;
+                const element = document.getElementById('result');
+                const content = document.createElement('a');
+                if (sol == "Error") {
+                    content.textContent = "Search terminated due to an error.";
+                } else {
+                    content.textContent = "Search terminated.";
+                }
+                element.appendChild(content);
+                document.getElementById("solveButton").textContent = "Start";
+                return;
             } else {
                 messageCount++;
                 const details = document.createElement('details');
@@ -918,86 +940,122 @@
         }
 
         function analyze() {
-            if (worker2) {
-                worker2.terminate();
-                worker2 = null;
-                document.getElementById("analyzer").textContent = "Analyze";
-                option_table = {
-                    valueNames: ["No", "slot", "D", "U", "L", "R", "F", "B"]
-                };
-                list_table = new List('table', option_table);
-                return;
-            }
-            const content = "<a>Hint: You can start searching by clicking a cell in the table. You can sort the table by clicking on the headers.</a><br>";
-            document.getElementById('table').innerHTML = content;
-            let scr = document.getElementById("scr").value;
-            const scramble = scr_fix(scr);
-            const option = document.getElementById('analyzer_option').value;
-            const checkboxes = document.querySelectorAll('#analyzer_rotation_option .analyzer');
-            const values = [];
-            checkboxes.forEach(function (checkbox) {
-                if (checkbox.checked) {
-                    values.push(checkbox.value);
-                }
-            });
-            const rot_set = values.join('');
-            messageCount_analyzer = -2;
-            document.getElementById('table').innerHTML += "<a>Solved: </a>";
-            const input = document.createElement('input');
-            input.type = 'text';
-            input.id = 'count_analyzer';
-            input.readOnly = true;
-            const input2 = document.createElement('input');
-            input2.type = 'text';
-            input2.id = 'count_analyzer_max';
-            input2.readOnly = true;
-            document.getElementById('table').appendChild(input);
-            document.getElementById('table').innerHTML += "<a>/</a>";
-            document.getElementById('table').appendChild(input2);
-            worker2 = new Worker('src/crossAnalyzer/worker_analyzer.js');
-            document.getElementById("analyzer").textContent = "End";
-            worker2.onmessage = function (event) {
-                if (messageCount_analyzer === -2) {
-                    messageCount_analyzer++;
-                    document.getElementById('table').innerHTML += event.data;
-                } else if (messageCount_analyzer === -1) {
-                    messageCount_analyzer++;
-                    document.getElementById("count_analyzer_max").value = event.data;
-                } else if (event.data === "Finished.") {
-                    if (worker2) {
-                        worker2.terminate();
-                        worker2 = null;
-                        document.getElementById("analyzer").textContent = "Analyze";
+            try {
+                if (worker2) {
+                    worker2.terminate();
+                    worker2 = null;
+                    document.getElementById("analyzer").textContent = "Analyze";
+                    if (messageCount_analyzer > 0) {
                         option_table = {
                             valueNames: ["No", "slot", "D", "U", "L", "R", "F", "B"]
                         };
                         list_table = new List('table', option_table);
-                        return;
                     }
-                } else {
-                    messageCount_analyzer++;
-                    document.querySelector('#analyzer_result tbody').insertAdjacentHTML('beforeend', event.data);
-                    document.getElementById("count_analyzer").value = messageCount_analyzer;
+                    return;
                 }
-            };
-            let cross = false;
-            let xcross = false;
-            let xxcross = false;
-            let xxxcross = false;
-            if (option === "cross" || option == "2x" || option === "3x" || option === "4x") {
-                cross = true;
+                const content = "<a>Hint: You can start searching by clicking a cell in the table. You can sort the table by clicking on the headers.</a><br>";
+                document.getElementById('table').innerHTML = content;
+                let scr = document.getElementById("scr").value;
+                const scramble = scr_fix(scr);
+                const option = document.getElementById('analyzer_option').value;
+                const checkboxes = document.querySelectorAll('#analyzer_rotation_option .analyzer');
+                const values = [];
+                checkboxes.forEach(function (checkbox) {
+                    if (checkbox.checked) {
+                        values.push(checkbox.value);
+                    }
+                });
+                const rot_set = values.join('');
+                messageCount_analyzer = -2;
+                document.getElementById('table').innerHTML += "<a>Solved: </a>";
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.id = 'count_analyzer';
+                input.readOnly = true;
+                const input2 = document.createElement('input');
+                input2.type = 'text';
+                input2.id = 'count_analyzer_max';
+                input2.readOnly = true;
+                document.getElementById('table').appendChild(input);
+                document.getElementById('table').innerHTML += "<a>/</a>";
+                document.getElementById('table').appendChild(input2);
+                worker2 = new Worker('src/crossAnalyzer/worker_analyzer.js');
+                document.getElementById("analyzer").textContent = "End";
+                worker2.onmessage = function (event) {
+                    if (event.data == "Error") {
+                        console.log(e.message);
+                        if (worker2) {
+                            worker2.terminate();
+                        }
+                        worker2 = null;
+                        document.getElementById("analyzer").textContent = "Analyze";
+                        if (messageCount_analyzer > 0) {
+                            option_table = {
+                                valueNames: ["No", "slot", "D", "U", "L", "R", "F", "B"]
+                            };
+                            list_table = new List('table', option_table);
+                        }
+                        const error_message = "<br><a>Analyzer terminated due to an error.</a><br>";
+                        document.getElementById('table').innerHTML += content;
+                        return;
+                    } else if (messageCount_analyzer === -2) {
+                        messageCount_analyzer++;
+                        document.getElementById('table').innerHTML += event.data;
+                    } else if (messageCount_analyzer === -1) {
+                        messageCount_analyzer++;
+                        document.getElementById("count_analyzer_max").value = event.data;
+                    } else if (event.data === "Finished.") {
+                        if (worker2) {
+                            worker2.terminate();
+                            worker2 = null;
+                            document.getElementById("analyzer").textContent = "Analyze";
+                            option_table = {
+                                valueNames: ["No", "slot", "D", "U", "L", "R", "F", "B"]
+                            };
+                            list_table = new List('table', option_table);
+                            return;
+                        }
+                    } else {
+                        messageCount_analyzer++;
+                        document.querySelector('#analyzer_result tbody').insertAdjacentHTML('beforeend', event.data);
+                        document.getElementById("count_analyzer").value = messageCount_analyzer;
+                    }
+                };
+                let cross = false;
+                let xcross = false;
+                let xxcross = false;
+                let xxxcross = false;
+                if (option === "cross" || option == "2x" || option === "3x" || option === "4x") {
+                    cross = true;
+                }
+                if (option === "xcross" || option == "2x" || option === "3x" || option === "4x") {
+                    xcross = true;
+                }
+                if (option === "xxcross" || option === "3x" || option === "4x") {
+                    xxcross = true;
+                }
+                if (option === "xxxcross" || option === "4x") {
+                    xxxcross = true;
+                }
+                const args = { scramble: convert(scramble), cross: cross, x: xcross, xx: xxcross, xxx: xxxcross, n: "1", rot_set: rot_set };
+                worker2.postMessage(args);
+            } catch (e) {
+                console.log(e.message);
+                if (worker2) {
+                    worker2.terminate();
+                }
+                worker2 = null;
+                document.getElementById("analyzer").textContent = "Analyze";
+                if (messageCount_analyzer > 0) {
+                    option_table = {
+                        valueNames: ["No", "slot", "D", "U", "L", "R", "F", "B"]
+                    };
+                    list_table = new List('table', option_table);
+                }
+                const error_message = "<br><a>Analyzer terminated due to an error.</a><br>";
+                document.getElementById('table').innerHTML += content;
+                return;
             }
-            if (option === "xcross" || option == "2x" || option === "3x" || option === "4x") {
-                xcross = true;
-            }
-            if (option === "xxcross" || option === "3x" || option === "4x") {
-                xxcross = true;
-            }
-            if (option === "xxxcross" || option === "4x") {
-                xxxcross = true;
-            }
-            const args = { scramble: convert(scramble), cross: cross, x: xcross, xx: xxcross, xxx: xxxcross, n: "1", rot_set: rot_set };
-            worker2.postMessage(args);
         }
 
         function solve(slot_option, rotation_option) {
@@ -1272,86 +1330,122 @@
         }
 
         function panalyze() {
-            if (worker3) {
-                worker3.terminate();
-                worker3 = null;
-                document.getElementById("panalyzer").textContent = "Analyze";
-                option_ptable = {
-                    valueNames: ["No", "slot", "pslot", "D", "U", "L", "R", "F", "B"]
-                };
-                list_ptable = new List('ptable', option_ptable);
-                return;
-            }
-            const content = "<a>Hint: You can start searching by clicking a cell in the table. You can sort the table by clicking on the headers.</a><br>";
-            document.getElementById('ptable').innerHTML = content;
-            let scr = document.getElementById("scr").value;
-            const scramble = scr_fix(scr);
-            const option = document.getElementById('panalyzer_option').value;
-            const checkboxes = document.querySelectorAll('#panalyzer_rotation_option .panalyzer');
-            const values = [];
-            checkboxes.forEach(function (checkbox) {
-                if (checkbox.checked) {
-                    values.push(checkbox.value);
-                }
-            });
-            const rot_set = values.join('');
-            messageCount_panalyzer = -2;
-            document.getElementById('ptable').innerHTML += "<a>Solved: </a>";
-            const input = document.createElement('input');
-            input.type = 'text';
-            input.id = 'count_panalyzer';
-            input.readOnly = true;
-            const input2 = document.createElement('input');
-            input2.type = 'text';
-            input2.id = 'count_panalyzer_max';
-            input2.readOnly = true;
-            document.getElementById('ptable').appendChild(input);
-            document.getElementById('ptable').innerHTML += "<a>/</a>";
-            document.getElementById('ptable').appendChild(input2);
-            worker3 = new Worker('src/pseudoCrossAnalyzer/worker_panalyzer.js');
-            document.getElementById("panalyzer").textContent = "End";
-            worker3.onmessage = function (event) {
-                if (messageCount_panalyzer === -2) {
-                    messageCount_panalyzer++;
-                    document.getElementById('ptable').innerHTML += event.data;
-                } else if (messageCount_panalyzer === -1) {
-                    messageCount_panalyzer++;
-                    document.getElementById("count_panalyzer_max").value = event.data;
-                } else if (event.data === "Finished.") {
-                    if (worker3) {
-                        worker3.terminate();
-                        worker3 = null;
-                        document.getElementById("panalyzer").textContent = "Analyze";
+            try {
+                if (worker3) {
+                    worker3.terminate();
+                    worker3 = null;
+                    document.getElementById("panalyzer").textContent = "Analyze";
+                    if (messageCount_panalyzer > 0) {
                         option_ptable = {
                             valueNames: ["No", "slot", "pslot", "D", "U", "L", "R", "F", "B"]
                         };
                         list_ptable = new List('ptable', option_ptable);
-                        return;
                     }
-                } else {
-                    messageCount_panalyzer++;
-                    document.querySelector('#panalyzer_result tbody').insertAdjacentHTML('beforeend', event.data);
-                    document.getElementById("count_panalyzer").value = messageCount_panalyzer;
+                    return;
                 }
-            };
-            let cross = false;
-            let xcross = false;
-            let xxcross = false;
-            let xxxcross = false;
-            if (option === "cross" || option == "2x" || option === "3x" || option === "4x") {
-                cross = true;
+                const content = "<a>Hint: You can start searching by clicking a cell in the table. You can sort the table by clicking on the headers.</a><br>";
+                document.getElementById('ptable').innerHTML = content;
+                let scr = document.getElementById("scr").value;
+                const scramble = scr_fix(scr);
+                const option = document.getElementById('panalyzer_option').value;
+                const checkboxes = document.querySelectorAll('#panalyzer_rotation_option .panalyzer');
+                const values = [];
+                checkboxes.forEach(function (checkbox) {
+                    if (checkbox.checked) {
+                        values.push(checkbox.value);
+                    }
+                });
+                const rot_set = values.join('');
+                messageCount_panalyzer = -2;
+                document.getElementById('ptable').innerHTML += "<a>Solved: </a>";
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.id = 'count_panalyzer';
+                input.readOnly = true;
+                const input2 = document.createElement('input');
+                input2.type = 'text';
+                input2.id = 'count_panalyzer_max';
+                input2.readOnly = true;
+                document.getElementById('ptable').appendChild(input);
+                document.getElementById('ptable').innerHTML += "<a>/</a>";
+                document.getElementById('ptable').appendChild(input2);
+                worker3 = new Worker('src/pseudoCrossAnalyzer/worker_panalyzer.js');
+                document.getElementById("panalyzer").textContent = "End";
+                worker3.onmessage = function (event) {
+                    if (event.data == "Error") {
+                        console.log(e.message);
+                        if (worker3) {
+                            worker3.terminate();
+                        }
+                        worker3 = null;
+                        document.getElementById("panalyzer").textContent = "Analyze";
+                        if (messageCount_panalyzer > 0) {
+                            option_ptable = {
+                                valueNames: ["No", "slot", "pslot", "D", "U", "L", "R", "F", "B"]
+                            };
+                            list_ptable = new List('ptable', option_ptable);
+                        }
+                        const error_message = "<br><a>Analyzer terminated due to an error.</a><br>";
+                        document.getElementById('ptable').innerHTML += content;
+                        return;
+                    } else if (messageCount_panalyzer === -2) {
+                        messageCount_panalyzer++;
+                        document.getElementById('ptable').innerHTML += event.data;
+                    } else if (messageCount_panalyzer === -1) {
+                        messageCount_panalyzer++;
+                        document.getElementById("count_panalyzer_max").value = event.data;
+                    } else if (event.data === "Finished.") {
+                        if (worker3) {
+                            worker3.terminate();
+                            worker3 = null;
+                            document.getElementById("panalyzer").textContent = "Analyze";
+                            option_ptable = {
+                                valueNames: ["No", "slot", "pslot", "D", "U", "L", "R", "F", "B"]
+                            };
+                            list_ptable = new List('ptable', option_ptable);
+                            return;
+                        }
+                    } else {
+                        messageCount_panalyzer++;
+                        document.querySelector('#panalyzer_result tbody').insertAdjacentHTML('beforeend', event.data);
+                        document.getElementById("count_panalyzer").value = messageCount_panalyzer;
+                    }
+                };
+                let cross = false;
+                let xcross = false;
+                let xxcross = false;
+                let xxxcross = false;
+                if (option === "cross" || option == "2x" || option === "3x" || option === "4x") {
+                    cross = true;
+                }
+                if (option === "xcross" || option == "2x" || option === "3x" || option === "4x") {
+                    xcross = true;
+                }
+                if (option === "xxcross" || option === "3x" || option === "4x") {
+                    xxcross = true;
+                }
+                if (option === "xxxcross" || option === "4x") {
+                    xxxcross = true;
+                }
+                const args = { scramble: convert(scramble), cross: cross, x: xcross, xx: xxcross, xxx: xxxcross, n: "1", rot_set: rot_set };
+                worker3.postMessage(args);
+            } catch (e) {
+                console.log(e.message);
+                if (worker3) {
+                    worker3.terminate();
+                }
+                worker3 = null;
+                document.getElementById("panalyzer").textContent = "Analyze";
+                if (messageCount_panalyzer > 0) {
+                    option_ptable = {
+                        valueNames: ["No", "slot", "pslot", "D", "U", "L", "R", "F", "B"]
+                    };
+                    list_ptable = new List('ptable', option_ptable);
+                }
+                const error_message = "<br><a>Analyzer terminated due to an error.</a><br>";
+                document.getElementById('ptable').innerHTML += content;
+                return;
             }
-            if (option === "xcross" || option == "2x" || option === "3x" || option === "4x") {
-                xcross = true;
-            }
-            if (option === "xxcross" || option === "3x" || option === "4x") {
-                xxcross = true;
-            }
-            if (option === "xxxcross" || option === "4x") {
-                xxxcross = true;
-            }
-            const args = { scramble: convert(scramble), cross: cross, x: xcross, xx: xxcross, xxx: xxxcross, n: "1", rot_set: rot_set };
-            worker3.postMessage(args);
         }
 
         function psolve(slot_option, pslot_option, rotation_option) {
@@ -1367,88 +1461,119 @@
             startWorker();
         }
 
-
         function pair_analyze() {
-            if (worker4) {
-                worker4.terminate();
-                worker4 = null;
-                document.getElementById("pair_analyzer").textContent = "Analyze";
-                option_pair_table = {
-                    valueNames: ["No", "slot", "pslot", "D", "U", "L", "R", "F", "B"]
-                };
-                list_pair_table = new List('pair_table', option_pair_table);
-                return;
-            }
-            const content = "<a>Hint: You can start searching by clicking a cell in the table. You can sort the table by clicking on the headers.</a><br>";
-            document.getElementById('pair_table').innerHTML = content;
-            let scr = document.getElementById("scr").value;
-            const scramble = scr_fix(scr);
-            const option = document.getElementById('pair_analyzer_option').value;
-            const checkboxes = document.querySelectorAll('#pair_analyzer_rotation_option .pair_analyzer');
-            const values = [];
-            checkboxes.forEach(function (checkbox) {
-                if (checkbox.checked) {
-                    values.push(checkbox.value);
-                }
-            });
-            const rot_set = values.join('');
-            messageCount_pair_analyzer = -2;
-            document.getElementById('pair_table').innerHTML += "<a>Solved: </a>";
-            const input = document.createElement('input');
-            input.type = 'text';
-            input.id = 'count_pair_analyzer';
-            input.readOnly = true;
-            const input2 = document.createElement('input');
-            input2.type = 'text';
-            input2.id = 'count_pair_analyzer_max';
-            input2.readOnly = true;
-            document.getElementById('pair_table').appendChild(input);
-            document.getElementById('pair_table').innerHTML += "<a>/</a>";
-            document.getElementById('pair_table').appendChild(input2);
-            worker4 = new Worker('src/pairAnalyzer/worker_analyzer.js');
-            document.getElementById("pair_analyzer").textContent = "End";
-            worker4.onmessage = function (event) {
-                if (messageCount_pair_analyzer === -2) {
-                    messageCount_pair_analyzer++;
-                    document.getElementById('pair_table').innerHTML += event.data;
-                } else if (messageCount_pair_analyzer === -1) {
-                    messageCount_pair_analyzer++;
-                    document.getElementById("count_pair_analyzer_max").value = event.data;
-                } else if (event.data === "Finished.") {
-                    if (worker4) {
-                        worker4.terminate();
-                        worker4 = null;
-                        document.getElementById("pair_analyzer").textContent = "Analyze";
+            try {
+                if (worker4) {
+                    worker4.terminate();
+                    worker4 = null;
+                    document.getElementById("pair_analyzer").textContent = "Analyze";
+                    if (messageCount_pair_analyzer > 0) {
                         option_pair_table = {
                             valueNames: ["No", "slot", "pslot", "D", "U", "L", "R", "F", "B"]
                         };
                         list_pair_table = new List('pair_table', option_pair_table);
-                        return;
                     }
-                } else {
-                    messageCount_pair_analyzer++;
-                    document.querySelector('#pair_analyzer_result tbody').insertAdjacentHTML('beforeend', event.data);
-                    document.getElementById("count_pair_analyzer").value = messageCount_pair_analyzer;
+                    return;
                 }
-            };
-            let cross = false;
-            let xcross = false;
-            let xxcross = false;
-            let xxxcross = false;
-            if (option === "cross" || option == "2x" || option === "3x" || option === "4x") {
-                cross = true;
+                const content = "<a>Hint: You can start searching by clicking a cell in the table. You can sort the table by clicking on the headers.</a><br>";
+                document.getElementById('pair_table').innerHTML = content;
+                let scr = document.getElementById("scr").value;
+                const scramble = scr_fix(scr);
+                const option = document.getElementById('pair_analyzer_option').value;
+                const checkboxes = document.querySelectorAll('#pair_analyzer_rotation_option .pair_analyzer');
+                const values = [];
+                checkboxes.forEach(function (checkbox) {
+                    if (checkbox.checked) {
+                        values.push(checkbox.value);
+                    }
+                });
+                const rot_set = values.join('');
+                messageCount_pair_analyzer = -2;
+                document.getElementById('pair_table').innerHTML += "<a>Solved: </a>";
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.id = 'count_pair_analyzer';
+                input.readOnly = true;
+                const input2 = document.createElement('input');
+                input2.type = 'text';
+                input2.id = 'count_pair_analyzer_max';
+                input2.readOnly = true;
+                document.getElementById('pair_table').appendChild(input);
+                document.getElementById('pair_table').innerHTML += "<a>/</a>";
+                document.getElementById('pair_table').appendChild(input2);
+                worker4 = new Worker('src/pairAnalyzer/worker_analyzer.js');
+                document.getElementById("pair_analyzer").textContent = "End";
+                worker4.onmessage = function (event) {
+                    if (event.data == "Error") {
+                        console.log(e.message);
+                        if (worker4) {
+                            worker4.terminate();
+                        }
+                        worker4 = null;
+                        document.getElementById("pair_analyzer").textContent = "Analyze";
+                        const error_message = "<br><a>Analyzer terminated due to an error.</a><br>";
+                        document.getElementById('pair_table').innerHTML += content;
+                        return;
+                    } else if (messageCount_pair_analyzer === -2) {
+                        messageCount_pair_analyzer++;
+                        document.getElementById('pair_table').innerHTML += event.data;
+                    } else if (messageCount_pair_analyzer === -1) {
+                        messageCount_pair_analyzer++;
+                        document.getElementById("count_pair_analyzer_max").value = event.data;
+                    } else if (event.data === "Finished.") {
+                        if (worker4) {
+                            worker4.terminate();
+                            worker4 = null;
+                            document.getElementById("pair_analyzer").textContent = "Analyze";
+                            if (messageCount_pair_analyzer > 0) {
+                                option_pair_table = {
+                                    valueNames: ["No", "slot", "pslot", "D", "U", "L", "R", "F", "B"]
+                                };
+                                list_pair_table = new List('pair_table', option_pair_table);
+                            }
+                            return;
+                        }
+                    } else {
+                        messageCount_pair_analyzer++;
+                        document.querySelector('#pair_analyzer_result tbody').insertAdjacentHTML('beforeend', event.data);
+                        document.getElementById("count_pair_analyzer").value = messageCount_pair_analyzer;
+                    }
+                };
+                let cross = false;
+                let xcross = false;
+                let xxcross = false;
+                let xxxcross = false;
+                if (option === "cross" || option == "2x" || option === "3x" || option === "4x") {
+                    cross = true;
+                }
+                if (option === "xcross" || option == "2x" || option === "3x" || option === "4x") {
+                    xcross = true;
+                }
+                if (option === "xxcross" || option === "3x" || option === "4x") {
+                    xxcross = true;
+                }
+                if (option === "xxxcross" || option === "4x") {
+                    xxxcross = true;
+                }
+                const args = { scramble: convert(scramble), cross: cross, x: xcross, xx: xxcross, xxx: xxxcross, n: "1", rot_set: rot_set };
+                worker4.postMessage(args);
+            } catch (e) {
+                console.log(e.message);
+                if (worker4) {
+                    worker4.terminate();
+                }
+                worker4 = null;
+                document.getElementById("pair_analyzer").textContent = "Analyze";
+                if (messageCount_pair_analyzer > 0) {
+                    option_pair_table = {
+                        valueNames: ["No", "slot", "pslot", "D", "U", "L", "R", "F", "B"]
+                    };
+                    list_pair_table = new List('pair_table', option_pair_table);
+                }
+                const error_message = "<br><a>Analyzer terminated due to an error.</a><br>";
+                document.getElementById('pair_table').innerHTML += content;
+                return;
             }
-            if (option === "xcross" || option == "2x" || option === "3x" || option === "4x") {
-                xcross = true;
-            }
-            if (option === "xxcross" || option === "3x" || option === "4x") {
-                xxcross = true;
-            }
-            if (option === "xxxcross" || option === "4x") {
-                xxxcross = true;
-            }
-            const args = { scramble: convert(scramble), cross: cross, x: xcross, xx: xxcross, xxx: xxxcross, n: "1", rot_set: rot_set };
-            worker4.postMessage(args);
         }
 
         function pair_solve(slot_option, pslot_option, rotation_option) {
@@ -1465,90 +1590,126 @@
         }
 
         function pair_panalyze() {
-            if (worker5) {
-                worker5.terminate();
-                worker5 = null;
-                document.getElementById("pair_panalyzer").textContent = "Analyze";
-                option_pair_ptable = {
-                    valueNames: ["No", "slot", "pslot", "a_slot", "a_pslot", "D", "U", "L", "R", "F", "B"]
-                };
-                list_pair_ptable = new List('pair_ptable', option_pair_ptable);
-                return;
-            }
-            const content = "<a>Hint: You can start searching by clicking a cell in the table. You can sort the table by clicking on the headers.</a><br>";
-            document.getElementById('pair_ptable').innerHTML = content;
-            let scr = document.getElementById("scr").value;
-            const scramble = scr_fix(scr);
-            const option = document.getElementById('pair_panalyzer_option').value;
-            const checkboxes = document.querySelectorAll('#pair_panalyzer_rotation_option .pair_panalyzer');
-            const values = [];
-            checkboxes.forEach(function (checkbox) {
-                if (checkbox.checked) {
-                    values.push(checkbox.value);
-                }
-            });
-            const rot_set = values.join('');
-            messageCount_pair_panalyzer = -2;
-            document.getElementById('pair_ptable').innerHTML += "<a>Solved: </a>";
-            const input = document.createElement('input');
-            input.type = 'text';
-            input.id = 'count_pair_panalyzer';
-            input.readOnly = true;
-            const input2 = document.createElement('input');
-            input2.type = 'text';
-            input2.id = 'count_pair_panalyzer_max';
-            input2.readOnly = true;
-            document.getElementById('pair_ptable').appendChild(input);
-            document.getElementById('pair_ptable').innerHTML += "<a>/</a>";
-            document.getElementById('pair_ptable').appendChild(input2);
-            if (document.getElementById("pair_panalyzer_memory_option").value === "model1") {
-                worker5 = new Worker('src/pseudoPairAnalyzer/worker_analyzer.js');
-            } else {
-                worker5 = new Worker('src/pseudoPairAnalyzer_lite/worker_analyzer.js');
-            }
-            document.getElementById("pair_panalyzer").textContent = "End";
-            worker5.onmessage = function (event) {
-                if (messageCount_pair_panalyzer === -2) {
-                    messageCount_pair_panalyzer++;
-                    document.getElementById('pair_ptable').innerHTML += event.data;
-                } else if (messageCount_pair_panalyzer === -1) {
-                    messageCount_pair_panalyzer++;
-                    document.getElementById("count_pair_panalyzer_max").value = event.data;
-                } else if (event.data === "Finished.") {
-                    if (worker5) {
-                        worker5.terminate();
-                        worker5 = null;
-                        document.getElementById("pair_panalyzer").textContent = "Analyze";
+            try {
+                if (worker5) {
+                    worker5.terminate();
+                    worker5 = null;
+                    document.getElementById("pair_panalyzer").textContent = "Analyze";
+                    if (messageCount_pair_panalyzer > 0) {
                         option_pair_ptable = {
                             valueNames: ["No", "slot", "pslot", "a_slot", "a_pslot", "D", "U", "L", "R", "F", "B"]
                         };
                         list_pair_ptable = new List('pair_ptable', option_pair_ptable);
-                        return;
                     }
-                } else {
-                    messageCount_pair_panalyzer++;
-                    document.querySelector('#pair_panalyzer_result tbody').insertAdjacentHTML('beforeend', event.data);
-                    document.getElementById("count_pair_panalyzer").value = messageCount_pair_panalyzer;
+                    return;
                 }
-            };
-            let cross = false;
-            let xcross = false;
-            let xxcross = false;
-            let xxxcross = false;
-            if (option === "cross" || option == "2x" || option === "3x" || option === "4x") {
-                cross = true;
+                const content = "<a>Hint: You can start searching by clicking a cell in the table. You can sort the table by clicking on the headers.</a><br>";
+                document.getElementById('pair_ptable').innerHTML = content;
+                let scr = document.getElementById("scr").value;
+                const scramble = scr_fix(scr);
+                const option = document.getElementById('pair_panalyzer_option').value;
+                const checkboxes = document.querySelectorAll('#pair_panalyzer_rotation_option .pair_panalyzer');
+                const values = [];
+                checkboxes.forEach(function (checkbox) {
+                    if (checkbox.checked) {
+                        values.push(checkbox.value);
+                    }
+                });
+                const rot_set = values.join('');
+                messageCount_pair_panalyzer = -2;
+                document.getElementById('pair_ptable').innerHTML += "<a>Solved: </a>";
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.id = 'count_pair_panalyzer';
+                input.readOnly = true;
+                const input2 = document.createElement('input');
+                input2.type = 'text';
+                input2.id = 'count_pair_panalyzer_max';
+                input2.readOnly = true;
+                document.getElementById('pair_ptable').appendChild(input);
+                document.getElementById('pair_ptable').innerHTML += "<a>/</a>";
+                document.getElementById('pair_ptable').appendChild(input2);
+                if (document.getElementById("pair_panalyzer_memory_option").value === "model1") {
+                    worker5 = new Worker('src/pseudoPairAnalyzer/worker_analyzer.js');
+                } else {
+                    worker5 = new Worker('src/pseudoPairAnalyzer_lite/worker_analyzer.js');
+                }
+                document.getElementById("pair_panalyzer").textContent = "End";
+                worker5.onmessage = function (event) {
+                    if (event.data == "Error") {
+                        console.log(e.message);
+                        if (worker5) {
+                            worker5.terminate();
+                        }
+                        worker5 = null;
+                        document.getElementById("pair_panalyzer").textContent = "Analyze";
+                        if (messageCount_pair_panalyzer > 0) {
+                            option_pair_ptable = {
+                                valueNames: ["No", "slot", "pslot", "a_slot", "a_pslot", "D", "U", "L", "R", "F", "B"]
+                            };
+                            list_pair_ptable = new List('pair_ptable', option_pair_ptable);
+                        }
+                        const error_message = "<br><a>Analyzer terminated due to an error.</a><br>";
+                        document.getElementById('pair_ptable').innerHTML += content;
+                        return;
+                    } else if (messageCount_pair_panalyzer === -2) {
+                        messageCount_pair_panalyzer++;
+                        document.getElementById('pair_ptable').innerHTML += event.data;
+                    } else if (messageCount_pair_panalyzer === -1) {
+                        messageCount_pair_panalyzer++;
+                        document.getElementById("count_pair_panalyzer_max").value = event.data;
+                    } else if (event.data === "Finished.") {
+                        if (worker5) {
+                            worker5.terminate();
+                            worker5 = null;
+                            document.getElementById("pair_panalyzer").textContent = "Analyze";
+                            option_pair_ptable = {
+                                valueNames: ["No", "slot", "pslot", "a_slot", "a_pslot", "D", "U", "L", "R", "F", "B"]
+                            };
+                            list_pair_ptable = new List('pair_ptable', option_pair_ptable);
+                            return;
+                        }
+                    } else {
+                        messageCount_pair_panalyzer++;
+                        document.querySelector('#pair_panalyzer_result tbody').insertAdjacentHTML('beforeend', event.data);
+                        document.getElementById("count_pair_panalyzer").value = messageCount_pair_panalyzer;
+                    }
+                };
+                let cross = false;
+                let xcross = false;
+                let xxcross = false;
+                let xxxcross = false;
+                if (option === "cross" || option == "2x" || option === "3x" || option === "4x") {
+                    cross = true;
+                }
+                if (option === "xcross" || option == "2x" || option === "3x" || option === "4x") {
+                    xcross = true;
+                }
+                if (option === "xxcross" || option === "3x" || option === "4x") {
+                    xxcross = true;
+                }
+                if (option === "xxxcross" || option === "4x") {
+                    xxxcross = true;
+                }
+                const args = { scramble: convert(scramble), cross: cross, x: xcross, xx: xxcross, xxx: xxxcross, n: "1", rot_set: rot_set };
+                worker5.postMessage(args);
+            } catch (e) {
+                console.log(e.message);
+                if (worker5) {
+                    worker5.terminate();
+                }
+                worker5 = null;
+                document.getElementById("pair_panalyzer").textContent = "Analyze";
+                if (messageCount_pair_panalyzer > 0) {
+                    option_pair_ptable = {
+                        valueNames: ["No", "slot", "pslot", "a_slot", "a_pslot", "D", "U", "L", "R", "F", "B"]
+                    };
+                    list_pair_ptable = new List('pair_ptable', option_pair_ptable);
+                }
+                const error_message = "<br><a>Analyzer terminated due to an error.</a><br>";
+                document.getElementById('pair_ptable').innerHTML += content;
+                return;
             }
-            if (option === "xcross" || option == "2x" || option === "3x" || option === "4x") {
-                xcross = true;
-            }
-            if (option === "xxcross" || option === "3x" || option === "4x") {
-                xxcross = true;
-            }
-            if (option === "xxxcross" || option === "4x") {
-                xxxcross = true;
-            }
-            const args = { scramble: convert(scramble), cross: cross, x: xcross, xx: xxcross, xxx: xxxcross, n: "1", rot_set: rot_set };
-            worker5.postMessage(args);
         }
 
         function pair_psolve(slot_option, pslot_option, a_slot_option, a_pslot_option, rotation_option) {
