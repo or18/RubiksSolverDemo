@@ -1081,6 +1081,7 @@
         }
 
         Module.onRuntimeInitialized = function () {
+            document.getElementById("error").value += "Module initialization successfully.";
             document.getElementById('reverse').onclick = function () {
                 const scr = document.getElementById('scr').value;
                 const scr_fixed = scr_fix2(scr);
@@ -1133,6 +1134,10 @@
                 const result = Module.ScrambleToState(scramble);
                 return result;
             }
+        };
+
+        Module.onAbort = function () {
+            document.getElementById("error").value += "Module initialization failed.";
         };
 
         function undo() {
