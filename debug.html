@@ -4,6 +4,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>Rubik's Cube Solver</title>
     <script src="src/min2phase.js/min2phase.js"></script>
     <script src="src/functions/functions.js"></script>
@@ -170,6 +173,10 @@
             display: none;
         }
 
+        .hidden_small {
+            visibility: hidden;
+        }
+
         a,
         pre {
             color: #ffffff;
@@ -239,7 +246,7 @@
     <h2>This is online solver for Rubik's cube cross, xcross, xxcross, xxxcross, xxxxcross, last layer substeps, last
         layer, F2L pairing. Pseudo F2L solver is also available. </h2>
     <a href="https://github.com/or18/RubiksSolverDemo">Source</a><br>
-    <a href="https://or18.github.io/Rubiks-cube-xcross-solver/">Old Demo</a><br>
+    <a href="https://or18.github.io/Rubiks-cube-xcross-solver/">Old Demo</a><br><br>
     <textarea id="error"></textarea><br>
     <label for="solver">Solver</label><br>
     <select id="solver" onchange="change()">
@@ -256,15 +263,15 @@
         <option value="LL2">LL</option>
         <option value="LU2">LL AUF</option>
     </select>
-    <button id="undo" class="button small" onclick="undo()">←</button>
-    <button id="redo" class="button small" onclick="redo()">→</button><br>
+    <button id="undo" class="button small hidden_small" onclick="undo()">←</button>
+    <button id="redo" class="button small hidden_small" onclick="redo()">→</button><br>
 
     <textarea id="scr" rows="10" cols="10"
         placeholder="The string after // on each line is recognized as a comment. Write the //setup comment in the appropriate position when viewing on alg.cubing.net or cubedb.net."
         onchange="save()"></textarea><br>
     <button id="gen" class="button medium" onclick="genscr()">Random</button>
-    <button id="reverse" class="button medium" onclick="reverse()">Reverse</button>
-    <button id="mirror" class="button medium" onclick="mirror()">Mirror</button><br><br>
+    <button id="reverse" class="button medium hidden" onclick="reverse()">Reverse</button>
+    <button id="mirror" class="button medium hidden" onclick="mirror()">Mirror</button><br><br>
     <div id="show"></div>
     <pre id="links"
         class="hidden"><a id="link_alg_cubing" href="https://alg.cubing.net/" target="_blank" rel="noopener noreferrer">alg.cubing.net</a>  <a id="link_cubedb" href="https://cubedb.net/?puzzle=3x3" target="_blank" rel="noopener noreferrer">cubedb.net</a></pre>
@@ -621,7 +628,7 @@
         let worker5;
         let messageCount = 0;
         let messageCount_analyzer = 0;
-        let messageCount_panalyze = 0;
+        let messageCount_panalyzer = 0;
         let messageCount_pair_analyzer = 0;
         let messageCount_pair_panalyze = 0;
         let option_table;
@@ -703,7 +710,7 @@
                     worker = null;
                     const element = document.getElementById('result');
                     const content = document.createElement('a');
-                    content.textContent = "Search terminated";
+                    content.textContent = "Search terminated.";
                     element.appendChild(content);
                     document.getElementById("solveButton").textContent = "Start";
                     return;
@@ -766,7 +773,7 @@
                     appendSol(scr2, rot + " " + sol);
                     const element = document.getElementById('result');
                     const content = document.createElement('a');
-                    content.textContent = "Search terminated";
+                    content.textContent = "Search terminated.";
                     element.appendChild(content);
                     document.getElementById("solveButton").textContent = "Start";
                 }
@@ -776,23 +783,38 @@
                     };
                 }
             } catch (e) {
-                document.getElementById("error").value += e + "\n";
+                console.log(e.message);
+                document.getElementById("error").value += e.message;
+                if (worker) {
+                    worker.terminate();
+                }
+                worker = null;
+                const element = document.getElementById('result');
+                const content = document.createElement('a');
+                content.textContent = "Search terminated due an error.";
+                element.appendChild(content);
+                document.getElementById("solveButton").textContent = "Start";
+                return;
             }
         }
 
         function appendSol(scr, sol) {
             const element = document.getElementById('result');
-            if (sol == "Search finished." || sol == "Already solved.") {
+            if (sol == "Search finished." || sol == "Already solved." || sol == "Error") {
                 if (worker) {
                     worker.terminate();
-                    worker = null;
-                    const element = document.getElementById('result');
-                    const content = document.createElement('a');
-                    content.textContent = "Search terminated";
-                    element.appendChild(content);
-                    document.getElementById("solveButton").textContent = "Start";
-                    return;
                 }
+                worker = null;
+                const element = document.getElementById('result');
+                const content = document.createElement('a');
+                if (sol == "Error") {
+                    content.textContent = "Search terminated due to an error.";
+                } else {
+                    content.textContent = "Search terminated.";
+                }
+                element.appendChild(content);
+                document.getElementById("solveButton").textContent = "Start";
+                return;
             } else {
                 messageCount++;
                 const details = document.createElement('details');
@@ -932,10 +954,12 @@
                     worker2.terminate();
                     worker2 = null;
                     document.getElementById("analyzer").textContent = "Analyze";
-                    option_table = {
-                        valueNames: ["No", "slot", "D", "U", "L", "R", "F", "B"]
-                    };
-                    list_table = new List('table', option_table);
+                    if (messageCount_analyzer > 0) {
+                        option_table = {
+                            valueNames: ["No", "slot", "D", "U", "L", "R", "F", "B"]
+                        };
+                        list_table = new List('table', option_table);
+                    }
                     return;
                 }
                 const content = "<a>Hint: You can start searching by clicking a cell in the table. You can sort the table by clicking on the headers.</a><br>";
@@ -967,7 +991,24 @@
                 worker2 = new Worker('src/crossAnalyzer/worker_analyzer.js');
                 document.getElementById("analyzer").textContent = "End";
                 worker2.onmessage = function (event) {
-                    if (messageCount_analyzer === -2) {
+                    if (event.data == "Error") {
+                        console.log(e.message);
+                        document.getElementById("error").value += e.message;
+                        if (worker2) {
+                            worker2.terminate();
+                        }
+                        worker2 = null;
+                        document.getElementById("analyzer").textContent = "Analyze";
+                        if (messageCount_analyzer > 0) {
+                            option_table = {
+                                valueNames: ["No", "slot", "D", "U", "L", "R", "F", "B"]
+                            };
+                            list_table = new List('table', option_table);
+                        }
+                        const error_message = "<br><a>Analyzer terminated due to an error.</a><br>";
+                        document.getElementById('table').innerHTML += content;
+                        return;
+                    } else if (messageCount_analyzer === -2) {
                         messageCount_analyzer++;
                         document.getElementById('table').innerHTML += event.data;
                     } else if (messageCount_analyzer === -1) {
@@ -1009,7 +1050,22 @@
                 const args = { scramble: convert(scramble), cross: cross, x: xcross, xx: xxcross, xxx: xxxcross, n: "1", rot_set: rot_set };
                 worker2.postMessage(args);
             } catch (e) {
-                document.getElementById("error").value += e + "\n";
+                console.log(e.message);
+                document.getElementById("error").value += e.message;
+                if (worker2) {
+                    worker2.terminate();
+                }
+                worker2 = null;
+                document.getElementById("analyzer").textContent = "Analyze";
+                if (messageCount_analyzer > 0) {
+                    option_table = {
+                        valueNames: ["No", "slot", "D", "U", "L", "R", "F", "B"]
+                    };
+                    list_table = new List('table', option_table);
+                }
+                const error_message = "<br><a>Analyzer terminated due to an error.</a><br>";
+                document.getElementById('table').innerHTML += content;
+                return;
             }
         }
 
@@ -1028,7 +1084,7 @@
             document.getElementById('reverse').onclick = function () {
                 const scr = document.getElementById('scr').value;
                 const scr_fixed = scr_fix2(scr);
-                if (scr === "") {
+                if (scr_fixed === "") {
                     return;
                 }
                 const lines = scr_fixed.split('\n');
@@ -1050,7 +1106,7 @@
             document.getElementById('mirror').onclick = function () {
                 const scr = document.getElementById('scr').value;
                 const scr_fixed = scr_fix2(scr);
-                if (scr === "") {
+                if (scr_fixed === "") {
                     return;
                 }
                 const lines = scr_fixed.split('\n');
@@ -1116,192 +1172,189 @@
         }
 
         function updateButtons() {
-            try {
-                undoButton.disabled = currentIndex <= 0;
-                redoButton.disabled = currentIndex >= history.length - 1;
-                if (currentIndex >= 0) {
-                    const scr = document.getElementById("scr").value;
-                    const { URL1: link1, URL2: link2 } = getLink(scr);
-                    document.getElementById("link_alg_cubing").href = link1;
-                    document.getElementById("link_cubedb").href = link2;
-                    document.getElementById("links").classList.remove("hidden");
-                }
-            } catch (e) {
-                document.getElementById("error").value += e + "\n";
+            undoButton.disabled = currentIndex <= 0;
+            redoButton.disabled = currentIndex >= history.length - 1;
+            if (document.getElementById("scr").value == "") {
+                document.getElementById("reverse").classList.add("hidden");
+                document.getElementById("mirror").classList.add("hidden");
+            } else {
+                document.getElementById("reverse").classList.remove("hidden");
+                document.getElementById("mirror").classList.remove("hidden");
+            }
+            if (currentIndex <= 0) {
+                undoButton.classList.add("hidden_small");
+            } else {
+                undoButton.classList.remove("hidden_small");
+            }
+            if (currentIndex >= history.length - 1) {
+                redoButton.classList.add("hidden_small")
+            } else {
+                redoButton.classList.remove("hidden_small");
+            }
+            if (currentIndex >= 0) {
+                const scr = document.getElementById("scr").value;
+                const { URL1: link1, URL2: link2 } = getLink(scr);
+                document.getElementById("link_alg_cubing").href = link1;
+                document.getElementById("link_cubedb").href = link2;
+                document.getElementById("links").classList.remove("hidden");
             }
         }
 
         function updateDropdown() {
-            try {
-                const dropdownA = document.getElementById("pslot_edge");
-                const dropdownB = document.getElementById("pslot_corner");
-                document.getElementById("option_for_PF2LC").classList.add("hidden");
-                const selectedValue = dropdownA.value;
-                dropdownB.innerHTML = "";
-                let options = [];
-                if (selectedValue === "") {
-                    options = [
-                        { value: "", text: "" },
-                    ];
-                } else if (selectedValue === "BL" || selectedValue === "BR" || selectedValue === "FR" || selectedValue === "FL") {
-                    options = [
-                        { value: "BL", text: "BL" },
-                        { value: "BR", text: "BR" },
-                        { value: "FR", text: "FR" },
-                        { value: "FL", text: "FL" }
-                    ];
-                } else if (selectedValue === "BL BR" || selectedValue === "BL FR" || selectedValue === "BL FL" || selectedValue === "BR FR" || selectedValue === "BR FL" || selectedValue === "FR FL") {
-                    options = [
-                        { value: "BL BR", text: "BL BR" },
-                        { value: "BL FR", text: "BL FR" },
-                        { value: "BL FL", text: "BL FL" },
-                        { value: "BR FR", text: "BR FR" },
-                        { value: "BR FL", text: "BR FL" },
-                        { value: "FR FL", text: "FR FL" }
-                    ];
-                } else if (selectedValue === "BL BR FR" || selectedValue === "BL BR FL" || selectedValue === "BL FR FL" || selectedValue === "BR FR FL") {
-                    options = [
-                        { value: "BL BR FR", text: "BL BR FR" },
-                        { value: "BL BR FL", text: "BL BR FL" },
-                        { value: "BL FR FL", text: "BL FR FL" },
-                        { value: "BR FR FL", text: "BR FR FL" }
-                    ];
-                }
-
-                options.forEach(option => {
-                    const newOption = document.createElement("option");
-                    newOption.value = option.value;
-                    newOption.textContent = option.text;
-                    dropdownB.appendChild(newOption);
-                });
-
-                if (selectedValue !== "") {
-                    document.getElementById("option_for_PF2LC").classList.remove("hidden");
-                }
-            } catch (e) {
-                document.getElementById("error").value += e + "\n";
-            }
-        }
-
-        function updateDropdown2() {
-            try {
-                const dropdownA = document.getElementById("slot2");
-                const dropdownB = document.getElementById("pair_slot");
-                const selectedValue = dropdownA.value;
-                let selectedValueArray = selectedValue.split(" ");
-                dropdownB.innerHTML = "";
-                let options = [
-                    { value: "BL", text: "BL" },
-                    { value: "BR", text: "BR" },
-                    { value: "FR", text: "FR" },
-                    { value: "FL", text: "FL" }
+            const dropdownA = document.getElementById("pslot_edge");
+            const dropdownB = document.getElementById("pslot_corner");
+            document.getElementById("option_for_PF2LC").classList.add("hidden");
+            const selectedValue = dropdownA.value;
+            dropdownB.innerHTML = "";
+            let options = [];
+            if (selectedValue === "") {
+                options = [
+                    { value: "", text: "" },
                 ];
-                options = options.filter(option => !selectedValueArray.includes(option.value));
-                options.forEach(option => {
-                    const newOption = document.createElement("option");
-                    newOption.value = option.value;
-                    newOption.textContent = option.text;
-                    dropdownB.appendChild(newOption);
-                });
-            } catch (e) {
-                document.getElementById("error").value += e + "\n";
-            }
-        }
-
-        function updateDropdown3() {
-            try {
-                const dropdownA = document.getElementById("pslot_edge2");
-                let dropdownB = document.getElementById("pslot_corner2");
-                document.getElementById("option_for_PF2LC2").classList.add("hidden");
-                let selectedValue = dropdownA.value;
-                dropdownB.innerHTML = "";
-                let options = [];
-                if (selectedValue === "") {
-                    options = [
-                        { value: "", text: "" },
-                    ];
-                } else if (selectedValue === "BL" || selectedValue === "BR" || selectedValue === "FR" || selectedValue === "FL") {
-                    options = [
-                        { value: "BL", text: "BL" },
-                        { value: "BR", text: "BR" },
-                        { value: "FR", text: "FR" },
-                        { value: "FL", text: "FL" }
-                    ];
-                } else if (selectedValue === "BL BR" || selectedValue === "BL FR" || selectedValue === "BL FL" || selectedValue === "BR FR" || selectedValue === "BR FL" || selectedValue === "FR FL") {
-                    options = [
-                        { value: "BL BR", text: "BL BR" },
-                        { value: "BL FR", text: "BL FR" },
-                        { value: "BL FL", text: "BL FL" },
-                        { value: "BR FR", text: "BR FR" },
-                        { value: "BR FL", text: "BR FL" },
-                        { value: "FR FL", text: "FR FL" }
-                    ];
-                } else if (selectedValue === "BL BR FR" || selectedValue === "BL BR FL" || selectedValue === "BL FR FL" || selectedValue === "BR FR FL") {
-                    options = [
-                        { value: "BL BR FR", text: "BL BR FR" },
-                        { value: "BL BR FL", text: "BL BR FL" },
-                        { value: "BL FR FL", text: "BL FR FL" },
-                        { value: "BR FR FL", text: "BR FR FL" }
-                    ];
-                }
-
-                options.forEach(option => {
-                    const newOption = document.createElement("option");
-                    newOption.value = option.value;
-                    newOption.textContent = option.text;
-                    dropdownB.appendChild(newOption);
-                });
-
-                if (selectedValue !== "") {
-                    document.getElementById("option_for_PF2LC2").classList.remove("hidden");
-                }
-
-                dropdownB = document.getElementById("pair_pslot_edge");
-                selectedValue = dropdownA.value;
-                let selectedValueArray = selectedValue.split(" ");
-                dropdownB.innerHTML = "";
+            } else if (selectedValue === "BL" || selectedValue === "BR" || selectedValue === "FR" || selectedValue === "FL") {
                 options = [
                     { value: "BL", text: "BL" },
                     { value: "BR", text: "BR" },
                     { value: "FR", text: "FR" },
                     { value: "FL", text: "FL" }
                 ];
-                options = options.filter(option => !selectedValueArray.includes(option.value));
-                options.forEach(option => {
-                    const newOption = document.createElement("option");
-                    newOption.value = option.value;
-                    newOption.textContent = option.text;
-                    dropdownB.appendChild(newOption);
-                });
-                updateDropdown4();
-            } catch (e) {
-                document.getElementById("error").value += e + "\n";
+            } else if (selectedValue === "BL BR" || selectedValue === "BL FR" || selectedValue === "BL FL" || selectedValue === "BR FR" || selectedValue === "BR FL" || selectedValue === "FR FL") {
+                options = [
+                    { value: "BL BR", text: "BL BR" },
+                    { value: "BL FR", text: "BL FR" },
+                    { value: "BL FL", text: "BL FL" },
+                    { value: "BR FR", text: "BR FR" },
+                    { value: "BR FL", text: "BR FL" },
+                    { value: "FR FL", text: "FR FL" }
+                ];
+            } else if (selectedValue === "BL BR FR" || selectedValue === "BL BR FL" || selectedValue === "BL FR FL" || selectedValue === "BR FR FL") {
+                options = [
+                    { value: "BL BR FR", text: "BL BR FR" },
+                    { value: "BL BR FL", text: "BL BR FL" },
+                    { value: "BL FR FL", text: "BL FR FL" },
+                    { value: "BR FR FL", text: "BR FR FL" }
+                ];
+            }
+
+            options.forEach(option => {
+                const newOption = document.createElement("option");
+                newOption.value = option.value;
+                newOption.textContent = option.text;
+                dropdownB.appendChild(newOption);
+            });
+
+            if (selectedValue !== "") {
+                document.getElementById("option_for_PF2LC").classList.remove("hidden");
             }
         }
 
-        function updateDropdown4() {
-            try {
-                const dropdownA = document.getElementById("pslot_corner2");
-                const dropdownB = document.getElementById("pair_pslot_corner");
-                const selectedValue = dropdownA.value;
-                let selectedValueArray = selectedValue.split(" ");
-                dropdownB.innerHTML = "";
-                let options = [
+        function updateDropdown2() {
+            const dropdownA = document.getElementById("slot2");
+            const dropdownB = document.getElementById("pair_slot");
+            const selectedValue = dropdownA.value;
+            let selectedValueArray = selectedValue.split(" ");
+            dropdownB.innerHTML = "";
+            let options = [
+                { value: "BL", text: "BL" },
+                { value: "BR", text: "BR" },
+                { value: "FR", text: "FR" },
+                { value: "FL", text: "FL" }
+            ];
+            options = options.filter(option => !selectedValueArray.includes(option.value));
+            options.forEach(option => {
+                const newOption = document.createElement("option");
+                newOption.value = option.value;
+                newOption.textContent = option.text;
+                dropdownB.appendChild(newOption);
+            });
+        }
+
+        function updateDropdown3() {
+            const dropdownA = document.getElementById("pslot_edge2");
+            let dropdownB = document.getElementById("pslot_corner2");
+            document.getElementById("option_for_PF2LC2").classList.add("hidden");
+            let selectedValue = dropdownA.value;
+            dropdownB.innerHTML = "";
+            let options = [];
+            if (selectedValue === "") {
+                options = [
+                    { value: "", text: "" },
+                ];
+            } else if (selectedValue === "BL" || selectedValue === "BR" || selectedValue === "FR" || selectedValue === "FL") {
+                options = [
                     { value: "BL", text: "BL" },
                     { value: "BR", text: "BR" },
                     { value: "FR", text: "FR" },
                     { value: "FL", text: "FL" }
                 ];
-                options = options.filter(option => !selectedValueArray.includes(option.value));
-                options.forEach(option => {
-                    const newOption = document.createElement("option");
-                    newOption.value = option.value;
-                    newOption.textContent = option.text;
-                    dropdownB.appendChild(newOption);
-                });
-            } catch (e) {
-                document.getElementById("error").value += e + "\n";
+            } else if (selectedValue === "BL BR" || selectedValue === "BL FR" || selectedValue === "BL FL" || selectedValue === "BR FR" || selectedValue === "BR FL" || selectedValue === "FR FL") {
+                options = [
+                    { value: "BL BR", text: "BL BR" },
+                    { value: "BL FR", text: "BL FR" },
+                    { value: "BL FL", text: "BL FL" },
+                    { value: "BR FR", text: "BR FR" },
+                    { value: "BR FL", text: "BR FL" },
+                    { value: "FR FL", text: "FR FL" }
+                ];
+            } else if (selectedValue === "BL BR FR" || selectedValue === "BL BR FL" || selectedValue === "BL FR FL" || selectedValue === "BR FR FL") {
+                options = [
+                    { value: "BL BR FR", text: "BL BR FR" },
+                    { value: "BL BR FL", text: "BL BR FL" },
+                    { value: "BL FR FL", text: "BL FR FL" },
+                    { value: "BR FR FL", text: "BR FR FL" }
+                ];
             }
+
+            options.forEach(option => {
+                const newOption = document.createElement("option");
+                newOption.value = option.value;
+                newOption.textContent = option.text;
+                dropdownB.appendChild(newOption);
+            });
+
+            if (selectedValue !== "") {
+                document.getElementById("option_for_PF2LC2").classList.remove("hidden");
+            }
+
+            dropdownB = document.getElementById("pair_pslot_edge");
+            selectedValue = dropdownA.value;
+            let selectedValueArray = selectedValue.split(" ");
+            dropdownB.innerHTML = "";
+            options = [
+                { value: "BL", text: "BL" },
+                { value: "BR", text: "BR" },
+                { value: "FR", text: "FR" },
+                { value: "FL", text: "FL" }
+            ];
+            options = options.filter(option => !selectedValueArray.includes(option.value));
+            options.forEach(option => {
+                const newOption = document.createElement("option");
+                newOption.value = option.value;
+                newOption.textContent = option.text;
+                dropdownB.appendChild(newOption);
+            });
+            updateDropdown4();
+        }
+
+        function updateDropdown4() {
+            const dropdownA = document.getElementById("pslot_corner2");
+            const dropdownB = document.getElementById("pair_pslot_corner");
+            const selectedValue = dropdownA.value;
+            let selectedValueArray = selectedValue.split(" ");
+            dropdownB.innerHTML = "";
+            let options = [
+                { value: "BL", text: "BL" },
+                { value: "BR", text: "BR" },
+                { value: "FR", text: "FR" },
+                { value: "FL", text: "FL" }
+            ];
+            options = options.filter(option => !selectedValueArray.includes(option.value));
+            options.forEach(option => {
+                const newOption = document.createElement("option");
+                newOption.value = option.value;
+                newOption.textContent = option.text;
+                dropdownB.appendChild(newOption);
+            });
         }
 
         function panalyze() {
@@ -1310,10 +1363,12 @@
                     worker3.terminate();
                     worker3 = null;
                     document.getElementById("panalyzer").textContent = "Analyze";
-                    option_ptable = {
-                        valueNames: ["No", "slot", "pslot", "D", "U", "L", "R", "F", "B"]
-                    };
-                    list_ptable = new List('ptable', option_ptable);
+                    if (messageCount_panalyzer > 0) {
+                        option_ptable = {
+                            valueNames: ["No", "slot", "pslot", "D", "U", "L", "R", "F", "B"]
+                        };
+                        list_ptable = new List('ptable', option_ptable);
+                    }
                     return;
                 }
                 const content = "<a>Hint: You can start searching by clicking a cell in the table. You can sort the table by clicking on the headers.</a><br>";
@@ -1345,7 +1400,24 @@
                 worker3 = new Worker('src/pseudoCrossAnalyzer/worker_panalyzer.js');
                 document.getElementById("panalyzer").textContent = "End";
                 worker3.onmessage = function (event) {
-                    if (messageCount_panalyzer === -2) {
+                    if (event.data == "Error") {
+                        console.log(e.message);
+                        document.getElementById("error").value += e.message;
+                        if (worker3) {
+                            worker3.terminate();
+                        }
+                        worker3 = null;
+                        document.getElementById("panalyzer").textContent = "Analyze";
+                        if (messageCount_panalyzer > 0) {
+                            option_ptable = {
+                                valueNames: ["No", "slot", "pslot", "D", "U", "L", "R", "F", "B"]
+                            };
+                            list_ptable = new List('ptable', option_ptable);
+                        }
+                        const error_message = "<br><a>Analyzer terminated due to an error.</a><br>";
+                        document.getElementById('ptable').innerHTML += content;
+                        return;
+                    } else if (messageCount_panalyzer === -2) {
                         messageCount_panalyzer++;
                         document.getElementById('ptable').innerHTML += event.data;
                     } else if (messageCount_panalyzer === -1) {
@@ -1387,7 +1459,22 @@
                 const args = { scramble: convert(scramble), cross: cross, x: xcross, xx: xxcross, xxx: xxxcross, n: "1", rot_set: rot_set };
                 worker3.postMessage(args);
             } catch (e) {
-                document.getElementById("error").value += e + "\n";
+                console.log(e.message);
+                document.getElementById("error").value += e.message;
+                if (worker3) {
+                    worker3.terminate();
+                }
+                worker3 = null;
+                document.getElementById("panalyzer").textContent = "Analyze";
+                if (messageCount_panalyzer > 0) {
+                    option_ptable = {
+                        valueNames: ["No", "slot", "pslot", "D", "U", "L", "R", "F", "B"]
+                    };
+                    list_ptable = new List('ptable', option_ptable);
+                }
+                const error_message = "<br><a>Analyzer terminated due to an error.</a><br>";
+                document.getElementById('ptable').innerHTML += content;
+                return;
             }
         }
 
@@ -1404,17 +1491,18 @@
             startWorker();
         }
 
-
         function pair_analyze() {
             try {
                 if (worker4) {
                     worker4.terminate();
                     worker4 = null;
                     document.getElementById("pair_analyzer").textContent = "Analyze";
-                    option_pair_table = {
-                        valueNames: ["No", "slot", "pslot", "D", "U", "L", "R", "F", "B"]
-                    };
-                    list_pair_table = new List('pair_table', option_pair_table);
+                    if (messageCount_pair_analyzer > 0) {
+                        option_pair_table = {
+                            valueNames: ["No", "slot", "pslot", "D", "U", "L", "R", "F", "B"]
+                        };
+                        list_pair_table = new List('pair_table', option_pair_table);
+                    }
                     return;
                 }
                 const content = "<a>Hint: You can start searching by clicking a cell in the table. You can sort the table by clicking on the headers.</a><br>";
@@ -1446,7 +1534,18 @@
                 worker4 = new Worker('src/pairAnalyzer/worker_analyzer.js');
                 document.getElementById("pair_analyzer").textContent = "End";
                 worker4.onmessage = function (event) {
-                    if (messageCount_pair_analyzer === -2) {
+                    if (event.data == "Error") {
+                        console.log(e.message);
+                        document.getElementById("error").value += e.message;
+                        if (worker4) {
+                            worker4.terminate();
+                        }
+                        worker4 = null;
+                        document.getElementById("pair_analyzer").textContent = "Analyze";
+                        const error_message = "<br><a>Analyzer terminated due to an error.</a><br>";
+                        document.getElementById('pair_table').innerHTML += content;
+                        return;
+                    } else if (messageCount_pair_analyzer === -2) {
                         messageCount_pair_analyzer++;
                         document.getElementById('pair_table').innerHTML += event.data;
                     } else if (messageCount_pair_analyzer === -1) {
@@ -1457,10 +1556,12 @@
                             worker4.terminate();
                             worker4 = null;
                             document.getElementById("pair_analyzer").textContent = "Analyze";
-                            option_pair_table = {
-                                valueNames: ["No", "slot", "pslot", "D", "U", "L", "R", "F", "B"]
-                            };
-                            list_pair_table = new List('pair_table', option_pair_table);
+                            if (messageCount_pair_analyzer > 0) {
+                                option_pair_table = {
+                                    valueNames: ["No", "slot", "pslot", "D", "U", "L", "R", "F", "B"]
+                                };
+                                list_pair_table = new List('pair_table', option_pair_table);
+                            }
                             return;
                         }
                     } else {
@@ -1488,7 +1589,22 @@
                 const args = { scramble: convert(scramble), cross: cross, x: xcross, xx: xxcross, xxx: xxxcross, n: "1", rot_set: rot_set };
                 worker4.postMessage(args);
             } catch (e) {
-                document.getElementById("error").value += e + "\n";
+                console.log(e.message);
+                document.getElementById("error").value += e.message;
+                if (worker4) {
+                    worker4.terminate();
+                }
+                worker4 = null;
+                document.getElementById("pair_analyzer").textContent = "Analyze";
+                if (messageCount_pair_analyzer > 0) {
+                    option_pair_table = {
+                        valueNames: ["No", "slot", "pslot", "D", "U", "L", "R", "F", "B"]
+                    };
+                    list_pair_table = new List('pair_table', option_pair_table);
+                }
+                const error_message = "<br><a>Analyzer terminated due to an error.</a><br>";
+                document.getElementById('pair_table').innerHTML += content;
+                return;
             }
         }
 
@@ -1511,10 +1627,12 @@
                     worker5.terminate();
                     worker5 = null;
                     document.getElementById("pair_panalyzer").textContent = "Analyze";
-                    option_pair_ptable = {
-                        valueNames: ["No", "slot", "pslot", "a_slot", "a_pslot", "D", "U", "L", "R", "F", "B"]
-                    };
-                    list_pair_ptable = new List('pair_ptable', option_pair_ptable);
+                    if (messageCount_pair_panalyzer > 0) {
+                        option_pair_ptable = {
+                            valueNames: ["No", "slot", "pslot", "a_slot", "a_pslot", "D", "U", "L", "R", "F", "B"]
+                        };
+                        list_pair_ptable = new List('pair_ptable', option_pair_ptable);
+                    }
                     return;
                 }
                 const content = "<a>Hint: You can start searching by clicking a cell in the table. You can sort the table by clicking on the headers.</a><br>";
@@ -1550,7 +1668,24 @@
                 }
                 document.getElementById("pair_panalyzer").textContent = "End";
                 worker5.onmessage = function (event) {
-                    if (messageCount_pair_panalyzer === -2) {
+                    if (event.data == "Error") {
+                        console.log(e.message);
+                        document.getElementById("error").value += e.message;
+                        if (worker5) {
+                            worker5.terminate();
+                        }
+                        worker5 = null;
+                        document.getElementById("pair_panalyzer").textContent = "Analyze";
+                        if (messageCount_pair_panalyzer > 0) {
+                            option_pair_ptable = {
+                                valueNames: ["No", "slot", "pslot", "a_slot", "a_pslot", "D", "U", "L", "R", "F", "B"]
+                            };
+                            list_pair_ptable = new List('pair_ptable', option_pair_ptable);
+                        }
+                        const error_message = "<br><a>Analyzer terminated due to an error.</a><br>";
+                        document.getElementById('pair_ptable').innerHTML += content;
+                        return;
+                    } else if (messageCount_pair_panalyzer === -2) {
                         messageCount_pair_panalyzer++;
                         document.getElementById('pair_ptable').innerHTML += event.data;
                     } else if (messageCount_pair_panalyzer === -1) {
@@ -1592,7 +1727,22 @@
                 const args = { scramble: convert(scramble), cross: cross, x: xcross, xx: xxcross, xxx: xxxcross, n: "1", rot_set: rot_set };
                 worker5.postMessage(args);
             } catch (e) {
-                document.getElementById("error").value += e + "\n";
+                console.log(e.message);
+                document.getElementById("error").value += e.message;
+                if (worker5) {
+                    worker5.terminate();
+                }
+                worker5 = null;
+                document.getElementById("pair_panalyzer").textContent = "Analyze";
+                if (messageCount_pair_panalyzer > 0) {
+                    option_pair_ptable = {
+                        valueNames: ["No", "slot", "pslot", "a_slot", "a_pslot", "D", "U", "L", "R", "F", "B"]
+                    };
+                    list_pair_ptable = new List('pair_ptable', option_pair_ptable);
+                }
+                const error_message = "<br><a>Analyzer terminated due to an error.</a><br>";
+                document.getElementById('pair_ptable').innerHTML += content;
+                return;
             }
         }
 
@@ -1618,6 +1768,11 @@
         }
 
         window.onload = function () {
+            textarea.value = "";
+            document.getElementById("result").innerHTML = "";
+            undoButton.classList.add("hidden_small");
+            redoButton.classList.add("hidden_small");
+            document.getElementById("countLine").value = 0;
             change();
             updateDropdown();
         };
