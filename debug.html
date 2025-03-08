@@ -270,8 +270,8 @@
         placeholder="The string after // on each line is recognized as a comment. Write the //setup comment in the appropriate position when viewing on alg.cubing.net or cubedb.net."
         onchange="save()"></textarea><br>
     <button id="gen" class="button medium" onclick="genscr()">Random</button>
-    <button id="reverse" class="button medium hidden" onclick="reverse()">Reverse</button>
-    <button id="mirror" class="button medium hidden" onclick="mirror()">Mirror</button><br><br>
+    <button id="reverse" class="button medium hidden">Reverse</button>
+    <button id="mirror" class="button medium hidden">Mirror</button><br><br>
     <div id="show"></div>
     <pre id="links"
         class="hidden"><a id="link_alg_cubing" href="https://alg.cubing.net/" target="_blank" rel="noopener noreferrer">alg.cubing.net</a>  <a id="link_cubedb" href="https://cubedb.net/?puzzle=3x3" target="_blank" rel="noopener noreferrer">cubedb.net</a></pre>
@@ -749,27 +749,27 @@
                 document.getElementById("solveButton").textContent = "End";
 
                 if (solver === "F2L" || solver === "LS" || solver === "LL" || solver == "LU") {
-                    const args = { solver: solver, scr: convert(scr), rot: rot, slot: slot, ll: ll, num: num, len: len, restrict: restrict };
+                    const args = { solver: solver, scr: window.convert(scr), rot: rot, slot: slot, ll: ll, num: num, len: len, restrict: restrict };
                     worker = new Worker('src/crossSolver/worker.js');
                     worker.postMessage(args);
                 } else if (solver === "F2L2" || solver === "LS2" || solver === "LL2" || solver == "LU2") {
-                    const args = { solver: solver, scr: convert(scr), rot: rot, slot: slot, ll: ll, num: num, len: len, restrict: restrict };
+                    const args = { solver: solver, scr: window.convert(scr), rot: rot, slot: slot, ll: ll, num: num, len: len, restrict: restrict };
                     worker = new Worker('src/highMemorySolver/worker2.js');
                     worker.postMessage(args);
                 } else if (solver === "PF2L") {
-                    const args = { solver: solver, scr: convert(scr), rot: rot, slot: pslot_e, pslot: pslot_c, num: num, len: len, restrict: restrict };
+                    const args = { solver: solver, scr: window.convert(scr), rot: rot, slot: pslot_e, pslot: pslot_c, num: num, len: len, restrict: restrict };
                     worker = new Worker('src/pseudoCrossSolver/worker3.js');
                     worker.postMessage(args);
                 } else if (solver === "F2L_pair") {
-                    const args = { scr: convert(scr), rot: rot, slot: slot2, pslot: pair_slot, num: num, len: len, restrict: restrict };
+                    const args = { scr: window.convert(scr), rot: rot, slot: slot2, pslot: pair_slot, num: num, len: len, restrict: restrict };
                     worker = new Worker('src/F2L_PairingSolver/worker_pairing.js');
                     worker.postMessage(args);
                 } else if (solver === "PF2L_pair") {
-                    const args = { scr: convert(scr), rot: rot, slot: pslot_e2, pslot: pslot_c2, a_slot: pair_pslot_e, a_pslot: pair_pslot_c, num: num, len: len, restrict: restrict };
+                    const args = { scr: window.convert(scr), rot: rot, slot: pslot_e2, pslot: pslot_c2, a_slot: pair_pslot_e, a_pslot: pair_pslot_c, num: num, len: len, restrict: restrict };
                     worker = new Worker('src/pseudoPairingSolver/workerPseudoPairing.js');
                     worker.postMessage(args);
                 } else if (solver === "tp") {
-                    const sol = min2phase.solve(generateTwoPhaseInput(convert(scr + " " + rot)));
+                    const sol = min2phase.solve(window.generateTwoPhaseInput(window.convert(scr + " " + rot)));
                     appendSol(scr2, rot + " " + sol);
                     const element = document.getElementById('result');
                     const content = document.createElement('a');
@@ -1047,7 +1047,7 @@
                 if (option === "xxxcross" || option === "4x") {
                     xxxcross = true;
                 }
-                const args = { scramble: convert(scramble), cross: cross, x: xcross, xx: xxcross, xxx: xxxcross, n: "1", rot_set: rot_set };
+                const args = { scramble: window.convert(scramble), cross: cross, x: xcross, xx: xxcross, xxx: xxxcross, n: "1", rot_set: rot_set };
                 worker2.postMessage(args);
             } catch (e) {
                 console.log(e.message);
@@ -1081,7 +1081,9 @@
         }
 
         Module.onRuntimeInitialized = function () {
-            document.getElementById("error").value += "Module initialization successfully.";
+            if (typeof Module.scr_converter !== 'function') {
+            document.getElementById("error").value += "Module initialization failed.";
+            }
             document.getElementById('reverse').onclick = function () {
                 const scr = document.getElementById('scr').value;
                 const scr_fixed = scr_fix2(scr);
@@ -1461,7 +1463,7 @@
                 if (option === "xxxcross" || option === "4x") {
                     xxxcross = true;
                 }
-                const args = { scramble: convert(scramble), cross: cross, x: xcross, xx: xxcross, xxx: xxxcross, n: "1", rot_set: rot_set };
+                const args = { scramble: window.convert(scramble), cross: cross, x: xcross, xx: xxcross, xxx: xxxcross, n: "1", rot_set: rot_set };
                 worker3.postMessage(args);
             } catch (e) {
                 console.log(e.message);
@@ -1591,7 +1593,7 @@
                 if (option === "xxxcross" || option === "4x") {
                     xxxcross = true;
                 }
-                const args = { scramble: convert(scramble), cross: cross, x: xcross, xx: xxcross, xxx: xxxcross, n: "1", rot_set: rot_set };
+                const args = { scramble: window.convert(scramble), cross: cross, x: xcross, xx: xxcross, xxx: xxxcross, n: "1", rot_set: rot_set };
                 worker4.postMessage(args);
             } catch (e) {
                 console.log(e.message);
@@ -1729,7 +1731,7 @@
                 if (option === "xxxcross" || option === "4x") {
                     xxxcross = true;
                 }
-                const args = { scramble: convert(scramble), cross: cross, x: xcross, xx: xxcross, xxx: xxxcross, n: "1", rot_set: rot_set };
+                const args = { scramble: window.convert(scramble), cross: cross, x: xcross, xx: xxcross, xxx: xxxcross, n: "1", rot_set: rot_set };
                 worker5.postMessage(args);
             } catch (e) {
                 console.log(e.message);
