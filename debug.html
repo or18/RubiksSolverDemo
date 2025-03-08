@@ -1127,7 +1127,7 @@
                     save();
                 };
                     if (typeof Module.scr_converter === 'function'){
-                        document.getElementById("error") += "scr_converter is not a function";
+                        document.getElementById("error").value += "scr_converter is not a function";
                     }
                 window.convert = function (scramble) {
                     const result = Module.scr_converter(scramble);
