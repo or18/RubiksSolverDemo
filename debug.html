@@ -705,6 +705,10 @@
 
         function startWorker() {
             try {
+                    if (typeof Module.scr_converter !== 'function'){
+                        document.getElementById("error").value += "scr_converter is not a function";
+                        return;
+                    }
                 if (worker) {
                     worker.terminate();
                     worker = null;
@@ -1126,9 +1130,6 @@
                     document.getElementById('scr').value = result.trim() + "\n";
                     save();
                 };
-                    if (typeof Module.scr_converter === 'function'){
-                        document.getElementById("error").value += "scr_converter is not a function";
-                    }
                 window.convert = function (scramble) {
                     const result = Module.scr_converter(scramble);
                     return result;
