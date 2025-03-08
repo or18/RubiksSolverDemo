@@ -1138,6 +1138,9 @@
                     const result = Module.ScrambleToState(scramble);
                     return result;
                 }
+                    if (typeof Module.scr_converter !== 'function'){
+                        document.getElementById("error").value += "scr_converter is not a function";
+                    }
             } catch (e) {
                 console.log(e);
                 document.getElementById("error").value += e.message;
