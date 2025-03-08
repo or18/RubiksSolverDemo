@@ -170,6 +170,10 @@
             display: none;
         }
 
+        .hidden_small {
+            visibility: hidden;
+        }
+
         a,
         pre {
             color: #ffffff;
@@ -255,15 +259,15 @@
         <option value="LL2">LL</option>
         <option value="LU2">LL AUF</option>
     </select>
-    <button id="undo" class="button small" onclick="undo()">←</button>
-    <button id="redo" class="button small" onclick="redo()">→</button><br>
+    <button id="undo" class="button small hidden_small" onclick="undo()">←</button>
+    <button id="redo" class="button small hidden_small" onclick="redo()">→</button><br>
 
     <textarea id="scr" rows="10" cols="10"
         placeholder="The string after // on each line is recognized as a comment. Write the //setup comment in the appropriate position when viewing on alg.cubing.net or cubedb.net."
         onchange="save()"></textarea><br>
     <button id="gen" class="button medium" onclick="genscr()">Random</button>
-    <button id="reverse" class="button medium" onclick="reverse()">Reverse</button>
-    <button id="mirror" class="button medium" onclick="mirror()">Mirror</button><br><br>
+    <button id="reverse" class="button medium hidden" onclick="reverse()">Reverse</button>
+    <button id="mirror" class="button medium hidden" onclick="mirror()">Mirror</button><br><br>
     <div id="show"></div>
     <pre id="links"
         class="hidden"><a id="link_alg_cubing" href="https://alg.cubing.net/" target="_blank" rel="noopener noreferrer">alg.cubing.net</a>  <a id="link_cubedb" href="https://cubedb.net/?puzzle=3x3" target="_blank" rel="noopener noreferrer">cubedb.net</a></pre>
@@ -1073,7 +1077,7 @@
             document.getElementById('reverse').onclick = function () {
                 const scr = document.getElementById('scr').value;
                 const scr_fixed = scr_fix2(scr);
-                if (scr === "") {
+                if (scr_fixed === "") {
                     return;
                 }
                 const lines = scr_fixed.split('\n');
@@ -1095,7 +1099,7 @@
             document.getElementById('mirror').onclick = function () {
                 const scr = document.getElementById('scr').value;
                 const scr_fixed = scr_fix2(scr);
-                if (scr === "") {
+                if (scr_fixed === "") {
                     return;
                 }
                 const lines = scr_fixed.split('\n');
@@ -1163,6 +1167,23 @@
         function updateButtons() {
             undoButton.disabled = currentIndex <= 0;
             redoButton.disabled = currentIndex >= history.length - 1;
+            if (document.getElementById("scr").value == "") {
+                document.getElementById("reverse").classList.add("hidden");
+                document.getElementById("mirror").classList.add("hidden");
+            } else {
+                document.getElementById("reverse").classList.remove("hidden");
+                document.getElementById("mirror").classList.remove("hidden");
+            }
+            if (currentIndex <= 0) {
+                undoButton.classList.add("hidden_small");
+            } else {
+                undoButton.classList.remove("hidden_small");
+            }
+            if (currentIndex >= history.length - 1) {
+                redoButton.classList.add("hidden_small")
+            } else {
+                redoButton.classList.remove("hidden_small");
+            }
             if (currentIndex >= 0) {
                 const scr = document.getElementById("scr").value;
                 const { URL1: link1, URL2: link2 } = getLink(scr);
@@ -1734,6 +1755,11 @@
         }
 
         window.onload = function () {
+            textarea.value = "";
+            document.getElementById("result").innerHTML = "";
+            undoButton.classList.add("hidden_small");
+            redoButton.classList.add("hidden_small");
+            document.getElementById("countLine").value = 0;
             change();
             updateDropdown();
         };
