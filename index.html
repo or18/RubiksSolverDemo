@@ -266,8 +266,8 @@
         placeholder="The string after // on each line is recognized as a comment. Write the //setup comment in the appropriate position when viewing on alg.cubing.net or cubedb.net."
         onchange="save()"></textarea><br>
     <button id="gen" class="button medium" onclick="genscr()">Random</button>
-    <button id="reverse" class="button medium" onclick="reverse()">Reverse</button>
-    <button id="mirror" class="button medium" onclick="mirror()">Mirror</button><br><br>
+    <button id="reverse" class="button medium" onclick="reverseScramble()">Reverse</button>
+    <button id="mirror" class="button medium" onclick="mirrorScramble()">Mirror</button><br><br>
     <div id="show"></div>
     <pre id="links"
         class="hidden"><a id="link_alg_cubing" href="https://alg.cubing.net/" target="_blank" rel="noopener noreferrer">alg.cubing.net</a>  <a id="link_cubedb" href="https://cubedb.net/?puzzle=3x3" target="_blank" rel="noopener noreferrer">cubedb.net</a></pre>
@@ -1092,12 +1092,7 @@
         }
 
         Module.onRuntimeInitialized = function () {
-            document.getElementById('reverse').onclick = function () {
-                if (typeof Module.scr_reverse !== "function") {
-                    alert("Error: The required function is not initialized. Please reload the page manually.");
-                    return;
-                }
-                const scr = document.getElementById('scr').value;
+            window.reverse = function (scr) {
                 const scr_fixed = scr_fix2(scr);
                 if (scr_fixed === "") {
                     return;
@@ -1115,15 +1110,13 @@
                     }
                 }
                 const result = processedLines.join('\n');
-                document.getElementById('scr').value = result.trim() + "\n";
-                save();
+                return result.trim() + "\n";
             };
-            document.getElementById('mirror').onclick = function () {
+            window.mirror = function (scr) {
                 if (typeof Module.scr_mirror !== "function") {
                     alert("Error: The required function is not initialized. Please reload the page manually.");
                     return;
                 }
-                const scr = document.getElementById('scr').value;
                 const scr_fixed = scr_fix2(scr);
                 if (scr_fixed === "") {
                     return;
@@ -1141,8 +1134,7 @@
                     }
                 }
                 const result = processedLines.join('\n');
-                document.getElementById('scr').value = result.trim() + "\n";
-                save();
+                return result.trim() + "\n";
             };
             window.convert = function (scramble) {
                 const result = Module.scr_converter(scramble);
@@ -1153,6 +1145,32 @@
                 return result;
             }
         };
+
+        function reverseScramble(){
+            if (typeof reverse !== "function") {
+                alert("Error: The required function is not initialized. Please reload the page manually.");
+                return;
+            }
+            const scr = document.getElementById("scr").value;
+            if(scr===""){
+                return;
+            }
+            document.getElementById("scr").value = reverse(scr);
+            save();
+        }
+
+        function mirrorScramble(){
+            if (typeof mirror !== "function") {
+                alert("Error: The required function is not initialized. Please reload the page manually.");
+                return;
+            }
+            const scr = document.getElementById("scr").value;
+            if(scr===""){
+                return;
+            }
+            document.getElementById("scr").value = mirror(scr);
+            save();
+        }
 
         function undo() {
             if (currentIndex > 0) {
