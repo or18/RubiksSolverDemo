@@ -4,9 +4,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <meta http-equiv="Pragma" content="no-cache">
-    <meta http-equiv="Expires" content="0">
     <title>Rubik's Cube Solver</title>
     <script src="src/min2phase.js/min2phase.js"></script>
     <script src="src/functions/functions.js"></script>
@@ -269,8 +266,8 @@
         placeholder="The string after // on each line is recognized as a comment. Write the //setup comment in the appropriate position when viewing on alg.cubing.net or cubedb.net."
         onchange="save()"></textarea><br>
     <button id="gen" class="button medium" onclick="genscr()">Random</button>
-    <button id="reverse" class="button medium hidden" onclick="reverse()">Reverse</button>
-    <button id="mirror" class="button medium hidden" onclick="mirror()">Mirror</button><br><br>
+    <button id="reverse" class="button medium" onclick="reverse()">Reverse</button>
+    <button id="mirror" class="button medium" onclick="mirror()">Mirror</button><br><br>
     <div id="show"></div>
     <pre id="links"
         class="hidden"><a id="link_alg_cubing" href="https://alg.cubing.net/" target="_blank" rel="noopener noreferrer">alg.cubing.net</a>  <a id="link_cubedb" href="https://cubedb.net/?puzzle=3x3" target="_blank" rel="noopener noreferrer">cubedb.net</a></pre>
@@ -599,7 +596,7 @@
         </select>
         <input type="text" id="res" value="UDLRFB" class="hidden" required><br>
     </div>
-    <a class="hidden" id="tp_alert">Two Phase Solver output 1 solution.</a><br>
+    <a class="hidden" id="tp_alert">Two Phase Solver output 1 solution.<br></a>
     <button id="solveButton" class="button medium" onclick="startWorker()">Start</button><br>
     <label for="countLine">Number of solutions: </label>
     <input type="text" id="countLine" value="0" readonly>
@@ -709,7 +706,17 @@
                     worker = null;
                     const element = document.getElementById('result');
                     const content = document.createElement('a');
-                    content.textContent = "Search terminated.";
+                    content.innerHTML = "Search terminated.<br>";
+                    element.appendChild(content);
+                    document.getElementById("solveButton").textContent = "Start";
+                    return;
+                }
+
+                if (typeof convert !== "function" || typeof generateTwoPhaseInput !== "function") {
+                    alert("Error: The required function is not initialized. Please reload the page manually.");
+                    const element = document.getElementById('result');
+                    const content = document.createElement('a');
+                    content.innerHTML = "Error: Search terminated due an error.<br>";
                     element.appendChild(content);
                     document.getElementById("solveButton").textContent = "Start";
                     return;
@@ -724,7 +731,7 @@
                 if (scr === "") {
                     const element = document.getElementById('result');
                     const content = document.createElement('a');
-                    content.textContent = "Input scramble";
+                    content.innerHTML = "Input scramble.<br>";
                     element.appendChild(content);
                     return;
                 }
@@ -789,7 +796,7 @@
                 worker = null;
                 const element = document.getElementById('result');
                 const content = document.createElement('a');
-                content.textContent = "Search terminated due an error.";
+                content.innerHTML = "Error: Search terminated due an error.<br>";
                 element.appendChild(content);
                 document.getElementById("solveButton").textContent = "Start";
                 return;
@@ -806,9 +813,9 @@
                 const element = document.getElementById('result');
                 const content = document.createElement('a');
                 if (sol == "Error") {
-                    content.textContent = "Search terminated due to an error.";
+                    content.innerHTML = "Error: Search terminated due to an error.<br>";
                 } else {
-                    content.textContent = "Search terminated.";
+                    content.innerHTML = "Search terminated.<br>";
                 }
                 element.appendChild(content);
                 document.getElementById("solveButton").textContent = "Start";
@@ -838,7 +845,7 @@
                         const lineBreak = document.createElement('br');
                         details.appendChild(lineBreak);
                         const content = document.createElement('a');
-                        content.textContent = "Warning: Failed to create TwistyPlayer.";
+                        content.innerHTML = "Warning: Failed to create TwistyPlayer.<br>";
                         details.appendChild(content);
                     }
                 }
@@ -934,7 +941,7 @@
                 document.getElementById('show').appendChild(sim);
             } catch (e) {
                 const content = document.createElement('a');
-                content.textContent = "Warning: Failed to create TwistyPlayer.";
+                content.innerHTML = "Warning: Failed to create TwistyPlayer.<br>";
                 document.getElementById('show').appendChild(content);
             }
         }
@@ -958,6 +965,14 @@
                         };
                         list_table = new List('table', option_table);
                     }
+                    return;
+                }
+
+                if (typeof convert !== "function") {
+                    alert("Error: The required function is not initialized. Please reload the page manually.");
+                    document.getElementById("analyzer").textContent = "Analyze";
+                    const error_message = "<br><a>Analyzer terminated due to an error.</a><br>";
+                    document.getElementById('table').innerHTML += error_message;
                     return;
                 }
                 const content = "<a>Hint: You can start searching by clicking a cell in the table. You can sort the table by clicking on the headers.</a><br>";
@@ -1002,8 +1017,8 @@
                             };
                             list_table = new List('table', option_table);
                         }
-                        const error_message = "<br><a>Analyzer terminated due to an error.</a><br>";
-                        document.getElementById('table').innerHTML += content;
+                        const error_message = "<br><a>Error: Analyzer terminated due to an error.</a><br>";
+                        document.getElementById('table').innerHTML += error_message;
                         return;
                     } else if (messageCount_analyzer === -2) {
                         messageCount_analyzer++;
@@ -1059,8 +1074,8 @@
                     };
                     list_table = new List('table', option_table);
                 }
-                const error_message = "<br><a>Analyzer terminated due to an error.</a><br>";
-                document.getElementById('table').innerHTML += content;
+                const error_message = "<br><a>AError: nalyzer terminated due to an error.</a><br>";
+                document.getElementById('table').innerHTML += error_message;
                 return;
             }
         }
@@ -1078,6 +1093,10 @@
 
         Module.onRuntimeInitialized = function () {
             document.getElementById('reverse').onclick = function () {
+                if (typeof Module.scr_reverse !== "function") {
+                    alert("Error: The required function is not initialized. Please reload the page manually.");
+                    return;
+                }
                 const scr = document.getElementById('scr').value;
                 const scr_fixed = scr_fix2(scr);
                 if (scr_fixed === "") {
@@ -1100,6 +1119,10 @@
                 save();
             };
             document.getElementById('mirror').onclick = function () {
+                if (typeof Module.scr_mirror !== "function") {
+                    alert("Error: The required function is not initialized. Please reload the page manually.");
+                    return;
+                }
                 const scr = document.getElementById('scr').value;
                 const scr_fixed = scr_fix2(scr);
                 if (scr_fixed === "") {
@@ -1143,7 +1166,7 @@
                     document.getElementById('show').appendChild(sim);
                 } catch (e) {
                     const content = document.createElement('a');
-                    content.textContent = "Warning: Failed to create TwistyPlayer.";
+                    content.innerHTML = "Warning: Failed to create TwistyPlayer.<br>";
                     document.getElementById('show').appendChild(content);
                 }
             }
@@ -1161,7 +1184,7 @@
                     document.getElementById('show').appendChild(sim);
                 } catch (e) {
                     const content = document.createElement('a');
-                    content.textContent = "Warning: Failed to create TwistyPlayer.";
+                    content.innerHTML = "Warning: Failed to create TwistyPlayer.<br>";
                     document.getElementById('show').appendChild(content);
                 }
             }
@@ -1170,13 +1193,16 @@
         function updateButtons() {
             undoButton.disabled = currentIndex <= 0;
             redoButton.disabled = currentIndex >= history.length - 1;
-            if (document.getElementById("scr").value == "") {
+            const currentScr = document.getElementById("scr").value;
+            if (currentScr === "") {
                 document.getElementById("reverse").classList.add("hidden");
                 document.getElementById("mirror").classList.add("hidden");
             } else {
                 document.getElementById("reverse").classList.remove("hidden");
                 document.getElementById("mirror").classList.remove("hidden");
             }
+            const newUrl = `${window.location.pathname}?scramble=${encodeURIComponent(currentScr)}`;
+            window.history.pushState({ path: newUrl }, '', newUrl);
             if (currentIndex <= 0) {
                 undoButton.classList.add("hidden_small");
             } else {
@@ -1188,13 +1214,13 @@
                 redoButton.classList.remove("hidden_small");
             }
             if (currentIndex >= 0) {
-                const scr = document.getElementById("scr").value;
-                const { URL1: link1, URL2: link2 } = getLink(scr);
+                const { URL1: link1, URL2: link2 } = getLink(currentScr);
                 document.getElementById("link_alg_cubing").href = link1;
                 document.getElementById("link_cubedb").href = link2;
                 document.getElementById("links").classList.remove("hidden");
             }
         }
+
 
         function updateDropdown() {
             const dropdownA = document.getElementById("pslot_edge");
@@ -1367,6 +1393,13 @@
                     }
                     return;
                 }
+                if (typeof convert !== "function") {
+                    alert("Error: The required function is not initialized. Please reload the page manually.");
+                    document.getElementById("panalyzer").textContent = "Analyze";
+                    const error_message = "<br><a>Error: Analyzer terminated due to an error.</a><br>";
+                    document.getElementById('ptable').innerHTML += error_message;
+                    return;
+                }
                 const content = "<a>Hint: You can start searching by clicking a cell in the table. You can sort the table by clicking on the headers.</a><br>";
                 document.getElementById('ptable').innerHTML = content;
                 let scr = document.getElementById("scr").value;
@@ -1410,7 +1443,7 @@
                             list_ptable = new List('ptable', option_ptable);
                         }
                         const error_message = "<br><a>Analyzer terminated due to an error.</a><br>";
-                        document.getElementById('ptable').innerHTML += content;
+                        document.getElementById('ptable').innerHTML += error_message;
                         return;
                     } else if (messageCount_panalyzer === -2) {
                         messageCount_panalyzer++;
@@ -1466,8 +1499,8 @@
                     };
                     list_ptable = new List('ptable', option_ptable);
                 }
-                const error_message = "<br><a>Analyzer terminated due to an error.</a><br>";
-                document.getElementById('ptable').innerHTML += content;
+                const error_message = "<br><a>Error: Analyzer terminated due to an error.</a><br>";
+                document.getElementById('ptable').innerHTML += error_message;
                 return;
             }
         }
@@ -1497,6 +1530,13 @@
                         };
                         list_pair_table = new List('pair_table', option_pair_table);
                     }
+                    return;
+                }
+                if (typeof convert !== "function") {
+                    alert("Error: The required function is not initialized. Please reload the page manually.");
+                    document.getElementById("pair_analyzer").textContent = "Analyze";
+                    const error_message = "<br><a>Error: Analyzer terminated due to an error.</a><br>";
+                    document.getElementById('pair_table').innerHTML += error_message;
                     return;
                 }
                 const content = "<a>Hint: You can start searching by clicking a cell in the table. You can sort the table by clicking on the headers.</a><br>";
@@ -1536,7 +1576,7 @@
                         worker4 = null;
                         document.getElementById("pair_analyzer").textContent = "Analyze";
                         const error_message = "<br><a>Analyzer terminated due to an error.</a><br>";
-                        document.getElementById('pair_table').innerHTML += content;
+                        document.getElementById('pair_table').innerHTML += error_message;
                         return;
                     } else if (messageCount_pair_analyzer === -2) {
                         messageCount_pair_analyzer++;
@@ -1594,8 +1634,8 @@
                     };
                     list_pair_table = new List('pair_table', option_pair_table);
                 }
-                const error_message = "<br><a>Analyzer terminated due to an error.</a><br>";
-                document.getElementById('pair_table').innerHTML += content;
+                const error_message = "<br><a>Error: Analyzer terminated due to an error.</a><br>";
+                document.getElementById('pair_table').innerHTML += error_message;
                 return;
             }
         }
@@ -1625,6 +1665,13 @@
                         };
                         list_pair_ptable = new List('pair_ptable', option_pair_ptable);
                     }
+                    return;
+                }
+                if (typeof convert !== "function") {
+                    alert("Error: The required function is not initialized. Please reload the page manually.");
+                    document.getElementById("pair_panalyzer").textContent = "Analyze";
+                    const error_message = "<br><a>Error: Analyzer terminated due to an error.</a><br>";
+                    document.getElementById('pair_table').innerHTML += error_message;
                     return;
                 }
                 const content = "<a>Hint: You can start searching by clicking a cell in the table. You can sort the table by clicking on the headers.</a><br>";
@@ -1674,7 +1721,7 @@
                             list_pair_ptable = new List('pair_ptable', option_pair_ptable);
                         }
                         const error_message = "<br><a>Analyzer terminated due to an error.</a><br>";
-                        document.getElementById('pair_ptable').innerHTML += content;
+                        document.getElementById('pair_ptable').innerHTML += error_message;
                         return;
                     } else if (messageCount_pair_panalyzer === -2) {
                         messageCount_pair_panalyzer++;
@@ -1730,8 +1777,8 @@
                     };
                     list_pair_ptable = new List('pair_ptable', option_pair_ptable);
                 }
-                const error_message = "<br><a>Analyzer terminated due to an error.</a><br>";
-                document.getElementById('pair_ptable').innerHTML += content;
+                const error_message = "<br><a>Error: Analyzer terminated due to an error.</a><br>";
+                document.getElementById('pair_ptable').innerHTML += error_message;
                 return;
             }
         }
@@ -1758,13 +1805,20 @@
         }
 
         window.onload = function () {
-            textarea.value = "";
+            const urlParams = new URLSearchParams(window.location.search);
+            const scrambleParam = urlParams.get('scramble');
+            document.getElementById('scr').value = scrambleParam ? decodeURIComponent(scrambleParam) : '';
+            if (scrambleParam === '') {
+                document.getElementById("reverse").classList.add("hidden");
+                document.getElementById("mirror").classList.add("hidden");
+            }
             document.getElementById("result").innerHTML = "";
             undoButton.classList.add("hidden_small");
             redoButton.classList.add("hidden_small");
             document.getElementById("countLine").value = 0;
             change();
             updateDropdown();
+            save();
         };
     </script>
 </body>
