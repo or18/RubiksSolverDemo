@@ -1201,7 +1201,7 @@
                 document.getElementById("reverse").classList.remove("hidden");
                 document.getElementById("mirror").classList.remove("hidden");
             }
-            const newUrl = `${window.location.pathname}?scramble=${encodeURIComponent(currentScr)}`;
+            const newUrl = `${window.location.pathname}?scramble=${encodeURIComponent(scr_fix2(currentScr))}`;
             window.history.pushState({ path: newUrl }, '', newUrl);
             if (currentIndex <= 0) {
                 undoButton.classList.add("hidden_small");
