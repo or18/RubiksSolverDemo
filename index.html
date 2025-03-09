@@ -1201,7 +1201,7 @@
                 document.getElementById("reverse").classList.remove("hidden");
                 document.getElementById("mirror").classList.remove("hidden");
             }
-            const newUrl = `${window.location.pathname}?scramble=${encodeURIComponent(scr_fix2(currentScr))}`;
+            const newUrl = `${window.location.pathname}?scramble=${encodeURIComponent(scr_fix2(currentScr).replace(/ /g, '_').replace(/'/g, '-'))}`;
             window.history.pushState({ path: newUrl }, '', newUrl);
             if (currentIndex <= 0) {
                 undoButton.classList.add("hidden_small");
@@ -1807,7 +1807,7 @@
         window.onload = function () {
             const urlParams = new URLSearchParams(window.location.search);
             const scrambleParam = urlParams.get('scramble');
-            document.getElementById('scr').value = scrambleParam ? decodeURIComponent(scrambleParam) : '';
+            document.getElementById('scr').value = scrambleParam ? decodeURIComponent(scrambleParam.replace(/_/g, ' ').replace(/-/g, '\'')) : '';
             if (scrambleParam === '') {
                 document.getElementById("reverse").classList.add("hidden");
                 document.getElementById("mirror").classList.add("hidden");
