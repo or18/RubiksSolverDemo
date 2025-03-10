@@ -118,7 +118,7 @@ std::vector<int> StringToAlg(std::string str)
 			auto it = std::find(move_names.begin(), move_names.end(), name);
 			if (it != move_names.end())
 			{
-				alg.push_back(std::distance(move_names.begin(), it));
+				alg.emplace_back(std::distance(move_names.begin(), it));
 			}
 		}
 	}
@@ -461,58 +461,14 @@ std::vector<int> create_multi_move_table2(int n, int c, int pn, int size, const 
 	return move_table;
 }
 
-std::vector<int> create_prune_table_cross(int depth, const std::vector<int> &table1, const std::vector<int> &table2)
-{
-	int size1 = 528;
-	int size2 = 528;
-	int size = size1 * size2;
-	std::vector<int> prune_table(size, -1);
-	int next_i;
-	int index1_tmp;
-	int index2_tmp;
-	int index1_tmp_end;
-	int index2_tmp_end;
-	int next_d;
-	prune_table[416 * size2 + 520] = 0;
-	prune_table[468 * size2 + 428] = 0;
-	prune_table[520 * size2 + 416] = 0;
-	prune_table[428 * size2 + 468] = 0;
-	for (int d = 0; d < depth; ++d)
-	{
-		next_d = d + 1;
-		for (int i = 0; i < size; ++i)
-		{
-			if (prune_table[i] == d)
-			{
-				index1_tmp = (i / size2) * 18;
-				index2_tmp = (i % size2) * 18;
-				index1_tmp_end = index1_tmp + 18;
-				index2_tmp_end = index2_tmp + 18;
-				for (int j = index1_tmp, k = index2_tmp; j < index1_tmp_end && k < index2_tmp_end; ++j, ++k)
-				{
-					next_i = table1[j] * size2 + table2[k];
-					if (prune_table[next_i] == -1)
-					{
-						prune_table[next_i] = next_d;
-					}
-				}
-			}
-		}
-	}
-	return prune_table;
-}
-
-std::vector<int> create_prune_table2(int index2, int depth, const std::vector<int> &table1, const std::vector<int> &table2)
+void create_prune_table2(int index2, int depth, const std::vector<int> &table1, const std::vector<int> &table2, std::vector<int> &prune_table)
 {
 	int size1 = 190080;
 	int size2 = 24;
 	int size = size1 * size2;
-	std::vector<int> prune_table(size, -1);
 	int next_i;
 	int index1_tmp;
 	int index2_tmp;
-	int index1_tmp_end;
-	int index2_tmp_end;
 	int next_d;
 	std::vector<int> a = {16, 18, 20, 22};
 	int index1 = array_to_index(a, 4, 2, 12);
@@ -529,33 +485,24 @@ std::vector<int> create_prune_table2(int index2, int depth, const std::vector<in
 			{
 				index1_tmp = (i / size2) * 24;
 				index2_tmp = (i % size2) * 18;
-				index1_tmp_end = index1_tmp + 18;
-				index2_tmp_end = index2_tmp + 18;
-				for (int j = index1_tmp, k = index2_tmp; j < index1_tmp_end && k < index2_tmp_end; ++j, ++k)
+				for (int j = 0; j < 18; ++j)
 				{
-					next_i = table1[j] + table2[k];
-					if (prune_table[next_i] == -1)
-					{
-						prune_table[next_i] = next_d;
-					}
+					next_i = table1[index1_tmp + j] + table2[index2_tmp + j];
+					prune_table[next_i] = prune_table[next_i] == -1 ? next_d : prune_table[next_i];
 				}
 			}
 		}
 	}
-	return prune_table;
 }
 
-std::vector<int> create_prune_table3(int index3, int index2, int depth, const std::vector<int> &table1, const std::vector<int> &table2)
+void create_prune_table3(int index3, int index2, int depth, const std::vector<int> &table1, const std::vector<int> &table2, std::vector<int> &prune_table)
 {
 	int size1 = 190080;
 	int size2 = 24;
 	int size = size1 * size2;
-	std::vector<int> prune_table(size, -1);
 	int next_i;
 	int index1_tmp;
 	int index2_tmp;
-	int index1_tmp_end;
-	int index2_tmp_end;
 	int next_d;
 	int num_filled = 0;
 	std::vector<std::string> appl_moves;
@@ -623,34 +570,24 @@ std::vector<int> create_prune_table3(int index3, int index2, int depth, const st
 			{
 				index1_tmp = (i / size2) * 24;
 				index2_tmp = (i % size2) * 18;
-				index1_tmp_end = index1_tmp + 18;
-				index2_tmp_end = index2_tmp + 18;
-				for (int j = index1_tmp, k = index2_tmp; j < index1_tmp_end && k < index2_tmp_end; ++j, ++k)
+				for (int j = 0; j < 18; ++j)
 				{
-					next_i = table1[j] + table2[k];
-					if (prune_table[next_i] == -1)
-					{
-						prune_table[next_i] = next_d;
-					}
+					next_i = table1[index1_tmp + j] + table2[index2_tmp + j];
+					prune_table[next_i] = prune_table[next_i] == -1 ? next_d : prune_table[next_i];
 				}
 			}
 		}
 	}
-	return prune_table;
 }
 
-std::vector<int> create_prune_table_edge_corner(int index1, int index2, int size1, int size2, int depth, const std::vector<int> &table1, const std::vector<int> &table2)
+void create_prune_table_edge_corner(int index1, int index2, int size1, int size2, int depth, const std::vector<int> &table1, const std::vector<int> &table2, std::vector<int> &prune_table)
 {
 	int size = size1 * size2;
-	std::vector<int> prune_table(size, -1);
 	int start = index1 * size2 + index2;
 	int next_i;
 	int index1_tmp;
 	int index2_tmp;
-	int index1_tmp_end;
-	int index2_tmp_end;
 	int next_d;
-	int num_filled = 0;
 	prune_table[start] = 0;
 	prune_table[table1[index1 * 18 + 3] * size2 + table2[index2 * 18 + 3]] = 0;
 	prune_table[table1[index1 * 18 + 4] * size2 + table2[index2 * 18 + 4]] = 0;
@@ -714,21 +651,14 @@ std::vector<int> create_prune_table_edge_corner(int index1, int index2, int size
 			{
 				index1_tmp = (i / size2) * 18;
 				index2_tmp = (i % size2) * 18;
-				index1_tmp_end = index1_tmp + 18;
-				index2_tmp_end = index2_tmp + 18;
-				for (int j = index1_tmp, k = index2_tmp; j < index1_tmp_end && k < index2_tmp_end; ++j, ++k)
+				for (int j = 0; j < 18; ++j)
 				{
-					next_i = table1[j] * size2 + table2[k];
-					if (prune_table[next_i] == -1)
-					{
-						prune_table[next_i] = next_d;
-						num_filled += 1;
-					}
+					next_i = table1[index1_tmp + j] * size2 + table2[index2_tmp + j];
+					prune_table[next_i] = prune_table[next_i] == -1 ? next_d : prune_table[next_i];
 				}
 			}
 		}
 	}
-	return prune_table;
 }
 
 std::vector<bool> create_ma_table()
@@ -742,7 +672,7 @@ std::vector<bool> create_ma_table()
 			condition = (prev < 18) &&
 						(i / 3 == prev / 3 ||
 						 ((i / 3) / 2 == (prev / 3) / 2 && (prev / 3) % 2 > (i / 3) % 2));
-			ma.push_back(condition);
+			ma.emplace_back(condition);
 		}
 	}
 	return ma;
@@ -852,42 +782,78 @@ struct xcross_analyzer2
 		std::vector<int> edge_index = {187520, 187520, 187520, 187520};
 		std::vector<int> corner_index = {12, 15, 18, 21};
 		std::vector<int> single_edge_index = {0, 2, 4, 6};
-		prune_table1 = create_prune_table2(corner_index[0], 8, multi_move_table, corner_move_table);
-		prune_table2 = create_prune_table2(corner_index[1], 8, multi_move_table, corner_move_table);
-		prune_table3 = create_prune_table2(corner_index[2], 8, multi_move_table, corner_move_table);
-		prune_table4 = create_prune_table2(corner_index[3], 8, multi_move_table, corner_move_table);
-		prune_table1_x = create_prune_table3(single_edge_index[0], corner_index[0], 8, multi_move_table, corner_move_table);
-		prune_table2_x = create_prune_table3(single_edge_index[0], corner_index[1], 8, multi_move_table, corner_move_table);
-		prune_table3_x = create_prune_table3(single_edge_index[0], corner_index[2], 8, multi_move_table, corner_move_table);
-		prune_table4_x = create_prune_table3(single_edge_index[0], corner_index[3], 8, multi_move_table, corner_move_table);
-		prune_table5_x = create_prune_table3(single_edge_index[1], corner_index[0], 8, multi_move_table, corner_move_table);
-		prune_table6_x = create_prune_table3(single_edge_index[1], corner_index[1], 8, multi_move_table, corner_move_table);
-		prune_table7_x = create_prune_table3(single_edge_index[1], corner_index[2], 8, multi_move_table, corner_move_table);
-		prune_table8_x = create_prune_table3(single_edge_index[1], corner_index[3], 8, multi_move_table, corner_move_table);
-		prune_table9_x = create_prune_table3(single_edge_index[2], corner_index[0], 8, multi_move_table, corner_move_table);
-		prune_table10_x = create_prune_table3(single_edge_index[2], corner_index[1], 8, multi_move_table, corner_move_table);
-		prune_table11_x = create_prune_table3(single_edge_index[2], corner_index[2], 8, multi_move_table, corner_move_table);
-		prune_table12_x = create_prune_table3(single_edge_index[2], corner_index[3], 8, multi_move_table, corner_move_table);
-		prune_table13_x = create_prune_table3(single_edge_index[3], corner_index[0], 8, multi_move_table, corner_move_table);
-		prune_table14_x = create_prune_table3(single_edge_index[3], corner_index[1], 8, multi_move_table, corner_move_table);
-		prune_table15_x = create_prune_table3(single_edge_index[3], corner_index[2], 8, multi_move_table, corner_move_table);
-		prune_table16_x = create_prune_table3(single_edge_index[3], corner_index[3], 8, multi_move_table, corner_move_table);
-		edge_corner_prune_table1 = create_prune_table_edge_corner(single_edge_index[0], corner_index[0], 24, 24, 8, edge_move_table, corner_move_table);
-		edge_corner_prune_table2 = create_prune_table_edge_corner(single_edge_index[0], corner_index[1], 24, 24, 8, edge_move_table, corner_move_table);
-		edge_corner_prune_table3 = create_prune_table_edge_corner(single_edge_index[0], corner_index[2], 24, 24, 8, edge_move_table, corner_move_table);
-		edge_corner_prune_table4 = create_prune_table_edge_corner(single_edge_index[0], corner_index[3], 24, 24, 8, edge_move_table, corner_move_table);
-		edge_corner_prune_table5 = create_prune_table_edge_corner(single_edge_index[1], corner_index[0], 24, 24, 8, edge_move_table, corner_move_table);
-		edge_corner_prune_table6 = create_prune_table_edge_corner(single_edge_index[1], corner_index[1], 24, 24, 8, edge_move_table, corner_move_table);
-		edge_corner_prune_table7 = create_prune_table_edge_corner(single_edge_index[1], corner_index[2], 24, 24, 8, edge_move_table, corner_move_table);
-		edge_corner_prune_table8 = create_prune_table_edge_corner(single_edge_index[1], corner_index[3], 24, 24, 8, edge_move_table, corner_move_table);
-		edge_corner_prune_table9 = create_prune_table_edge_corner(single_edge_index[2], corner_index[0], 24, 24, 8, edge_move_table, corner_move_table);
-		edge_corner_prune_table10 = create_prune_table_edge_corner(single_edge_index[2], corner_index[1], 24, 24, 8, edge_move_table, corner_move_table);
-		edge_corner_prune_table11 = create_prune_table_edge_corner(single_edge_index[2], corner_index[2], 24, 24, 8, edge_move_table, corner_move_table);
-		edge_corner_prune_table12 = create_prune_table_edge_corner(single_edge_index[2], corner_index[3], 24, 24, 8, edge_move_table, corner_move_table);
-		edge_corner_prune_table13 = create_prune_table_edge_corner(single_edge_index[3], corner_index[0], 24, 24, 8, edge_move_table, corner_move_table);
-		edge_corner_prune_table14 = create_prune_table_edge_corner(single_edge_index[3], corner_index[1], 24, 24, 8, edge_move_table, corner_move_table);
-		edge_corner_prune_table15 = create_prune_table_edge_corner(single_edge_index[3], corner_index[2], 24, 24, 8, edge_move_table, corner_move_table);
-		edge_corner_prune_table16 = create_prune_table_edge_corner(single_edge_index[3], corner_index[3], 24, 24, 8, edge_move_table, corner_move_table);
+		prune_table1 = std::vector<int>(24 * 22 * 20 * 18 * 24, -1);
+		prune_table2 = std::vector<int>(24 * 22 * 20 * 18 * 24, -1);
+		prune_table3 = std::vector<int>(24 * 22 * 20 * 18 * 24, -1);
+		prune_table4 = std::vector<int>(24 * 22 * 20 * 18 * 24, -1);
+		prune_table1_x = std::vector<int>(24 * 22 * 20 * 18 * 24, -1);
+		prune_table2_x = std::vector<int>(24 * 22 * 20 * 18 * 24, -1);
+		prune_table3_x = std::vector<int>(24 * 22 * 20 * 18 * 24, -1);
+		prune_table4_x = std::vector<int>(24 * 22 * 20 * 18 * 24, -1);
+		prune_table5_x = std::vector<int>(24 * 22 * 20 * 18 * 24, -1);
+		prune_table6_x = std::vector<int>(24 * 22 * 20 * 18 * 24, -1);
+		prune_table7_x = std::vector<int>(24 * 22 * 20 * 18 * 24, -1);
+		prune_table8_x = std::vector<int>(24 * 22 * 20 * 18 * 24, -1);
+		prune_table9_x = std::vector<int>(24 * 22 * 20 * 18 * 24, -1);
+		prune_table10_x = std::vector<int>(24 * 22 * 20 * 18 * 24, -1);
+		prune_table11_x = std::vector<int>(24 * 22 * 20 * 18 * 24, -1);
+		prune_table12_x = std::vector<int>(24 * 22 * 20 * 18 * 24, -1);
+		prune_table13_x = std::vector<int>(24 * 22 * 20 * 18 * 24, -1);
+		prune_table14_x = std::vector<int>(24 * 22 * 20 * 18 * 24, -1);
+		prune_table15_x = std::vector<int>(24 * 22 * 20 * 18 * 24, -1);
+		prune_table16_x = std::vector<int>(24 * 22 * 20 * 18 * 24, -1);
+		edge_corner_prune_table1 = std::vector<int>(24 * 24, -1);
+		edge_corner_prune_table2 = std::vector<int>(24 * 24, -1);
+		edge_corner_prune_table3 = std::vector<int>(24 * 24, -1);
+		edge_corner_prune_table4 = std::vector<int>(24 * 24, -1);
+		edge_corner_prune_table5 = std::vector<int>(24 * 24, -1);
+		edge_corner_prune_table6 = std::vector<int>(24 * 24, -1);
+		edge_corner_prune_table7 = std::vector<int>(24 * 24, -1);
+		edge_corner_prune_table8 = std::vector<int>(24 * 24, -1);
+		edge_corner_prune_table9 = std::vector<int>(24 * 24, -1);
+		edge_corner_prune_table10 = std::vector<int>(24 * 24, -1);
+		edge_corner_prune_table11 = std::vector<int>(24 * 24, -1);
+		edge_corner_prune_table12 = std::vector<int>(24 * 24, -1);
+		edge_corner_prune_table13 = std::vector<int>(24 * 24, -1);
+		edge_corner_prune_table14 = std::vector<int>(24 * 24, -1);
+		edge_corner_prune_table15 = std::vector<int>(24 * 24, -1);
+		edge_corner_prune_table16 = std::vector<int>(24 * 24, -1);
+		create_prune_table2(corner_index[0], 8, multi_move_table, corner_move_table, prune_table1);
+		create_prune_table2(corner_index[1], 8, multi_move_table, corner_move_table, prune_table2);
+		create_prune_table2(corner_index[2], 8, multi_move_table, corner_move_table, prune_table3);
+		create_prune_table2(corner_index[3], 8, multi_move_table, corner_move_table, prune_table4);
+		create_prune_table3(single_edge_index[0], corner_index[0], 8, multi_move_table, corner_move_table, prune_table1_x);
+		create_prune_table3(single_edge_index[0], corner_index[1], 8, multi_move_table, corner_move_table, prune_table2_x);
+		create_prune_table3(single_edge_index[0], corner_index[2], 8, multi_move_table, corner_move_table, prune_table3_x);
+		create_prune_table3(single_edge_index[0], corner_index[3], 8, multi_move_table, corner_move_table, prune_table4_x);
+		create_prune_table3(single_edge_index[1], corner_index[0], 8, multi_move_table, corner_move_table, prune_table5_x);
+		create_prune_table3(single_edge_index[1], corner_index[1], 8, multi_move_table, corner_move_table, prune_table6_x);
+		create_prune_table3(single_edge_index[1], corner_index[2], 8, multi_move_table, corner_move_table, prune_table7_x);
+		create_prune_table3(single_edge_index[1], corner_index[3], 8, multi_move_table, corner_move_table, prune_table8_x);
+		create_prune_table3(single_edge_index[2], corner_index[0], 8, multi_move_table, corner_move_table, prune_table9_x);
+		create_prune_table3(single_edge_index[2], corner_index[1], 8, multi_move_table, corner_move_table, prune_table10_x);
+		create_prune_table3(single_edge_index[2], corner_index[2], 8, multi_move_table, corner_move_table, prune_table11_x);
+		create_prune_table3(single_edge_index[2], corner_index[3], 8, multi_move_table, corner_move_table, prune_table12_x);
+		create_prune_table3(single_edge_index[3], corner_index[0], 8, multi_move_table, corner_move_table, prune_table13_x);
+		create_prune_table3(single_edge_index[3], corner_index[1], 8, multi_move_table, corner_move_table, prune_table14_x);
+		create_prune_table3(single_edge_index[3], corner_index[2], 8, multi_move_table, corner_move_table, prune_table15_x);
+		create_prune_table3(single_edge_index[3], corner_index[3], 8, multi_move_table, corner_move_table, prune_table16_x);
+		create_prune_table_edge_corner(single_edge_index[0], corner_index[0], 24, 24, 8, edge_move_table, corner_move_table, edge_corner_prune_table1);
+		create_prune_table_edge_corner(single_edge_index[0], corner_index[1], 24, 24, 8, edge_move_table, corner_move_table, edge_corner_prune_table2);
+		create_prune_table_edge_corner(single_edge_index[0], corner_index[2], 24, 24, 8, edge_move_table, corner_move_table, edge_corner_prune_table3);
+		create_prune_table_edge_corner(single_edge_index[0], corner_index[3], 24, 24, 8, edge_move_table, corner_move_table, edge_corner_prune_table4);
+		create_prune_table_edge_corner(single_edge_index[1], corner_index[0], 24, 24, 8, edge_move_table, corner_move_table, edge_corner_prune_table5);
+		create_prune_table_edge_corner(single_edge_index[1], corner_index[1], 24, 24, 8, edge_move_table, corner_move_table, edge_corner_prune_table6);
+		create_prune_table_edge_corner(single_edge_index[1], corner_index[2], 24, 24, 8, edge_move_table, corner_move_table, edge_corner_prune_table7);
+		create_prune_table_edge_corner(single_edge_index[1], corner_index[3], 24, 24, 8, edge_move_table, corner_move_table, edge_corner_prune_table8);
+		create_prune_table_edge_corner(single_edge_index[2], corner_index[0], 24, 24, 8, edge_move_table, corner_move_table, edge_corner_prune_table9);
+		create_prune_table_edge_corner(single_edge_index[2], corner_index[1], 24, 24, 8, edge_move_table, corner_move_table, edge_corner_prune_table10);
+		create_prune_table_edge_corner(single_edge_index[2], corner_index[2], 24, 24, 8, edge_move_table, corner_move_table, edge_corner_prune_table11);
+		create_prune_table_edge_corner(single_edge_index[2], corner_index[3], 24, 24, 8, edge_move_table, corner_move_table, edge_corner_prune_table12);
+		create_prune_table_edge_corner(single_edge_index[3], corner_index[0], 24, 24, 8, edge_move_table, corner_move_table, edge_corner_prune_table13);
+		create_prune_table_edge_corner(single_edge_index[3], corner_index[1], 24, 24, 8, edge_move_table, corner_move_table, edge_corner_prune_table14);
+		create_prune_table_edge_corner(single_edge_index[3], corner_index[2], 24, 24, 8, edge_move_table, corner_move_table, edge_corner_prune_table15);
+		create_prune_table_edge_corner(single_edge_index[3], corner_index[3], 24, 24, 8, edge_move_table, corner_move_table, edge_corner_prune_table16);
 	}
 
 	bool depth_limited_search_1(int arg_index1, int arg_index2, int arg_index3, int depth, int prev, std::vector<int> &prune1, std::vector<int> &edge_prune1)
@@ -911,14 +877,14 @@ struct xcross_analyzer2
 			{
 				continue;
 			}
-			sol.push_back(i);
+			sol.emplace_back(i);
 			if (depth == 1)
 			{
 				if (prune1_tmp == 0 && edge_prune1_tmp == 0)
 				{
 					count += 1;
 					total_length += sol.size();
-					sol_len.push_back(sol.size());
+					sol_len.emplace_back(sol.size());
 					if (count == sol_num)
 					{
 						return true;
@@ -968,7 +934,7 @@ struct xcross_analyzer2
 		for (std::string name : restrict)
 		{
 			auto it = std::find(move_names.begin(), move_names.end(), name);
-			move_restrict.push_back(std::distance(move_names.begin(), it));
+			move_restrict.emplace_back(std::distance(move_names.begin(), it));
 		}
 		for (std::string rot : rotations)
 		{
@@ -998,7 +964,7 @@ struct xcross_analyzer2
 			{
 				index2 *= 18;
 				index3 *= 18;
-				for (int d = 1; d <= max_length; d++)
+				for (int d = prune1_tmp; d <= max_length; d++)
 				{
 					if (depth_limited_search_1(index1, index2, index3, d, 324, std::ref(prune1), std::ref(edge_prune)))
 					{
@@ -1023,38 +989,38 @@ struct xcross_analyzer2
 	void xcross_analyze(std::string scramble, int arg_sol_num, std::vector<std::string> rotations)
 	{
 		std::vector<std::array<std::reference_wrapper<std::vector<int>>, 4>> refs_x = {{std::ref(prune_table1_x),
-																						  std::ref(prune_table2_x),
-																						  std::ref(prune_table3_x),
-																						  std::ref(prune_table4_x)},
-																						 {std::ref(prune_table5_x),
-																						  std::ref(prune_table6_x),
-																						  std::ref(prune_table7_x),
-																						  std::ref(prune_table8_x)},
-																						 {std::ref(prune_table9_x),
-																						  std::ref(prune_table10_x),
-																						  std::ref(prune_table11_x),
-																						  std::ref(prune_table12_x)},
-																						 {std::ref(prune_table13_x),
-																						  std::ref(prune_table14_x),
-																						  std::ref(prune_table15_x),
-																						  std::ref(prune_table16_x)}};
+																						std::ref(prune_table2_x),
+																						std::ref(prune_table3_x),
+																						std::ref(prune_table4_x)},
+																					   {std::ref(prune_table5_x),
+																						std::ref(prune_table6_x),
+																						std::ref(prune_table7_x),
+																						std::ref(prune_table8_x)},
+																					   {std::ref(prune_table9_x),
+																						std::ref(prune_table10_x),
+																						std::ref(prune_table11_x),
+																						std::ref(prune_table12_x)},
+																					   {std::ref(prune_table13_x),
+																						std::ref(prune_table14_x),
+																						std::ref(prune_table15_x),
+																						std::ref(prune_table16_x)}};
 
 		std::vector<std::array<std::reference_wrapper<std::vector<int>>, 4>> refs_edge = {{std::ref(edge_corner_prune_table1),
-																							 std::ref(edge_corner_prune_table2),
-																							 std::ref(edge_corner_prune_table3),
-																							 std::ref(edge_corner_prune_table4)},
-																							{std::ref(edge_corner_prune_table5),
-																							 std::ref(edge_corner_prune_table6),
-																							 std::ref(edge_corner_prune_table7),
-																							 std::ref(edge_corner_prune_table8)},
-																							{std::ref(edge_corner_prune_table9),
-																							 std::ref(edge_corner_prune_table10),
-																							 std::ref(edge_corner_prune_table11),
-																							 std::ref(edge_corner_prune_table12)},
-																							{std::ref(edge_corner_prune_table13),
-																							 std::ref(edge_corner_prune_table14),
-																							 std::ref(edge_corner_prune_table15),
-																							 std::ref(edge_corner_prune_table16)}};
+																						   std::ref(edge_corner_prune_table2),
+																						   std::ref(edge_corner_prune_table3),
+																						   std::ref(edge_corner_prune_table4)},
+																						  {std::ref(edge_corner_prune_table5),
+																						   std::ref(edge_corner_prune_table6),
+																						   std::ref(edge_corner_prune_table7),
+																						   std::ref(edge_corner_prune_table8)},
+																						  {std::ref(edge_corner_prune_table9),
+																						   std::ref(edge_corner_prune_table10),
+																						   std::ref(edge_corner_prune_table11),
+																						   std::ref(edge_corner_prune_table12)},
+																						  {std::ref(edge_corner_prune_table13),
+																						   std::ref(edge_corner_prune_table14),
+																						   std::ref(edge_corner_prune_table15),
+																						   std::ref(edge_corner_prune_table16)}};
 		std::vector<std::string> slot_names = {"BL", "BR", "FR", "FL"};
 		for (int slot1_tmp = 0; slot1_tmp < 4; slot1_tmp++)
 		{
@@ -1094,14 +1060,14 @@ struct xcross_analyzer2
 			{
 				continue;
 			}
-			sol.push_back(i);
+			sol.emplace_back(i);
 			if (depth == 1)
 			{
 				if (prune1_tmp == 0 && prune2_tmp == 0 && edge_prune1_tmp == 0 && index6_tmp == edge_solved2)
 				{
 					count += 1;
 					total_length += sol.size();
-					sol_len.push_back(sol.size());
+					sol_len.emplace_back(sol.size());
 					if (count == sol_num)
 					{
 						return true;
@@ -1137,7 +1103,7 @@ struct xcross_analyzer2
 		for (std::string name : restrict)
 		{
 			auto it = std::find(move_names.begin(), move_names.end(), name);
-			move_restrict.push_back(std::distance(move_names.begin(), it));
+			move_restrict.emplace_back(std::distance(move_names.begin(), it));
 		}
 		for (std::string rot : rotations)
 		{
@@ -1178,7 +1144,7 @@ struct xcross_analyzer2
 				index4 *= 18;
 				index5 *= 18;
 				index6 *= 18;
-				for (int d = 1; d <= max_length; d++)
+				for (int d = std::max(prune1_tmp, prune2_tmp); d <= max_length; d++)
 				{
 					if (depth_limited_search_2(index1, index2, index3, index4, index5, index6, d, 324, std::ref(prune1), std::ref(prune2), std::ref(edge_prune1)))
 					{
@@ -1203,38 +1169,38 @@ struct xcross_analyzer2
 	void xxcross_analyze(std::string scramble, int arg_sol_num, std::vector<std::string> rotations)
 	{
 		std::vector<std::array<std::reference_wrapper<std::vector<int>>, 4>> refs_x = {{std::ref(prune_table1_x),
-																						  std::ref(prune_table2_x),
-																						  std::ref(prune_table3_x),
-																						  std::ref(prune_table4_x)},
-																						 {std::ref(prune_table5_x),
-																						  std::ref(prune_table6_x),
-																						  std::ref(prune_table7_x),
-																						  std::ref(prune_table8_x)},
-																						 {std::ref(prune_table9_x),
-																						  std::ref(prune_table10_x),
-																						  std::ref(prune_table11_x),
-																						  std::ref(prune_table12_x)},
-																						 {std::ref(prune_table13_x),
-																						  std::ref(prune_table14_x),
-																						  std::ref(prune_table15_x),
-																						  std::ref(prune_table16_x)}};
+																						std::ref(prune_table2_x),
+																						std::ref(prune_table3_x),
+																						std::ref(prune_table4_x)},
+																					   {std::ref(prune_table5_x),
+																						std::ref(prune_table6_x),
+																						std::ref(prune_table7_x),
+																						std::ref(prune_table8_x)},
+																					   {std::ref(prune_table9_x),
+																						std::ref(prune_table10_x),
+																						std::ref(prune_table11_x),
+																						std::ref(prune_table12_x)},
+																					   {std::ref(prune_table13_x),
+																						std::ref(prune_table14_x),
+																						std::ref(prune_table15_x),
+																						std::ref(prune_table16_x)}};
 
 		std::vector<std::array<std::reference_wrapper<std::vector<int>>, 4>> refs_edge = {{std::ref(edge_corner_prune_table1),
-																							 std::ref(edge_corner_prune_table2),
-																							 std::ref(edge_corner_prune_table3),
-																							 std::ref(edge_corner_prune_table4)},
-																							{std::ref(edge_corner_prune_table5),
-																							 std::ref(edge_corner_prune_table6),
-																							 std::ref(edge_corner_prune_table7),
-																							 std::ref(edge_corner_prune_table8)},
-																							{std::ref(edge_corner_prune_table9),
-																							 std::ref(edge_corner_prune_table10),
-																							 std::ref(edge_corner_prune_table11),
-																							 std::ref(edge_corner_prune_table12)},
-																							{std::ref(edge_corner_prune_table13),
-																							 std::ref(edge_corner_prune_table14),
-																							 std::ref(edge_corner_prune_table15),
-																							 std::ref(edge_corner_prune_table16)}};
+																						   std::ref(edge_corner_prune_table2),
+																						   std::ref(edge_corner_prune_table3),
+																						   std::ref(edge_corner_prune_table4)},
+																						  {std::ref(edge_corner_prune_table5),
+																						   std::ref(edge_corner_prune_table6),
+																						   std::ref(edge_corner_prune_table7),
+																						   std::ref(edge_corner_prune_table8)},
+																						  {std::ref(edge_corner_prune_table9),
+																						   std::ref(edge_corner_prune_table10),
+																						   std::ref(edge_corner_prune_table11),
+																						   std::ref(edge_corner_prune_table12)},
+																						  {std::ref(edge_corner_prune_table13),
+																						   std::ref(edge_corner_prune_table14),
+																						   std::ref(edge_corner_prune_table15),
+																						   std::ref(edge_corner_prune_table16)}};
 		std::vector<std::string> slot_names = {"BL", "BR", "FR", "FL"};
 		std::array<std::reference_wrapper<std::vector<int>>, 4> refs = {
 			std::ref(prune_table1),
@@ -1301,14 +1267,14 @@ struct xcross_analyzer2
 			{
 				continue;
 			}
-			sol.push_back(i);
+			sol.emplace_back(i);
 			if (depth == 1)
 			{
 				if (prune1_tmp == 0 && prune2_tmp == 0 && prune3_tmp == 0 && edge_prune1_tmp == 0 && index8_tmp == edge_solved2 && index9_tmp == edge_solved3)
 				{
 					count += 1;
 					total_length += sol.size();
-					sol_len.push_back(sol.size());
+					sol_len.emplace_back(sol.size());
 					if (count == sol_num)
 					{
 						return true;
@@ -1346,7 +1312,7 @@ struct xcross_analyzer2
 		for (std::string name : restrict)
 		{
 			auto it = std::find(move_names.begin(), move_names.end(), name);
-			move_restrict.push_back(std::distance(move_names.begin(), it));
+			move_restrict.emplace_back(std::distance(move_names.begin(), it));
 		}
 		for (std::string rot : rotations)
 		{
@@ -1398,7 +1364,7 @@ struct xcross_analyzer2
 				index7 *= 18;
 				index8 *= 18;
 				index9 *= 18;
-				for (int d = 1; d <= max_length; d++)
+				for (int d = std::max(prune1_tmp, std::max(prune2_tmp, prune3_tmp)); d <= max_length; d++)
 				{
 					if (depth_limited_search_3(index1, index2, index3, index4, index5, index6, index7, index8, index9, d, 324, std::ref(prune1), std::ref(prune2), std::ref(prune3), std::ref(edge_prune1)))
 					{
@@ -1423,38 +1389,38 @@ struct xcross_analyzer2
 	void xxxcross_analyze(std::string scramble, int arg_sol_num, std::vector<std::string> rotations)
 	{
 		std::vector<std::array<std::reference_wrapper<std::vector<int>>, 4>> refs_x = {{std::ref(prune_table1_x),
-																						  std::ref(prune_table2_x),
-																						  std::ref(prune_table3_x),
-																						  std::ref(prune_table4_x)},
-																						 {std::ref(prune_table5_x),
-																						  std::ref(prune_table6_x),
-																						  std::ref(prune_table7_x),
-																						  std::ref(prune_table8_x)},
-																						 {std::ref(prune_table9_x),
-																						  std::ref(prune_table10_x),
-																						  std::ref(prune_table11_x),
-																						  std::ref(prune_table12_x)},
-																						 {std::ref(prune_table13_x),
-																						  std::ref(prune_table14_x),
-																						  std::ref(prune_table15_x),
-																						  std::ref(prune_table16_x)}};
+																						std::ref(prune_table2_x),
+																						std::ref(prune_table3_x),
+																						std::ref(prune_table4_x)},
+																					   {std::ref(prune_table5_x),
+																						std::ref(prune_table6_x),
+																						std::ref(prune_table7_x),
+																						std::ref(prune_table8_x)},
+																					   {std::ref(prune_table9_x),
+																						std::ref(prune_table10_x),
+																						std::ref(prune_table11_x),
+																						std::ref(prune_table12_x)},
+																					   {std::ref(prune_table13_x),
+																						std::ref(prune_table14_x),
+																						std::ref(prune_table15_x),
+																						std::ref(prune_table16_x)}};
 
 		std::vector<std::array<std::reference_wrapper<std::vector<int>>, 4>> refs_edge = {{std::ref(edge_corner_prune_table1),
-																							 std::ref(edge_corner_prune_table2),
-																							 std::ref(edge_corner_prune_table3),
-																							 std::ref(edge_corner_prune_table4)},
-																							{std::ref(edge_corner_prune_table5),
-																							 std::ref(edge_corner_prune_table6),
-																							 std::ref(edge_corner_prune_table7),
-																							 std::ref(edge_corner_prune_table8)},
-																							{std::ref(edge_corner_prune_table9),
-																							 std::ref(edge_corner_prune_table10),
-																							 std::ref(edge_corner_prune_table11),
-																							 std::ref(edge_corner_prune_table12)},
-																							{std::ref(edge_corner_prune_table13),
-																							 std::ref(edge_corner_prune_table14),
-																							 std::ref(edge_corner_prune_table15),
-																							 std::ref(edge_corner_prune_table16)}};
+																						   std::ref(edge_corner_prune_table2),
+																						   std::ref(edge_corner_prune_table3),
+																						   std::ref(edge_corner_prune_table4)},
+																						  {std::ref(edge_corner_prune_table5),
+																						   std::ref(edge_corner_prune_table6),
+																						   std::ref(edge_corner_prune_table7),
+																						   std::ref(edge_corner_prune_table8)},
+																						  {std::ref(edge_corner_prune_table9),
+																						   std::ref(edge_corner_prune_table10),
+																						   std::ref(edge_corner_prune_table11),
+																						   std::ref(edge_corner_prune_table12)},
+																						  {std::ref(edge_corner_prune_table13),
+																						   std::ref(edge_corner_prune_table14),
+																						   std::ref(edge_corner_prune_table15),
+																						   std::ref(edge_corner_prune_table16)}};
 		std::vector<std::string> slot_names = {"BL", "BR", "FR", "FL"};
 		std::array<std::reference_wrapper<std::vector<int>>, 4> refs = {
 			std::ref(prune_table1),
@@ -1536,14 +1502,14 @@ struct xcross_analyzer2
 			{
 				continue;
 			}
-			sol.push_back(i);
+			sol.emplace_back(i);
 			if (depth == 1)
 			{
 				if (prune1_tmp == 0 && prune2_tmp == 0 && prune3_tmp == 0 && prune4_tmp == 0 && edge_prune1_tmp == 0 && index10_tmp == edge_solved2 && index11_tmp == edge_solved3 && index12_tmp == edge_solved4)
 				{
 					count += 1;
 					total_length += sol.size();
-					sol_len.push_back(sol.size());
+					sol_len.emplace_back(sol.size());
 					if (count == sol_num)
 					{
 						return true;
@@ -1583,7 +1549,7 @@ struct xcross_analyzer2
 		for (std::string name : restrict)
 		{
 			auto it = std::find(move_names.begin(), move_names.end(), name);
-			move_restrict.push_back(std::distance(move_names.begin(), it));
+			move_restrict.emplace_back(std::distance(move_names.begin(), it));
 		}
 		for (std::string rot : rotations)
 		{
@@ -1646,7 +1612,7 @@ struct xcross_analyzer2
 				index10 *= 18;
 				index11 *= 18;
 				index12 *= 18;
-				for (int d = 1; d <= max_length; d++)
+				for (int d = std::max(prune1_tmp, std::max(prune2_tmp, std::max(prune3_tmp, prune4_tmp))); d <= max_length; d++)
 				{
 					if (depth_limited_search_4(index1, index2, index3, index4, index5, index6, index7, index8, index9, index10, index11, index12, d, 324, std::ref(prune1), std::ref(prune2), std::ref(prune3), std::ref(prune4), std::ref(edge_prune1)))
 					{
@@ -1671,57 +1637,57 @@ struct xcross_analyzer2
 	void xxxxcross_analyze(std::string scramble, int arg_sol_num, std::vector<std::string> rotations)
 	{
 		std::vector<std::array<std::reference_wrapper<std::vector<int>>, 4>> refs_x = {{std::ref(prune_table1_x),
-																						  std::ref(prune_table2_x),
-																						  std::ref(prune_table3_x),
-																						  std::ref(prune_table4_x)},
-																						 {std::ref(prune_table5_x),
-																						  std::ref(prune_table6_x),
-																						  std::ref(prune_table7_x),
-																						  std::ref(prune_table8_x)},
-																						 {std::ref(prune_table9_x),
-																						  std::ref(prune_table10_x),
-																						  std::ref(prune_table11_x),
-																						  std::ref(prune_table12_x)},
-																						 {std::ref(prune_table13_x),
-																						  std::ref(prune_table14_x),
-																						  std::ref(prune_table15_x),
-																						  std::ref(prune_table16_x)}};
+																						std::ref(prune_table2_x),
+																						std::ref(prune_table3_x),
+																						std::ref(prune_table4_x)},
+																					   {std::ref(prune_table5_x),
+																						std::ref(prune_table6_x),
+																						std::ref(prune_table7_x),
+																						std::ref(prune_table8_x)},
+																					   {std::ref(prune_table9_x),
+																						std::ref(prune_table10_x),
+																						std::ref(prune_table11_x),
+																						std::ref(prune_table12_x)},
+																					   {std::ref(prune_table13_x),
+																						std::ref(prune_table14_x),
+																						std::ref(prune_table15_x),
+																						std::ref(prune_table16_x)}};
 
 		std::vector<std::array<std::reference_wrapper<std::vector<int>>, 4>> refs_edge = {{std::ref(edge_corner_prune_table1),
-																							 std::ref(edge_corner_prune_table2),
-																							 std::ref(edge_corner_prune_table3),
-																							 std::ref(edge_corner_prune_table4)},
-																							{std::ref(edge_corner_prune_table5),
-																							 std::ref(edge_corner_prune_table6),
-																							 std::ref(edge_corner_prune_table7),
-																							 std::ref(edge_corner_prune_table8)},
-																							{std::ref(edge_corner_prune_table9),
-																							 std::ref(edge_corner_prune_table10),
-																							 std::ref(edge_corner_prune_table11),
-																							 std::ref(edge_corner_prune_table12)},
-																							{std::ref(edge_corner_prune_table13),
-																							 std::ref(edge_corner_prune_table14),
-																							 std::ref(edge_corner_prune_table15),
-																							 std::ref(edge_corner_prune_table16)}};
-		start_search_4(scramble, 3, 0, 1, 2, 0, 1, 2, 3, refs_x[3][0], std::ref(prune_table2), std::ref(prune_table3), std::ref(prune_table4), refs_edge[3][0], "BL BR FR", "BR FR FL", "FL", "BL", arg_sol_num, rotations);
-		start_search_4(scramble, 3, 0, 1, 2, 1, 0, 2, 3, refs_x[3][1], std::ref(prune_table1), std::ref(prune_table3), std::ref(prune_table4), refs_edge[3][1], "BL BR FR", "BL FR FL", "FL", "BR", arg_sol_num, rotations);
-		start_search_4(scramble, 3, 0, 1, 2, 2, 0, 1, 3, refs_x[3][2], std::ref(prune_table1), std::ref(prune_table2), std::ref(prune_table4), refs_edge[3][2], "BL BR FR", "BL BR FL", "FL", "FR", arg_sol_num, rotations);
-		start_search_4(scramble, 3, 0, 1, 2, 3, 0, 1, 2, refs_x[3][3], std::ref(prune_table1), std::ref(prune_table2), std::ref(prune_table3), refs_edge[3][3], "BL BR FR", "BL BR FR", "FL", "FL", arg_sol_num, rotations);
+																						   std::ref(edge_corner_prune_table2),
+																						   std::ref(edge_corner_prune_table3),
+																						   std::ref(edge_corner_prune_table4)},
+																						  {std::ref(edge_corner_prune_table5),
+																						   std::ref(edge_corner_prune_table6),
+																						   std::ref(edge_corner_prune_table7),
+																						   std::ref(edge_corner_prune_table8)},
+																						  {std::ref(edge_corner_prune_table9),
+																						   std::ref(edge_corner_prune_table10),
+																						   std::ref(edge_corner_prune_table11),
+																						   std::ref(edge_corner_prune_table12)},
+																						  {std::ref(edge_corner_prune_table13),
+																						   std::ref(edge_corner_prune_table14),
+																						   std::ref(edge_corner_prune_table15),
+																						   std::ref(edge_corner_prune_table16)}};
+		start_search_4(scramble, 3, 0, 1, 2, 0, 1, 2, 3, refs_x[3][0], prune_table2, prune_table3, prune_table4, refs_edge[3][0], "BL BR FR", "BR FR FL", "FL", "BL", arg_sol_num, rotations);
+		start_search_4(scramble, 3, 0, 1, 2, 1, 0, 2, 3, refs_x[3][1], prune_table1, prune_table3, prune_table4, refs_edge[3][1], "BL BR FR", "BL FR FL", "FL", "BR", arg_sol_num, rotations);
+		start_search_4(scramble, 3, 0, 1, 2, 2, 0, 1, 3, refs_x[3][2], prune_table1, prune_table2, prune_table4, refs_edge[3][2], "BL BR FR", "BL BR FL", "FL", "FR", arg_sol_num, rotations);
+		start_search_4(scramble, 3, 0, 1, 2, 3, 0, 1, 2, refs_x[3][3], prune_table1, prune_table2, prune_table3, refs_edge[3][3], "BL BR FR", "BL BR FR", "FL", "FL", arg_sol_num, rotations);
 
-		start_search_4(scramble, 2, 0, 1, 3, 0, 1, 2, 3, refs_x[2][0], std::ref(prune_table2), std::ref(prune_table3), std::ref(prune_table4), refs_edge[2][0], "BL BR FL", "BR FR FL", "FR", "BL", arg_sol_num, rotations);
-		start_search_4(scramble, 2, 0, 1, 3, 1, 0, 2, 3, refs_x[2][1], std::ref(prune_table1), std::ref(prune_table3), std::ref(prune_table4), refs_edge[2][1], "BL BR FL", "BL FR FL", "FR", "BR", arg_sol_num, rotations);
-		start_search_4(scramble, 2, 0, 1, 3, 2, 0, 1, 3, refs_x[2][2], std::ref(prune_table1), std::ref(prune_table2), std::ref(prune_table4), refs_edge[2][2], "BL BR FL", "BL BR FL", "FR", "FR", arg_sol_num, rotations);
-		start_search_4(scramble, 2, 0, 1, 3, 3, 0, 1, 2, refs_x[2][3], std::ref(prune_table1), std::ref(prune_table2), std::ref(prune_table3), refs_edge[2][3], "BL BR FL", "BL BR FR", "FR", "FL", arg_sol_num, rotations);
+		start_search_4(scramble, 2, 0, 1, 3, 0, 1, 2, 3, refs_x[2][0], prune_table2, prune_table3, prune_table4, refs_edge[2][0], "BL BR FL", "BR FR FL", "FR", "BL", arg_sol_num, rotations);
+		start_search_4(scramble, 2, 0, 1, 3, 1, 0, 2, 3, refs_x[2][1], prune_table1, prune_table3, prune_table4, refs_edge[2][1], "BL BR FL", "BL FR FL", "FR", "BR", arg_sol_num, rotations);
+		start_search_4(scramble, 2, 0, 1, 3, 2, 0, 1, 3, refs_x[2][2], prune_table1, prune_table2, prune_table4, refs_edge[2][2], "BL BR FL", "BL BR FL", "FR", "FR", arg_sol_num, rotations);
+		start_search_4(scramble, 2, 0, 1, 3, 3, 0, 1, 2, refs_x[2][3], prune_table1, prune_table2, prune_table3, refs_edge[2][3], "BL BR FL", "BL BR FR", "FR", "FL", arg_sol_num, rotations);
 
-		start_search_4(scramble, 1, 0, 2, 3, 0, 1, 2, 3, refs_x[1][0], std::ref(prune_table2), std::ref(prune_table3), std::ref(prune_table4), refs_edge[1][0], "BL FR FL", "BR FR FL", "BR", "BL", arg_sol_num, rotations);
-		start_search_4(scramble, 1, 0, 2, 3, 1, 0, 2, 3, refs_x[1][1], std::ref(prune_table1), std::ref(prune_table3), std::ref(prune_table4), refs_edge[1][1], "BL FR FL", "BL FR FL", "BR", "BR", arg_sol_num, rotations);
-		start_search_4(scramble, 1, 0, 2, 3, 2, 0, 1, 3, refs_x[1][2], std::ref(prune_table1), std::ref(prune_table2), std::ref(prune_table4), refs_edge[1][2], "BL FR FL", "BL BR FL", "BR", "FR", arg_sol_num, rotations);
-		start_search_4(scramble, 1, 0, 2, 3, 3, 0, 1, 2, refs_x[1][3], std::ref(prune_table1), std::ref(prune_table2), std::ref(prune_table3), refs_edge[1][3], "BL FR FL", "BL BR FR", "BR", "FL", arg_sol_num, rotations);
+		start_search_4(scramble, 1, 0, 2, 3, 0, 1, 2, 3, refs_x[1][0], prune_table2, prune_table3, prune_table4, refs_edge[1][0], "BL FR FL", "BR FR FL", "BR", "BL", arg_sol_num, rotations);
+		start_search_4(scramble, 1, 0, 2, 3, 1, 0, 2, 3, refs_x[1][1], prune_table1, prune_table3, prune_table4, refs_edge[1][1], "BL FR FL", "BL FR FL", "BR", "BR", arg_sol_num, rotations);
+		start_search_4(scramble, 1, 0, 2, 3, 2, 0, 1, 3, refs_x[1][2], prune_table1, prune_table2, prune_table4, refs_edge[1][2], "BL FR FL", "BL BR FL", "BR", "FR", arg_sol_num, rotations);
+		start_search_4(scramble, 1, 0, 2, 3, 3, 0, 1, 2, refs_x[1][3], prune_table1, prune_table2, prune_table3, refs_edge[1][3], "BL FR FL", "BL BR FR", "BR", "FL", arg_sol_num, rotations);
 
-		start_search_4(scramble, 0, 1, 2, 3, 0, 1, 2, 3, refs_x[0][0], std::ref(prune_table2), std::ref(prune_table3), std::ref(prune_table4), refs_edge[0][0], "BR FR FL", "BR FR FL", "BL", "BL", arg_sol_num, rotations);
-		start_search_4(scramble, 0, 1, 2, 3, 1, 0, 2, 3, refs_x[0][1], std::ref(prune_table1), std::ref(prune_table3), std::ref(prune_table4), refs_edge[0][1], "BR FR FL", "BL FR FL", "BL", "BR", arg_sol_num, rotations);
-		start_search_4(scramble, 0, 1, 2, 3, 2, 0, 1, 3, refs_x[0][2], std::ref(prune_table1), std::ref(prune_table2), std::ref(prune_table4), refs_edge[0][2], "BR FR FL", "BL BR FL", "BL", "FR", arg_sol_num, rotations);
-		start_search_4(scramble, 0, 1, 2, 3, 3, 0, 1, 2, refs_x[0][3], std::ref(prune_table1), std::ref(prune_table2), std::ref(prune_table3), refs_edge[0][3], "BR FR FL", "BL BR FR", "BL", "FL", arg_sol_num, rotations);
+		start_search_4(scramble, 0, 1, 2, 3, 0, 1, 2, 3, refs_x[0][0], prune_table2, prune_table3, prune_table4, refs_edge[0][0], "BR FR FL", "BR FR FL", "BL", "BL", arg_sol_num, rotations);
+		start_search_4(scramble, 0, 1, 2, 3, 1, 0, 2, 3, refs_x[0][1], prune_table1, prune_table3, prune_table4, refs_edge[0][1], "BR FR FL", "BL FR FL", "BL", "BR", arg_sol_num, rotations);
+		start_search_4(scramble, 0, 1, 2, 3, 2, 0, 1, 3, refs_x[0][2], prune_table1, prune_table2, prune_table4, refs_edge[0][2], "BR FR FL", "BL BR FL", "BL", "FR", arg_sol_num, rotations);
+		start_search_4(scramble, 0, 1, 2, 3, 3, 0, 1, 2, refs_x[0][3], prune_table1, prune_table2, prune_table3, refs_edge[0][3], "BR FR FL", "BL BR FR", "BL", "FL", arg_sol_num, rotations);
 	}
 };
 
@@ -1729,26 +1695,38 @@ void analyzer(std::string scramble, bool cross, bool x, bool xx, bool xxx, std::
 {
 	std::vector<std::string> rotations;
 	std::string table = "<br><table border=\"2\" id=\"pair_panalyzer_result\"><thead><tr><th class=\"sort\" data-sort=\"No\">No</th><th class=\"sort\" data-sort=\"slot\">PSE</th><th class=\"sort\" data-sort=\"pslot\">PSC</th><th class=\"sort\" data-sort=\"a_slot\">APSE</th><th class=\"sort\" data-sort=\"a_pslot\">APSC</th>";
-	for(char c_tmp : rot_set){
+	for (char c_tmp : rot_set)
+	{
 		std::string c(1, c_tmp);
-		if(c=="D"){
+		if (c == "D")
+		{
 			table += "<th class=\"sort\" data-sort=\"D\">None</th>";
-			rotations.push_back("");
-		}else if(c=="U"){
+			rotations.emplace_back("");
+		}
+		else if (c == "U")
+		{
 			table += "<th class=\"sort\" data-sort=\"U\">z2</th>";
-			rotations.push_back("z2");
-		}else if(c=="L"){
+			rotations.emplace_back("z2");
+		}
+		else if (c == "L")
+		{
 			table += "<th class=\"sort\" data-sort=\"L\">z'</th>";
-			rotations.push_back("z'");
-		}else if(c=="R"){
+			rotations.emplace_back("z'");
+		}
+		else if (c == "R")
+		{
 			table += "<th class=\"sort\" data-sort=\"R\">z</th>";
-			rotations.push_back("z");
-		}else if(c=="F"){
+			rotations.emplace_back("z");
+		}
+		else if (c == "F")
+		{
 			table += "<th class=\"sort\" data-sort=\"F\">x'</th>";
-			rotations.push_back("x'");
-		}else{
+			rotations.emplace_back("x'");
+		}
+		else
+		{
 			table += "<th class=\"sort\" data-sort=\"B\">x</th>";
-			rotations.push_back("x");
+			rotations.emplace_back("x");
 		}
 	}
 	table += "</tr></thead><tbody class=\"list\"></tbody></table>";

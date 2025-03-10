@@ -375,12 +375,7 @@
             <label for="checkboxF_pair_panalyzer">F</label>
             <input type="checkbox" id="checkboxB_pair_panalyzer" class="custom-checkbox pair_panalyzer" value="B">
             <label for="checkboxB_pair_panalyzer">B</label>
-        </fieldset>
-        <label for="pair_panalyzer_memory_option">Memory</label><br>
-        <select id="pair_panalyzer_memory_option">
-            <option value="model1">&lt; 400 MB</option>
-            <option value="model2">&lt; 100 MB</option>
-        </select><br>
+        </fieldset><br>
         <select id="pair_panalyzer_option">
             <option value="cross">cross</option>
             <option value="xcross">xcross</option>
@@ -814,8 +809,10 @@
                 const content = document.createElement('a');
                 if (sol == "Error") {
                     content.innerHTML = "Error: Search terminated due to an error.<br>";
+                } else if (sol === "Already solved.") {
+                    content.innerHTML = "Already solved.<br>";
                 } else {
-                    content.innerHTML = "Search terminated.<br>";
+                    content.innerHTML = "Search finished.<br>";
                 }
                 element.appendChild(content);
                 document.getElementById("solveButton").textContent = "Start";
@@ -1146,26 +1143,26 @@
             }
         };
 
-        function reverseScramble(){
+        function reverseScramble() {
             if (typeof reverse !== "function") {
                 alert("Error: The required function is not initialized. Please reload the page manually.");
                 return;
             }
             const scr = document.getElementById("scr").value;
-            if(scr===""){
+            if (scr === "") {
                 return;
             }
             document.getElementById("scr").value = reverse(scr);
             save();
         }
 
-        function mirrorScramble(){
+        function mirrorScramble() {
             if (typeof mirror !== "function") {
                 alert("Error: The required function is not initialized. Please reload the page manually.");
                 return;
             }
             const scr = document.getElementById("scr").value;
-            if(scr===""){
+            if (scr === "") {
                 return;
             }
             document.getElementById("scr").value = mirror(scr);
@@ -1718,11 +1715,7 @@
                 document.getElementById('pair_ptable').appendChild(input);
                 document.getElementById('pair_ptable').innerHTML += "<a>/</a>";
                 document.getElementById('pair_ptable').appendChild(input2);
-                if (document.getElementById("pair_panalyzer_memory_option").value === "model1") {
-                    worker5 = new Worker('src/pseudoPairAnalyzer/worker_analyzer.js');
-                } else {
-                    worker5 = new Worker('src/pseudoPairAnalyzer_lite/worker_analyzer.js');
-                }
+                worker5 = new Worker('src/pseudoPairAnalyzer/worker_analyzer.js');
                 document.getElementById("pair_panalyzer").textContent = "End";
                 worker5.onmessage = function (event) {
                     if (event.data == "Error") {
