@@ -2044,7 +2044,7 @@
         document.getElementById('header').addEventListener('click', function () {
             const url = new URL(window.location.href);
             url.search = '';
-            window.location.href = url.origin + '/index.html';
+            window.location.href = url;
         });
 
         window.onload = function () {
