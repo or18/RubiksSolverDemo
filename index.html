@@ -16,6 +16,13 @@
         gtag('config', 'G-MXJH30352W');
     </script>
     <style>
+        header {
+            padding: 2px;
+            text-align: center;
+            cursor: pointer;
+            background-color: #121212;
+        }
+
         body {
             font-family: Arial, sans-serif;
             margin: 20px;
@@ -239,13 +246,15 @@
 </head>
 
 <body>
-    <h1>Rubik's Cube Solver</h1>
+    <header id="header">
+        <h1>Rubik's Cube Solver</h1>
+    </header>
     <h2>This is online solver for Rubik's cube cross, xcross, xxcross, xxxcross, xxxxcross, last layer substeps, last
         layer, F2L pairing. Pseudo F2L solver is also available. </h2>
     <a href="https://github.com/or18/RubiksSolverDemo">Source</a><br>
     <a href="https://or18.github.io/Rubiks-cube-xcross-solver/">Old Demo</a><br><br>
     <label for="solver">Solver</label><br>
-    <select id="solver" onchange="change()">
+    <select id="solver" onchange="change(); updateUrlParams();">
         <option value="F2L" selected>F2L Lite</option>
         <option value="F2L_pair">Pairing</option>
         <option value="PF2L">Pseudo F2L Lite</option>
@@ -253,7 +262,7 @@
         <option value="LS">LL Substeps Lite</option>
         <option value="LL">LL Lite</option>
         <option value="LU">LL AUF Lite</option>
-        <option value="tp">Two Phase</option>
+        <option value="twophase">Two Phase</option>
         <option value="F2L2">F2L</option>
         <option value="LS2">LL Substeps</option>
         <option value="LL2">LL</option>
@@ -389,7 +398,7 @@
         <div id="pair_ptable"></div>
     </div><br>
     <label for="rot">Rotation: </label>
-    <select id="rot">
+    <select id="rot" onchange="updateUrlParams()">
         <option value="">None</option>
         <option value="y">y</option>
         <option value="y2">y2</option>
@@ -420,8 +429,8 @@
         <option value="x y'">x y'</option>
     </select><br>
     <div id="option_for_F2L" class="hidden">
-        <label for="rot">Slot: </label>
-        <select id="slot">
+        <label for="slot">Slot: </label>
+        <select id="slot" onchange="updateUrlParams()">
             <option value="">None</option>
             <option value="BL">BL</option>
             <option value="BR">BR</option>
@@ -443,7 +452,7 @@
     <div id="option_for_PF2L" class="hidden">
         <div id="option_for_PF2LE">
             <label for="pslot_edge">Pseudo Edge: </label>
-            <select id="pslot_edge" onchange="updateDropdown()">
+            <select id="pslot_edge" onchange="updateDropdown(); updateUrlParams();">
                 <option value="">None</option>
                 <option value="BL">BL</option>
                 <option value="BR">BR</option>
@@ -463,14 +472,14 @@
         </div>
         <div id="option_for_PF2LC" class="hidden">
             <label for="pslot_corner">Pseudo Corner: </label>
-            <select id="pslot_corner">
+            <select id="pslot_corner" onchange="updateUrlParams()">
             </select>
         </div>
     </div>
 
     <div id="option_for_F2L2" class="hidden">
-        <label for="rot">Slot: </label>
-        <select id="slot2" onchange="updateDropdown2()">
+        <label for="slot2">Slot: </label>
+        <select id="slot2" onchange="updateDropdown2(); updateUrlParams()">
             <option value="">None</option>
             <option value="BL">BL</option>
             <option value="BR">BR</option>
@@ -490,7 +499,7 @@
     </div>
     <div id="option_for_pair_F2L" class="hidden">
         <label for="pair_slot">Pair Slot: </label>
-        <select id="pair_slot">
+        <select id="pair_slot" onchange="updateUrlParams()">
             <option value="BL">BL</option>
             <option value="BR">BR</option>
             <option value="FR">FR</option>
@@ -500,7 +509,7 @@
     <div id="option_for_PF2L2" class="hidden">
         <div id="option_for_PF2LE2">
             <label for="pslot_edge2">Pseudo Edge: </label>
-            <select id="pslot_edge2" onchange="updateDropdown3()">
+            <select id="pslot_edge2" onchange="updateDropdown3(); updateUrlParams()">
                 <option value="">None</option>
                 <option value="BL">BL</option>
                 <option value="BR">BR</option>
@@ -520,13 +529,13 @@
         </div>
         <div id="option_for_PF2LC2" class="hidden">
             <label for="pslot_corner2">Pseudo Corner: </label>
-            <select id="pslot_corner2" onchange="updateDropdown4()">
+            <select id="pslot_corner2" onchange="updateDropdown4(); updateUrlParams()">
             </select>
         </div>
         <div id="option_for_pair_PF2L" class="hidden">
             <div id="option_for_pair_PF2LE">
                 <label for="pair_pslot_edge">Pair Edge: </label>
-                <select id="pair_pslot_edge">
+                <select id="pair_pslot_edge" onchange="updateUrlParams()">
                     <option value="BL">BL</option>
                     <option value="BR">BR</option>
                     <option value="FR">FR</option>
@@ -535,7 +544,7 @@
             </div>
             <div id="option_for_pair_PF2LC">
                 <label for="pair_pslot_corner">Pair Corner: </label>
-                <select id="pair_pslot_corner">
+                <select id="pair_pslot_corner" onchange="updateUrlParams()">
                     <option value="BL">BL</option>
                     <option value="BR">BR</option>
                     <option value="FR">FR</option>
@@ -547,7 +556,7 @@
 
     <div id="option_for_LS" class="hidden">
         <label for="ll">LL option: </label>
-        <select id="ll">
+        <select id="ll" onchange="updateUrlParams()">
             <option value="">None</option>
             <option value="CP">CP</option>
             <option value="CO">CO</option>
@@ -568,16 +577,19 @@
     </div>
     <div id="basic input">
         <label for="len">Max Length: </label>
-        <input type="number" id="len" value="20" min="1" required><br>
+        <input type="number" id="len" value="20" min="1" required onchange="updateUrlParams()"><br>
         <label for="num">Max Count: </label>
-        <input type="number" id="num" value="20" min=1 required><br>
-        <label for="res_drop">Restrict: </label>
-        <select id="res_drop" onchange="res_change()">
+        <input type="number" id="num" value="20" min=1 required onchange="updateUrlParams()"><br>
+        <label for="res">Restrict: </label>
+        <select id="res" onchange="updateUrlParams()">
             <option value="UDLRFB">UDLRFB</option>
             <option value="UDRF">UDRF</option>
             <option value="UDLF">UDLF</option>
+            <option value="UDRB">UDRB</option>
+            <option value="UDLB">UDLB</option>
             <option value="UDLR">UDLR</option>
-            <option value="UDFB">UDFB</option>
+            <option value="URFB">URFB</option>
+            <option value="ULFB">ULFB</option>
             <option value="URF">URF</option>
             <option value="ULF">ULF</option>
             <option value="URB">URB</option>
@@ -585,11 +597,10 @@
             <option value="UDR">UDR</option>
             <option value="UDL">UDL</option>
             <option value="ULR">ULR</option>
+            <option value="ULR">UFB</option>
             <option value="UR">UR</option>
             <option value="UL">UL</option>
-            <option value="custom">Custom</option>
         </select>
-        <input type="text" id="res" value="UDLRFB" class="hidden" required><br>
     </div>
     <a class="hidden" id="tp_alert">Two Phase Solver output 1 solution.<br></a>
     <button id="solveButton" class="button medium" onclick="startWorker()">Start</button><br>
@@ -671,7 +682,6 @@
 
         function splitAtLastScramble(input) {
             const scrambleRegex = /\/\/\s*setup/g;
-            let match;
             const index = input.search(scrambleRegex);
             if (index !== -1) {
                 const scrambleLineEnd = input.indexOf('\n', index);
@@ -692,6 +702,235 @@
             const URL1 = "https://alg.cubing.net/?setup=" + transformedAbove + "&alg=" + transformedBelow + "%0A&puzzle=3x3x3";
             const URL2 = "https://cubedb.net/?puzzle=3x3&scramble=" + transformedAbove + "&alg=" + transformedBelow + "%0A";
             return { URL1, URL2 };
+        }
+
+        const idToKeyMap = {
+            'solver': 'solver',
+            'scr': 'scramble',
+            'rot': 'rot',
+            'slot': 'slot',
+            'slot2': 'slot2',
+            'pair_slot': 'aslot',
+            'pslot_edge': 'pse',
+            'pslot_corner': 'psc',
+            'pslot_edge2': 'pse2',
+            'pslot_corner2': 'psc2',
+            'pair_pslot_edge': 'apse',
+            'pair_pslot_corner': 'apsc',
+            'll': 'll',
+            'len': 'len',
+            'num': 'num',
+            'res': 'res'
+        };
+
+        const defaultValues = {
+            'F2L': {
+                'solver': 'F2L',
+                'scr': '',
+                'rot': '',
+                'slot': '',
+                'len': '20',
+                'num': '20',
+                'res': 'UDLRFB'
+            },
+            'LS': {
+                'solver': 'LS',
+                'scr': '',
+                'rot': '',
+                'll': '',
+                'len': '20',
+                'num': '20',
+                'res': 'UDLRFB'
+            },
+            'LL': {
+                'solver': 'LL',
+                'scr': '',
+                'rot': '',
+                'len': '20',
+                'num': '20',
+                'res': 'UDLRFB'
+            },
+            'LU': {
+                'solver': 'LU',
+                'scr': '',
+                'rot': '',
+                'len': '20',
+                'num': '20',
+                'res': 'UDLRFB'
+            },
+            'F2L2': {
+                'solver': 'F2L2',
+                'scr': '',
+                'rot': '',
+                'slot': '',
+                'len': '20',
+                'num': '20',
+                'res': 'UDLRFB'
+            },
+            'LS2': {
+                'solver': 'LS2',
+                'scr': '',
+                'rot': '',
+                'll': '',
+                'len': '20',
+                'num': '20',
+                'res': 'UDLRFB'
+            },
+            'LL2': {
+                'solver': 'LL2',
+                'scr': '',
+                'rot': '',
+                'len': '20',
+                'num': '20',
+                'res': 'UDLRFB',
+                'res': 'UDLRFB'
+            },
+            'LU2': {
+                'solver': 'LU2',
+                'scr': '',
+                'rot': '',
+                'len': '20',
+                'num': '20',
+                'res': 'UDLRFB'
+            },
+            'F2L_pair': {
+                'solver': 'F2L_pair',
+                'scr': '',
+                'rot': '',
+                'slot2': '',
+                'pair_slot': 'BL',
+                'len': '20',
+                'num': '20',
+                'res': 'UDLRFB'
+            },
+            'PF2L': {
+                'solver': 'PF2L',
+                'scr': '',
+                'rot': '',
+                'pslot_edge': '',
+                'pslot_corner': '',
+                'len': '20',
+                'num': '20',
+                'res': 'UDLRFB'
+            },
+            'PF2L_pair': {
+                'solver': 'PF2L_pair',
+                'scr': '',
+                'rot': '',
+                'pslot_edge2': '',
+                'pslot_corner2': '',
+                'pair_pslot_edge': 'BL',
+                'pair_pslot_corner': 'BL',
+                'len': '20',
+                'num': '20',
+                'res': 'UDLRFB'
+            },
+            'twophase': {
+                'solver': 'twophase',
+                'scr': '',
+                'rot': ''
+            }
+        };
+
+        const idList = [
+            'solver',
+            'scr',
+            'rot',
+            'slot',
+            'slot2',
+            'pair_slot',
+            'pslot_edge',
+            'pslot_corner',
+            'pslot_edge2',
+            'pslot_corner2',
+            'pair_pslot_edge',
+            'pair_pslot_corner',
+            'll',
+            'len',
+            'num',
+            'res'
+        ];
+
+        function updateUrlParams() {
+            const solver = document.getElementById('solver').value;
+            const url = new URL(window.location.href);
+            const defaultValueTmp = defaultValues[solver];
+            idList.forEach(id => {
+                const key = idToKeyMap[id];
+                var newValue = document.getElementById(id)?.value;
+                if (typeof key !== "undefined" && typeof defaultValueTmp[id] !== "undefined") {
+                    if (id === 'scr') {
+                        if (newValue !== '') {
+                            newValue = encodeURIComponent(scr_fix2(newValue).replace(/ /g, '_').replace(/'/g, '-'));
+                            url.searchParams.set(key, newValue);
+                        } else {
+                            url.searchParams.delete(key);
+                        }
+                    } else {
+                        if ((document.getElementById(id).tagName === 'SELECT' && document.getElementById(id).selectedIndex > 0) || (document.getElementById(id).tagName === "INPUT" && newValue !== defaultValueTmp[id])) {
+                            newValue = newValue.replace(/ /g, '_').replace(/'/g, '-');
+                            url.searchParams.set(key, newValue);
+                        } else {
+                            url.searchParams.delete(key);
+                        }
+                    }
+                } else {
+                    url.searchParams.delete(key);
+                }
+            });
+            window.history.pushState({}, '', url);
+        }
+
+        function setParamsFromUrl(urlParams) {
+            const solver = urlParams.get(idToKeyMap['solver']) ? urlParams.get(idToKeyMap['solver']) : 'F2L';
+            document.getElementById('solver').value = solver;
+            change();
+            document.getElementById('rot').value = urlParams.get(idToKeyMap['rot']) ? urlParams.get(idToKeyMap['rot']).replace(/_/g, ' ').replace(/-/g, '\'') : defaultValues[solver]['rot'];
+            if (solver !== "twophase") {
+                document.getElementById('len').value = urlParams.get(idToKeyMap['len']) ? urlParams.get(idToKeyMap['len']) : defaultValues[solver]['len'];
+                document.getElementById('num').value = urlParams.get(idToKeyMap['num']) ? urlParams.get(idToKeyMap['num']) : defaultValues[solver]['num'];
+                document.getElementById('res').value = urlParams.get(idToKeyMap['res']) ? urlParams.get(idToKeyMap['res']) : defaultValues[solver]['res'];
+            }
+            if (solver === "F2L" || solver === "F2L2") {
+                document.getElementById('slot').value = urlParams.get(idToKeyMap['slot']) ? urlParams.get(idToKeyMap['slot']).replace(/_/g, ' ') : defaultValues[solver]['slot'];
+            } else if (solver === "F2L_pair") {
+                document.getElementById('slot2').value = urlParams.get(idToKeyMap['slot2']) ? urlParams.get(idToKeyMap['slot2']).replace(/_/g, ' ') : defaultValues[solver]['slot2'];
+                updateDropdown2();
+                if (urlParams.get(idToKeyMap['pair_slot'])) {
+                    document.getElementById('pair_slot').value = urlParams.get(idToKeyMap['pair_slot']).replace(/_/g, ' ');
+                } else {
+                    document.getElementById('pair_slot').selectedIndex = 0;
+                }
+            } else if (solver === "LS" || solver === "LS2") {
+                document.getElementById('ll').value = urlParams.get(idToKeyMap['ll']) ? urlParams.get(idToKeyMap['ll']).replace(/_/g, ' ') : defaultValues[solver]['ll'];
+            } else if (solver === "PF2L") {
+                document.getElementById('pslot_edge').value = urlParams.get(idToKeyMap['pslot_edge']) ? urlParams.get(idToKeyMap['pslot_edge']).replace(/_/g, ' ') : defaultValues[solver]['pslot_edge'];
+                updateDropdown();
+                if (urlParams.get(idToKeyMap['pslot_corner'])) {
+                    document.getElementById('pslot_corner').value = urlParams.get(idToKeyMap['pslot_corner']).replace(/_/g, ' ');
+                } else {
+                    document.getElementById('pslot_corner').selectedIndex = 0;
+                }
+            } else if (solver === "PF2L_pair") {
+                document.getElementById('pslot_edge2').value = urlParams.get(idToKeyMap['pslot_edge2']) ? urlParams.get(idToKeyMap['pslot_edge2']).replace(/_/g, ' ') : defaultValues[solver]['pslot_edge2'];
+                updateDropdown3();
+                if (urlParams.get(idToKeyMap['pslot_corner2'])) {
+                    document.getElementById('pslot_corner2').value = urlParams.get(idToKeyMap['pslot_corner2']).replace(/_/g, ' ');
+                } else {
+                    document.getElementById('pslot_corner2').selectedIndex = 0;
+                }
+                if (urlParams.get(idToKeyMap['pair_pslot_edge'])) {
+                    document.getElementById('pair_pslot_edge').value = urlParams.get(idToKeyMap['pair_pslot_edge']).replace(/_/g, ' ');
+                } else {
+                    document.getElementById('pair_pslot_edge').selectedIndex = 0;
+                }
+                updateDropdown4()
+                if (urlParams.get(idToKeyMap['pair_pslot_corner'])) {
+                    document.getElementById('pair_pslot_corner').value = urlParams.get(idToKeyMap['pair_pslot_corner']).replace(/_/g, ' ');
+                } else {
+                    document.getElementById('pair_pslot_corner').selectedIndex = 0;
+                }
+            }
         }
 
         function startWorker() {
@@ -743,10 +982,7 @@
                 const ll = document.getElementById('ll').value
                 const num = document.getElementById('num').value;
                 const len = document.getElementById('len').value;
-                var restrict = document.getElementById('res_drop').value;
-                if (restrict === "custom") {
-                    restrict = document.getElementById('res').value;
-                }
+                var restrict = document.getElementById('res').value;
                 document.getElementById("solveButton").textContent = "End";
 
                 if (solver === "F2L" || solver === "LS" || solver === "LL" || solver == "LU") {
@@ -769,7 +1005,7 @@
                     const args = { scr: convert(scr), rot: rot, slot: pslot_e2, pslot: pslot_c2, a_slot: pair_pslot_e, a_pslot: pair_pslot_c, num: num, len: len, restrict: restrict };
                     worker = new Worker('src/pseudoPairingSolver/workerPseudoPairing.js');
                     worker.postMessage(args);
-                } else if (solver === "tp") {
+                } else if (solver === "twophase") {
                     const sol = min2phase.solve(generateTwoPhaseInput(convert(scr + " " + rot)));
                     appendSol(scr2, rot + " " + sol);
                     const element = document.getElementById('result');
@@ -903,18 +1139,9 @@
                 document.getElementById("option_for_PF2L2").classList.remove("hidden");
                 document.getElementById("option_for_pair_PF2L").classList.remove("hidden");
                 document.getElementById("pair_panalyze").classList.remove("hidden");
-                document.getElementById("basic input").classList.add("hidden");
-            } else if (selectedValue === "tp") {
+            } else if (selectedValue === "twophase") {
                 document.getElementById("tp_alert").classList.remove("hidden");
                 document.getElementById("basic input").classList.add("hidden");
-            }
-        }
-
-        function res_change() {
-            document.getElementById("res").classList.add("hidden");
-            const selectedValue = document.getElementById("res_drop").value;
-            if (selectedValue === "custom") {
-                document.getElementById("res").classList.remove("hidden");
             }
         }
 
@@ -1083,8 +1310,8 @@
             document.getElementById('slot').value = slot_option;
             document.getElementById('num').value = 20;
             document.getElementById('len').value = 20;
-            document.getElementById('res_drop').value = "UDLRFB";
-            res_change();
+            document.getElementById('res').value = "UDLRFB";
+            updateUrlParams();
             startWorker();
         }
 
@@ -1216,8 +1443,7 @@
                 document.getElementById("reverse").classList.remove("hidden");
                 document.getElementById("mirror").classList.remove("hidden");
             }
-            const newUrl = `${window.location.pathname}?scramble=${encodeURIComponent(scr_fix2(currentScr).replace(/ /g, '_').replace(/'/g, '-'))}`;
-            window.history.pushState({ path: newUrl }, '', newUrl);
+            updateUrlParams();
             if (currentIndex <= 0) {
                 undoButton.classList.add("hidden_small");
             } else {
@@ -1528,8 +1754,8 @@
             document.getElementById('pslot_corner').value = pslot_option;
             document.getElementById('num').value = 20;
             document.getElementById('len').value = 20;
-            document.getElementById('res_drop').value = "UDLRFB";
-            res_change();
+            document.getElementById('res').value = "UDLRFB";
+            updateUrlParams();
             startWorker();
         }
 
@@ -1663,8 +1889,8 @@
             document.getElementById('pair_slot').value = pslot_option;
             document.getElementById('num').value = 20;
             document.getElementById('len').value = 20;
-            document.getElementById('res_drop').value = "UDLRFB";
-            res_change();
+            document.getElementById('res').value = "UDLRFB";
+            updateUrlParams();
             startWorker();
         }
 
@@ -1805,8 +2031,8 @@
             document.getElementById('pair_pslot_corner').value = a_pslot_option;
             document.getElementById('num').value = 20;
             document.getElementById('len').value = 20;
-            document.getElementById('res_drop').value = "UDLRFB";
-            res_change();
+            document.getElementById('res').value = "UDLRFB";
+            updateUrlParams();
             startWorker();
         }
 
@@ -1815,9 +2041,13 @@
             save();
         }
 
+        document.getElementById('header').addEventListener('click', function () {
+            window.location.href = '/';
+        });
+
         window.onload = function () {
             const urlParams = new URLSearchParams(window.location.search);
-            const scrambleParam = urlParams.get('scramble');
+            const scrambleParam = urlParams.get(idToKeyMap['scr']);
             document.getElementById('scr').value = scrambleParam ? decodeURIComponent(scrambleParam.replace(/_/g, ' ').replace(/-/g, '\'')) : '';
             if (scrambleParam === '') {
                 document.getElementById("reverse").classList.add("hidden");
@@ -1827,8 +2057,7 @@
             undoButton.classList.add("hidden_small");
             redoButton.classList.add("hidden_small");
             document.getElementById("countLine").value = 0;
-            change();
-            updateDropdown();
+            setParamsFromUrl(urlParams);
             save();
         };
     </script>
