@@ -2042,7 +2042,9 @@
         }
 
         document.getElementById('header').addEventListener('click', function () {
-            window.location.href = '/';
+            const url = new URL(window.location.href);
+            url.search = '';
+            window.location.href = url.origin + '/index.html';
         });
 
         window.onload = function () {
