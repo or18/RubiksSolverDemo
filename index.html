@@ -641,6 +641,7 @@
         let list_ptable;
         let list_pair_table;
         let list_pair_ptable;
+        let sol_input = false;
 
         function scr_fix(scr) {
             const fixed_scr = scr_fix2(scr);
@@ -1007,7 +1008,7 @@
                     worker.postMessage(args);
                 } else if (solver === "twophase") {
                     const sol = min2phase.solve(generateTwoPhaseInput(convert(scr + " " + rot)));
-                    appendSol(scr2, rot + " " + sol);
+                    appendSol(scr_fix2(scr2), rot + " " + sol);
                     const element = document.getElementById('result');
                     const content = document.createElement('a');
                     content.textContent = "Search terminated.";
@@ -1056,7 +1057,7 @@
             } else {
                 messageCount++;
                 const details = document.createElement('details');
-                if (messageCount === 1) {
+                if (messageCount === 1 || sol_input) {
                     details.setAttribute('open', '');
                 }
                 const summary = document.createElement('summary');
@@ -1098,9 +1099,24 @@
                 link_element2.rel = 'noopener noreferrer';
                 link_element2.textContent = 'cubedb.net';
                 details.appendChild(link_element2);
+                var spaceElement2 = document.createElement('a');
+                spaceElement2.innerHTML = "&nbsp;&nbsp;";
+                details.appendChild(spaceElement2);
+                const currentUrl = new URL(window.location.href);
+                currentUrl.searchParams.set('index', `${messageCount}`);
+                currentUrl.searchParams.set('sol', sol.replace(/ /g, '_').replace(/'/g, '-'));
+                var link_element3 = document.createElement('a');
+                link_element3.href = currentUrl;
+                link_element3.target = '_blank';
+                link_element3.rel = 'noopener noreferrer';
+                link_element3.textContent = 'or18.github.io';
+                details.appendChild(link_element3);
                 details.style.marginBottom = '10px';
                 element.appendChild(details);
                 document.getElementById("countLine").value = messageCount;
+                if (messageCount === 1) {
+                    window.history.pushState({}, '', currentUrl);
+                }
             }
         }
 
@@ -1173,7 +1189,7 @@
         function genscr() {
             var cube = min2phase.randomCube();
             var solution = min2phase.solve(cube);
-            document.getElementById('scr').value = solution + "//setup\n";
+            document.getElementById('scr').value = scr_fix2(solution) + " // setup\n";
             save();
         }
 
@@ -1199,7 +1215,7 @@
                     document.getElementById('table').innerHTML += error_message;
                     return;
                 }
-                const content = "<a>Hint: You can start searching by clicking a cell in the table. You can sort the table by clicking on the headers.</a><br>";
+                const content = "<a>Hint: Click a cell to start the search with that condition, and click the header to sort.</a><br>";
                 document.getElementById('table').innerHTML = content;
                 let scr = document.getElementById("scr").value;
                 const scramble = scr_fix(scr);
@@ -1641,7 +1657,7 @@
                     document.getElementById('ptable').innerHTML += error_message;
                     return;
                 }
-                const content = "<a>Hint: You can start searching by clicking a cell in the table. You can sort the table by clicking on the headers.</a><br>";
+                const content = "<a>Hint: Click a cell to start the search with that condition, and click the header to sort.</a><br>";
                 document.getElementById('ptable').innerHTML = content;
                 let scr = document.getElementById("scr").value;
                 const scramble = scr_fix(scr);
@@ -1780,7 +1796,7 @@
                     document.getElementById('pair_table').innerHTML += error_message;
                     return;
                 }
-                const content = "<a>Hint: You can start searching by clicking a cell in the table. You can sort the table by clicking on the headers.</a><br>";
+                const content = "<a>Hint: Click a cell to start the search with that condition, and click the header to sort.</a><br>";
                 document.getElementById('pair_table').innerHTML = content;
                 let scr = document.getElementById("scr").value;
                 const scramble = scr_fix(scr);
@@ -1915,7 +1931,7 @@
                     document.getElementById('pair_ptable').innerHTML += error_message;
                     return;
                 }
-                const content = "<a>Hint: You can start searching by clicking a cell in the table. You can sort the table by clicking on the headers.</a><br>";
+                const content = "<a>Hint: Click a cell to start the search with that condition, and click the header to sort.</a><br>";
                 document.getElementById('pair_ptable').innerHTML = content;
                 let scr = document.getElementById("scr").value;
                 const scramble = scr_fix(scr);
@@ -2050,15 +2066,30 @@
         window.onload = function () {
             const urlParams = new URLSearchParams(window.location.search);
             const scrambleParam = urlParams.get(idToKeyMap['scr']);
+            document.getElementById("result").innerHTML = "";
+            if (scrambleParam) {
+                const scr = decodeURIComponent(scrambleParam.replace(/_/g, ' ').replace(/-/g, '\''));
+                document.getElementById('scr').value = scr;
+                const sol_num = urlParams.get('index');
+                const sol = urlParams.get('sol');
+                if (sol_num && sol) {
+                    messageCount = Number(sol_num) - 1;
+                    const sol_fixed = sol.replace(/_/g, ' ').replace(/-/g, '\'');
+                    sol_input = true;
+                    appendSol(scr, sol_fixed);
+                    sol_input = false;
+                    document.getElementById("countLine").value = 1;
+                } else {
+                    document.getElementById("countLine").value = 0;
+                }
+            }
             document.getElementById('scr').value = scrambleParam ? decodeURIComponent(scrambleParam.replace(/_/g, ' ').replace(/-/g, '\'')) : '';
             if (scrambleParam === '') {
                 document.getElementById("reverse").classList.add("hidden");
                 document.getElementById("mirror").classList.add("hidden");
             }
-            document.getElementById("result").innerHTML = "";
             undoButton.classList.add("hidden_small");
             redoButton.classList.add("hidden_small");
-            document.getElementById("countLine").value = 0;
             setParamsFromUrl(urlParams);
             save();
         };
