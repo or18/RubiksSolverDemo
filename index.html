@@ -623,6 +623,63 @@
     </script>
 
     <script>
+        Module.onRuntimeInitialized = function () {
+            window.reverse = function (scr) {
+                const scr_fixed = scr_fix2(scr);
+                if (scr_fixed === "") {
+                    return;
+                }
+                const lines = scr_fixed.split('\n');
+                const processedLines = [];
+                for (let i = lines.length - 1; i >= 0; i--) {
+                    const line = lines[i];
+                    const [alg, comment] = line.split('//');
+                    const alg_revresed = Module.scr_reverse(alg.trim());
+                    if (comment) {
+                        processedLines.push(`${alg_revresed} // ${comment.trim()}`);
+                    } else {
+                        processedLines.push(alg_revresed);
+                    }
+                }
+                const result = processedLines.join('\n');
+                return result.trim() + "\n";
+            };
+            window.mirror = function (scr) {
+                if (typeof Module.scr_mirror !== "function") {
+                    alert("Error: The required function is not initialized. Please reload the page manually.");
+                    return;
+                }
+                const scr_fixed = scr_fix2(scr);
+                if (scr_fixed === "") {
+                    return;
+                }
+                const lines = scr_fixed.split('\n');
+                const processedLines = [];
+                for (let i = 0; i < lines.length; i++) {
+                    const line = lines[i];
+                    const [alg, comment] = line.split('//');
+                    const alg_mirrored = Module.scr_mirror(alg.trim());
+                    if (comment) {
+                        processedLines.push(`${alg_mirrored} // ${comment.trim()}`);
+                    } else {
+                        processedLines.push(alg_mirrored);
+                    }
+                }
+                const result = processedLines.join('\n');
+                return result.trim() + "\n";
+            };
+            window.convert = function (scramble) {
+                const result = Module.scr_converter(scramble);
+                return result;
+            };
+            window.generateTwoPhaseInput = function (scramble) {
+                const result = Module.ScrambleToState(scramble);
+                return result;
+            }
+        };
+    </script>
+
+    <script>
         let worker;
         let worker2;
         let worker3;
@@ -1330,61 +1387,6 @@
             updateUrlParams();
             startWorker();
         }
-
-        Module.onRuntimeInitialized = function () {
-            window.reverse = function (scr) {
-                const scr_fixed = scr_fix2(scr);
-                if (scr_fixed === "") {
-                    return;
-                }
-                const lines = scr_fixed.split('\n');
-                const processedLines = [];
-                for (let i = lines.length - 1; i >= 0; i--) {
-                    const line = lines[i];
-                    const [alg, comment] = line.split('//');
-                    const alg_revresed = Module.scr_reverse(alg.trim());
-                    if (comment) {
-                        processedLines.push(`${alg_revresed} // ${comment.trim()}`);
-                    } else {
-                        processedLines.push(alg_revresed);
-                    }
-                }
-                const result = processedLines.join('\n');
-                return result.trim() + "\n";
-            };
-            window.mirror = function (scr) {
-                if (typeof Module.scr_mirror !== "function") {
-                    alert("Error: The required function is not initialized. Please reload the page manually.");
-                    return;
-                }
-                const scr_fixed = scr_fix2(scr);
-                if (scr_fixed === "") {
-                    return;
-                }
-                const lines = scr_fixed.split('\n');
-                const processedLines = [];
-                for (let i = 0; i < lines.length; i++) {
-                    const line = lines[i];
-                    const [alg, comment] = line.split('//');
-                    const alg_mirrored = Module.scr_mirror(alg.trim());
-                    if (comment) {
-                        processedLines.push(`${alg_mirrored} // ${comment.trim()}`);
-                    } else {
-                        processedLines.push(alg_mirrored);
-                    }
-                }
-                const result = processedLines.join('\n');
-                return result.trim() + "\n";
-            };
-            window.convert = function (scramble) {
-                const result = Module.scr_converter(scramble);
-                return result;
-            };
-            window.generateTwoPhaseInput = function (scramble) {
-                const result = Module.ScrambleToState(scramble);
-                return result;
-            }
-        };
 
         function reverseScramble() {
             if (typeof reverse !== "function") {
