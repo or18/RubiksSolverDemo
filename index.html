@@ -879,7 +879,7 @@
                     url.searchParams.delete(key);
                 }
             });
-            window.history.pushState({}, '', url);
+            window.history.replaceState({}, '', url);
         }
 
         function setParamsFromUrl(urlParams) {
@@ -1115,7 +1115,7 @@
                 element.appendChild(details);
                 document.getElementById("countLine").value = messageCount;
                 if (messageCount === 1) {
-                    window.history.pushState({}, '', currentUrl);
+                    window.history.replaceState({}, '', currentUrl);
                 }
             }
         }
