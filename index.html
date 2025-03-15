@@ -1243,10 +1243,19 @@
             }
         }
 
+        function generateTwoPhaseInputWrapper(scr) {
+            if (typeof generateTwoPhaseInput !== "function") {
+                alert("Error: The required function is not initialized. Please reload the page manually.");
+                return;
+            } else {
+                return generateTwoPhaseInput(scr);
+            }
+        }
+
         function genscr() {
             var cube = min2phase.randomCube();
             var solution = min2phase.solve(cube);
-            var sol_reversed = min2phase.solve(generateTwoPhaseInput(solution));
+            var sol_reversed = min2phase.solve(generateTwoPhaseInputWrapper(solution));
             document.getElementById('scr').value = scr_fix2(sol_reversed) + " // setup\n";
             save();
         }
