@@ -90,7 +90,7 @@ std::unordered_map<std::string, State> moves = {
 
 std::vector<std::string> move_names = {"U", "U2", "U'", "D", "D2", "D'", "L", "L2", "L'", "R", "R2", "R'", "F", "F2", "F'", "B", "B2", "B'"};
 
-std::string AlgToString(std::vector<int> alg)
+std::string AlgToString(std::vector<int> &alg)
 {
 	std::string result = "";
 	for (int i : alg)

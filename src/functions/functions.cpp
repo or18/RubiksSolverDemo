@@ -295,7 +295,7 @@ std::unordered_map<std::string, std::string> rotation_reverse = {
 	{"x2'", "x2"},
 	{"x'", "x"}};
 
-std::string AlgToString(std::vector<int> alg)
+std::string AlgToString(std::vector<int> &alg)
 {
 	std::string result = "";
 	for (int i : alg)
@@ -305,7 +305,7 @@ std::string AlgToString(std::vector<int> alg)
 	return result;
 }
 
-std::vector<int> StringToAlg(std::string str)
+std::vector<int> StringToAlg(std::string &str)
 {
 	std::vector<int> alg;
 	std::istringstream iss(str);
@@ -317,7 +317,7 @@ std::vector<int> StringToAlg(std::string str)
 			auto it = std::find(move_names.begin(), move_names.end(), name);
 			if (it != move_names.end())
 			{
-				alg.push_back(std::distance(move_names.begin(), it));
+				alg.emplace_back(std::distance(move_names.begin(), it));
 			}
 		}
 	}
@@ -364,7 +364,7 @@ std::string ReverseScramble(std::string str)
 	return result;
 }
 
-std::vector<int> AlgConvertRotation(std::vector<int> alg, std::string rotation)
+std::vector<int> AlgConvertRotation(std::vector<int> &alg, std::string &rotation)
 {
 	if (rotation.empty())
 	{
@@ -415,7 +415,7 @@ std::vector<int> AlgConvertRotation(std::vector<int> alg, std::string rotation)
 	return alg;
 }
 
-std::vector<int> AlgRotation(std::vector<int> alg, std::string rotation_algString)
+std::vector<int> AlgRotation(std::vector<int> &alg, std::string &rotation_algString)
 {
 	std::istringstream iss(rotation_algString);
 	std::string rot;
@@ -433,6 +433,7 @@ std::string ConvertScramble(std::string str)
 	std::string rotation = "";
 	std::istringstream iss(str);
 	std::string name;
+	std::vector<int> tmp_alg, tmp_alg2;
 	while (iss >> name)
 	{
 		if (move_convert.count(name) > 0)
@@ -453,7 +454,9 @@ std::string ConvertScramble(std::string str)
 		}
 		else if (rotation_reverse.count(name) > 0)
 		{
-			result2 = AlgToString(AlgRotation(StringToAlg(result2), name));
+			tmp_alg = StringToAlg(result2);
+			tmp_alg2 = AlgRotation(tmp_alg, name);
+			result2 = AlgToString(tmp_alg2);
 			rotation += name + " ";
 		}
 	}
@@ -534,7 +537,7 @@ std::unordered_map<std::string, State> moves = {
 std::string ScrambleToState(std::string scramble){
 		std::vector<std::string> faces;
 		for (const auto& pair : moves) {
-			faces.push_back(pair.first);
+			faces.emplace_back(pair.first);
 		}
 		State state;
 		std::string name;
@@ -556,5 +559,4 @@ EMSCRIPTEN_BINDINGS(my_module)
 	emscripten::function("scr_reverse", &ReverseScramble);
 	emscripten::function("scr_converter", &ConvertScramble);
 	emscripten::function("ScrambleToState", &ScrambleToState);
-
 }
