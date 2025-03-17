@@ -1,14 +1,16 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Rubik's Cube Solver</title>
-    <script src="src/min2phase.js/min2phase.js"></script>
-    <script src="src/functions/functions.js"></script>
-    <script src="src/functions/list.js"></script>
+    <meta name="description"
+        content="Lite and fast solvers for Rubik's Cube cross, X-cross, XX-cross, free pair and pseudo F2L. ">
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-MXJH30352W"></script>
+    <script async src="src/min2phase.js/min2phase.js"></script>
+    <script async src="src/functions/list.js"></script>
+    <script src="src/functions/functions.js"></script>
     <script>
         window.dataLayer = window.dataLayer || [];
         function gtag() { dataLayer.push(arguments); }
@@ -249,62 +251,63 @@
     <header id="header">
         <h1>Rubik's Cube Solver</h1>
     </header>
-    <h2>This is online solver for Rubik's cube cross, xcross, xxcross, xxxcross, xxxxcross, last layer substeps, last
-        layer, F2L pairing. Pseudo F2L solver is also available. </h2>
-    <a href="https://github.com/or18/RubiksSolverDemo">Source</a><br>
-    <a href="https://or18.github.io/Rubiks-cube-xcross-solver/">Old Demo</a><br><br>
+    <h2>This is solver for Rubik's cube cross, X-cross, XX-cross, XXX-cross, XXXX-cross, free pair, last layer(OLL,
+        ZBLS, PLL, ZBLL). Pseudo F2L solver also available. Lite and fast solvers that work on smartphones are also
+        available.</h2>
+    <a href="https://github.com/or18/RubiksSolverDemo" rel="noopener noreferrer">Source</a><br>
+    <a href="https://or18.github.io/Rubiks-cube-xcross-solver/" rel="noopener noreferrer">Old Demo</a><br><br>
     <label for="solver">Solver</label><br>
-    <select id="solver" onchange="change(); updateUrlParams();">
-        <option value="F2L" selected>F2L Lite</option>
-        <option value="F2L_pair">Pairing</option>
-        <option value="PF2L">Pseudo F2L Lite</option>
-        <option value="PF2L_pair">Pseudo Pairing</option>
-        <option value="LS">LL Substeps Lite</option>
-        <option value="LL">LL Lite</option>
-        <option value="LU">LL AUF Lite</option>
-        <option value="twophase">Two Phase</option>
-        <option value="F2L2">F2L</option>
-        <option value="LS2">LL Substeps</option>
-        <option value="LL2">LL</option>
-        <option value="LU2">LL AUF</option>
+    <select translate="no" id="solver" onchange="change(); updateUrlParams();">
+        <option translate="no" value="F2L" selected>F2L Lite</option>
+        <option translate="no" value="F2L_pair">Pairing</option>
+        <option translate="no" value="PF2L">Pseudo F2L Lite</option>
+        <option translate="no" value="PF2L_pair">Pseudo Pairing</option>
+        <option translate="no" value="LS">LL Substeps Lite</option>
+        <option translate="no" value="LL">LL Lite</option>
+        <option translate="no" value="LU">LL AUF Lite</option>
+        <option translate="no" value="twophase">Two Phase</option>
+        <option translate="no" value="F2L2">F2L</option>
+        <option translate="no" value="LS2">LL Substeps</option>
+        <option translate="no" value="LL2">LL</option>
+        <option translate="no" value="LU2">LL AUF</option>
     </select>
     <button id="undo" class="button small hidden_small" onclick="undo()">←</button>
     <button id="redo" class="button small hidden_small" onclick="redo()">→</button><br>
-
-    <textarea id="scr" rows="10" cols="10"
-        placeholder="The string after // on each line is recognized as a comment. Write the //setup comment in the appropriate position when viewing on alg.cubing.net or cubedb.net."
+    <label for="scr">Scramble algs </label><br>
+    <textarea id="scr" rows="10" cols="10" placeholder="Use // to write comments, as in algs // comment. 
+Write the //setup comment in the appropriate position when viewing on alg.cubing.net or cubedb.net."
         onchange="save()"></textarea><br>
     <button id="gen" class="button medium" onclick="genscr()">Random</button>
     <button id="reverse" class="button medium" onclick="reverseScramble()">Reverse</button>
     <button id="mirror" class="button medium" onclick="mirrorScramble()">Mirror</button><br><br>
     <div id="show"></div>
     <pre id="links"
-        class="hidden"><a id="link_alg_cubing" href="https://alg.cubing.net/" target="_blank" rel="noopener noreferrer">alg.cubing.net</a>  <a id="link_cubedb" href="https://cubedb.net/?puzzle=3x3" target="_blank" rel="noopener noreferrer">cubedb.net</a></pre>
+        class="hidden"><a translate="no" id="link_alg_cubing" href="https://alg.cubing.net/" target="_blank" rel="noopener noreferrer">alg.cubing.net</a>  <a translate="no" id="link_cubedb" href="https://cubedb.net/?puzzle=3x3" target="_blank" rel="noopener noreferrer">cubedb.net</a></pre>
 
     <div id="analyze">
         <label for="analyzer_rotation_option">Analyzer Options</label>
         <fieldset id="analyzer_rotation_option">
             <input type="checkbox" id="checkboxD_analyzer" class="custom-checkbox analyzer" value="D" checked>
-            <label for="checkboxD_analyzer">D</label>
+            <label translate="no" translate="no" for="checkboxD_analyzer">D</label>
             <input type="checkbox" id="checkboxU_analyzer" class="custom-checkbox analyzer" value="U">
-            <label for="checkboxU_analyzer">U</label>
+            <label translate="no" for="checkboxU_analyzer">U</label>
             <input type="checkbox" id="checkboxL_analyzer" class="custom-checkbox analyzer" value="L">
-            <label for="checkboxL_analyzer">L</label>
+            <label translate="no" for="checkboxL_analyzer">L</label>
             <input type="checkbox" id="checkboxR_analyzer" class="custom-checkbox analyzer" value="R">
-            <label for="checkboxR_analyzer">R</label>
+            <label translate="no" for="checkboxR_analyzer">R</label>
             <input type="checkbox" id="checkboxF_analyzer" class="custom-checkbox analyzer" value="F">
-            <label for="checkboxF_analyzer">F</label>
+            <label translate="no" for="checkboxF_analyzer">F</label>
             <input type="checkbox" id="checkboxB_analyzer" class="custom-checkbox analyzer" value="B">
-            <label for="checkboxB_analyzer">B</label>
+            <label translate="no" for="checkboxB_analyzer">B</label>
         </fieldset>
-        <select id="analyzer_option">
-            <option value="cross">cross</option>
-            <option value="xcross">xcross</option>
-            <option value="xxcross">xxcross</option>
-            <option value="xxxcross">xxxcross</option>
-            <option value="2x">cross, x</option>
-            <option value="3x">cross, x, xx</option>
-            <option value="4x">cross, x, xx, xxx</option>
+        <select translate="no" id="analyzer_option">
+            <option translate="no" value="cross">cross</option>
+            <option translate="no" value="xcross">xcross</option>
+            <option translate="no" value="xxcross">xxcross</option>
+            <option translate="no" value="xxxcross">xxxcross</option>
+            <option translate="no" value="2x">cross, x</option>
+            <option translate="no" value="3x">cross, x, xx</option>
+            <option translate="no" value="4x">cross, x, xx, xxx</option>
         </select>
         <button id="analyzer" class="button medium" onclick="analyze()">Analyze</button>
         <div id="table"></div>
@@ -314,26 +317,26 @@
         <label for="panalyzer_rotation_option">Analyzer Options</label>
         <fieldset id="panalyzer_rotation_option">
             <input type="checkbox" id="checkboxD_panalyzer" class="custom-checkbox panalyzer" value="D" checked>
-            <label for="checkboxD_panalyzer">D</label>
+            <label translate="no" for="checkboxD_panalyzer">D</label>
             <input type="checkbox" id="checkboxU_panalyzer" class="custom-checkbox panalyzer" value="U">
-            <label for="checkboxU_panalyzer">U</label>
+            <label translate="no" for="checkboxU_panalyzer">U</label>
             <input type="checkbox" id="checkboxL_panalyzer" class="custom-checkbox panalyzer" value="L">
-            <label for="checkboxL_panalyzer">L</label>
+            <label translate="no" for="checkboxL_panalyzer">L</label>
             <input type="checkbox" id="checkboxR_panalyzer" class="custom-checkbox panalyzer" value="R">
-            <label for="checkboxR_panalyzer">R</label>
+            <label translate="no" for="checkboxR_panalyzer">R</label>
             <input type="checkbox" id="checkboxF_panalyzer" class="custom-checkbox panalyzer" value="F">
-            <label for="checkboxF_panalyzer">F</label>
+            <label translate="no" for="checkboxF_panalyzer">F</label>
             <input type="checkbox" id="checkboxB_panalyzer" class="custom-checkbox panalyzer" value="B">
-            <label for="checkboxB_panalyzer">B</label>
+            <label translate="no" for="checkboxB_panalyzer">B</label>
         </fieldset>
-        <select id="panalyzer_option">
-            <option value="cross">cross</option>
-            <option value="xcross">xcross</option>
-            <option value="xxcross">xxcross</option>
-            <option value="xxxcross">xxxcross</option>
-            <option value="2x">cross, x</option>
-            <option value="3x">cross, x, xx</option>
-            <option value="4x">cross, x, xx, xxx</option>
+        <select translate="no" id="panalyzer_option">
+            <option translate="no" value="cross">cross</option>
+            <option translate="no" value="xcross">xcross</option>
+            <option translate="no" value="xxcross">xxcross</option>
+            <option translate="no" value="xxxcross">xxxcross</option>
+            <option translate="no" value="2x">cross, x</option>
+            <option translate="no" value="3x">cross, x, xx</option>
+            <option translate="no" value="4x">cross, x, xx, xxx</option>
         </select>
         <button id="panalyzer" class="button medium" onclick="panalyze()">Analyze</button>
         <div id="ptable"></div>
@@ -343,26 +346,26 @@
         <label for="pair_analyzer_rotation_option">Analyzer Options</label>
         <fieldset id="pair_analyzer_rotation_option">
             <input type="checkbox" id="checkboxD_pair_analyzer" class="custom-checkbox pair_analyzer" value="D" checked>
-            <label for="checkboxD_pair_analyzer">D</label>
+            <label translate="no" for="checkboxD_pair_analyzer">D</label>
             <input type="checkbox" id="checkboxU_pair_analyzer" class="custom-checkbox pair_analyzer" value="U">
-            <label for="checkboxU_pair_analyzer">U</label>
+            <label translate="no" for="checkboxU_pair_analyzer">U</label>
             <input type="checkbox" id="checkboxL_pair_analyzer" class="custom-checkbox pair_analyzer" value="L">
-            <label for="checkboxL_pair_analyzer">L</label>
+            <label translate="no" for="checkboxL_pair_analyzer">L</label>
             <input type="checkbox" id="checkboxR_pair_analyzer" class="custom-checkbox pair_analyzer" value="R">
-            <label for="checkboxR_pair_analyzer">R</label>
+            <label translate="no" for="checkboxR_pair_analyzer">R</label>
             <input type="checkbox" id="checkboxF_pair_analyzer" class="custom-checkbox pair_analyzer" value="F">
-            <label for="checkboxF_pair_analyzer">F</label>
+            <label translate="no" for="checkboxF_pair_analyzer">F</label>
             <input type="checkbox" id="checkboxB_pair_analyzer" class="custom-checkbox pair_analyzer" value="B">
-            <label for="checkboxB_pair_analyzer">B</label>
+            <label translate="no" for="checkboxB_pair_analyzer">B</label>
         </fieldset>
-        <select id="pair_analyzer_option">
-            <option value="cross">cross</option>
-            <option value="xcross">xcross</option>
-            <option value="xxcross">xxcross</option>
-            <option value="xxxcross">xxxcross</option>
-            <option value="2x">cross, x</option>
-            <option value="3x">cross, x, xx</option>
-            <option value="4x">cross, x, xx, xxx</option>
+        <select translate="no" id="pair_analyzer_option">
+            <option translate="no" value="cross">cross</option>
+            <option translate="no" value="xcross">xcross</option>
+            <option translate="no" value="xxcross">xxcross</option>
+            <option translate="no" value="xxxcross">xxxcross</option>
+            <option translate="no" value="2x">cross, x</option>
+            <option translate="no" value="3x">cross, x, xx</option>
+            <option translate="no" value="4x">cross, x, xx, xxx</option>
         </select>
         <button id="pair_analyzer" class="button medium" onclick="pair_analyze()">Analyze</button>
         <div id="pair_table"></div>
@@ -373,206 +376,206 @@
         <fieldset id="pair_panalyzer_rotation_option">
             <input type="checkbox" id="checkboxD_pair_panalyzer" class="custom-checkbox pair_panalyzer" value="D"
                 checked>
-            <label for="checkboxD_pair_panalyzer">D</label>
+            <label translate="no" for="checkboxD_pair_panalyzer">D</label>
             <input type="checkbox" id="checkboxU_pair_panalyzer" class="custom-checkbox pair_panalyzer" value="U">
-            <label for="checkboxU_pair_panalyzer">U</label>
+            <label translate="no" for="checkboxU_pair_panalyzer">U</label>
             <input type="checkbox" id="checkboxL_pair_panalyzer" class="custom-checkbox pair_panalyzer" value="L">
-            <label for="checkboxL_pair_panalyzer">L</label>
+            <label translate="no" for="checkboxL_pair_panalyzer">L</label>
             <input type="checkbox" id="checkboxR_pair_panalyzer" class="custom-checkbox pair_panalyzer" value="R">
-            <label for="checkboxR_pair_panalyzer">R</label>
+            <label translate="no" for="checkboxR_pair_panalyzer">R</label>
             <input type="checkbox" id="checkboxF_pair_panalyzer" class="custom-checkbox pair_panalyzer" value="F">
-            <label for="checkboxF_pair_panalyzer">F</label>
+            <label translate="no" for="checkboxF_pair_panalyzer">F</label>
             <input type="checkbox" id="checkboxB_pair_panalyzer" class="custom-checkbox pair_panalyzer" value="B">
-            <label for="checkboxB_pair_panalyzer">B</label>
+            <label translate="no" for="checkboxB_pair_panalyzer">B</label>
         </fieldset><br>
-        <select id="pair_panalyzer_option">
-            <option value="cross">cross</option>
-            <option value="xcross">xcross</option>
-            <option value="xxcross">xxcross</option>
-            <option value="xxxcross">xxxcross</option>
-            <option value="2x">cross, x</option>
-            <option value="3x">cross, x, xx</option>
-            <option value="4x">cross, x, xx, xxx</option>
+        <select translate="no" id="pair_panalyzer_option">
+            <option translate="no" value="cross">cross</option>
+            <option translate="no" value="xcross">xcross</option>
+            <option translate="no" value="xxcross">xxcross</option>
+            <option translate="no" value="xxxcross">xxxcross</option>
+            <option translate="no" value="2x">cross, x</option>
+            <option translate="no" value="3x">cross, x, xx</option>
+            <option translate="no" value="4x">cross, x, xx, xxx</option>
         </select>
         <button id="pair_panalyzer" class="button medium" onclick="pair_panalyze()">Analyze</button>
         <div id="pair_ptable"></div>
     </div><br>
     <label for="rot">Rotation: </label>
-    <select id="rot" onchange="updateUrlParams()">
-        <option value="">None</option>
-        <option value="y">y</option>
-        <option value="y2">y2</option>
-        <option value="y'">y'</option>
-        <option value="z2">z2</option>
-        <option value="z2 y">z2 y</option>
-        <option value="z2 y2">z2 y2</option>
-        <option value="z2 y'">z2 y'</option>
-        <option value="z'">z'</option>
-        <option value="z' y">z' y</option>
-        <option value="z' y2">z' y2</option>
-        <option value="z' y'">z' y'</option>
-        <option value="z">z</option>
-        <option value="z y">z y</option>
-        <option value="z y2">z y2</option>
-        <option value="z y'">z y'</option>
-        <option value="x'">x'</option>
-        <option value="x' y">x' y</option>
-        <option value="x' y2">x' y2</option>
-        <option value="x' y'">x' y'</option>
-        <option value="x2">x2</option>
-        <option value="x2 y">x2 y</option>
-        <option value="x2 y2">x2 y2</option>
-        <option value="x2 y'">x2 y'</option>
-        <option value="x">x</option>
-        <option value="x y">x y</option>
-        <option value="x y2">x y2</option>
-        <option value="x y'">x y'</option>
+    <select translate="no" id="rot" onchange="updateUrlParams()">
+        <option translate="no" value="">None</option>
+        <option translate="no" value="y">y</option>
+        <option translate="no" value="y2">y2</option>
+        <option translate="no" value="y'">y'</option>
+        <option translate="no" value="z2">z2</option>
+        <option translate="no" value="z2 y">z2 y</option>
+        <option translate="no" value="z2 y2">z2 y2</option>
+        <option translate="no" value="z2 y'">z2 y'</option>
+        <option translate="no" value="z'">z'</option>
+        <option translate="no" value="z' y">z' y</option>
+        <option translate="no" value="z' y2">z' y2</option>
+        <option translate="no" value="z' y'">z' y'</option>
+        <option translate="no" value="z">z</option>
+        <option translate="no" value="z y">z y</option>
+        <option translate="no" value="z y2">z y2</option>
+        <option translate="no" value="z y'">z y'</option>
+        <option translate="no" value="x'">x'</option>
+        <option translate="no" value="x' y">x' y</option>
+        <option translate="no" value="x' y2">x' y2</option>
+        <option translate="no" value="x' y'">x' y'</option>
+        <option translate="no" value="x2">x2</option>
+        <option translate="no" value="x2 y">x2 y</option>
+        <option translate="no" value="x2 y2">x2 y2</option>
+        <option translate="no" value="x2 y'">x2 y'</option>
+        <option translate="no" value="x">x</option>
+        <option translate="no" value="x y">x y</option>
+        <option translate="no" value="x y2">x y2</option>
+        <option translate="no" value="x y'">x y'</option>
     </select><br>
     <div id="option_for_F2L" class="hidden">
         <label for="slot">Slot: </label>
-        <select id="slot" onchange="updateUrlParams()">
-            <option value="">None</option>
-            <option value="BL">BL</option>
-            <option value="BR">BR</option>
-            <option value="FR">FR</option>
-            <option value="FL">FL</option>
-            <option value="BL BR">BL BR</option>
-            <option value="BL FR">BL FR</option>
-            <option value="BL FL">BL FL</option>
-            <option value="BR FR">BR FR</option>
-            <option value="BR FL">BR FL</option>
-            <option value="FR FL">FR FL</option>
-            <option value="BL BR FR">BL BR FR</option>
-            <option value="BL BR FL">BL BR FL</option>
-            <option value="BL FR FL">BL FR FL</option>
-            <option value="BR FR FL">BR FR FL</option>
-            <option value="BL BR FR FL">BL BR FR FL</option>
+        <select translate="no" id="slot" onchange="updateUrlParams()">
+            <option translate="no" value="">None</option>
+            <option translate="no" value="BL">BL</option>
+            <option translate="no" value="BR">BR</option>
+            <option translate="no" value="FR">FR</option>
+            <option translate="no" value="FL">FL</option>
+            <option translate="no" value="BL BR">BL BR</option>
+            <option translate="no" value="BL FR">BL FR</option>
+            <option translate="no" value="BL FL">BL FL</option>
+            <option translate="no" value="BR FR">BR FR</option>
+            <option translate="no" value="BR FL">BR FL</option>
+            <option translate="no" value="FR FL">FR FL</option>
+            <option translate="no" value="BL BR FR">BL BR FR</option>
+            <option translate="no" value="BL BR FL">BL BR FL</option>
+            <option translate="no" value="BL FR FL">BL FR FL</option>
+            <option translate="no" value="BR FR FL">BR FR FL</option>
+            <option translate="no" value="BL BR FR FL">BL BR FR FL</option>
         </select>
     </div>
     <div id="option_for_PF2L" class="hidden">
         <div id="option_for_PF2LE">
-            <label for="pslot_edge">Pseudo Edge: </label>
-            <select id="pslot_edge" onchange="updateDropdown(); updateUrlParams();">
-                <option value="">None</option>
-                <option value="BL">BL</option>
-                <option value="BR">BR</option>
-                <option value="FR">FR</option>
-                <option value="FL">FL</option>
-                <option value="BL BR">BL BR</option>
-                <option value="BL FR">BL FR</option>
-                <option value="BL FL">BL FL</option>
-                <option value="BR FR">BR FR</option>
-                <option value="BR FL">BR FL</option>
-                <option value="FR FL">FR FL</option>
-                <option value="BL BR FR">BL BR FR</option>
-                <option value="BL BR FL">BL BR FL</option>
-                <option value="BL FR FL">BL FR FL</option>
-                <option value="BR FR FL">BR FR FL</option>
+            <label for="pslot_edge">Pseudo Slot Edge: </label>
+            <select translate="no" id="pslot_edge" onchange="updateDropdown(); updateUrlParams();">
+                <option translate="no" value="">None</option>
+                <option translate="no" value="BL">BL</option>
+                <option translate="no" value="BR">BR</option>
+                <option translate="no" value="FR">FR</option>
+                <option translate="no" value="FL">FL</option>
+                <option translate="no" value="BL BR">BL BR</option>
+                <option translate="no" value="BL FR">BL FR</option>
+                <option translate="no" value="BL FL">BL FL</option>
+                <option translate="no" value="BR FR">BR FR</option>
+                <option translate="no" value="BR FL">BR FL</option>
+                <option translate="no" value="FR FL">FR FL</option>
+                <option translate="no" value="BL BR FR">BL BR FR</option>
+                <option translate="no" value="BL BR FL">BL BR FL</option>
+                <option translate="no" value="BL FR FL">BL FR FL</option>
+                <option translate="no" value="BR FR FL">BR FR FL</option>
             </select>
         </div>
         <div id="option_for_PF2LC" class="hidden">
-            <label for="pslot_corner">Pseudo Corner: </label>
-            <select id="pslot_corner" onchange="updateUrlParams()">
+            <label for="pslot_corner">Pseudo Slot Corner: </label>
+            <select translate="no" id="pslot_corner" onchange="updateUrlParams()">
             </select>
         </div>
     </div>
 
     <div id="option_for_F2L2" class="hidden">
         <label for="slot2">Slot: </label>
-        <select id="slot2" onchange="updateDropdown2(); updateUrlParams()">
-            <option value="">None</option>
-            <option value="BL">BL</option>
-            <option value="BR">BR</option>
-            <option value="FR">FR</option>
-            <option value="FL">FL</option>
-            <option value="BL BR">BL BR</option>
-            <option value="BL FR">BL FR</option>
-            <option value="BL FL">BL FL</option>
-            <option value="BR FR">BR FR</option>
-            <option value="BR FL">BR FL</option>
-            <option value="FR FL">FR FL</option>
-            <option value="BL BR FR">BL BR FR</option>
-            <option value="BL BR FL">BL BR FL</option>
-            <option value="BL FR FL">BL FR FL</option>
-            <option value="BR FR FL">BR FR FL</option>
+        <select translate="no" id="slot2" onchange="updateDropdown2(); updateUrlParams()">
+            <option translate="no" value="">None</option>
+            <option translate="no" value="BL">BL</option>
+            <option translate="no" value="BR">BR</option>
+            <option translate="no" value="FR">FR</option>
+            <option translate="no" value="FL">FL</option>
+            <option translate="no" value="BL BR">BL BR</option>
+            <option translate="no" value="BL FR">BL FR</option>
+            <option translate="no" value="BL FL">BL FL</option>
+            <option translate="no" value="BR FR">BR FR</option>
+            <option translate="no" value="BR FL">BR FL</option>
+            <option translate="no" value="FR FL">FR FL</option>
+            <option translate="no" value="BL BR FR">BL BR FR</option>
+            <option translate="no" value="BL BR FL">BL BR FL</option>
+            <option translate="no" value="BL FR FL">BL FR FL</option>
+            <option translate="no" value="BR FR FL">BR FR FL</option>
         </select>
     </div>
     <div id="option_for_pair_F2L" class="hidden">
-        <label for="pair_slot">Pair Slot: </label>
-        <select id="pair_slot" onchange="updateUrlParams()">
-            <option value="BL">BL</option>
-            <option value="BR">BR</option>
-            <option value="FR">FR</option>
-            <option value="FL">FL</option>
+        <label for="pair_slot">Free Pair: </label>
+        <select translate="no" id="pair_slot" onchange="updateUrlParams()">
+            <option translate="no" value="BL">BL</option>
+            <option translate="no" value="BR">BR</option>
+            <option translate="no" value="FR">FR</option>
+            <option translate="no" value="FL">FL</option>
         </select>
     </div>
     <div id="option_for_PF2L2" class="hidden">
         <div id="option_for_PF2LE2">
-            <label for="pslot_edge2">Pseudo Edge: </label>
-            <select id="pslot_edge2" onchange="updateDropdown3(); updateUrlParams()">
-                <option value="">None</option>
-                <option value="BL">BL</option>
-                <option value="BR">BR</option>
-                <option value="FR">FR</option>
-                <option value="FL">FL</option>
-                <option value="BL BR">BL BR</option>
-                <option value="BL FR">BL FR</option>
-                <option value="BL FL">BL FL</option>
-                <option value="BR FR">BR FR</option>
-                <option value="BR FL">BR FL</option>
-                <option value="FR FL">FR FL</option>
-                <option value="BL BR FR">BL BR FR</option>
-                <option value="BL BR FL">BL BR FL</option>
-                <option value="BL FR FL">BL FR FL</option>
-                <option value="BR FR FL">BR FR FL</option>
+            <label for="pslot_edge2">Pseudo Slot Edge: </label>
+            <select translate="no" id="pslot_edge2" onchange="updateDropdown3(); updateUrlParams()">
+                <option translate="no" value="">None</option>
+                <option translate="no" value="BL">BL</option>
+                <option translate="no" value="BR">BR</option>
+                <option translate="no" value="FR">FR</option>
+                <option translate="no" value="FL">FL</option>
+                <option translate="no" value="BL BR">BL BR</option>
+                <option translate="no" value="BL FR">BL FR</option>
+                <option translate="no" value="BL FL">BL FL</option>
+                <option translate="no" value="BR FR">BR FR</option>
+                <option translate="no" value="BR FL">BR FL</option>
+                <option translate="no" value="FR FL">FR FL</option>
+                <option translate="no" value="BL BR FR">BL BR FR</option>
+                <option translate="no" value="BL BR FL">BL BR FL</option>
+                <option translate="no" value="BL FR FL">BL FR FL</option>
+                <option translate="no" value="BR FR FL">BR FR FL</option>
             </select>
         </div>
         <div id="option_for_PF2LC2" class="hidden">
-            <label for="pslot_corner2">Pseudo Corner: </label>
-            <select id="pslot_corner2" onchange="updateDropdown4(); updateUrlParams()">
+            <label for="pslot_corner2">Pseudo Slot Corner: </label>
+            <select translate="no" id="pslot_corner2" onchange="updateDropdown4(); updateUrlParams()">
             </select>
         </div>
         <div id="option_for_pair_PF2L" class="hidden">
             <div id="option_for_pair_PF2LE">
-                <label for="pair_pslot_edge">Pair Edge: </label>
-                <select id="pair_pslot_edge" onchange="updateUrlParams()">
-                    <option value="BL">BL</option>
-                    <option value="BR">BR</option>
-                    <option value="FR">FR</option>
-                    <option value="FL">FL</option>
+                <label for="pair_pslot_edge">Free Pair Edge: </label>
+                <select translate="no" id="pair_pslot_edge" onchange="updateUrlParams()">
+                    <option translate="no" value="BL">BL</option>
+                    <option translate="no" value="BR">BR</option>
+                    <option translate="no" value="FR">FR</option>
+                    <option translate="no" value="FL">FL</option>
                 </select>
             </div>
             <div id="option_for_pair_PF2LC">
-                <label for="pair_pslot_corner">Pair Corner: </label>
-                <select id="pair_pslot_corner" onchange="updateUrlParams()">
-                    <option value="BL">BL</option>
-                    <option value="BR">BR</option>
-                    <option value="FR">FR</option>
-                    <option value="FL">FL</option>
+                <label for="pair_pslot_corner">Free Pair Corner: </label>
+                <select translate="no" id="pair_pslot_corner" onchange="updateUrlParams()">
+                    <option translate="no" value="BL">BL</option>
+                    <option translate="no" value="BR">BR</option>
+                    <option translate="no" value="FR">FR</option>
+                    <option translate="no" value="FL">FL</option>
                 </select>
             </div>
         </div>
     </div>
 
     <div id="option_for_LS" class="hidden">
-        <label for="ll">LL option: </label>
-        <select id="ll" onchange="updateUrlParams()">
-            <option value="">None</option>
-            <option value="CP">CP</option>
-            <option value="CO">CO</option>
-            <option value="EP">EP</option>
-            <option value="EO">EO</option>
-            <option value="CP CO">CP CO</option>
-            <option value="CP EP">CP EP</option>
-            <option value="CP EO">CP EO</option>
-            <option value="CO EP">CO EP</option>
-            <option value="CO EO">CO EO</option>
-            <option value="EP EO">EP EO</option>
-            <option value="CP CO EP">CP CO EP</option>
-            <option value="CP CO EO">CP CO EO</option>
-            <option value="CP EO EP">CP EO EP</option>
-            <option value="CO EP EO">CO EP EO</option>
-            <option value="CP CO EP EO">CP CO EP EO</option>
+        <label for="ll">Last Layer option: </label>
+        <select translate="no" id="ll" onchange="updateUrlParams()">
+            <option translate="no" value="">None</option>
+            <option translate="no" value="CP">CP</option>
+            <option translate="no" value="CO">CO</option>
+            <option translate="no" value="EP">EP</option>
+            <option translate="no" value="EO">EO</option>
+            <option translate="no" value="CP CO">CP CO</option>
+            <option translate="no" value="CP EP">CP EP</option>
+            <option translate="no" value="CP EO">CP EO</option>
+            <option translate="no" value="CO EP">CO EP</option>
+            <option translate="no" value="CO EO">CO EO</option>
+            <option translate="no" value="EP EO">EP EO</option>
+            <option translate="no" value="CP CO EP">CP CO EP</option>
+            <option translate="no" value="CP CO EO">CP CO EO</option>
+            <option translate="no" value="CP EO EP">CP EO EP</option>
+            <option translate="no" value="CO EP EO">CO EP EO</option>
+            <option translate="no" value="CP CO EP EO">CP CO EP EO</option>
         </select>
     </div>
     <div id="basic input">
@@ -580,26 +583,26 @@
         <input type="number" id="len" value="20" min="1" required onchange="updateUrlParams()"><br>
         <label for="num">Max Count: </label>
         <input type="number" id="num" value="20" min=1 required onchange="updateUrlParams()"><br>
-        <label for="res">Restrict: </label>
-        <select id="res" onchange="updateUrlParams()">
-            <option value="UDLRFB">UDLRFB</option>
-            <option value="UDRF">UDRF</option>
-            <option value="UDLF">UDLF</option>
-            <option value="UDRB">UDRB</option>
-            <option value="UDLB">UDLB</option>
-            <option value="UDLR">UDLR</option>
-            <option value="URFB">URFB</option>
-            <option value="ULFB">ULFB</option>
-            <option value="URF">URF</option>
-            <option value="ULF">ULF</option>
-            <option value="URB">URB</option>
-            <option value="ULB">ULB</option>
-            <option value="UDR">UDR</option>
-            <option value="UDL">UDL</option>
-            <option value="ULR">ULR</option>
-            <option value="ULR">UFB</option>
-            <option value="UR">UR</option>
-            <option value="UL">UL</option>
+        <label for="res">Move Restrict: </label>
+        <select translate="no" id="res" onchange="updateUrlParams()">
+            <option translate="no" value="UDLRFB">UDLRFB</option>
+            <option translate="no" value="UDRF">UDRF</option>
+            <option translate="no" value="UDLF">UDLF</option>
+            <option translate="no" value="UDRB">UDRB</option>
+            <option translate="no" value="UDLB">UDLB</option>
+            <option translate="no" value="UDLR">UDLR</option>
+            <option translate="no" value="URFB">URFB</option>
+            <option translate="no" value="ULFB">ULFB</option>
+            <option translate="no" value="URF">URF</option>
+            <option translate="no" value="ULF">ULF</option>
+            <option translate="no" value="URB">URB</option>
+            <option translate="no" value="ULB">ULB</option>
+            <option translate="no" value="UDR">UDR</option>
+            <option translate="no" value="UDL">UDL</option>
+            <option translate="no" value="ULR">ULR</option>
+            <option translate="no" value="ULR">UFB</option>
+            <option translate="no" value="UR">UR</option>
+            <option translate="no" value="UL">UL</option>
         </select>
     </div>
     <a class="hidden" id="tp_alert">Two Phase Solver output 1 solution.<br></a>
@@ -1122,7 +1125,7 @@
                 const textNode = document.createTextNode(messageCount + ": " + sol);
                 const button = document.createElement('button');
                 button.classList.add('button', 'medium');
-                button.textContent = 'Add alg';
+                button.textContent = 'Add';
                 button.onclick = function () {
                     add(sol);
                 };
@@ -1146,6 +1149,7 @@
                 link_element1.target = '_blank';
                 link_element1.rel = 'noopener noreferrer';
                 link_element1.textContent = 'alg.cubing.net';
+                link_element1.setAttribute('translate', 'no');
                 details.appendChild(link_element1);
                 var spaceElement = document.createElement('a');
                 spaceElement.innerHTML = "&nbsp;";
@@ -1155,6 +1159,7 @@
                 link_element2.target = '_blank';
                 link_element2.rel = 'noopener noreferrer';
                 link_element2.textContent = 'cubedb.net';
+                link_element2.setAttribute('translate', 'no');
                 details.appendChild(link_element2);
                 var spaceElement2 = document.createElement('a');
                 spaceElement2.innerHTML = "&nbsp;";
@@ -1167,6 +1172,7 @@
                 link_element3.target = '_blank';
                 link_element3.rel = 'noopener noreferrer';
                 link_element3.textContent = 'or18.github.io';
+                link_element3.setAttribute('translate', 'no');
                 details.appendChild(link_element3);
                 details.style.marginBottom = '10px';
                 element.appendChild(details);

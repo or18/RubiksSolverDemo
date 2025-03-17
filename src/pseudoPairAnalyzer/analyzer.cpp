@@ -1694,7 +1694,7 @@ struct xcross_analyzer2
 void analyzer(std::string scramble, bool cross, bool x, bool xx, bool xxx, std::string num, std::string rot_set)
 {
 	std::vector<std::string> rotations;
-	std::string table = "<br><table border=\"2\" id=\"pair_panalyzer_result\"><thead><tr><th class=\"sort\" data-sort=\"No\">No</th><th class=\"sort\" data-sort=\"slot\">PSE</th><th class=\"sort\" data-sort=\"pslot\">PSC</th><th class=\"sort\" data-sort=\"a_slot\">APSE</th><th class=\"sort\" data-sort=\"a_pslot\">APSC</th>";
+	std::string table = "<br><table border=\"2\" id=\"pair_panalyzer_result\" translate=\"no\"><thead><tr><th class=\"sort\" data-sort=\"No\">No</th><th class=\"sort\" data-sort=\"slot\">PSE</th><th class=\"sort\" data-sort=\"pslot\">PSC</th><th class=\"sort\" data-sort=\"a_slot\">APSE</th><th class=\"sort\" data-sort=\"a_pslot\">APSC</th>";
 	for (char c_tmp : rot_set)
 	{
 		std::string c(1, c_tmp);
