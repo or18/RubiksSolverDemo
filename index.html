@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Rubik's Cube Solver</title>
     <meta name="description"
-        content="Lite and fast solvers for Rubik's Cube cross, X-cross, XX-cross, free pair and pseudo F2L. ">
+        content="Fast solver for Rubik's Cube cross, X-cross, XX-cross, free pair, pseudo F2L, and last layer. ">
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-MXJH30352W"></script>
     <script async src="src/min2phase.js/min2phase.js"></script>
     <script async src="src/functions/list.js"></script>
@@ -252,8 +252,7 @@
         <h1>Rubik's Cube Solver</h1>
     </header>
     <h2>This is solver for Rubik's cube cross, X-cross, XX-cross, XXX-cross, XXXX-cross, free pair, last layer(OLL,
-        ZBLS, PLL, ZBLL). Pseudo F2L solver also available. Lite and fast solvers that work on smartphones are also
-        available.</h2>
+        ZBLS, PLL, ZBLL, 1LLL). Pseudo X-, XX-, XXX-cross and free pair solver also available.</h2>
     <a href="https://github.com/or18/RubiksSolverDemo" rel="noopener noreferrer">Source</a><br>
     <a href="https://or18.github.io/Rubiks-cube-xcross-solver/" rel="noopener noreferrer">Old Demo</a><br><br>
     <label for="solver">Solver</label><br>
@@ -1122,6 +1121,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                 }
                 const summary = document.createElement('summary');
                 summary.textContent = messageCount + ": " + sol;
+                summary.setAttribute('translate', 'no');
                 const textNode = document.createTextNode(messageCount + ": " + sol);
                 const button = document.createElement('button');
                 button.classList.add('button', 'medium');
