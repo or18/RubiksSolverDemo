@@ -939,7 +939,11 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                     url.searchParams.delete(key);
                 }
             });
-            window.history.replaceState({}, '', url);
+            try {
+                window.history.replaceState({}, '', url);
+            } catch (e) {
+                console.log(e.message);
+            }
         }
 
         function setParamsFromUrl(urlParams) {
@@ -1179,7 +1183,11 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                 element.appendChild(details);
                 document.getElementById("countLine").value = messageCount;
                 if (messageCount === 1) {
-                    window.history.replaceState({}, '', currentUrl);
+                    try {
+                        window.history.replaceState({}, '', currentUrl);
+                    } catch (e) {
+                        console.log(e.message);
+                    }
                 }
             }
         }
@@ -1228,14 +1236,14 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
         const textarea = document.getElementById('scr');
         const undoButton = document.getElementById('undo');
         const redoButton = document.getElementById('redo');
-        let history = [];
+        let history_input = [];
         let currentIndex = -1;
 
         function save() {
-            if (currentIndex < history.length - 1) {
-                history = history.slice(0, currentIndex + 1);
+            if (currentIndex < history_input.length - 1) {
+                history_input = history_input.slice(0, currentIndex + 1);
             }
-            history.push(textarea.value);
+            history_input.push(textarea.value);
             currentIndex++;
             updateButtons();
             try {
@@ -1434,7 +1442,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
         function undo() {
             if (currentIndex > 0) {
                 currentIndex--;
-                textarea.value = history[currentIndex];
+                textarea.value = history_input[currentIndex];
                 updateButtons();
                 try {
                     document.getElementById('show').innerHTML = '';
@@ -1450,9 +1458,9 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
         }
 
         function redo() {
-            if (currentIndex < history.length - 1) {
+            if (currentIndex < history_input.length - 1) {
                 currentIndex++;
-                textarea.value = history[currentIndex];
+                textarea.value = history_input[currentIndex];
                 updateButtons();
                 try {
                     document.getElementById('show').innerHTML = '';
@@ -1469,7 +1477,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
 
         function updateButtons() {
             undoButton.disabled = currentIndex <= 0;
-            redoButton.disabled = currentIndex >= history.length - 1;
+            redoButton.disabled = currentIndex >= history_input.length - 1;
             const currentScr = document.getElementById("scr").value;
             if (currentScr === "") {
                 document.getElementById("reverse").classList.add("hidden");
@@ -1484,7 +1492,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             } else {
                 undoButton.classList.remove("hidden_small");
             }
-            if (currentIndex >= history.length - 1) {
+            if (currentIndex >= history_input.length - 1) {
                 redoButton.classList.add("hidden_small")
             } else {
                 redoButton.classList.remove("hidden_small");
