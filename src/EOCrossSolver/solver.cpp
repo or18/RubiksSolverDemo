@@ -603,7 +603,7 @@ struct cross_search
                     int index_eo_tmp2 = index_eo;
                     for (int j : sol)
                     {
-                        if (index1_tmp2 == multi_move_table[index1_tmp2 + j] * 18 && index2_tmp2 == multi_move_table[index2_tmp2 + j] * 18 && index_eo_tmp2 == eo_move_table[index_eo_tmp2 + j])
+                        if (index1_tmp2 == multi_move_table[index1_tmp2 + j] * 18 && index2_tmp2 == multi_move_table[index2_tmp2 + j] * 18 && (index_eo_tmp2 == 0 && j != 12 && j != 14 && j != 15 && j != 17))
                         {
                             valid = false;
                             break;
@@ -621,7 +621,7 @@ struct cross_search
                             }
                             index1_tmp2 *= 18;
                             index2_tmp2 *= 18;
-                    }
+                        }
                     }
                     if (valid)
                     {
@@ -766,7 +766,7 @@ struct xcross_search
                     int index_eo_tmp2 = index_eo;
                     for (int j : sol)
                     {
-                        if (index1_tmp2 == multi_move_table[index1_tmp2 + j] && index2_tmp2 == corner_move_table[index2_tmp2 + j] * 18 && index3_tmp2 == edge_move_table[index3_tmp2 + j] * 18 && index_eo_tmp2 == eo_move_table[index_eo_tmp2 + j])
+                        if (index1_tmp2 == multi_move_table[index1_tmp2 + j] && index2_tmp2 == corner_move_table[index2_tmp2 + j] * 18 && index3_tmp2 == edge_move_table[index3_tmp2 + j] * 18 && (index_eo_tmp2 == 0 && j != 12 && j != 14 && j != 15 && j != 17))
                         {
                             valid = false;
                             break;
@@ -943,7 +943,7 @@ struct xxcross_search
             {
                 continue;
             }
-            index_eo_tmp = eo_move_table[index_eo_tmp + i];
+            index_eo_tmp = eo_move_table[arg_index_eo + i];
             sol.emplace_back(i);
             if (depth == 1)
             {
@@ -961,7 +961,7 @@ struct xxcross_search
                     int index_eo_tmp2 = index_eo;
                     for (int j : sol)
                     {
-                        if (index1_tmp2 == multi_move_table[index1_tmp2 + j] && index2_tmp2 == corner_move_table[index2_tmp2 + j] * 18 && index3_tmp2 == multi_move_table[index3_tmp2 + j] && index4_tmp2 == corner_move_table[index4_tmp2 + j] * 18 && index5_tmp2 == edge_move_table[index5_tmp2 + j] * 18 && index6_tmp2 == edge_move_table[index6_tmp2 + j] * 18 && index_eo_tmp2 == eo_move_table[index_eo_tmp2 + j])
+                        if (index1_tmp2 == multi_move_table[index1_tmp2 + j] && index2_tmp2 == corner_move_table[index2_tmp2 + j] * 18 && index3_tmp2 == multi_move_table[index3_tmp2 + j] && index4_tmp2 == corner_move_table[index4_tmp2 + j] * 18 && index5_tmp2 == edge_move_table[index5_tmp2 + j] * 18 && index6_tmp2 == edge_move_table[index6_tmp2 + j] * 18 && (index_eo_tmp2 == 0 && j != 12 && j != 14 && j != 15 && j != 17))
                         {
                             valid = false;
                             break;
@@ -1196,7 +1196,7 @@ struct xxxcross_search
                     int index_eo_tmp2 = index_eo;
                     for (int j : sol)
                     {
-                        if (index1_tmp2 == multi_move_table[index1_tmp2 + j] && index2_tmp2 == corner_move_table[index2_tmp2 + j] * 18 && index3_tmp2 == multi_move_table[index3_tmp2 + j] && index4_tmp2 == corner_move_table[index4_tmp2 + j] * 18 && index5_tmp2 == multi_move_table[index5_tmp2 + j] && index6_tmp2 == corner_move_table[index6_tmp2 + j] * 18 && index7_tmp2 == edge_move_table[index7_tmp2 + j] * 18 && index8_tmp2 == edge_move_table[index8_tmp2 + j] * 18 && index9_tmp2 == edge_move_table[index9_tmp2 + j] * 18 && index_eo_tmp2 == eo_move_table[index_eo_tmp2 + j])
+                        if (index1_tmp2 == multi_move_table[index1_tmp2 + j] && index2_tmp2 == corner_move_table[index2_tmp2 + j] * 18 && index3_tmp2 == multi_move_table[index3_tmp2 + j] && index4_tmp2 == corner_move_table[index4_tmp2 + j] * 18 && index5_tmp2 == multi_move_table[index5_tmp2 + j] && index6_tmp2 == corner_move_table[index6_tmp2 + j] * 18 && index7_tmp2 == edge_move_table[index7_tmp2 + j] * 18 && index8_tmp2 == edge_move_table[index8_tmp2 + j] * 18 && index9_tmp2 == edge_move_table[index9_tmp2 + j] * 18 && (index_eo_tmp2 == 0 && j != 12 && j != 14 && j != 15 && j != 17))
                         {
                             valid = false;
                             break;
@@ -1463,7 +1463,7 @@ struct xxxxcross_search
                     int index_eo_tmp2 = index_eo;
                     for (int j : sol)
                     {
-                        if (index1_tmp2 == multi_move_table[index1_tmp2 + j] && index2_tmp2 == corner_move_table[index2_tmp2 + j] * 18 && index3_tmp2 == multi_move_table[index3_tmp2 + j] && index4_tmp2 == corner_move_table[index4_tmp2 + j] * 18 && index5_tmp2 == multi_move_table[index5_tmp2 + j] && index6_tmp2 == corner_move_table[index6_tmp2 + j] * 18 && index7_tmp2 == multi_move_table[index7_tmp2 + j] && index8_tmp2 == corner_move_table[index8_tmp2 + j] * 18 && index9_tmp2 == edge_move_table[index9_tmp2 + j] * 18 && index10_tmp2 == edge_move_table[index10_tmp2 + j] * 18 && index11_tmp2 == edge_move_table[index11_tmp2 + j] * 18 && index12_tmp2 == edge_move_table[index12_tmp2 + j] * 18 && index_eo_tmp2 == eo_move_table[index_eo_tmp2 + j])
+                        if (index1_tmp2 == multi_move_table[index1_tmp2 + j] && index2_tmp2 == corner_move_table[index2_tmp2 + j] * 18 && index3_tmp2 == multi_move_table[index3_tmp2 + j] && index4_tmp2 == corner_move_table[index4_tmp2 + j] * 18 && index5_tmp2 == multi_move_table[index5_tmp2 + j] && index6_tmp2 == corner_move_table[index6_tmp2 + j] * 18 && index7_tmp2 == multi_move_table[index7_tmp2 + j] && index8_tmp2 == corner_move_table[index8_tmp2 + j] * 18 && index9_tmp2 == edge_move_table[index9_tmp2 + j] * 18 && index10_tmp2 == edge_move_table[index10_tmp2 + j] * 18 && index11_tmp2 == edge_move_table[index11_tmp2 + j] * 18 && index12_tmp2 == edge_move_table[index12_tmp2 + j] * 18 && (index_eo_tmp2 == 0 && j != 12 && j != 14 && j != 15 && j != 17))
                         {
                             valid = false;
                             break;
