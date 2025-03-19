@@ -603,25 +603,17 @@ struct cross_search
                     int index_eo_tmp2 = index_eo;
                     for (int j : sol)
                     {
-                        if (index1_tmp2 == multi_move_table[index1_tmp2 + j] * 18 && index2_tmp2 == multi_move_table[index2_tmp2 + j] * 18)
+                        c += 1;
+                        index1_tmp2 = multi_move_table[index1_tmp2 + j];
+                        index2_tmp2 = multi_move_table[index2_tmp2 + j];
+                        index_eo_tmp2 = eo_move_table[index_eo_tmp2 + j];
+                        if (c < l && prune_table[index1_tmp2 * 528 + index2_tmp2] == 0 && index_eo_tmp2 == 0)
                         {
                             valid = false;
                             break;
                         }
-                        else
-                        {
-                            c += 1;
-                            index1_tmp2 = multi_move_table[index1_tmp2 + j];
-                            index2_tmp2 = multi_move_table[index2_tmp2 + j];
-                            index_eo_tmp2 = eo_move_table[index_eo_tmp2 + j];
-                            if (c < l && prune_table[index1_tmp2 * 528 + index2_tmp2] == 0 && index_eo_tmp2 == 0)
-                            {
-                                valid = false;
-                                break;
-                            }
-                            index1_tmp2 *= 18;
-                            index2_tmp2 *= 18;
-                        }
+                        index1_tmp2 *= 18;
+                        index2_tmp2 *= 18;
                     }
                     if (valid)
                     {
