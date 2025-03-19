@@ -550,6 +550,27 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             </div>
         </div>
     </div>
+    <div id="option_for_eocross" class="hidden">
+        <label for="slot_eo">Slot: </label>
+        <select translate="no" id="slot_eo" onchange="updateUrlParams()">
+            <option translate="no" value="">None</option>
+            <option translate="no" value="BL">BL</option>
+            <option translate="no" value="BR">BR</option>
+            <option translate="no" value="FR">FR</option>
+            <option translate="no" value="FL">FL</option>
+            <option translate="no" value="BL BR">BL BR</option>
+            <option translate="no" value="BL FR">BL FR</option>
+            <option translate="no" value="BL FL">BL FL</option>
+            <option translate="no" value="BR FR">BR FR</option>
+            <option translate="no" value="BR FL">BR FL</option>
+            <option translate="no" value="FR FL">FR FL</option>
+            <option translate="no" value="BL BR FR">BL BR FR</option>
+            <option translate="no" value="BL BR FL">BL BR FL</option>
+            <option translate="no" value="BL FR FL">BL FR FL</option>
+            <option translate="no" value="BR FR FL">BR FR FL</option>
+            <option translate="no" value="BL BR FR FL">BL BR FR FL</option>
+        </select>
+    </div>
 
     <div id="option_for_LS" class="hidden">
         <label for="ll">Last Layer option: </label>
@@ -765,6 +786,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             'rot': 'rot',
             'slot': 'slot',
             'slot2': 'slot2',
+            'slot_eo': 'slot3',
             'pair_slot': 'aslot',
             'pslot_edge': 'pse',
             'pslot_corner': 'psc',
@@ -889,6 +911,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                 'solver': 'EOCross',
                 'scr': '',
                 'rot': '',
+                'slot_eo': '',
                 'len': '20',
                 'num': '20',
                 'res': 'UDLRFB'
@@ -901,6 +924,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             'rot',
             'slot',
             'slot2',
+            'slot_eo',
             'pair_slot',
             'pslot_edge',
             'pslot_corner',
@@ -997,6 +1021,8 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                 } else {
                     document.getElementById('pair_pslot_corner').selectedIndex = 0;
                 }
+            } else if (solver==="EOCross"){
+                document.getElementById('slot_eo').value = urlParams.get(idToKeyMap['slot_eo']) ? urlParams.get(idToKeyMap['slot_eo']).replace(/_/g, ' ') : defaultValues[solver]['slot_eo'];
             }
         }
 
@@ -1039,6 +1065,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                 const rot = document.getElementById('rot').value;
                 const slot = document.getElementById('slot').value;
                 const slot2 = document.getElementById('slot2').value;
+                const slot3 = document.getElementById('slot_eo').value;
                 const pair_slot = document.getElementById('pair_slot').value;
                 const pslot_e = document.getElementById('pslot_edge').value;
                 const pslot_c = document.getElementById('pslot_corner').value;
@@ -1082,7 +1109,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                     document.getElementById("solveButton").textContent = "Start";
                 } else if (solver === "EOCross") {
                     console.log("EOCross");
-                    const args = { scr: convert(scr), rot: rot, num: num, len: len, restrict: restrict };
+                    const args = { scr: convert(scr), rot: rot, slot: slot3, num: num, len: len, restrict: restrict };
                     worker = new Worker("src/EOCrossSolver/worker.js");
                     worker.postMessage(args);
                 }
@@ -1218,6 +1245,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             document.getElementById("pair_analyze").classList.add("hidden");
             document.getElementById("pair_panalyze").classList.add("hidden");
             document.getElementById("tp_alert").classList.add("hidden");
+            document.getElementById('option_for_eocross').classList.add("hidden");
             if (selectedValue === "F2L" || selectedValue === "F2L2") {
                 document.getElementById("option_for_F2L").classList.remove("hidden");
                 document.getElementById("analyze").classList.remove("hidden");
@@ -1237,6 +1265,8 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             } else if (selectedValue === "twophase") {
                 document.getElementById("tp_alert").classList.remove("hidden");
                 document.getElementById("basic input").classList.add("hidden");
+            } else if (selectedValue === "EOCross") {
+                document.getElementById('option_for_eocross').classList.remove("hidden");
             }
         }
 
