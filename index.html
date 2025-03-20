@@ -1492,6 +1492,9 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             document.getElementById('len').value = 20;
             document.getElementById('res').value = "UDLRFB";
             updateUrlParams();
+            if (worker) {
+                startWorker();
+            }
             startWorker();
         }
 
@@ -1880,6 +1883,9 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             document.getElementById('len').value = 20;
             document.getElementById('res').value = "UDLRFB";
             updateUrlParams();
+            if (worker) {
+                startWorker();
+            }
             startWorker();
         }
 
@@ -2014,6 +2020,9 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             document.getElementById('len').value = 20;
             document.getElementById('res').value = "UDLRFB";
             updateUrlParams();
+            if (worker) {
+                startWorker();
+            }
             startWorker();
         }
 
@@ -2155,6 +2164,9 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             document.getElementById('len').value = 20;
             document.getElementById('res').value = "UDLRFB";
             updateUrlParams();
+            if (worker) {
+                startWorker();
+            }
             startWorker();
         }
 
@@ -2166,7 +2178,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                     document.getElementById("eo_analyzer").textContent = "Analyze";
                     if (messageCount_eo_analyzer > 0) {
                         option_eo_table = {
-                            valueNames: ["No", "slot", "D", "U", "L", "R", "F", "B"]
+                            valueNames: ["No", "slot", "D", "D1", "U", "U1", "L", "L1", "R", "R1", "F", "F1", "B", "B1"]
                         };
                         list_eo_table = new List('eo_table', option_eo_table);
                     }
@@ -2217,7 +2229,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                         document.getElementById("eo_analyzer").textContent = "Analyze";
                         if (messageCount_eo_analyzer > 0) {
                             option_eo_table = {
-                                valueNames: ["No", "slot", "D", "U", "L", "R", "F", "B"]
+                                valueNames: ["No", "slot", "D", "D1", "U", "U1", "L", "L1", "R", "R1", "F", "F1", "B", "B1"]
                             };
                             list_eo_table = new List('eo_table', option_eo_table);
                         }
@@ -2236,7 +2248,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                             worker6 = null;
                             document.getElementById("eo_analyzer").textContent = "Analyze";
                             option_eo_table = {
-                                valueNames: ["No", "slot", "D", "U", "L", "R", "F", "B"]
+                                valueNames: ["No", "slot", "D", "D1", "U", "U1", "L", "L1", "R", "R1", "F", "F1", "B", "B1"]
                             };
                             list_eo_table = new List('eo_table', option_eo_table);
                             return;
@@ -2274,7 +2286,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                 document.getElementById("eo_analyzer").textContent = "Analyze";
                 if (messageCount_eo_analyzer > 0) {
                     option_eo_table = {
-                        valueNames: ["No", "slot", "D", "U", "L", "R", "F", "B"]
+                        valueNames: ["No", "slot", "D", "D1", "U", "U1", "L", "L1", "R", "R1", "F", "F1", "B", "B1"]
                     };
                     list_eo_table = new List('eo_table', option_eo_table);
                 }
@@ -2292,6 +2304,9 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             document.getElementById('len').value = 20;
             document.getElementById('res').value = "UDLRFB";
             updateUrlParams();
+            if (worker) {
+                startWorker();
+            }
             startWorker();
         }
 

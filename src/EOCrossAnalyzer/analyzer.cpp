@@ -668,16 +668,16 @@ struct cross_analyzer
 
 	std::string converter(std::string input)
 	{
-		std::vector<std::string> rotations = {"", "z2", "z'", "z", "x'", "x"};
-		std::vector<std::string> rotations_js = {"''", "'z2'", "'z\\''", "'z'", "'x\\''", "'x'"};
+		std::vector<std::string> rotations = {"", "y", "z2", "z2 y", "z'", "z' y", "z", "z y", "x'", "x' y", "x", "x y"};
+		std::vector<std::string> rotations_js = {"''", "'y'", "'z2'", "'z2 y'", "'z\\''", "'z\\' y'", "'z'", "'z y'", "'x\\''", "'x\\' y'", "'x'", "'x y'"};
 		auto it = std::find(rotations.begin(), rotations.end(), input);
 		return rotations_js[std::distance(rotations.begin(), it)];
 	}
 
 	std::string converter_face(std::string input)
 	{
-		std::vector<std::string> rotations = {"", "z2", "z'", "z", "x'", "x"};
-		std::vector<std::string> rotations_js = {"'D'", "'U'", "'L'", "'R'", "'F'", "'B'"};
+		std::vector<std::string> rotations = {"", "y", "z2", "z2 y", "z'", "z' y", "z", "z y", "x'", "x' y", "x", "x y"};
+		std::vector<std::string> rotations_js = {"'D'", "'D1'", "'U'", "'U1'", "'L'", "'L1'", "'R'", "'R1'", "'F'", "'F1'", "'B'", "'B1'"};
 		auto it = std::find(rotations.begin(), rotations.end(), input);
 		return rotations_js[std::distance(rotations.begin(), it)];
 	}
@@ -876,16 +876,16 @@ struct xcross_analyzer2
 
 	std::string converter(std::string input)
 	{
-		std::vector<std::string> rotations = {"", "z2", "z'", "z", "x'", "x"};
-		std::vector<std::string> rotations_js = {"''", "'z2'", "'z\\''", "'z'", "'x\\''", "'x'"};
+		std::vector<std::string> rotations = {"", "y", "z2", "z2 y", "z'", "z' y", "z", "z y", "x'", "x' y", "x", "x y"};
+		std::vector<std::string> rotations_js = {"''", "'y'", "'z2'", "'z2 y'", "'z\\''", "'z\\' y'", "'z'", "'z y'", "'x\\''", "'x\\' y'", "'x'", "'x y'"};
 		auto it = std::find(rotations.begin(), rotations.end(), input);
 		return rotations_js[std::distance(rotations.begin(), it)];
 	}
 
 	std::string converter_face(std::string input)
 	{
-		std::vector<std::string> rotations = {"", "z2", "z'", "z", "x'", "x"};
-		std::vector<std::string> rotations_js = {"'D'", "'U'", "'L'", "'R'", "'F'", "'B'"};
+		std::vector<std::string> rotations = {"", "y", "z2", "z2 y", "z'", "z' y", "z", "z y", "x'", "x' y", "x", "x y"};
+		std::vector<std::string> rotations_js = {"'D'", "'D1'", "'U'", "'U1'", "'L'", "'L1'", "'R'", "'R1'", "'F'", "'F1'", "'B'", "'B1'"};
 		auto it = std::find(rotations.begin(), rotations.end(), input);
 		return rotations_js[std::distance(rotations.begin(), it)];
 	}
@@ -1292,32 +1292,44 @@ void analyzer(std::string scramble, bool cross, bool x, bool xx, bool xxx, std::
 		if (c == "D")
 		{
 			table += "<th class=\"sort\" data-sort=\"D\">None</th>";
+			table += "<th class=\"sort\" data-sort=\"D1\">y</th>";
 			rotations.emplace_back("");
+			rotations.emplace_back("y");
 		}
 		else if (c == "U")
 		{
 			table += "<th class=\"sort\" data-sort=\"U\">z2</th>";
+			table += "<th class=\"sort\" data-sort=\"U1\">z2 y</th>";
 			rotations.emplace_back("z2");
+			rotations.emplace_back("z2 y");
 		}
 		else if (c == "L")
 		{
 			table += "<th class=\"sort\" data-sort=\"L\">z'</th>";
+			table += "<th class=\"sort\" data-sort=\"L1\">z' y</th>";
 			rotations.emplace_back("z'");
+			rotations.emplace_back("z' y");
 		}
 		else if (c == "R")
 		{
 			table += "<th class=\"sort\" data-sort=\"R\">z</th>";
+			table += "<th class=\"sort\" data-sort=\"R1\">z y</th>";
 			rotations.emplace_back("z");
+			rotations.emplace_back("z y");
 		}
 		else if (c == "F")
 		{
 			table += "<th class=\"sort\" data-sort=\"F\">x'</th>";
+			table += "<th class=\"sort\" data-sort=\"F1\">x' y</th>";
 			rotations.emplace_back("x'");
+			rotations.emplace_back("x' y");
 		}
 		else
 		{
 			table += "<th class=\"sort\" data-sort=\"B\">x</th>";
+			table += "<th class=\"sort\" data-sort=\"B1\">x y</th>";
 			rotations.emplace_back("x");
+			rotations.emplace_back("x y");
 		}
 	}
 	table += "</tr></thead><tbody class=\"list\"></tbody></table>";
