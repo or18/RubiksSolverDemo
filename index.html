@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Rubik's Cube Solver</title>
     <meta name="description"
-        content="Fast solver for Rubik's Cube cross, X-cross, XX-cross, free pair, pseudo F2L, and last layer. ">
+        content="Fast solver for Rubik's Cube cross, X-cross, EOCross, free pair, pseudo F2L, and last layer. ">
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-MXJH30352W"></script>
     <script async src="src/min2phase.js/min2phase.js"></script>
     <script async src="src/functions/list.js"></script>
@@ -142,17 +142,21 @@
 
         .pair_analyzer_result {
             color: #ffffff;
-
         }
 
         .pair_panalyzer_result {
             color: #ffffff;
         }
 
+        .eo_analyzer_result {
+            color: #ffffff;
+        }
+
         table,
         ptable,
         pair_table,
-        pair_ptable {
+        pair_ptable,
+        eo_table {
             width: 100%;
             max-width: 700px;
             max-height: 400px;
@@ -252,7 +256,8 @@
         <h1>Rubik's Cube Solver</h1>
     </header>
     <h2>This is solver for Rubik's cube cross, X-cross, XX-cross, XXX-cross, XXXX-cross, free pair, last layer(OLL,
-        ZBLS, ZBLL). Pseudo X-, XX-, XXX-cross and free pair solver also available.</h2>
+        ZBLS, ZBLL). Pseudo X-, XX-, XXX-cross and free pair solver also available. EOCross and X-, XX-, XXX-EOCross
+        solver also available.</h2>
     <h2>Warning: Due to security issues, solvers may not function properly, especially in mobile browsers.</h2>
     <a href="https://github.com/or18/RubiksSolverDemo" rel="noopener noreferrer">Source</a><br>
     <a href="https://or18.github.io/Rubiks-cube-xcross-solver/" rel="noopener noreferrer">Old Demo</a><br><br>
@@ -262,6 +267,7 @@
         <option translate="no" value="F2L_pair">Pairing</option>
         <option translate="no" value="PF2L">Pseudo F2L Lite</option>
         <option translate="no" value="PF2L_pair">Pseudo Pairing</option>
+        <option translate="no" value="EOCross">EOCross</option>
         <option translate="no" value="LS">LL Substeps Lite</option>
         <option translate="no" value="LL">LL Lite</option>
         <option translate="no" value="LU">LL AUF Lite</option>
@@ -311,6 +317,35 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
         </select>
         <button id="analyzer" class="button medium" onclick="analyze()">Analyze</button>
         <div id="table"></div>
+    </div>
+
+    <div id="eo_analyze">
+        <label for="eo_analyzer_rotation_option">Analyzer Options</label>
+        <fieldset id="eo_analyzer_rotation_option">
+            <input type="checkbox" id="checkboxD_eo_analyzer" class="custom-checkbox eo_analyzer" value="D" checked>
+            <label translate="no" translate="no" for="checkboxD_eo_analyzer">D</label>
+            <input type="checkbox" id="checkboxU_eo_analyzer" class="custom-checkbox eo_analyzer" value="U">
+            <label translate="no" for="checkboxU_eo_analyzer">U</label>
+            <input type="checkbox" id="checkboxL_eo_analyzer" class="custom-checkbox eo_analyzer" value="L">
+            <label translate="no" for="checkboxL_eo_analyzer">L</label>
+            <input type="checkbox" id="checkboxR_eo_analyzer" class="custom-checkbox eo_analyzer" value="R">
+            <label translate="no" for="checkboxR_eo_analyzer">R</label>
+            <input type="checkbox" id="checkboxF_eo_analyzer" class="custom-checkbox eo_analyzer" value="F">
+            <label translate="no" for="checkboxF_eo_analyzer">F</label>
+            <input type="checkbox" id="checkboxB_eo_analyzer" class="custom-checkbox eo_analyzer" value="B">
+            <label translate="no" for="checkboxB_eo_analyzer">B</label>
+        </fieldset>
+        <select translate="no" id="eo_analyzer_option">
+            <option translate="no" value="cross">cross</option>
+            <option translate="no" value="xcross">xcross</option>
+            <option translate="no" value="xxcross">xxcross</option>
+            <option translate="no" value="xxxcross">xxxcross</option>
+            <option translate="no" value="2x">cross, x</option>
+            <option translate="no" value="3x">cross, x, xx</option>
+            <option translate="no" value="4x">cross, x, xx, xxx</option>
+        </select>
+        <button id="eo_analyzer" class="button medium" onclick="eo_analyze()">Analyze</button>
+        <div id="eo_table"></div>
     </div>
 
     <div id="panalyze">
@@ -556,6 +591,27 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             </div>
         </div>
     </div>
+    <div id="option_for_eocross" class="hidden">
+        <label for="slot_eo">Slot: </label>
+        <select translate="no" id="slot_eo" onchange="updateUrlParams()">
+            <option translate="no" value="">None</option>
+            <option translate="no" value="BL">BL</option>
+            <option translate="no" value="BR">BR</option>
+            <option translate="no" value="FR">FR</option>
+            <option translate="no" value="FL">FL</option>
+            <option translate="no" value="BL BR">BL BR</option>
+            <option translate="no" value="BL FR">BL FR</option>
+            <option translate="no" value="BL FL">BL FL</option>
+            <option translate="no" value="BR FR">BR FR</option>
+            <option translate="no" value="BR FL">BR FL</option>
+            <option translate="no" value="FR FL">FR FL</option>
+            <option translate="no" value="BL BR FR">BL BR FR</option>
+            <option translate="no" value="BL BR FL">BL BR FL</option>
+            <option translate="no" value="BL FR FL">BL FR FL</option>
+            <option translate="no" value="BR FR FL">BR FR FL</option>
+            <option translate="no" value="BL BR FR FL">BL BR FR FL</option>
+        </select>
+    </div>
 
     <div id="option_for_LS" class="hidden">
         <label for="ll">Last Layer option: </label>
@@ -688,19 +744,23 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
         let worker3;
         let worker4;
         let worker5;
+        let worker6;
         let messageCount = 0;
         let messageCount_analyzer = 0;
         let messageCount_panalyzer = 0;
         let messageCount_pair_analyzer = 0;
         let messageCount_pair_panalyze = 0;
+        let messageCount_eo_analyzer = 0;
         let option_table;
         let option_ptable;
         let option_pair_table;
         let option_pair_ptable;
+        let option_eo_table;
         let list_table;
         let list_ptable;
         let list_pair_table;
         let list_pair_ptable;
+        let list_eo_table;
         let sol_input = false;
 
         function scr_fix(scr) {
@@ -771,6 +831,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             'rot': 'rot',
             'slot': 'slot',
             'slot2': 'slot2',
+            'slot_eo': 'slot3',
             'pair_slot': 'aslot',
             'pslot_edge': 'pse',
             'pslot_corner': 'psc',
@@ -890,6 +951,15 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                 'solver': 'twophase',
                 'scr': '',
                 'rot': ''
+            },
+            'EOCross': {
+                'solver': 'EOCross',
+                'scr': '',
+                'rot': '',
+                'slot_eo': '',
+                'len': '20',
+                'num': '20',
+                'res': 'UDLRFB'
             }
         };
 
@@ -899,6 +969,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             'rot',
             'slot',
             'slot2',
+            'slot_eo',
             'pair_slot',
             'pslot_edge',
             'pslot_corner',
@@ -995,6 +1066,8 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                 } else {
                     document.getElementById('pair_pslot_corner').selectedIndex = 0;
                 }
+            } else if (solver === "EOCross") {
+                document.getElementById('slot_eo').value = urlParams.get(idToKeyMap['slot_eo']) ? urlParams.get(idToKeyMap['slot_eo']).replace(/_/g, ' ') : defaultValues[solver]['slot_eo'];
             }
         }
 
@@ -1037,6 +1110,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                 const rot = document.getElementById('rot').value;
                 const slot = document.getElementById('slot').value;
                 const slot2 = document.getElementById('slot2').value;
+                const slot3 = document.getElementById('slot_eo').value;
                 const pair_slot = document.getElementById('pair_slot').value;
                 const pslot_e = document.getElementById('pslot_edge').value;
                 const pslot_c = document.getElementById('pslot_corner').value;
@@ -1078,6 +1152,10 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                     content.textContent = "Search terminated.";
                     element.appendChild(content);
                     document.getElementById("solveButton").textContent = "Start";
+                } else if (solver === "EOCross") {
+                    const args = { scr: convert(scr), rot: rot, slot: slot3, num: num, len: len, restrict: restrict };
+                    worker = new Worker("src/EOCrossSolver/worker.js");
+                    worker.postMessage(args);
                 }
                 if (worker) {
                     worker.onmessage = function (event) {
@@ -1203,6 +1281,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             document.getElementById("option_for_F2L2").classList.add("hidden");
             document.getElementById("option_for_LS").classList.add("hidden");
             document.getElementById("analyze").classList.add("hidden");
+            document.getElementById("eo_analyze").classList.add("hidden");
             document.getElementById("panalyze").classList.add("hidden");
             document.getElementById("option_for_PF2L").classList.add("hidden");
             document.getElementById("option_for_PF2L2").classList.add("hidden");
@@ -1211,6 +1290,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             document.getElementById("pair_analyze").classList.add("hidden");
             document.getElementById("pair_panalyze").classList.add("hidden");
             document.getElementById("tp_alert").classList.add("hidden");
+            document.getElementById('option_for_eocross').classList.add("hidden");
             if (selectedValue === "F2L" || selectedValue === "F2L2") {
                 document.getElementById("option_for_F2L").classList.remove("hidden");
                 document.getElementById("analyze").classList.remove("hidden");
@@ -1230,6 +1310,9 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             } else if (selectedValue === "twophase") {
                 document.getElementById("tp_alert").classList.remove("hidden");
                 document.getElementById("basic input").classList.add("hidden");
+            } else if (selectedValue === "EOCross") {
+                document.getElementById('option_for_eocross').classList.remove("hidden");
+                document.getElementById("eo_analyze").classList.remove("hidden");
             }
         }
 
@@ -1327,7 +1410,6 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                 document.getElementById("analyzer").textContent = "End";
                 worker2.onmessage = function (event) {
                     if (event.data == "Error") {
-                        console.log(e.message);
                         if (worker2) {
                             worker2.terminate();
                         }
@@ -1714,7 +1796,6 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                 document.getElementById("panalyzer").textContent = "End";
                 worker3.onmessage = function (event) {
                     if (event.data == "Error") {
-                        console.log(e.message);
                         if (worker3) {
                             worker3.terminate();
                         }
@@ -1853,7 +1934,6 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                 document.getElementById("pair_analyzer").textContent = "End";
                 worker4.onmessage = function (event) {
                     if (event.data == "Error") {
-                        console.log(e.message);
                         if (worker4) {
                             worker4.terminate();
                         }
@@ -1988,7 +2068,6 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                 document.getElementById("pair_panalyzer").textContent = "End";
                 worker5.onmessage = function (event) {
                     if (event.data == "Error") {
-                        console.log(e.message);
                         if (worker5) {
                             worker5.terminate();
                         }
@@ -2072,6 +2151,143 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             updateDropdown4();
             document.getElementById('pair_pslot_edge').value = a_slot_option;
             document.getElementById('pair_pslot_corner').value = a_pslot_option;
+            document.getElementById('num').value = 20;
+            document.getElementById('len').value = 20;
+            document.getElementById('res').value = "UDLRFB";
+            updateUrlParams();
+            startWorker();
+        }
+
+        function eo_analyze() {
+            try {
+                if (worker6) {
+                    worker6.terminate();
+                    worker6 = null;
+                    document.getElementById("eo_analyzer").textContent = "Analyze";
+                    if (messageCount_eo_analyzer > 0) {
+                        option_eo_table = {
+                            valueNames: ["No", "slot", "D", "U", "L", "R", "F", "B"]
+                        };
+                        list_eo_table = new List('eo_table', option_eo_table);
+                    }
+                    return;
+                }
+
+                if (typeof convert !== "function") {
+                    alert("Error: The required function is not initialized. Please reload the page manually.");
+                    document.getElementById("eo_analyzer").textContent = "Analyze";
+                    const error_message = "<br><a>Analyzer terminated due to an error.</a><br>";
+                    document.getElementById('eo_table').innerHTML += error_message;
+                    return;
+                }
+                const content = "<a>Hint: Click a cell to start the search with that condition, and click the header to sort.</a><br>";
+                document.getElementById('eo_table').innerHTML = content;
+                let scr = document.getElementById("scr").value;
+                const scramble = scr_fix(scr);
+                const option = document.getElementById('eo_analyzer_option').value;
+                const checkboxes = document.querySelectorAll('#eo_analyzer_rotation_option .eo_analyzer');
+                const values = [];
+                checkboxes.forEach(function (checkbox) {
+                    if (checkbox.checked) {
+                        values.push(checkbox.value);
+                    }
+                });
+                const rot_set = values.join('');
+                messageCount_eo_analyzer = -2;
+                document.getElementById('eo_table').innerHTML += "<a>Solved: </a>";
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.id = 'count_eo_analyzer';
+                input.readOnly = true;
+                const input2 = document.createElement('input');
+                input2.type = 'text';
+                input2.id = 'count_eo_analyzer_max';
+                input2.readOnly = true;
+                document.getElementById('eo_table').appendChild(input);
+                document.getElementById('eo_table').innerHTML += "<a>/</a>";
+                document.getElementById('eo_table').appendChild(input2);
+                worker6 = new Worker('src/EOCrossAnalyzer/worker_analyzer.js');
+                document.getElementById("eo_analyzer").textContent = "End";
+                worker6.onmessage = function (event) {
+                    if (event.data == "Error") {
+                        if (worker6) {
+                            worker6.terminate();
+                        }
+                        worker6 = null;
+                        document.getElementById("eo_analyzer").textContent = "Analyze";
+                        if (messageCount_eo_analyzer > 0) {
+                            option_eo_table = {
+                                valueNames: ["No", "slot", "D", "U", "L", "R", "F", "B"]
+                            };
+                            list_eo_table = new List('eo_table', option_eo_table);
+                        }
+                        const error_message = "<br><a>Error: Analyzer terminated due to an error.</a><br>";
+                        document.getElementById('eo_table').innerHTML += error_message;
+                        return;
+                    } else if (messageCount_eo_analyzer === -2) {
+                        messageCount_eo_analyzer++;
+                        document.getElementById('eo_table').innerHTML += event.data;
+                    } else if (messageCount_eo_analyzer === -1) {
+                        messageCount_eo_analyzer++;
+                        document.getElementById("count_eo_analyzer_max").value = event.data;
+                    } else if (event.data === "Finished.") {
+                        if (worker6) {
+                            worker6.terminate();
+                            worker6 = null;
+                            document.getElementById("eo_analyzer").textContent = "Analyze";
+                            option_eo_table = {
+                                valueNames: ["No", "slot", "D", "U", "L", "R", "F", "B"]
+                            };
+                            list_eo_table = new List('eo_table', option_eo_table);
+                            return;
+                        }
+                    } else {
+                        messageCount_eo_analyzer++;
+                        document.querySelector('#eo_analyzer_result tbody').insertAdjacentHTML('beforeend', event.data);
+                        document.getElementById("count_eo_analyzer").value = messageCount_eo_analyzer;
+                    }
+                };
+                let cross = false;
+                let xcross = false;
+                let xxcross = false;
+                let xxxcross = false;
+                if (option === "cross" || option == "2x" || option === "3x" || option === "4x") {
+                    cross = true;
+                }
+                if (option === "xcross" || option == "2x" || option === "3x" || option === "4x") {
+                    xcross = true;
+                }
+                if (option === "xxcross" || option === "3x" || option === "4x") {
+                    xxcross = true;
+                }
+                if (option === "xxxcross" || option === "4x") {
+                    xxxcross = true;
+                }
+                const args = { scramble: convert(scramble), cross: cross, x: xcross, xx: xxcross, xxx: xxxcross, n: "1", rot_set: rot_set };
+                worker6.postMessage(args);
+            } catch (e) {
+                console.log(e.message);
+                if (worker6) {
+                    worker6.terminate();
+                }
+                worker6 = null;
+                document.getElementById("eo_analyzer").textContent = "Analyze";
+                if (messageCount_eo_analyzer > 0) {
+                    option_eo_table = {
+                        valueNames: ["No", "slot", "D", "U", "L", "R", "F", "B"]
+                    };
+                    list_eo_table = new List('eo_table', option_eo_table);
+                }
+                const error_message = "<br><a>AError: nalyzer terminated due to an error.</a><br>";
+                document.getElementById('eo_table').innerHTML += error_message;
+                return;
+            }
+        }
+
+        function eo_solve(slot_option, rotation_option) {
+            document.getElementById("solver").value = "EOCross";
+            document.getElementById('rot').value = rotation_option;
+            document.getElementById('slot_eo').value = slot_option;
             document.getElementById('num').value = 20;
             document.getElementById('len').value = 20;
             document.getElementById('res').value = "UDLRFB";

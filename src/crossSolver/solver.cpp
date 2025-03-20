@@ -566,7 +566,7 @@ struct cross_search
         multi_move_table = create_multi_move_table(2, 2, 12, 24 * 22, edge_move_table);
         index1 = 416;
         index2 = 520;
-        prune_table = create_prune_table(index1, index2, 24 * 22, 24 * 22, 9, multi_move_table, multi_move_table);
+        prune_table = create_prune_table(index1, index2, 24 * 22, 24 * 22, 10, multi_move_table, multi_move_table);
         ma = create_ma_table();
     }
 
@@ -815,7 +815,7 @@ struct xcross_search
         index2 = corner_index[slot1];
         index3 = single_edge_index[slot1];
         edge_solved1 = index3;
-        create_prune_table2(index1, index2, 24 * 22 * 20 * 18, 24, 9, multi_move_table, corner_move_table, prune_table1);
+        create_prune_table2(index1, index2, 24 * 22 * 20 * 18, 24, 10, multi_move_table, corner_move_table, prune_table1);
         count = 0;
         for (std::string name : restrict)
         {
@@ -897,7 +897,7 @@ struct xxcross_search
         prune_table2 = std::vector<int>(24 * 22 * 20 * 18 * 24, -1);
     }
 
-    bool depth_limited_search(int arg_index1, int arg_index2, int arg_index3, int arg_index4, int arg_index5, int arg_index6, int depth, int prev)
+    bool depth_limited_search(int arg_index1, int arg_index2, int arg_index4, int arg_index5, int arg_index6, int depth, int prev)
     {
         for (int i : move_restrict)
         {
@@ -913,10 +913,9 @@ struct xxcross_search
             {
                 continue;
             }
-            index3_tmp = multi_move_table[arg_index3 + i];
             index4_tmp = corner_move_table[arg_index4 + i];
             index6_tmp = edge_move_table[arg_index6 + i];
-            prune2_tmp = prune_table2[index3_tmp + index4_tmp];
+            prune2_tmp = prune_table2[index1_tmp + index4_tmp];
             if (prune2_tmp >= depth)
             {
                 continue;
@@ -931,13 +930,12 @@ struct xxcross_search
                     int c = 0;
                     int index1_tmp2 = index1;
                     int index2_tmp2 = index2;
-                    int index3_tmp2 = index3;
                     int index4_tmp2 = index4;
                     int index5_tmp2 = index5;
                     int index6_tmp2 = index6;
                     for (int j : sol)
                     {
-                        if (index1_tmp2 == multi_move_table[index1_tmp2 + j] && index2_tmp2 == corner_move_table[index2_tmp2 + j] * 18 && index3_tmp2 == multi_move_table[index3_tmp2 + j] && index4_tmp2 == corner_move_table[index4_tmp2 + j] * 18 && index5_tmp2 == edge_move_table[index5_tmp2 + j] * 18 && index6_tmp2 == edge_move_table[index6_tmp2 + j] * 18)
+                        if (index1_tmp2 == multi_move_table[index1_tmp2 + j] && index2_tmp2 == corner_move_table[index2_tmp2 + j] * 18 && index4_tmp2 == corner_move_table[index4_tmp2 + j] * 18 && index5_tmp2 == edge_move_table[index5_tmp2 + j] * 18 && index6_tmp2 == edge_move_table[index6_tmp2 + j] * 18)
                         {
                             valid = false;
                             break;
@@ -947,11 +945,10 @@ struct xxcross_search
                             c += 1;
                             index1_tmp2 = multi_move_table[index1_tmp2 + j];
                             index2_tmp2 = corner_move_table[index2_tmp2 + j];
-                            index3_tmp2 = multi_move_table[index3_tmp2 + j];
                             index4_tmp2 = corner_move_table[index4_tmp2 + j];
                             index5_tmp2 = edge_move_table[index5_tmp2 + j];
                             index6_tmp2 = edge_move_table[index6_tmp2 + j];
-                            if (c < l && (prune_table1[index1_tmp2 + index2_tmp2] == 0 && prune_table2[index3_tmp2 + index4_tmp2] == 0 && index5_tmp2 == edge_solved1 && index6_tmp2 == edge_solved2))
+                            if (c < l && (prune_table1[index1_tmp2 + index2_tmp2] == 0 && prune_table2[index1_tmp2 + index4_tmp2] == 0 && index5_tmp2 == edge_solved1 && index6_tmp2 == edge_solved2))
                             {
                                 valid = false;
                                 break;
@@ -981,7 +978,7 @@ struct xxcross_search
                     }
                 }
             }
-            else if (depth_limited_search(index1_tmp, index2_tmp * 18, index3_tmp, index4_tmp * 18, index5_tmp * 18, index6_tmp * 18, depth - 1, i * 18))
+            else if (depth_limited_search(index1_tmp, index2_tmp * 18, index4_tmp * 18, index5_tmp * 18, index6_tmp * 18, depth - 1, i * 18))
             {
                 return true;
             }
@@ -1007,12 +1004,11 @@ struct xxcross_search
         index2 = corner_index[slot1];
         index5 = single_edge_index[slot1];
         edge_solved1 = index5;
-        create_prune_table2(index1, index2, 24 * 22 * 20 * 18, 24, 9, multi_move_table, corner_move_table, prune_table1);
-        index3 = edge_index[slot2];
+        create_prune_table2(index1, index2, 24 * 22 * 20 * 18, 24, 10, multi_move_table, corner_move_table, prune_table1);
         index4 = corner_index[slot2];
         index6 = single_edge_index[slot2];
         edge_solved2 = index6;
-        create_prune_table2(index3, index4, 24 * 22 * 20 * 18, 24, 9, multi_move_table, corner_move_table, prune_table2);
+        create_prune_table2(index1, index4, 24 * 22 * 20 * 18, 24, 10, multi_move_table, corner_move_table, prune_table2);
         count = 0;
         for (std::string name : restrict)
         {
@@ -1020,18 +1016,16 @@ struct xxcross_search
             move_restrict.emplace_back(std::distance(move_names.begin(), it));
         }
         index1 *= 24;
-        index3 *= 24;
         for (int m : alg)
         {
             index1 = multi_move_table[index1 + m];
             index2 = corner_move_table[index2 * 18 + m];
-            index3 = multi_move_table[index3 + m];
             index4 = corner_move_table[index4 * 18 + m];
             index5 = edge_move_table[index5 * 18 + m];
             index6 = edge_move_table[index6 * 18 + m];
         }
         prune1_tmp = prune_table1[index1 + index2];
-        prune2_tmp = prune_table2[index3 + index4];
+        prune2_tmp = prune_table2[index1 + index4];
         if (prune1_tmp == 0 && prune2_tmp == 0 && index5 == edge_solved1 && index6 == edge_solved2)
         {
             update("Already solved.");
@@ -1044,7 +1038,7 @@ struct xxcross_search
             index6 *= 18;
             for (int d = std::max(prune1_tmp, prune2_tmp); d <= max_length; d++)
             {
-                if (depth_limited_search(index1, index2, index3, index4, index5, index6, d, 324))
+                if (depth_limited_search(index1, index2, index4, index5, index6, d, 324))
                 {
                     break;
                 }
@@ -1112,7 +1106,7 @@ struct xxxcross_search
         prune_table3 = std::vector<int>(24 * 22 * 20 * 18 * 24, -1);
     }
 
-    bool depth_limited_search(int arg_index1, int arg_index2, int arg_index3, int arg_index4, int arg_index5, int arg_index6, int arg_index7, int arg_index8, int arg_index9, int depth, int prev)
+    bool depth_limited_search(int arg_index1, int arg_index2, int arg_index4, int arg_index6, int arg_index7, int arg_index8, int arg_index9, int depth, int prev)
     {
         for (int i : move_restrict)
         {
@@ -1128,18 +1122,16 @@ struct xxxcross_search
             {
                 continue;
             }
-            index3_tmp = multi_move_table[arg_index3 + i];
             index4_tmp = corner_move_table[arg_index4 + i];
             index8_tmp = edge_move_table[arg_index8 + i];
-            prune2_tmp = prune_table2[index3_tmp + index4_tmp];
+            prune2_tmp = prune_table2[index1_tmp + index4_tmp];
             if (prune2_tmp >= depth)
             {
                 continue;
             }
-            index5_tmp = multi_move_table[arg_index5 + i];
             index6_tmp = corner_move_table[arg_index6 + i];
             index9_tmp = edge_move_table[arg_index9 + i];
-            prune3_tmp = prune_table3[index5_tmp + index6_tmp];
+            prune3_tmp = prune_table3[index1_tmp + index6_tmp];
             if (prune3_tmp >= depth)
             {
                 continue;
@@ -1154,16 +1146,14 @@ struct xxxcross_search
                     int c = 0;
                     int index1_tmp2 = index1;
                     int index2_tmp2 = index2;
-                    int index3_tmp2 = index3;
                     int index4_tmp2 = index4;
-                    int index5_tmp2 = index5;
                     int index6_tmp2 = index6;
                     int index7_tmp2 = index7;
                     int index8_tmp2 = index8;
                     int index9_tmp2 = index9;
                     for (int j : sol)
                     {
-                        if (index1_tmp2 == multi_move_table[index1_tmp2 + j] && index2_tmp2 == corner_move_table[index2_tmp2 + j] * 18 && index3_tmp2 == multi_move_table[index3_tmp2 + j] && index4_tmp2 == corner_move_table[index4_tmp2 + j] * 18 && index5_tmp2 == multi_move_table[index5_tmp2 + j] && index6_tmp2 == corner_move_table[index6_tmp2 + j] * 18 && index7_tmp2 == edge_move_table[index7_tmp2 + j] * 18 && index8_tmp2 == edge_move_table[index8_tmp2 + j] * 18 && index9_tmp2 == edge_move_table[index9_tmp2 + j] * 18)
+                        if (index1_tmp2 == multi_move_table[index1_tmp2 + j] && index2_tmp2 == corner_move_table[index2_tmp2 + j] * 18 && index4_tmp2 == corner_move_table[index4_tmp2 + j] * 18 && index6_tmp2 == corner_move_table[index6_tmp2 + j] * 18 && index7_tmp2 == edge_move_table[index7_tmp2 + j] * 18 && index8_tmp2 == edge_move_table[index8_tmp2 + j] * 18 && index9_tmp2 == edge_move_table[index9_tmp2 + j] * 18)
                         {
                             valid = false;
                             break;
@@ -1173,14 +1163,12 @@ struct xxxcross_search
                             c += 1;
                             index1_tmp2 = multi_move_table[index1_tmp2 + j];
                             index2_tmp2 = corner_move_table[index2_tmp2 + j];
-                            index3_tmp2 = multi_move_table[index3_tmp2 + j];
                             index4_tmp2 = corner_move_table[index4_tmp2 + j];
-                            index5_tmp2 = multi_move_table[index5_tmp2 + j];
                             index6_tmp2 = corner_move_table[index6_tmp2 + j];
                             index7_tmp2 = edge_move_table[index7_tmp2 + j];
                             index8_tmp2 = edge_move_table[index8_tmp2 + j];
                             index9_tmp2 = edge_move_table[index9_tmp2 + j];
-                            if (c < l && (prune_table1[index1_tmp2 + index2_tmp2] == 0 && prune_table2[index3_tmp2 + index4_tmp2] == 0 && prune_table3[index5_tmp2 + index6_tmp2] == 0 && index7_tmp2 == edge_solved1 && index8_tmp2 == edge_solved2 && index9_tmp2 == edge_solved3))
+                            if (c < l && (prune_table1[index1_tmp2 + index2_tmp2] == 0 && prune_table2[index1_tmp2 + index4_tmp2] == 0 && prune_table3[index1_tmp2 + index6_tmp2] == 0 && index7_tmp2 == edge_solved1 && index8_tmp2 == edge_solved2 && index9_tmp2 == edge_solved3))
                             {
                                 valid = false;
                                 break;
@@ -1212,7 +1200,7 @@ struct xxxcross_search
                     }
                 }
             }
-            else if (depth_limited_search(index1_tmp, index2_tmp * 18, index3_tmp, index4_tmp * 18, index5_tmp, index6_tmp * 18, index7_tmp * 18, index8_tmp * 18, index9_tmp * 18, depth - 1, i * 18))
+            else if (depth_limited_search(index1_tmp, index2_tmp * 18, index4_tmp * 18, index6_tmp * 18, index7_tmp * 18, index8_tmp * 18, index9_tmp * 18, depth - 1, i * 18))
             {
                 return true;
             }
@@ -1239,17 +1227,15 @@ struct xxxcross_search
         index2 = corner_index[slot1];
         index7 = single_edge_index[slot1];
         edge_solved1 = index7;
-        create_prune_table2(index1, index2, 24 * 22 * 20 * 18, 24, 9, multi_move_table, corner_move_table, prune_table1);
-        index3 = edge_index[slot2];
+        create_prune_table2(index1, index2, 24 * 22 * 20 * 18, 24, 10, multi_move_table, corner_move_table, prune_table1);
         index4 = corner_index[slot2];
         index8 = single_edge_index[slot2];
         edge_solved2 = index8;
-        create_prune_table2(index3, index4, 24 * 22 * 20 * 18, 24, 9, multi_move_table, corner_move_table, prune_table2);
-        index5 = edge_index[slot3];
+        create_prune_table2(index1, index4, 24 * 22 * 20 * 18, 24, 10, multi_move_table, corner_move_table, prune_table2);
         index6 = corner_index[slot3];
         index9 = single_edge_index[slot3];
         edge_solved3 = index9;
-        create_prune_table2(index5, index6, 24 * 22 * 20 * 18, 24, 9, multi_move_table, corner_move_table, prune_table3);
+        create_prune_table2(index1, index6, 24 * 22 * 20 * 18, 24, 10, multi_move_table, corner_move_table, prune_table3);
         count = 0;
         for (std::string name : restrict)
         {
@@ -1257,23 +1243,19 @@ struct xxxcross_search
             move_restrict.emplace_back(std::distance(move_names.begin(), it));
         }
         index1 *= 24;
-        index3 *= 24;
-        index5 *= 24;
         for (int m : alg)
         {
             index1 = multi_move_table[index1 + m];
             index2 = corner_move_table[index2 * 18 + m];
-            index3 = multi_move_table[index3 + m];
             index4 = corner_move_table[index4 * 18 + m];
-            index5 = multi_move_table[index5 + m];
             index6 = corner_move_table[index6 * 18 + m];
             index7 = edge_move_table[index7 * 18 + m];
             index8 = edge_move_table[index8 * 18 + m];
             index9 = edge_move_table[index9 * 18 + m];
         }
         prune1_tmp = prune_table1[index1 + index2];
-        prune2_tmp = prune_table2[index3 + index4];
-        prune3_tmp = prune_table3[index5 + index6];
+        prune2_tmp = prune_table2[index1 + index4];
+        prune3_tmp = prune_table3[index1 + index6];
         if (prune1_tmp == 0 && prune2_tmp == 0 && prune3_tmp == 0 && index7 == edge_solved1 && index8 == edge_solved2 && index9 == edge_solved3)
         {
             update("Already solved.");
@@ -1288,7 +1270,7 @@ struct xxxcross_search
             index9 *= 18;
             for (int d = std::max(prune1_tmp, std::max(prune2_tmp, prune3_tmp)); d <= max_length; d++)
             {
-                if (depth_limited_search(index1, index2, index3, index4, index5, index6, index7, index8, index9, d, 324))
+                if (depth_limited_search(index1, index2, index4, index6, index7, index8, index9, d, 324))
                 {
                     break;
                 }
@@ -1359,7 +1341,7 @@ struct xxxxcross_search
         prune_table4 = std::vector<int>(24 * 22 * 20 * 18 * 24, -1);
     }
 
-    bool depth_limited_search(int arg_index1, int arg_index2, int arg_index3, int arg_index4, int arg_index5, int arg_index6, int arg_index7, int arg_index8, int arg_index9, int arg_index10, int arg_index11, int arg_index12, int depth, int prev)
+    bool depth_limited_search(int arg_index1, int arg_index2, int arg_index4, int arg_index6, int arg_index8, int arg_index9, int arg_index10, int arg_index11, int arg_index12, int depth, int prev)
     {
         for (int i : move_restrict)
         {
@@ -1375,26 +1357,23 @@ struct xxxxcross_search
             {
                 continue;
             }
-            index3_tmp = multi_move_table[arg_index3 + i];
             index4_tmp = corner_move_table[arg_index4 + i];
             index10_tmp = edge_move_table[arg_index10 + i];
-            prune2_tmp = prune_table2[index3_tmp + index4_tmp];
+            prune2_tmp = prune_table2[index1_tmp + index4_tmp];
             if (prune2_tmp >= depth)
             {
                 continue;
             }
-            index5_tmp = multi_move_table[arg_index5 + i];
             index6_tmp = corner_move_table[arg_index6 + i];
             index11_tmp = edge_move_table[arg_index11 + i];
-            prune3_tmp = prune_table3[index5_tmp + index6_tmp];
+            prune3_tmp = prune_table3[index1_tmp + index6_tmp];
             if (prune3_tmp >= depth)
             {
                 continue;
             }
-            index7_tmp = multi_move_table[arg_index7 + i];
             index8_tmp = corner_move_table[arg_index8 + i];
             index12_tmp = edge_move_table[arg_index12 + i];
-            prune4_tmp = prune_table4[index7_tmp + index8_tmp];
+            prune4_tmp = prune_table4[index1_tmp + index8_tmp];
             if (prune4_tmp >= depth)
             {
                 continue;
@@ -1409,11 +1388,8 @@ struct xxxxcross_search
                     int c = 0;
                     int index1_tmp2 = index1;
                     int index2_tmp2 = index2;
-                    int index3_tmp2 = index3;
                     int index4_tmp2 = index4;
-                    int index5_tmp2 = index5;
                     int index6_tmp2 = index6;
-                    int index7_tmp2 = index7;
                     int index8_tmp2 = index8;
                     int index9_tmp2 = index9;
                     int index10_tmp2 = index10;
@@ -1421,7 +1397,7 @@ struct xxxxcross_search
                     int index12_tmp2 = index12;
                     for (int j : sol)
                     {
-                        if (index1_tmp2 == multi_move_table[index1_tmp2 + j] && index2_tmp2 == corner_move_table[index2_tmp2 + j] * 18 && index3_tmp2 == multi_move_table[index3_tmp2 + j] && index4_tmp2 == corner_move_table[index4_tmp2 + j] * 18 && index5_tmp2 == multi_move_table[index5_tmp2 + j] && index6_tmp2 == corner_move_table[index6_tmp2 + j] * 18 && index7_tmp2 == multi_move_table[index7_tmp2 + j] && index8_tmp2 == corner_move_table[index8_tmp2 + j] * 18 && index9_tmp2 == edge_move_table[index9_tmp2 + j] * 18 && index10_tmp2 == edge_move_table[index10_tmp2 + j] * 18 && index11_tmp2 == edge_move_table[index11_tmp2 + j] * 18 && index12_tmp2 == edge_move_table[index12_tmp2 + j] * 18)
+                        if (index1_tmp2 == multi_move_table[index1_tmp2 + j] && index2_tmp2 == corner_move_table[index2_tmp2 + j] * 18 && index4_tmp2 == corner_move_table[index4_tmp2 + j] * 18 && index6_tmp2 == corner_move_table[index6_tmp2 + j] * 18 && index8_tmp2 == corner_move_table[index8_tmp2 + j] * 18 && index9_tmp2 == edge_move_table[index9_tmp2 + j] * 18 && index10_tmp2 == edge_move_table[index10_tmp2 + j] * 18 && index11_tmp2 == edge_move_table[index11_tmp2 + j] * 18 && index12_tmp2 == edge_move_table[index12_tmp2 + j] * 18)
                         {
                             valid = false;
                             break;
@@ -1431,17 +1407,14 @@ struct xxxxcross_search
                             c += 1;
                             index1_tmp2 = multi_move_table[index1_tmp2 + j];
                             index2_tmp2 = corner_move_table[index2_tmp2 + j];
-                            index3_tmp2 = multi_move_table[index3_tmp2 + j];
                             index4_tmp2 = corner_move_table[index4_tmp2 + j];
-                            index5_tmp2 = multi_move_table[index5_tmp2 + j];
                             index6_tmp2 = corner_move_table[index6_tmp2 + j];
-                            index7_tmp2 = multi_move_table[index7_tmp2 + j];
                             index8_tmp2 = corner_move_table[index8_tmp2 + j];
                             index9_tmp2 = edge_move_table[index9_tmp2 + j];
                             index10_tmp2 = edge_move_table[index10_tmp2 + j];
                             index11_tmp2 = edge_move_table[index11_tmp2 + j];
                             index12_tmp2 = edge_move_table[index12_tmp2 + j];
-                            if (c < l && (prune_table1[index1_tmp2 + index2_tmp2] == 0 && prune_table2[index3_tmp2 + index4_tmp2] == 0 && prune_table3[index5_tmp2 + index6_tmp2] == 0 && prune_table4[index7_tmp2 + index8_tmp2] == 0 && index9_tmp2 == 0 && index10_tmp2 == 2 && index11_tmp2 == 4 && index12_tmp2 == 6))
+                            if (c < l && (prune_table1[index1_tmp2 + index2_tmp2] == 0 && prune_table2[index1_tmp2 + index4_tmp2] == 0 && prune_table3[index1_tmp2 + index6_tmp2] == 0 && prune_table4[index1_tmp2 + index8_tmp2] == 0 && index9_tmp2 == 0 && index10_tmp2 == 2 && index11_tmp2 == 4 && index12_tmp2 == 6))
                             {
                                 valid = false;
                                 break;
@@ -1475,7 +1448,7 @@ struct xxxxcross_search
                     }
                 }
             }
-            else if (depth_limited_search(index1_tmp, index2_tmp * 18, index3_tmp, index4_tmp * 18, index5_tmp, index6_tmp * 18, index7_tmp, index8_tmp * 18, index9_tmp * 18, index10_tmp * 18, index11_tmp * 18, index12_tmp * 18, depth - 1, i * 18))
+            else if (depth_limited_search(index1_tmp, index2_tmp * 18, index4_tmp * 18, index6_tmp * 18, index8_tmp * 18, index9_tmp * 18, index10_tmp * 18, index11_tmp * 18, index12_tmp * 18, depth - 1, i * 18))
             {
                 return true;
             }
@@ -1498,19 +1471,16 @@ struct xxxxcross_search
         index1 = edge_index[0];
         index2 = corner_index[0];
         index9 = single_edge_index[0];
-        create_prune_table2(index1, index2, 24 * 22 * 20 * 18, 24, 9, multi_move_table, corner_move_table, prune_table1);
-        index3 = edge_index[1];
+        create_prune_table2(index1, index2, 24 * 22 * 20 * 18, 24, 10, multi_move_table, corner_move_table, prune_table1);
         index4 = corner_index[1];
         index10 = single_edge_index[1];
-        create_prune_table2(index3, index4, 24 * 22 * 20 * 18, 24, 9, multi_move_table, corner_move_table, prune_table2);
-        index5 = edge_index[2];
+        create_prune_table2(index1, index4, 24 * 22 * 20 * 18, 24, 10, multi_move_table, corner_move_table, prune_table2);
         index6 = corner_index[2];
         index11 = single_edge_index[2];
-        create_prune_table2(index5, index6, 24 * 22 * 20 * 18, 24, 9, multi_move_table, corner_move_table, prune_table3);
-        index7 = edge_index[3];
+        create_prune_table2(index1, index6, 24 * 22 * 20 * 18, 24, 10, multi_move_table, corner_move_table, prune_table3);
         index8 = corner_index[3];
         index12 = single_edge_index[3];
-        create_prune_table2(index7, index8, 24 * 22 * 20 * 18, 24, 9, multi_move_table, corner_move_table, prune_table4);
+        create_prune_table2(index1, index8, 24 * 22 * 20 * 18, 24, 10, multi_move_table, corner_move_table, prune_table4);
         count = 0;
         for (std::string name : restrict)
         {
@@ -1518,18 +1488,12 @@ struct xxxxcross_search
             move_restrict.emplace_back(std::distance(move_names.begin(), it));
         }
         index1 *= 24;
-        index3 *= 24;
-        index5 *= 24;
-        index7 *= 24;
         for (int m : alg)
         {
             index1 = multi_move_table[index1 + m];
             index2 = corner_move_table[index2 * 18 + m];
-            index3 = multi_move_table[index3 + m];
             index4 = corner_move_table[index4 * 18 + m];
-            index5 = multi_move_table[index5 + m];
             index6 = corner_move_table[index6 * 18 + m];
-            index7 = multi_move_table[index7 + m];
             index8 = corner_move_table[index8 * 18 + m];
             index9 = edge_move_table[index9 * 18 + m];
             index10 = edge_move_table[index10 * 18 + m];
@@ -1537,9 +1501,9 @@ struct xxxxcross_search
             index12 = edge_move_table[index12 * 18 + m];
         }
         prune1_tmp = prune_table1[index1 + index2];
-        prune2_tmp = prune_table2[index3 + index4];
-        prune3_tmp = prune_table3[index5 + index6];
-        prune4_tmp = prune_table4[index7 + index8];
+        prune2_tmp = prune_table2[index1 + index4];
+        prune3_tmp = prune_table3[index1 + index6];
+        prune4_tmp = prune_table4[index1 + index8];
         if (prune1_tmp == 0 && prune2_tmp == 0 && prune3_tmp == 0 && prune4_tmp == 0 && index9 == 0 && index10 == 2 && index11 == 4 && index12 == 6)
         {
             update("Already solved.");
@@ -1556,7 +1520,7 @@ struct xxxxcross_search
             index12 *= 18;
             for (int d = std::max(prune1_tmp, std::max(prune2_tmp, std::max(prune3_tmp, prune4_tmp))); d <= max_length; d++)
             {
-                if (depth_limited_search(index1, index2, index3, index4, index5, index6, index7, index8, index9, index10, index11, index12, d, 324))
+                if (depth_limited_search(index1, index2, index4, index6, index8, index9, index10, index11, index12, d, 324))
                 {
                     break;
                 }
@@ -1659,7 +1623,7 @@ struct LL_substeps_search
         }
     }
 
-    bool depth_limited_search(int arg_index1, int arg_index2, int arg_index3, int arg_index4, int arg_index5, int arg_index6, int arg_index7, int arg_index8, int arg_index9, int arg_index10, int arg_index11, int arg_index12, int arg_index_cp, int arg_index_co, int arg_index_ep, int arg_index_eo, int depth, int prev)
+    bool depth_limited_search(int arg_index1, int arg_index2, int arg_index4, int arg_index6, int arg_index8, int arg_index9, int arg_index10, int arg_index11, int arg_index12, int arg_index_cp, int arg_index_co, int arg_index_ep, int arg_index_eo, int depth, int prev)
     {
         for (int i : move_restrict)
         {
@@ -1675,26 +1639,23 @@ struct LL_substeps_search
             {
                 continue;
             }
-            index3_tmp = multi_move_table[arg_index3 + i];
             index4_tmp = corner_move_table[arg_index4 + i];
             index10_tmp = edge_move_table[arg_index10 + i];
-            prune2_tmp = prune_table2[index3_tmp + index4_tmp];
+            prune2_tmp = prune_table2[index1_tmp + index4_tmp];
             if (prune2_tmp >= depth)
             {
                 continue;
             }
-            index5_tmp = multi_move_table[arg_index5 + i];
             index6_tmp = corner_move_table[arg_index6 + i];
             index11_tmp = edge_move_table[arg_index11 + i];
-            prune3_tmp = prune_table3[index5_tmp + index6_tmp];
+            prune3_tmp = prune_table3[index1_tmp + index6_tmp];
             if (prune3_tmp >= depth)
             {
                 continue;
             }
-            index7_tmp = multi_move_table[arg_index7 + i];
             index8_tmp = corner_move_table[arg_index8 + i];
             index12_tmp = edge_move_table[arg_index12 + i];
-            prune4_tmp = prune_table4[index7_tmp + index8_tmp];
+            prune4_tmp = prune_table4[index1_tmp + index8_tmp];
             if (prune4_tmp >= depth)
             {
                 continue;
@@ -1713,11 +1674,8 @@ struct LL_substeps_search
                     int c = 0;
                     int index1_tmp2 = index1;
                     int index2_tmp2 = index2;
-                    int index3_tmp2 = index3;
                     int index4_tmp2 = index4;
-                    int index5_tmp2 = index5;
                     int index6_tmp2 = index6;
-                    int index7_tmp2 = index7;
                     int index8_tmp2 = index8;
                     int index9_tmp2 = index9;
                     int index10_tmp2 = index10;
@@ -1732,11 +1690,8 @@ struct LL_substeps_search
                         c += 1;
                         index1_tmp2 = multi_move_table[index1_tmp2 + j];
                         index2_tmp2 = corner_move_table[index2_tmp2 + j];
-                        index3_tmp2 = multi_move_table[index3_tmp2 + j];
                         index4_tmp2 = corner_move_table[index4_tmp2 + j];
-                        index5_tmp2 = multi_move_table[index5_tmp2 + j];
                         index6_tmp2 = corner_move_table[index6_tmp2 + j];
-                        index7_tmp2 = multi_move_table[index7_tmp2 + j];
                         index8_tmp2 = corner_move_table[index8_tmp2 + j];
                         index9_tmp2 = edge_move_table[index9_tmp2 + j];
                         index10_tmp2 = edge_move_table[index10_tmp2 + j];
@@ -1746,7 +1701,7 @@ struct LL_substeps_search
                         index_co_tmp2 = co_move_table[index_co_tmp2 + j];
                         index_ep_tmp2 = ep_move_table[index_ep_tmp2 + j];
                         index_eo_tmp2 = eo_move_table[index_eo_tmp2 + j];
-                        if (c < l && (prune_table1[index1_tmp2 + index2_tmp2] == 0 && prune_table2[index3_tmp2 + index4_tmp2] == 0 && prune_table3[index5_tmp2 + index6_tmp2] == 0 && prune_table4[index7_tmp2 + index8_tmp2] == 0 && index9_tmp2 == 0 && index10_tmp2 == 2 && index11_tmp2 == 4 && index12_tmp2 == 6 && (solve_ep || (index_ep_tmp2 == 105480 || index_ep_tmp2 == 105534 || index_ep_tmp2 == 105948 || index_ep_tmp2 == 108090)) && (solve_cp || (index_cp_tmp2 == 0 || index_cp_tmp2 == 54 || index_cp_tmp2 == 324 || index_cp_tmp2 == 1170)) && (solve_co || index_co_tmp2 == 0) && (solve_eo || index_eo_tmp2 == 0)))
+                        if (c < l && (prune_table1[index1_tmp2 + index2_tmp2] == 0 && prune_table2[index1_tmp2 + index4_tmp2] == 0 && prune_table3[index1_tmp2 + index6_tmp2] == 0 && prune_table4[index1_tmp2 + index8_tmp2] == 0 && index9_tmp2 == 0 && index10_tmp2 == 2 && index11_tmp2 == 4 && index12_tmp2 == 6 && (solve_ep || (index_ep_tmp2 == 105480 || index_ep_tmp2 == 105534 || index_ep_tmp2 == 105948 || index_ep_tmp2 == 108090)) && (solve_cp || (index_cp_tmp2 == 0 || index_cp_tmp2 == 54 || index_cp_tmp2 == 324 || index_cp_tmp2 == 1170)) && (solve_co || index_co_tmp2 == 0) && (solve_eo || index_eo_tmp2 == 0)))
                         {
                             valid = false;
                             break;
@@ -1779,7 +1734,7 @@ struct LL_substeps_search
                     }
                 }
             }
-            else if (depth_limited_search(index1_tmp, index2_tmp * 18, index3_tmp, index4_tmp * 18, index5_tmp, index6_tmp * 18, index7_tmp, index8_tmp * 18, index9_tmp * 18, index10_tmp * 18, index11_tmp * 18, index12_tmp * 18, index_cp_tmp, index_co_tmp, index_ep_tmp, index_eo_tmp, depth - 1, i * 18))
+            else if (depth_limited_search(index1_tmp, index2_tmp * 18, index4_tmp * 18, index6_tmp * 18, index8_tmp * 18, index9_tmp * 18, index10_tmp * 18, index11_tmp * 18, index12_tmp * 18, index_cp_tmp, index_co_tmp, index_ep_tmp, index_eo_tmp, depth - 1, i * 18))
             {
                 return true;
             }
@@ -1807,18 +1762,15 @@ struct LL_substeps_search
         index2 = corner_index[0];
         index9 = single_edge_index[0];
         create_prune_table2(index1, index2, 24 * 22 * 20 * 18, 24, 9, multi_move_table, corner_move_table, prune_table1);
-        index3 = edge_index[1];
         index4 = corner_index[1];
         index10 = single_edge_index[1];
-        create_prune_table2(index3, index4, 24 * 22 * 20 * 18, 24, 9, multi_move_table, corner_move_table, prune_table2);
-        index5 = edge_index[2];
+        create_prune_table2(index1, index4, 24 * 22 * 20 * 18, 24, 9, multi_move_table, corner_move_table, prune_table2);
         index6 = corner_index[2];
         index11 = single_edge_index[2];
-        create_prune_table2(index5, index6, 24 * 22 * 20 * 18, 24, 9, multi_move_table, corner_move_table, prune_table3);
-        index7 = edge_index[3];
+        create_prune_table2(index1, index6, 24 * 22 * 20 * 18, 24, 9, multi_move_table, corner_move_table, prune_table3);
         index8 = corner_index[3];
         index12 = single_edge_index[3];
-        create_prune_table2(index7, index8, 24 * 22 * 20 * 18, 24, 9, multi_move_table, corner_move_table, prune_table4);
+        create_prune_table2(index1, index8, 24 * 22 * 20 * 18, 24, 9, multi_move_table, corner_move_table, prune_table4);
         count = 0;
         for (std::string name : restrict)
         {
@@ -1826,9 +1778,6 @@ struct LL_substeps_search
             move_restrict.emplace_back(std::distance(move_names.begin(), it));
         }
         index1 *= 24;
-        index3 *= 24;
-        index5 *= 24;
-        index7 *= 24;
         index_cp = 0;
         index_co = 0;
         index_ep = 5860 * 18;
@@ -1837,11 +1786,8 @@ struct LL_substeps_search
         {
             index1 = multi_move_table[index1 + m];
             index2 = corner_move_table[index2 * 18 + m];
-            index3 = multi_move_table[index3 + m];
             index4 = corner_move_table[index4 * 18 + m];
-            index5 = multi_move_table[index5 + m];
             index6 = corner_move_table[index6 * 18 + m];
-            index7 = multi_move_table[index7 + m];
             index8 = corner_move_table[index8 * 18 + m];
             index_cp = cp_move_table[index_cp + m];
             index_co = co_move_table[index_co + m];
@@ -1853,9 +1799,9 @@ struct LL_substeps_search
             index12 = edge_move_table[index12 * 18 + m];
         }
         prune1_tmp = prune_table1[index1 + index2];
-        prune2_tmp = prune_table2[index3 + index4];
-        prune3_tmp = prune_table3[index5 + index6];
-        prune4_tmp = prune_table4[index7 + index8];
+        prune2_tmp = prune_table2[index1 + index4];
+        prune3_tmp = prune_table3[index1 + index6];
+        prune4_tmp = prune_table4[index1 + index8];
         if (prune1_tmp == 0 && prune2_tmp == 0 && prune3_tmp == 0 && prune4_tmp == 0 && index9 == 0 && index10 == 2 && index11 == 4 && index12 == 6 && (solve_ep || (index_ep == 105480 || index_ep == 105534 || index_ep == 105948 || index_ep == 108090)) && (solve_cp || (index_cp == 0 || index_cp == 54 || index_cp == 324 || index_cp == 1170)) && (solve_co || index_co == 0) && (solve_eo || index_eo == 0))
         {
             update("Already solved.");
@@ -1872,7 +1818,7 @@ struct LL_substeps_search
             index12 *= 18;
             for (int d = std::max(prune1_tmp, std::max(prune2_tmp, std::max(prune3_tmp, prune4_tmp))); d <= max_length; d++)
             {
-                if (depth_limited_search(index1, index2, index3, index4, index5, index6, index7, index8, index9, index10, index11, index12, index_cp, index_co, index_ep, index_eo, d, 324))
+                if (depth_limited_search(index1, index2, index4, index6, index8, index9, index10, index11, index12, index_cp, index_co, index_ep, index_eo, d, 324))
                 {
                     break;
                 }
@@ -1971,7 +1917,7 @@ struct LL_search
         }
     }
 
-    bool depth_limited_search(int arg_index1, int arg_index2, int arg_index3, int arg_index4, int arg_index5, int arg_index6, int arg_index7, int arg_index8, int arg_index9, int arg_index10, int arg_index11, int arg_index12, int arg_index_cp, int arg_index_co, int arg_index_ep, int arg_index_eo, int depth, int prev)
+    bool depth_limited_search(int arg_index1, int arg_index2, int arg_index4, int arg_index6, int arg_index8, int arg_index9, int arg_index10, int arg_index11, int arg_index12, int arg_index_cp, int arg_index_co, int arg_index_ep, int arg_index_eo, int depth, int prev)
     {
         for (int i : move_restrict)
         {
@@ -1987,26 +1933,23 @@ struct LL_search
             {
                 continue;
             }
-            index3_tmp = multi_move_table[arg_index3 + i];
             index4_tmp = corner_move_table[arg_index4 + i];
             index10_tmp = edge_move_table[arg_index10 + i];
-            prune2_tmp = prune_table2[index3_tmp + index4_tmp];
+            prune2_tmp = prune_table2[index1_tmp + index4_tmp];
             if (prune2_tmp >= depth)
             {
                 continue;
             }
-            index5_tmp = multi_move_table[arg_index5 + i];
             index6_tmp = corner_move_table[arg_index6 + i];
             index11_tmp = edge_move_table[arg_index11 + i];
-            prune3_tmp = prune_table3[index5_tmp + index6_tmp];
+            prune3_tmp = prune_table3[index1_tmp + index6_tmp];
             if (prune3_tmp >= depth)
             {
                 continue;
             }
-            index7_tmp = multi_move_table[arg_index7 + i];
             index8_tmp = corner_move_table[arg_index8 + i];
             index12_tmp = edge_move_table[arg_index12 + i];
-            prune4_tmp = prune_table4[index7_tmp + index8_tmp];
+            prune4_tmp = prune_table4[index1_tmp + index8_tmp];
             if (prune4_tmp >= depth)
             {
                 continue;
@@ -2025,11 +1968,8 @@ struct LL_search
                     int c = 0;
                     int index1_tmp2 = index1;
                     int index2_tmp2 = index2;
-                    int index3_tmp2 = index3;
                     int index4_tmp2 = index4;
-                    int index5_tmp2 = index5;
                     int index6_tmp2 = index6;
-                    int index7_tmp2 = index7;
                     int index8_tmp2 = index8;
                     int index9_tmp2 = index9;
                     int index10_tmp2 = index10;
@@ -2044,11 +1984,8 @@ struct LL_search
                         c += 1;
                         index1_tmp2 = multi_move_table[index1_tmp2 + j];
                         index2_tmp2 = corner_move_table[index2_tmp2 + j];
-                        index3_tmp2 = multi_move_table[index3_tmp2 + j];
                         index4_tmp2 = corner_move_table[index4_tmp2 + j];
-                        index5_tmp2 = multi_move_table[index5_tmp2 + j];
                         index6_tmp2 = corner_move_table[index6_tmp2 + j];
-                        index7_tmp2 = multi_move_table[index7_tmp2 + j];
                         index8_tmp2 = corner_move_table[index8_tmp2 + j];
                         index9_tmp2 = edge_move_table[index9_tmp2 + j];
                         index10_tmp2 = edge_move_table[index10_tmp2 + j];
@@ -2058,7 +1995,7 @@ struct LL_search
                         index_co_tmp2 = co_move_table[index_co_tmp2 + j];
                         index_ep_tmp2 = ep_move_table[index_ep_tmp2 + j];
                         index_eo_tmp2 = eo_move_table[index_eo_tmp2 + j];
-                        if (c < l && (prune_table1[index1_tmp2 + index2_tmp2] == 0 && prune_table2[index3_tmp2 + index4_tmp2] == 0 && prune_table3[index5_tmp2 + index6_tmp2] == 0 && prune_table4[index7_tmp2 + index8_tmp2] == 0 && index9_tmp2 == 0 && index10_tmp2 == 2 && index11_tmp2 == 4 && index12_tmp2 == 6 && ((index_ep_tmp2 == 105480 && index_cp_tmp2 == 0) || (index_ep_tmp2 == 105948 && index_cp_tmp2 == 324) || (index_ep_tmp2 == 108090 && index_cp_tmp2 == 1170) || (index_ep_tmp2 == 105534 && index_cp_tmp2 == 54)) && index_co_tmp2 == 0 && index_eo_tmp2 == 0))
+                        if (c < l && (prune_table1[index1_tmp2 + index2_tmp2] == 0 && prune_table2[index1_tmp2 + index4_tmp2] == 0 && prune_table3[index1_tmp2 + index6_tmp2] == 0 && prune_table4[index1_tmp2 + index8_tmp2] == 0 && index9_tmp2 == 0 && index10_tmp2 == 2 && index11_tmp2 == 4 && index12_tmp2 == 6 && ((index_ep_tmp2 == 105480 && index_cp_tmp2 == 0) || (index_ep_tmp2 == 105948 && index_cp_tmp2 == 324) || (index_ep_tmp2 == 108090 && index_cp_tmp2 == 1170) || (index_ep_tmp2 == 105534 && index_cp_tmp2 == 54)) && index_co_tmp2 == 0 && index_eo_tmp2 == 0))
                         {
                             valid = false;
                             break;
@@ -2091,7 +2028,7 @@ struct LL_search
                     }
                 }
             }
-            else if (depth_limited_search(index1_tmp, index2_tmp * 18, index3_tmp, index4_tmp * 18, index5_tmp, index6_tmp * 18, index7_tmp, index8_tmp * 18, index9_tmp * 18, index10_tmp * 18, index11_tmp * 18, index12_tmp * 18, index_cp_tmp, index_co_tmp, index_ep_tmp, index_eo_tmp, depth - 1, i * 18))
+            else if (depth_limited_search(index1_tmp, index2_tmp * 18, index4_tmp * 18, index6_tmp * 18, index8_tmp * 18, index9_tmp * 18, index10_tmp * 18, index11_tmp * 18, index12_tmp * 18, index_cp_tmp, index_co_tmp, index_ep_tmp, index_eo_tmp, depth - 1, i * 18))
             {
                 return true;
             }
@@ -2115,18 +2052,15 @@ struct LL_search
         index2 = corner_index[0];
         index9 = single_edge_index[0];
         create_prune_table2(index1, index2, 24 * 22 * 20 * 18, 24, 9, multi_move_table, corner_move_table, prune_table1);
-        index3 = edge_index[1];
         index4 = corner_index[1];
         index10 = single_edge_index[1];
-        create_prune_table2(index3, index4, 24 * 22 * 20 * 18, 24, 9, multi_move_table, corner_move_table, prune_table2);
-        index5 = edge_index[2];
+        create_prune_table2(index1, index4, 24 * 22 * 20 * 18, 24, 9, multi_move_table, corner_move_table, prune_table2);
         index6 = corner_index[2];
         index11 = single_edge_index[2];
-        create_prune_table2(index5, index6, 24 * 22 * 20 * 18, 24, 9, multi_move_table, corner_move_table, prune_table3);
-        index7 = edge_index[3];
+        create_prune_table2(index1, index6, 24 * 22 * 20 * 18, 24, 9, multi_move_table, corner_move_table, prune_table3);
         index8 = corner_index[3];
         index12 = single_edge_index[3];
-        create_prune_table2(index7, index8, 24 * 22 * 20 * 18, 24, 9, multi_move_table, corner_move_table, prune_table4);
+        create_prune_table2(index1, index8, 24 * 22 * 20 * 18, 24, 9, multi_move_table, corner_move_table, prune_table4);
         count = 0;
         for (std::string name : restrict)
         {
@@ -2134,9 +2068,6 @@ struct LL_search
             move_restrict.emplace_back(std::distance(move_names.begin(), it));
         }
         index1 *= 24;
-        index3 *= 24;
-        index5 *= 24;
-        index7 *= 24;
         index_cp = 0;
         index_co = 0;
         index_ep = 5860 * 18;
@@ -2145,11 +2076,8 @@ struct LL_search
         {
             index1 = multi_move_table[index1 + m];
             index2 = corner_move_table[index2 * 18 + m];
-            index3 = multi_move_table[index3 + m];
             index4 = corner_move_table[index4 * 18 + m];
-            index5 = multi_move_table[index5 + m];
             index6 = corner_move_table[index6 * 18 + m];
-            index7 = multi_move_table[index7 + m];
             index8 = corner_move_table[index8 * 18 + m];
             index_cp = cp_move_table[index_cp + m];
             index_co = co_move_table[index_co + m];
@@ -2161,9 +2089,9 @@ struct LL_search
             index12 = edge_move_table[index12 * 18 + m];
         }
         prune1_tmp = prune_table1[index1 + index2];
-        prune2_tmp = prune_table2[index3 + index4];
-        prune3_tmp = prune_table3[index5 + index6];
-        prune4_tmp = prune_table4[index7 + index8];
+        prune2_tmp = prune_table2[index1 + index4];
+        prune3_tmp = prune_table3[index1 + index6];
+        prune4_tmp = prune_table4[index1 + index8];
         if (prune1_tmp == 0 && prune2_tmp == 0 && prune3_tmp == 0 && prune4_tmp == 0 && index9 == 0 && index10 == 2 && index11 == 4 && index12 == 6 && ((index_ep == 105480 && index_cp == 0) || (index_ep == 105948 && index_cp == 324) || (index_ep == 108090 && index_cp == 1170) || (index_ep == 105534 && index_cp == 54)) && index_co == 0 && index_eo == 0)
         {
             update("Already solved.");
@@ -2180,7 +2108,7 @@ struct LL_search
             index12 *= 18;
             for (int d = std::max(prune1_tmp, std::max(prune2_tmp, std::max(prune3_tmp, prune4_tmp))); d <= max_length; d++)
             {
-                if (depth_limited_search(index1, index2, index3, index4, index5, index6, index7, index8, index9, index10, index11, index12, index_cp, index_co, index_ep, index_eo, d, 324))
+                if (depth_limited_search(index1, index2, index4, index6, index8, index9, index10, index11, index12, index_cp, index_co, index_ep, index_eo, d, 324))
                 {
                     break;
                 }
@@ -2279,7 +2207,7 @@ struct LL_AUF_search
         }
     }
 
-    bool depth_limited_search(int arg_index1, int arg_index2, int arg_index3, int arg_index4, int arg_index5, int arg_index6, int arg_index7, int arg_index8, int arg_index9, int arg_index10, int arg_index11, int arg_index12, int arg_index_cp, int arg_index_co, int arg_index_ep, int arg_index_eo, int depth, int prev)
+    bool depth_limited_search(int arg_index1, int arg_index2, int arg_index4, int arg_index6, int arg_index8, int arg_index9, int arg_index10, int arg_index11, int arg_index12, int arg_index_cp, int arg_index_co, int arg_index_ep, int arg_index_eo, int depth, int prev)
     {
         for (int i : move_restrict)
         {
@@ -2295,26 +2223,23 @@ struct LL_AUF_search
             {
                 continue;
             }
-            index3_tmp = multi_move_table[arg_index3 + i];
             index4_tmp = corner_move_table[arg_index4 + i];
             index10_tmp = edge_move_table[arg_index10 + i];
-            prune2_tmp = prune_table2[index3_tmp + index4_tmp];
+            prune2_tmp = prune_table2[index1_tmp + index4_tmp];
             if (prune2_tmp >= depth)
             {
                 continue;
             }
-            index5_tmp = multi_move_table[arg_index5 + i];
             index6_tmp = corner_move_table[arg_index6 + i];
             index11_tmp = edge_move_table[arg_index11 + i];
-            prune3_tmp = prune_table3[index5_tmp + index6_tmp];
+            prune3_tmp = prune_table3[index1_tmp + index6_tmp];
             if (prune3_tmp >= depth)
             {
                 continue;
             }
-            index7_tmp = multi_move_table[arg_index7 + i];
             index8_tmp = corner_move_table[arg_index8 + i];
             index12_tmp = edge_move_table[arg_index12 + i];
-            prune4_tmp = prune_table4[index7_tmp + index8_tmp];
+            prune4_tmp = prune_table4[index1_tmp + index8_tmp];
             if (prune4_tmp >= depth)
             {
                 continue;
@@ -2344,7 +2269,7 @@ struct LL_AUF_search
                     }
                 }
             }
-            else if (depth_limited_search(index1_tmp, index2_tmp * 18, index3_tmp, index4_tmp * 18, index5_tmp, index6_tmp * 18, index7_tmp, index8_tmp * 18, index9_tmp * 18, index10_tmp * 18, index11_tmp * 18, index12_tmp * 18, index_cp_tmp, index_co_tmp, index_ep_tmp, index_eo_tmp, depth - 1, i * 18))
+            else if (depth_limited_search(index1_tmp, index2_tmp * 18, index4_tmp * 18, index6_tmp * 18, index8_tmp * 18, index9_tmp * 18, index10_tmp * 18, index11_tmp * 18, index12_tmp * 18, index_cp_tmp, index_co_tmp, index_ep_tmp, index_eo_tmp, depth - 1, i * 18))
             {
                 return true;
             }
@@ -2368,18 +2293,15 @@ struct LL_AUF_search
         index2 = corner_index[0];
         index9 = single_edge_index[0];
         create_prune_table2(index1, index2, 24 * 22 * 20 * 18, 24, 9, multi_move_table, corner_move_table, prune_table1);
-        index3 = edge_index[1];
         index4 = corner_index[1];
         index10 = single_edge_index[1];
-        create_prune_table2(index3, index4, 24 * 22 * 20 * 18, 24, 9, multi_move_table, corner_move_table, prune_table2);
-        index5 = edge_index[2];
+        create_prune_table2(index1, index4, 24 * 22 * 20 * 18, 24, 9, multi_move_table, corner_move_table, prune_table2);
         index6 = corner_index[2];
         index11 = single_edge_index[2];
-        create_prune_table2(index5, index6, 24 * 22 * 20 * 18, 24, 9, multi_move_table, corner_move_table, prune_table3);
-        index7 = edge_index[3];
+        create_prune_table2(index1, index6, 24 * 22 * 20 * 18, 24, 9, multi_move_table, corner_move_table, prune_table3);
         index8 = corner_index[3];
         index12 = single_edge_index[3];
-        create_prune_table2(index7, index8, 24 * 22 * 20 * 18, 24, 9, multi_move_table, corner_move_table, prune_table4);
+        create_prune_table2(index1, index8, 24 * 22 * 20 * 18, 24, 9, multi_move_table, corner_move_table, prune_table4);
         count = 0;
         for (std::string name : restrict)
         {
@@ -2387,9 +2309,6 @@ struct LL_AUF_search
             move_restrict.emplace_back(std::distance(move_names.begin(), it));
         }
         index1 *= 24;
-        index3 *= 24;
-        index5 *= 24;
-        index7 *= 24;
         index_cp = 0;
         index_co = 0;
         index_ep = 5860 * 18;
@@ -2398,11 +2317,8 @@ struct LL_AUF_search
         {
             index1 = multi_move_table[index1 + m];
             index2 = corner_move_table[index2 * 18 + m];
-            index3 = multi_move_table[index3 + m];
             index4 = corner_move_table[index4 * 18 + m];
-            index5 = multi_move_table[index5 + m];
             index6 = corner_move_table[index6 * 18 + m];
-            index7 = multi_move_table[index7 + m];
             index8 = corner_move_table[index8 * 18 + m];
             index_cp = cp_move_table[index_cp + m];
             index_co = co_move_table[index_co + m];
@@ -2414,9 +2330,9 @@ struct LL_AUF_search
             index12 = edge_move_table[index12 * 18 + m];
         }
         prune1_tmp = prune_table1[index1 + index2];
-        prune2_tmp = prune_table2[index3 + index4];
-        prune3_tmp = prune_table3[index5 + index6];
-        prune4_tmp = prune_table4[index7 + index8];
+        prune2_tmp = prune_table2[index1 + index4];
+        prune3_tmp = prune_table3[index1 + index6];
+        prune4_tmp = prune_table4[index1 + index8];
         if (prune1_tmp == 0 && prune2_tmp == 0 && prune3_tmp == 0 && prune4_tmp == 0 && index9 == 0 && index10 == 2 && index11 == 4 && index12 == 6 && index_ep == 105480 && index_cp == 0 && index_co == 0 && index_eo == 0)
         {
             update("Already solved.");
@@ -2433,7 +2349,7 @@ struct LL_AUF_search
             index12 *= 18;
             for (int d = std::max(prune1_tmp, std::max(prune2_tmp, std::max(prune3_tmp, prune4_tmp))); d <= max_length; d++)
             {
-                if (depth_limited_search(index1, index2, index3, index4, index5, index6, index7, index8, index9, index10, index11, index12, index_cp, index_co, index_ep, index_eo, d, 324))
+                if (depth_limited_search(index1, index2, index4, index6, index8, index9, index10, index11, index12, index_cp, index_co, index_ep, index_eo, d, 324))
                 {
                     break;
                 }
