@@ -651,7 +651,7 @@ struct cross_search
                     int index_eo_tmp2 = index_eo;
                     for (int j : sol)
                     {
-                        if (index1_tmp2 == multi_move_table[index1_tmp2 + j] * 18 && index2_tmp2 == multi_move_table[index2_tmp2 + j] * 18 && (index_eo_tmp2 == 0 && j != 12 && j != 14 && j != 15 && j != 17))
+                        if (index1_tmp2 == multi_move_table[index1_tmp2 + j] * 18 && index2_tmp2 == multi_move_table[index2_tmp2 + j] * 18 && index_eo_tmp2 == eo_move_table[index_eo_tmp2 + j] * 18)
                         {
                             valid = false;
                             break;
@@ -814,7 +814,7 @@ struct xcross_search
                     int index_eo_tmp2 = index_eo;
                     for (int j : sol)
                     {
-                        if (index1_tmp2 == multi_move_table[index1_tmp2 + j] && index2_tmp2 == corner_move_table[index2_tmp2 + j] * 18 && index3_tmp2 == edge_move_table[index3_tmp2 + j] * 18 && (index_eo_tmp2 == 0 && j != 12 && j != 14 && j != 15 && j != 17))
+                        if (index1_tmp2 == multi_move_table[index1_tmp2 + j] && index2_tmp2 == corner_move_table[index2_tmp2 + j] * 18 && index3_tmp2 == edge_move_table[index3_tmp2 + j] * 18 && index_eo_tmp2 == eo_move_table[index_eo_tmp2 + j] * 18)
                         {
                             valid = false;
                             break;
@@ -1009,7 +1009,7 @@ struct xxcross_search
                     int index_eo_tmp2 = index_eo;
                     for (int j : sol)
                     {
-                        if (index1_tmp2 == multi_move_table[index1_tmp2 + j] && index2_tmp2 == corner_move_table[index2_tmp2 + j] * 18 && index3_tmp2 == multi_move_table[index3_tmp2 + j] && index4_tmp2 == corner_move_table[index4_tmp2 + j] * 18 && index5_tmp2 == edge_move_table[index5_tmp2 + j] * 18 && index6_tmp2 == edge_move_table[index6_tmp2 + j] * 18 && (index_eo_tmp2 == 0 && j != 12 && j != 14 && j != 15 && j != 17))
+                        if (index1_tmp2 == multi_move_table[index1_tmp2 + j] && index2_tmp2 == corner_move_table[index2_tmp2 + j] * 18 && index3_tmp2 == multi_move_table[index3_tmp2 + j] && index4_tmp2 == corner_move_table[index4_tmp2 + j] * 18 && index5_tmp2 == edge_move_table[index5_tmp2 + j] * 18 && index6_tmp2 == edge_move_table[index6_tmp2 + j] * 18 && index_eo_tmp2 == eo_move_table[index_eo_tmp2 + j] * 18)
                         {
                             valid = false;
                             break;
