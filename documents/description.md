@@ -5,17 +5,17 @@ This is an online solver for speedcubers that uses specific methods such as CFOP
 
   - The following 13 solvers are currently available.
   
-    - **F2L Lite**: Lite solver for cross, X-cross, XX-cross, XXX-cross, XXXX-cross. Analyzer available.
+    - **F2L Lite**: Lite solver for cross, X-cross, XX-cross, XXX-cross, and XXXX-cross. Analyzer available.
 
-    - **Pairing**: Lite solver for a free pair with cross, X-cross, XX-cross, XXX-cross, XXX-cross. Analyzer available.
+    - **Pairing**: Lite solver for a free pair. Analyzer available.
 
-    - **Pseudo F2L Lite**: Lite solver for pseudo cross, X-cross, XX-cross, XXX-cross. Analyzer available.
+    - **Pseudo F2L Lite**: Lite solver for pseudo cross, X-cross, XX-cross, and XXX-cross. Analyzer available.
 
-    - **Pseudo Pairing**: Lite solver for a pseudo free pair with pseudo cross, X-cross, XX-cross, XXX-cross. Analyzer available.
+    - **Pseudo Pairing**: Lite solver for a pseudo free pair. Analyzer available.
 
-    - **EOCross**: Lite solver for EOCross, X-EOCross, XX-EOCross, XXX-EOCross. Analyzer available.
+    - **EOCross**: Lite solver for EOCross, X-EOCross, XX-EOCross, XXX-EOCross, and XXXX-EOCross. Analyzer available.
 
-    - **LL Substeps Lite**: Lite solver for last layer **CP**, **CO**, **EP**, **EO**
+    - **LL Substeps Lite**: Lite solver for last layer **CP**, **CO**, **EP**, and **EO**
 
     - **LL Lite**: Lite solver for last layer
 
@@ -23,15 +23,15 @@ This is an online solver for speedcubers that uses specific methods such as CFOP
 
     - **Two Phase**: Two Phase solver using [min2phase.js](https://github.com/cs0x7f/min2phase.js)
 
-    - **F2L**: Solver for cross, X-cross, XX-cross, XXX-cross, XXXX-cross. **Recommended for use with PC**. Analyzer available.
+    - **F2L**: Solver for cross, X-cross, XX-cross, XXX-cross, and XXXX-cross. **Recommended for use with PC**. Analyzer available.
 
-    - **LL Substeps**: Solver for last layer **CP**, **CO**, **EP**, **EO**. **Recommended for use with PC**.
+    - **LL Substeps**: Solver for last layer **CP**, **CO**, **EP**, and **EO**. **Recommended for use with PC**.
 
     - **LL**: Solver for last layer. **Recommended for use with PC**.
 
     - **LL AUF**: Solver for last layer and AUF. **Recommended for use with PC**.
 
-  -  Some solvers come with an analyzer that solves for each pattern one at a time and displays the shortest number of moves in HTM in a table. The numbered cells in this table act as buttons to start the search with that condition. You can click the header to sort the table by its columns. Select the face to analyze from **U**, **D**, **L**, **R**, **F**, and **B**.
+  -  Some solvers come with an analyzer that solves for each pattern one at a time and displays the shortest number of moves in HTM in a table. The numbered cells in this table act as buttons to start the search with that condition. You can click the header to sort the table by its columns. Select the faces to analyze from **U**, **D**, **L**, **R**, **F**, and **B**.
 
   - The following table shows the memory requirements for each solver. If memory is insufficient, the web page may crash (resulting in a forced reload). However, as mentioned below, it is possible to recover the page using the query parameter.
 
@@ -62,7 +62,7 @@ This is an online solver for speedcubers that uses specific methods such as CFOP
 
 - Each time a solution is found, a Details section will be created that includes an **[Add]** button, a Twisty Player, and various links, with the output being updated in real time. By pressing the **[Add]** button, you can add the solution to the **Scramble**.
 
-- Whenever the input fields are updated, the query parameters will also be updated. If a search is performed, the first solution will be added to the query parameters. Based on these query parameters, the page can be restored to its previous state.
+- Whenever the input fields are updated, the query parameters will also be updated. If a search is performed, the first solution will be added to the query parameters. 
 
 - In rare cases, functions exported by Emscripten may not be initialized properly (especially on mobile devices). In such cases, a warning will be displayed, and you will be prompted to reload the page manually.
 
@@ -98,23 +98,23 @@ This is an online solver for speedcubers that uses specific methods such as CFOP
       - **y y2 y2' y'**
       - **z z2 z2' z'**
 
-  - Comments can be written using "//". It is recommended to place "// setup" comments on the appropriate line. When viewing on [alg.cubing.net](https://alg.cubing.net/) or [cubedb.net](https://cubedb.net/), the line with "// setup" and above will be included in the **Setup** section, while the lines below will be included in the **Moves** section. 
+  - Comments can be written using "//". It is recommended to place "// setup" comments on the appropriate line. When viewing on [alg.cubing.net](https://alg.cubing.net/) or [cubedb.net](https://cubedb.net/), the line with "// setup" and above will be included in the **Setup** or **Scramble** section, while the lines below will be included in the **Moves** section. 
 
-- **Rotation**: Select the rotation before starting the search. 
+- **Rotation**: Select the rotation alg before starting the search. 
 
-- **Slot**: Select F2L slots from **BL** (**B**ack **L**eft), **BR** (**B**ack **R**ight), **FR** (**F**ront **R**ight), and **FL** (**F**ront **L**eft). If none of the four slots are selected, meaning **None** is chosen, it will function as a **cross solver**.
+- **Slot**: Select F2L slots from **BL** (**B**ack **L**eft), **BR** (**B**ack **R**ight), **FR** (**F**ront **R**ight), and **FL** (**F**ront **L**eft). If none of the four slots are selected, meaning **None** is chosen, it will function as cross solver.
 
 - **Free Pair**: Select a slot for solving the free pair from the slots other than the one selected in the **Slot**.
 
-- **Pseudo Slot Edge**: Select slot edges from **BL** (**B**ack **L**eft), **BR** (**B**ack **R**ight), **FR** (**F**ront **R**ight), and **FL** (**F**ront **L**eft). If none of the four slots are selected, meaning **None** is chosen, it will function as a **pseudo cross solver**, which solves cross when **D** face misalignment is allowed.
+- **Pseudo Slot Edge**: Select slot edges from **BL**, **BR**, **FR**, and **FL**. If none of the four slots are selected, meaning **None** is chosen, it will function as a **pseudo cross solver**, which solves cross when **D** face misalignment is allowed.
 
-- **Pseudo Slot Corner**: Select slot edges from **BL** (**B**ack **L**eft), **BR** (**B**ack **R**ight), **FR** (**F**ront **R**ight), and **FL** (**F**ront **L**eft). Dropbox for this will appear when anything other than **None** is selected for **Pseudo Slot Edge**.
+- **Pseudo Slot Corner**: Select slot edges from **BL**, **BR**, **FR**, and **FL**. Dropbox for this will appear when anything other than **None** is selected for **Pseudo Slot Edge**.
 
 - **Free Pair Edge**: Select a pseudo slot edge for solving the pseudo free pair from the slots other than the one selected in the **Pseudo Slot Edge**. 
 
 - **Free Pair Corner**: Select a pseudo slot corner for solving the pseudo free pair from the slots other than the one selected in the **Pseudo Slot Corner**. 
 
-- **Last Layer Option**: Select from **CP** (**C**orner **P**ermutation), **CO** (**C**orner **O**riantation), **EP** (**E**dge **P**ermutation) and **EO** (**E**dge **O**riantation). If none of these options are selected, meaning **None** is chosen, it will function as a **XXXX-cross solver**.
+- **Last Layer Option**: Select from **CP**, **CO**, **EP**, and **EO**. If none of these options are selected, meaning **None** is chosen, it will function as XXXX-cross solver.
 
 - **Max Length**:  The maximum number of moves in HTM for the solution to be searched.
 
@@ -148,14 +148,14 @@ A set of solvers for Rubik's Cube cross, X-cross, XX-cross, XXX-cross, and XXXX-
 - Search solutions for last two F2L slots, setting **Move Restrict** to **URF**. [[See on the website](https://or18.github.io/RubiksSolverDemo/?scramble=B-_U-_L2_D-_R_F_U_F_B_D2_F_D2_R2_F2_D2_B-_L2_U2_F2_D-_%252F%252F_setup&index=1&sol=U_F-_U-_R-_F_R-_F-_R2_U_F_&slot=BL_BR_FR_FL&res=UDRF)]
 
 ## **Pairing**
-A set of solvers for a free pair with cross, X-cross, XX-cross, XXX-cross. It is used to search solutions for cross with a free pair and some advanced F2L slotting, and more. Here are some examples. 
+A set of solvers for a free pair. It is used to search solutions for cross with a free pair, advanced F2L setup, and more. Here are some examples. 
 
 - Search solutions for cross with a free pair. [[See on the website](https://or18.github.io/RubiksSolverDemo/?scramble=L2_D_R_F_L2_F2_D2_L-_F-_B2_U-_L2_D_B2_L2_D_L2_B2_U2_B2_R-_%252F%252F_setup%250A&index=1&sol=B2_U2_L2_R_F_D_&solver=F2L_pair)]
 
 - Search solutions for 3rd F2L and last pair, setting **Move Restrict** to **URF**.  [[See on the website](https://or18.github.io/RubiksSolverDemo/?scramble=R_D-_R_U_D2_L-_B_L2_U2_D2_R_F2_R-_D2_R_B2_R-_D2_R-_D_%252F%252F_setup%250A&index=1&sol=U2_R-_F-_U-_F2_R-_F-_R2_&solver=F2L_pair&slot2=BL_BR_FL&res=URF)]
 
 ## **Pseudo F2L Lite**
-A set of solvers for pseudo cross, X-cross, XX-cross, XXX-cross. It is used to search solutions for pseudo X-cross, pseudo slotting, and more. Here are some examples.
+A set of solvers for pseudo cross, X-cross, XX-cross, and XXX-cross. It is used to search solutions for pseudo X-cross, pseudo slotting, and more. Here are some examples.
 
 - Search solutions for pseudo X-cross. [[See on the website](https://or18.github.io/RubiksSolverDemo/?scramble=L2_F_L-_F_R2_D-_L_U2_B_L-_D2_B2_R2_L_D2_R_U2_D2_F2_U2_R_%252F%252F_setup%250A&index=1&sol=U-_F2_L_U_R_B2_D2_B_&solver=PF2L&pse=BL)]
 
@@ -164,14 +164,14 @@ A set of solvers for pseudo cross, X-cross, XX-cross, XXX-cross. It is used to s
 - Search solutions for diagonal pseudo XX-cross. [[See on the website](https://or18.github.io/RubiksSolverDemo/?scramble=U-_D2_B2_R_F-_D_R_B2_U_R2_U_L2_D-_R2_U-_L2_U-_L2_B2_R-_%252F%252F_setup%250A&index=1&sol=z2_U2_L-_U-_F2_U2_B-_D2_F_L2_&solver=PF2L&pse=BL_FR&rot=z2&psc=BR_FL)]
 
 ## **Pseudo Pairing**
-A set of solvers for a pseudo free pair with pseudo cross, X-cross, XX-cross, XXX-cross. It is used to search solutions for pseudo cross with a pseudo free pair and some advanced pseudo slotting, and more. Here are some examples. 
+A set of solvers for a pseudo free pair. It is used to search solutions for pseudo cross with a pseudo free pair,  some advanced pseudo slotting, and more. Here are some examples. 
 
 - Search solutions for pseudo cross with a pseudo free pair. [[See on the website](https://or18.github.io/RubiksSolverDemo/?scramble=L_U2_L_B_D2_R_F-_B2_U2_L2_D-_B2_U_B2_R2_U-_R2_F2_R2_B_U2_%252F%252F_setup%250A&index=1&sol=D_B_L-_B2_D_R_&solver=PF2L_pair&apsc=BR)]
 
 - Search solutions for 3rd pseudo slot and last pseudo pair, setting **Move Restrict** to **UDR**. [[See on the website](https://or18.github.io/RubiksSolverDemo/?scramble=U-_F_U-_B2_U_F-_B2_D_F2_U-_F2_D_R2_D-_L2_U-_L2_U_%252F%252F_setup%250A&index=1&sol=D_R2_U-_R2_U_R-_U2_R-_&solver=PF2L_pair&pse2=BL_BR_FL&res=UDR)]
 
 ## **EOCross**
-A set of solvers for EOcross, X-EOcross, XX-EOcross, XXX-EOcross, XXXX-EOCross. Here are some examples.
+A set of solvers for EOcross, X-EOcross, XX-EOcross, XXX-EOcross, and XXXX-EOCross. Here are some examples.
 
 - Search solutions for EOCross (LR). [[See on the website](https://or18.github.io/RubiksSolverDemo/?scramble=R-_F_D-_B_D2_L2_B2_D-_L-_D2_B_U2_L2_F-_L2_F-_R2_F_L2_U2_B_%252F%252F_setup%250A&index=1&sol=z2_F-_D-_B-_D2_L-_B_L2_&solver=EOCross&rot=z2)]
 
@@ -183,7 +183,7 @@ A set of solvers for EOcross, X-EOcross, XX-EOcross, XXX-EOcross, XXXX-EOCross. 
 
 
 ## **LL Substeps Lite**
-A solver for last layer **CP**, **CO**, **EP**, **EO**. It is used to search solutions for OLL, COLL, ZBLS, and more. The **LL Substeps** solver can perform the same search.
+A solver for last layer **CP**, **CO**, **EP**, and **EO**. It is used to search solutions for OLL, COLL, ZBLS, and more. The **LL Substeps** solver can perform the same search.
 
 - Search solutions for OLL, setting **Move Restrict** to **URF**. [[See on the website](https://or18.github.io/RubiksSolverDemo/?scramble=R_F_R2_F-_R_U_R2_U_F2_L2_B2_D-_B2_L2_F2_U_R2_%252F%252F_setup%250A&index=1&sol=R-_F_U_F2_U_F2_U2_F-_U_R_&solver=LS&ll=CO_EO&res=URF)]
 
