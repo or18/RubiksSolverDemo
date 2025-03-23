@@ -133,7 +133,7 @@ A set of solvers for Rubik's Cube cross, X-cross, XX-cross, XXX-cross, and XXXX-
 
 - Search solutions for white cross, when selecting a rotation from the **`Rotation`** [[See on the website](https://or18.github.io/RubiksSolverDemo/?scramble=D2_F_L2_D_B2_L2_F2_R2_D2_B2_D2_U_F2_U2_B-_L_R_D_R-_F-_U_%252F%252F_setup%250A&index=1&sol=z2_D_R_D2_L2_R-_B-_&rot=z2)]
 
-- Search solutions for blue cross, when input a rotation in the **`Scramble`** [[See on the website](https://or18.github.io/RubiksSolverDemo/?scramble=D2_F_L2_D_B2_L2_F2_R2_D2_B2_D2_U_F2_U2_B-_L_R_D_R-_F-_U_%252F%252F_setup%250A%250Az2_%252F%252F_inspection&index=1&sol=D_R_D2_L2_R-_B-_)]
+- Search solutions for white cross, when input a rotation in the **`Scramble`** [[See on the website](https://or18.github.io/RubiksSolverDemo/?scramble=D2_F_L2_D_B2_L2_F2_R2_D2_B2_D2_U_F2_U2_B-_L_R_D_R-_F-_U_%252F%252F_setup%250A%250Az2_%252F%252F_inspection&index=1&sol=D_R_D2_L2_R-_B-_)]
 
 - Search solutions for white X-cross [[See on the website](https://or18.github.io/RubiksSolverDemo/?scramble=D-_L-_U2_B_L_B2_R-_D_B2_R_D_R2_D2_F2_R2_L2_F2_D-_F2_D_L2_%252F%252F_setup%250A&index=1&sol=z2_L_R2_B2_U-_L_B-_R_F2_D-_&rot=z2&slot=BL)]
 
