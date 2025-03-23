@@ -98,7 +98,7 @@ This is an online solver for speedcubers that uses specific methods such as CFOP
       - `y y2 y2' y'` 
       - `z z2 z2' z'` 
 
-  - Comments can be written using `//`. It is recommended to place `// setup` comments on the appropriate line. When viewing on [alg.cubing.net]([alg.cubing.net](https://alg.cubing.net/)) or [cubedb.net]([cubedb.net](https://cubedb.net/)), the line with `// setup` and above will be included in the **Setup** section, while the lines below will be included in the **Moves** section. 
+  - Comments can be written using `//`. It is recommended to place `// setup` comments on the appropriate line. When viewing on [alg.cubing.net](https://alg.cubing.net/) or [cubedb.net](https://cubedb.net/), the line with `// setup` and above will be included in the **Setup** section, while the lines below will be included in the **Moves** section. 
 
 - **`Rotation`**: Select the rotation before starting the search. 
 
