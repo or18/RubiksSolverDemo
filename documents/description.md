@@ -38,7 +38,7 @@ This is an online solver for speedcubers that uses specific methods such as CFOP
     | Solver | Single Search | Analyzer |
     |-----------|-----------|-----------|
     | `F2L Lite`   | 100 MB   | 100 MB   |
-    | `Pairing`   | 100 MB   | 100 MB   |
+    | `Pairing`   | 100 MB   | 200 MB   |
     | `Pseudo F2L Lite`   | 100 MB   | 100 MB   |
     | `Pseudo Pairing`   | 100 MB   | 400 MB   |
     | `EOCross`   | 200 MB   | 200 MB   |
