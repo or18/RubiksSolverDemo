@@ -5,9 +5,9 @@ This is an online solver for speedcubers that uses specific methods such as CFOP
 
   - The following 13 solvers are currently available.
   
-    - `F2L Lite`: Lite Solver for cross, X-cross, XX-cross, XXX-cross, XXXX-cross. Analyzer available.
+    - `F2L Lite`: Lite solver for cross, X-cross, XX-cross, XXX-cross, XXXX-cross. Analyzer available.
 
-    - `Pairing`: Lite Solver for a free pair with cross, X-cross, XX-cross, XXX-cross, XXXX-cross. Analyzer available.
+    - `Pairing`: Lite solver for a free pair with cross, X-cross, XX-cross, XXX-cross, XXX-cross. Analyzer available.
 
     - `Pseudo F2L Lite`: Lite solver for pseudo cross, X-cross, XX-cross, XXX-cross. Analyzer available.
 
