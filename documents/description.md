@@ -100,7 +100,7 @@ This is an online solver for speedcubers that uses specific methods such as CFOP
 
   - Comments can be written using "//". It is recommended to place "// setup" comments on the appropriate line. When viewing on [alg.cubing.net](https://alg.cubing.net/) or [cubedb.net](https://cubedb.net/), the line with "// setup" and above will be included in the **Setup** or **Scramble** section, while the lines below will be included in the **Moves** section. 
 
-- **Rotation**: Select the rotation alg before starting the search. 
+- **Rotation**: Select a rotation alg before starting the search. 
 
 - **Slot**: Select F2L slots from **BL** (**B**ack **L**eft), **BR** (**B**ack **R**ight), **FR** (**F**ront **R**ight), and **FL** (**F**ront **L**eft). If none of the four slots are selected, meaning **None** is chosen, it will function as cross solver.
 
