@@ -119,16 +119,18 @@
             box-sizing: border-box;
             display: block;
             font-family: Arial, sans-serif;
-            background-color: #1e1e1e;
             padding: 10px;
             font-size: 20px;
-            border: 1px solid #41417f;
-            border-radius: 4px;
-            word-wrap: break-word;
             color: #ffffff;
             width: 100%;
-            max-width: 700px;
+            max-width: 750px;
             cursor: pointer;
+        }
+
+        details {
+            border: 1px solid #41417f;
+            padding: 8px;
+            margin: 10px 0;
         }
 
         .analyzer_result {
@@ -258,11 +260,11 @@
     <h2>This is solver for Rubik's cube cross, X-cross, XX-cross, XXX-cross, XXXX-cross, free pair, last layer(OLL,
         ZBLS, ZBLL). Pseudo X-, XX-, XXX-cross and free pair solver also available. EOCross and X-, XX-, XXX-EOCross
         solver also available.</h2>
-    <h2>Warning: Due to security issues, solvers may not function properly, especially in mobile browsers.</h2>
     <a href="https://github.com/or18/RubiksSolverDemo" rel="noopener noreferrer">Source</a><br>
-    <a href="https://or18.github.io/RubiksSolverDemo/documents/description" rel="noopener noreferrer">Description and Examples</a><br>
+    <a href="https://or18.github.io/RubiksSolverDemo/documents/description" rel="noopener noreferrer">Description and
+        Examples</a><br>
     <a href="https://or18.github.io/Rubiks-cube-xcross-solver/" rel="noopener noreferrer">Old Demo</a><br><br>
-    <label for="solver">Solver</label><br>
+    <label for="solver">Solver: </label><br>
     <select translate="no" id="solver" onchange="change(); updateUrlParams();">
         <option translate="no" value="F2L" selected>F2L Lite</option>
         <option translate="no" value="F2L_pair">Pairing</option>
@@ -280,7 +282,7 @@
     </select>
     <button id="undo" class="button small hidden_small" onclick="undo()">←</button>
     <button id="redo" class="button small hidden_small" onclick="redo()">→</button><br>
-    <label for="scr">Scramble</label><br>
+    <label for="scr">Scramble: </label><br>
     <textarea id="scr" rows="10" cols="10" placeholder="Use // to write comments, as in algs // comment. 
 Write the //setup comment in the appropriate position when viewing on alg.cubing.net or cubedb.net."
         onchange="save()"></textarea><br>
@@ -291,8 +293,9 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
     <pre id="links"
         class="hidden"><a translate="no" id="link_alg_cubing" href="https://alg.cubing.net/" target="_blank" rel="noopener noreferrer">alg.cubing.net</a>  <a translate="no" id="link_cubedb" href="https://cubedb.net/?puzzle=3x3" target="_blank" rel="noopener noreferrer">cubedb.net</a></pre>
 
-    <div id="analyze">
-        <label for="analyzer_rotation_option">Analyzer Options</label>
+    <details id="analyze">
+        <summary id="summary_analyzer">Show Analyzer</summary><br>
+        <label for="analyzer_rotation_option">Face Option: </label>
         <fieldset id="analyzer_rotation_option">
             <input type="checkbox" id="checkboxD_analyzer" class="custom-checkbox analyzer" value="D" checked>
             <label translate="no" translate="no" for="checkboxD_analyzer">D</label>
@@ -307,6 +310,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             <input type="checkbox" id="checkboxB_analyzer" class="custom-checkbox analyzer" value="B">
             <label translate="no" for="checkboxB_analyzer">B</label>
         </fieldset>
+        <label for="analyzer_option">Solver Option: </label>
         <select translate="no" id="analyzer_option">
             <option translate="no" value="cross">cross</option>
             <option translate="no" value="xcross">xcross</option>
@@ -315,13 +319,16 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             <option translate="no" value="2x">cross, x</option>
             <option translate="no" value="3x">cross, x, xx</option>
             <option translate="no" value="4x">cross, x, xx, xxx</option>
-        </select>
-        <button id="analyzer" class="button medium" onclick="analyze()">Analyze</button>
+        </select><br>
+        <label for="analyzer_num">Count: </label>
+        <input type="number" id="analyzer_num" value="1" min="1" required><br>
+        <button id="analyzer" class="button medium" onclick="analyze()">Analyze</button><br>
         <div id="table"></div>
-    </div>
+    </details>
 
-    <div id="eo_analyze">
-        <label for="eo_analyzer_rotation_option">Analyzer Options</label>
+    <details id="eo_analyze">
+        <summary id="summary_eo_analyzer">Show Analyzer</summary><br>
+        <label for="eo_analyzer_rotation_option">Face Option: </label>
         <fieldset id="eo_analyzer_rotation_option">
             <input type="checkbox" id="checkboxD_eo_analyzer" class="custom-checkbox eo_analyzer" value="D" checked>
             <label translate="no" translate="no" for="checkboxD_eo_analyzer">D</label>
@@ -336,6 +343,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             <input type="checkbox" id="checkboxB_eo_analyzer" class="custom-checkbox eo_analyzer" value="B">
             <label translate="no" for="checkboxB_eo_analyzer">B</label>
         </fieldset>
+        <label for="eo_analyzer_option">Solver Option: </label>
         <select translate="no" id="eo_analyzer_option">
             <option translate="no" value="cross">cross</option>
             <option translate="no" value="xcross">xcross</option>
@@ -344,13 +352,16 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             <option translate="no" value="2x">cross, x</option>
             <option translate="no" value="3x">cross, x, xx</option>
             <option translate="no" value="4x">cross, x, xx, xxx</option>
-        </select>
+        </select><br>
+        <label for="eo_analyzer_num">Count: </label>
+        <input type="number" id="eo_analyzer_num" value="1" min="1" required><br>
         <button id="eo_analyzer" class="button medium" onclick="eo_analyze()">Analyze</button>
         <div id="eo_table"></div>
-    </div>
+    </details>
 
-    <div id="panalyze">
-        <label for="panalyzer_rotation_option">Analyzer Options</label>
+    <details id="panalyze">
+        <summary id="summary_panalyzer">Show Analyzer</summary><br>
+        <label for="panalyzer_rotation_option">Face Option: </label>
         <fieldset id="panalyzer_rotation_option">
             <input type="checkbox" id="checkboxD_panalyzer" class="custom-checkbox panalyzer" value="D" checked>
             <label translate="no" for="checkboxD_panalyzer">D</label>
@@ -365,6 +376,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             <input type="checkbox" id="checkboxB_panalyzer" class="custom-checkbox panalyzer" value="B">
             <label translate="no" for="checkboxB_panalyzer">B</label>
         </fieldset>
+        <label for="panalyzer_option">Solver Option: </label>
         <select translate="no" id="panalyzer_option">
             <option translate="no" value="cross">cross</option>
             <option translate="no" value="xcross">xcross</option>
@@ -373,13 +385,16 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             <option translate="no" value="2x">cross, x</option>
             <option translate="no" value="3x">cross, x, xx</option>
             <option translate="no" value="4x">cross, x, xx, xxx</option>
-        </select>
+        </select><br>
+        <label for="panalyzer_num">Count: </label>
+        <input type="number" id="panalyzer_num" value="1" min="1" required><br>
         <button id="panalyzer" class="button medium" onclick="panalyze()">Analyze</button>
         <div id="ptable"></div>
-    </div>
+    </details>
 
-    <div id="pair_analyze">
-        <label for="pair_analyzer_rotation_option">Analyzer Options</label>
+    <details id="pair_analyze">
+        <summary id="summary_pair_analyzer">Show Analyzer</summary><br>
+        <label for="pair_analyzer_rotation_option">Face Option: </label>
         <fieldset id="pair_analyzer_rotation_option">
             <input type="checkbox" id="checkboxD_pair_analyzer" class="custom-checkbox pair_analyzer" value="D" checked>
             <label translate="no" for="checkboxD_pair_analyzer">D</label>
@@ -394,6 +409,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             <input type="checkbox" id="checkboxB_pair_analyzer" class="custom-checkbox pair_analyzer" value="B">
             <label translate="no" for="checkboxB_pair_analyzer">B</label>
         </fieldset>
+        <label for="pair_analyzer_option">Solver Option: </label>
         <select translate="no" id="pair_analyzer_option">
             <option translate="no" value="cross">cross</option>
             <option translate="no" value="xcross">xcross</option>
@@ -402,13 +418,16 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             <option translate="no" value="2x">cross, x</option>
             <option translate="no" value="3x">cross, x, xx</option>
             <option translate="no" value="4x">cross, x, xx, xxx</option>
-        </select>
+        </select><br>
+        <label for="pair_analyzer_num">Count: </label>
+        <input type="number" id="pair_analyzer_num" value="1" min="1" required><br>
         <button id="pair_analyzer" class="button medium" onclick="pair_analyze()">Analyze</button>
         <div id="pair_table"></div>
-    </div>
+    </details>
 
-    <div id="pair_panalyze">
-        <label for="pair_panalyzer_rotation_option">Analyzer Options</label>
+    <details id="pair_panalyze">
+        <summary id="summary_pair_panalyzer">Show Analyzer</summary><br>
+        <label for="pair_panalyzer_rotation_option">Face Option: </label>
         <fieldset id="pair_panalyzer_rotation_option">
             <input type="checkbox" id="checkboxD_pair_panalyzer" class="custom-checkbox pair_panalyzer" value="D"
                 checked>
@@ -423,7 +442,8 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             <label translate="no" for="checkboxF_pair_panalyzer">F</label>
             <input type="checkbox" id="checkboxB_pair_panalyzer" class="custom-checkbox pair_panalyzer" value="B">
             <label translate="no" for="checkboxB_pair_panalyzer">B</label>
-        </fieldset><br>
+        </fieldset>
+        <label for="pair_panalyzer_option">Solver Option: </label>
         <select translate="no" id="pair_panalyzer_option">
             <option translate="no" value="cross">cross</option>
             <option translate="no" value="xcross">xcross</option>
@@ -432,10 +452,13 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             <option translate="no" value="2x">cross, x</option>
             <option translate="no" value="3x">cross, x, xx</option>
             <option translate="no" value="4x">cross, x, xx, xxx</option>
-        </select>
+        </select><br>
+        <label for="pair_panalyzer_num">Count: </label>
+        <input type="number" id="pair_panalyzer_num" value="1" min="1" required><br>
         <button id="pair_panalyzer" class="button medium" onclick="pair_panalyze()">Analyze</button>
         <div id="pair_ptable"></div>
-    </div><br>
+    </details><br>
+
     <label for="rot">Rotation: </label>
     <select translate="no" id="rot" onchange="updateUrlParams()">
         <option translate="no" value="">None</option>
@@ -1258,7 +1281,6 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                 link_element3.textContent = 'or18.github.io';
                 link_element3.setAttribute('translate', 'no');
                 details.appendChild(link_element3);
-                details.style.marginBottom = '10px';
                 element.appendChild(details);
                 document.getElementById("countLine").value = messageCount;
                 if (messageCount === 1) {
@@ -1394,6 +1416,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                     }
                 });
                 const rot_set = values.join('');
+                const sol_num = document.getElementById("analyzer_num").value;
                 messageCount_analyzer = -2;
                 document.getElementById('table').innerHTML += "<a>Solved: </a>";
                 const input = document.createElement('input');
@@ -1464,7 +1487,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                 if (option === "xxxcross" || option === "4x") {
                     xxxcross = true;
                 }
-                const args = { scramble: convert(scramble), cross: cross, x: xcross, xx: xxcross, xxx: xxxcross, n: "1", rot_set: rot_set };
+                const args = { scramble: convert(scramble), cross: cross, x: xcross, xx: xxcross, xxx: xxxcross, n: sol_num, rot_set: rot_set };
                 worker2.postMessage(args);
             } catch (e) {
                 console.log(e.message);
@@ -1783,6 +1806,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                     }
                 });
                 const rot_set = values.join('');
+                const sol_num = document.getElementById("panalyzer_num").value;
                 messageCount_panalyzer = -2;
                 document.getElementById('ptable').innerHTML += "<a>Solved: </a>";
                 const input = document.createElement('input');
@@ -1853,7 +1877,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                 if (option === "xxxcross" || option === "4x") {
                     xxxcross = true;
                 }
-                const args = { scramble: convert(scramble), cross: cross, x: xcross, xx: xxcross, xxx: xxxcross, n: "1", rot_set: rot_set };
+                const args = { scramble: convert(scramble), cross: cross, x: xcross, xx: xxcross, xxx: xxxcross, n: sol_num, rot_set: rot_set };
                 worker3.postMessage(args);
             } catch (e) {
                 console.log(e.message);
@@ -1924,6 +1948,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                     }
                 });
                 const rot_set = values.join('');
+                const sol_num = document.getElementById("pair_analyzer_num").value;
                 messageCount_pair_analyzer = -2;
                 document.getElementById('pair_table').innerHTML += "<a>Solved: </a>";
                 const input = document.createElement('input');
@@ -1990,7 +2015,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                 if (option === "xxxcross" || option === "4x") {
                     xxxcross = true;
                 }
-                const args = { scramble: convert(scramble), cross: cross, x: xcross, xx: xxcross, xxx: xxxcross, n: "1", rot_set: rot_set };
+                const args = { scramble: convert(scramble), cross: cross, x: xcross, xx: xxcross, xxx: xxxcross, n: sol_num, rot_set: rot_set };
                 worker4.postMessage(args);
             } catch (e) {
                 console.log(e.message);
@@ -2061,6 +2086,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                     }
                 });
                 const rot_set = values.join('');
+                const sol_num = document.getElementById("pair_panalyzer_num").value;
                 messageCount_pair_panalyzer = -2;
                 document.getElementById('pair_ptable').innerHTML += "<a>Solved: </a>";
                 const input = document.createElement('input');
@@ -2131,7 +2157,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                 if (option === "xxxcross" || option === "4x") {
                     xxxcross = true;
                 }
-                const args = { scramble: convert(scramble), cross: cross, x: xcross, xx: xxcross, xxx: xxxcross, n: "1", rot_set: rot_set };
+                const args = { scramble: convert(scramble), cross: cross, x: xcross, xx: xxcross, xxx: xxxcross, n: sol_num, rot_set: rot_set };
                 worker5.postMessage(args);
             } catch (e) {
                 console.log(e.message);
@@ -2206,6 +2232,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                     }
                 });
                 const rot_set = values.join('');
+                const sol_num = document.getElementById("eo_analyzer_num").value;
                 messageCount_eo_analyzer = -2;
                 document.getElementById('eo_table').innerHTML += "<a>Solved: </a>";
                 const input = document.createElement('input');
@@ -2276,7 +2303,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                 if (option === "xxxcross" || option === "4x") {
                     xxxcross = true;
                 }
-                const args = { scramble: convert(scramble), cross: cross, x: xcross, xx: xxcross, xxx: xxxcross, n: "1", rot_set: rot_set };
+                const args = { scramble: convert(scramble), cross: cross, x: xcross, xx: xxcross, xxx: xxxcross, n: sol_num, rot_set: rot_set };
                 worker6.postMessage(args);
             } catch (e) {
                 console.log(e.message);
@@ -2320,6 +2347,57 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             const url = new URL(window.location.href);
             url.search = '';
             window.location.href = url;
+        });
+
+        const details_analyzer = document.getElementById("analyze");
+        const details_eo_analyzer = document.getElementById("eo_analyze");
+        const details_panalyzer = document.getElementById("panalyze");
+        const details_pair_analyzer = document.getElementById("pair_analyze");
+        const details_pair_panalyzer = document.getElementById("pair_panalyze");
+        const summary_analyzer = document.getElementById("summary_analyzer");
+        const summary_eo_analyzer = document.getElementById("summary_eo_analyzer");
+        const summary_panalyzer = document.getElementById("summary_panalyzer");
+        const summary_pair_analyzer = document.getElementById("summary_pair_analyzer");
+        const summary_pair_panalyzer = document.getElementById("summary_pair_panalyzer");
+
+        details_analyzer.addEventListener('toggle', () => {
+            if (details_analyzer.open) {
+                summary_analyzer.textContent = "Hide Analyzer";
+            } else {
+                summary_analyzer.textContent = "Show Analyzer";
+            }
+        });
+
+        details_eo_analyzer.addEventListener('toggle', () => {
+            if (details_eo_analyzer.open) {
+                summary_eo_analyzer.textContent = "Hide Analyzer";
+            } else {
+                summary_eo_analyzer.textContent = "Show Analyzer";
+            }
+        });
+
+        details_panalyzer.addEventListener('toggle', () => {
+            if (details_panalyzer.open) {
+                summary_panalyzer.textContent = "Hide Analyzer";
+            } else {
+                summary_panalyzer.textContent = "Show Analyzer";
+            }
+        });
+
+        details_pair_analyzer.addEventListener('toggle', () => {
+            if (details_pair_analyzer.open) {
+                summary_pair_analyzer.textContent = "Hide Analyzer";
+            } else {
+                summary_pair_analyzer.textContent = "Show Analyzer";
+            }
+        });
+
+        details_pair_panalyzer.addEventListener('toggle', () => {
+            if (details_pair_panalyzer.open) {
+                summary_pair_panalyzer.textContent = "Hide Analyzer";
+            } else {
+                summary_pair_panalyzer.textContent = "Show Analyzer";
+            }
         });
 
         window.onload = function () {

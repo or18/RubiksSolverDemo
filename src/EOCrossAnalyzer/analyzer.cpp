@@ -648,12 +648,43 @@ struct cross_analyzer
 			{
 				if (prune_tmp == 0 && index_eo_tmp == 0)
 				{
-					count += 1;
-					total_length += sol.size();
-					sol_len.emplace_back(sol.size());
-					if (count == sol_num)
+					bool valid = true;
+					int l = static_cast<int>(sol.size());
+					int c = 0;
+					int index1_tmp2 = index1;
+					int index2_tmp2 = index2;
+					int index_eo_tmp2 = index_eo;
+					for (int j : sol)
 					{
-						return true;
+						if (index1_tmp2 == multi_move_table[index1_tmp2 + j] * 18 && index2_tmp2 == multi_move_table[index2_tmp2 + j] * 18 && index_eo_tmp2 == eo_move_table[index_eo_tmp2 + j] * 18)
+						{
+							valid = false;
+							break;
+						}
+						else
+						{
+							c += 1;
+							index1_tmp2 = multi_move_table[index1_tmp2 + j];
+							index2_tmp2 = multi_move_table[index2_tmp2 + j];
+							index_eo_tmp2 = eo_move_table[index_eo_tmp2 + j];
+							if (c < l && prune_table[index1_tmp2 * 528 + index2_tmp2] == 0 && index_eo_tmp2 == 0)
+							{
+								valid = false;
+								break;
+							}
+							index1_tmp2 *= 18;
+							index2_tmp2 *= 18;
+						}
+					}
+					if (valid)
+					{
+						count += 1;
+						total_length += sol.size();
+						sol_len.emplace_back(sol.size());
+						if (count == sol_num)
+						{
+							return true;
+						}
 					}
 				}
 			}
@@ -733,7 +764,7 @@ struct cross_analyzer
 				std::ostringstream oss;
 				if (arg_sol_num > 1)
 				{
-					oss << "<td onclick=\"eo_solve(\'" << name << "\', " << converter(rot) << ")\">" << sol_len[0] << "<br>(" << static_cast<double>(total_length) / double(sol_num) << ")</td>";
+					oss << "<td class=" << converter_face(rot) << " onclick=\"eo_solve(\'" << name << "\', " << converter(rot) << ")\">" << round(double(total_length) * 10 / sol_num) / 10 << "</td>";
 				}
 				else
 				{
@@ -856,12 +887,49 @@ struct xcross_analyzer2
 			{
 				if (prune1_tmp == 0 && index3_tmp == edge_solved1 && prune_dep_eo_tmp == 0)
 				{
-					count += 1;
-					total_length += sol.size();
-					sol_len.emplace_back(sol.size());
-					if (count == sol_num)
+					bool valid = true;
+					int l = static_cast<int>(sol.size());
+					int c = 0;
+					int index1_tmp2 = index1;
+					int index2_tmp2 = index2;
+					int index3_tmp2 = index3;
+					int index_dep_tmp2 = index_dep;
+					int index_eo_tmp2 = index_eo;
+					for (int j : sol)
 					{
-						return true;
+						if (index1_tmp2 == multi_move_table[index1_tmp2 + j] && index2_tmp2 == corner_move_table[index2_tmp2 + j] * 18 && index3_tmp2 == edge_move_table[index3_tmp2 + j] * 18 && index_eo_tmp2 == eo_move_table[index_eo_tmp2 + j] * 18)
+						{
+							valid = false;
+							break;
+						}
+						else
+						{
+							c += 1;
+							index1_tmp2 = multi_move_table[index1_tmp2 + j];
+							index2_tmp2 = corner_move_table[index2_tmp2 + j];
+							index3_tmp2 = edge_move_table[index3_tmp2 + j];
+							index_dep_tmp2 = dep_move_table[index_dep_tmp2 + j];
+							index_eo_tmp2 = eo_move_table[index_eo_tmp2 + j];
+							if (c < l && (prune_table1[index1_tmp2 + index2_tmp2] == 0 && index3_tmp2 == edge_solved1 && prune_table_dep_eo[index_dep_tmp2 * 2048 + index_eo_tmp2] == 0))
+							{
+								valid = false;
+								break;
+							}
+							index2_tmp2 *= 18;
+							index3_tmp2 *= 18;
+							index_dep_tmp2 *= 18;
+							index_eo_tmp2 *= 18;
+						}
+					}
+					if (valid)
+					{
+						count += 1;
+						total_length += sol.size();
+						sol_len.emplace_back(sol.size());
+						if (count == sol_num)
+						{
+							return true;
+						}
 					}
 				}
 			}
@@ -953,7 +1021,7 @@ struct xcross_analyzer2
 				std::ostringstream oss;
 				if (arg_sol_num > 1)
 				{
-					oss << "<td onclick=\"eo_solve(\'" << name << "\', " << converter(rot) << ")\">" << sol_len[0] << "<br>(" << static_cast<double>(total_length) / double(sol_num) << ")</td>";
+					oss << "<td class=" << converter_face(rot) << " onclick=\"eo_solve(\'" << name << "\', " << converter(rot) << ")\">" << round(double(total_length) * 10 / sol_num) / 10 << "</td>";
 				}
 				else
 				{
@@ -1008,12 +1076,55 @@ struct xcross_analyzer2
 			{
 				if (prune1_tmp == 0 && prune2_tmp == 0 && index5_tmp == edge_solved1 && index6_tmp == edge_solved2 && prune_dep_eo_tmp == 0)
 				{
-					count += 1;
-					total_length += sol.size();
-					sol_len.emplace_back(sol.size());
-					if (count == sol_num)
+					bool valid = true;
+					int l = static_cast<int>(sol.size());
+					int c = 0;
+					int index1_tmp2 = index1;
+					int index2_tmp2 = index2;
+					int index4_tmp2 = index4;
+					int index5_tmp2 = index5;
+					int index6_tmp2 = index6;
+					int index_dep_tmp2 = index_dep;
+					int index_eo_tmp2 = index_eo;
+					for (int j : sol)
 					{
-						return true;
+						if (index1_tmp2 == multi_move_table[index1_tmp2 + j] && index2_tmp2 == corner_move_table[index2_tmp2 + j] * 18 && index4_tmp2 == corner_move_table[index4_tmp2 + j] * 18 && index5_tmp2 == edge_move_table[index5_tmp2 + j] * 18 && index6_tmp2 == edge_move_table[index6_tmp2 + j] * 18 && index_eo_tmp2 == eo_move_table[index_eo_tmp2 + j] * 18)
+						{
+							valid = false;
+							break;
+						}
+						else
+						{
+							c += 1;
+							index1_tmp2 = multi_move_table[index1_tmp2 + j];
+							index2_tmp2 = corner_move_table[index2_tmp2 + j];
+							index4_tmp2 = corner_move_table[index4_tmp2 + j];
+							index5_tmp2 = edge_move_table[index5_tmp2 + j];
+							index6_tmp2 = edge_move_table[index6_tmp2 + j];
+							index_dep_tmp2 = dep_move_table[index_dep_tmp2 + j];
+							index_eo_tmp2 = eo_move_table[index_eo_tmp2 + j];
+							if (c < l && (prune_table1[index1_tmp2 + index2_tmp2] == 0 && prune_table2[index1_tmp2 + index4_tmp2] == 0 && index5_tmp2 == edge_solved1 && index6_tmp2 == edge_solved2 && prune_table_dep_eo[index_dep_tmp2 * 2048 + index_eo_tmp2] == 0))
+							{
+								valid = false;
+								break;
+							}
+							index2_tmp2 *= 18;
+							index4_tmp2 *= 18;
+							index5_tmp2 *= 18;
+							index6_tmp2 *= 18;
+							index_dep_tmp2 *= 18;
+							index_eo_tmp2 *= 18;
+						}
+					}
+					if (valid)
+					{
+						count += 1;
+						total_length += sol.size();
+						sol_len.emplace_back(sol.size());
+						if (count == sol_num)
+						{
+							return true;
+						}
 					}
 				}
 			}
@@ -1098,7 +1209,7 @@ struct xcross_analyzer2
 				std::ostringstream oss;
 				if (arg_sol_num > 1)
 				{
-					oss << "<td onclick=\"eo_solve(\'" << name << "\', " << converter(rot) << ")\">" << sol_len[0] << "<br>(" << static_cast<double>(total_length) / double(sol_num) << ")</td>";
+					oss << "<td class=" << converter_face(rot) << " onclick=\"eo_solve(\'" << name << "\', " << converter(rot) << ")\">" << round(double(total_length) * 10 / sol_num) / 10 << "</td>";
 				}
 				else
 				{
@@ -1162,12 +1273,61 @@ struct xcross_analyzer2
 			{
 				if (prune1_tmp == 0 && prune2_tmp == 0 && prune3_tmp == 0 && index7_tmp == edge_solved1 && index8_tmp == edge_solved2 && index9_tmp == edge_solved3 && prune_dep_eo_tmp == 0)
 				{
-					count += 1;
-					total_length += sol.size();
-					sol_len.emplace_back(sol.size());
-					if (count == sol_num)
+					bool valid = true;
+					int l = static_cast<int>(sol.size());
+					int c = 0;
+					int index1_tmp2 = index1;
+					int index2_tmp2 = index2;
+					int index4_tmp2 = index4;
+					int index6_tmp2 = index6;
+					int index7_tmp2 = index7;
+					int index8_tmp2 = index8;
+					int index9_tmp2 = index9;
+					int index_dep_tmp2 = index_dep;
+					int index_eo_tmp2 = index_eo;
+					for (int j : sol)
 					{
-						return true;
+						if (index1_tmp2 == multi_move_table[index1_tmp2 + j] && index2_tmp2 == corner_move_table[index2_tmp2 + j] * 18 && index4_tmp2 == corner_move_table[index4_tmp2 + j] * 18 && index6_tmp2 == corner_move_table[index6_tmp2 + j] * 18 && index7_tmp2 == edge_move_table[index7_tmp2 + j] * 18 && index8_tmp2 == edge_move_table[index8_tmp2 + j] * 18 && index9_tmp2 == edge_move_table[index9_tmp2 + j] * 18 && index_eo_tmp2 == eo_move_table[index_eo_tmp2 + j] * 18)
+						{
+							valid = false;
+							break;
+						}
+						else
+						{
+							c += 1;
+							index1_tmp2 = multi_move_table[index1_tmp2 + j];
+							index2_tmp2 = corner_move_table[index2_tmp2 + j];
+							index4_tmp2 = corner_move_table[index4_tmp2 + j];
+							index6_tmp2 = corner_move_table[index6_tmp2 + j];
+							index7_tmp2 = edge_move_table[index7_tmp2 + j];
+							index8_tmp2 = edge_move_table[index8_tmp2 + j];
+							index9_tmp2 = edge_move_table[index9_tmp2 + j];
+							index_dep_tmp2 = dep_move_table[index_dep_tmp2 + j];
+							index_eo_tmp2 = eo_move_table[index_eo_tmp2 + j];
+							if (c < l && (prune_table1[index1_tmp2 + index2_tmp2] == 0 && prune_table2[index1_tmp2 + index4_tmp2] == 0 && prune_table3[index1_tmp2 + index6_tmp2] == 0 && index7_tmp2 == edge_solved1 && index8_tmp2 == edge_solved2 && index9_tmp2 == edge_solved3 && prune_table_dep_eo[index_dep_tmp2 * 2048 + index_eo_tmp2] == 0))
+							{
+								valid = false;
+								break;
+							}
+							index2_tmp2 *= 18;
+							index4_tmp2 *= 18;
+							index6_tmp2 *= 18;
+							index7_tmp2 *= 18;
+							index8_tmp2 *= 18;
+							index9_tmp2 *= 18;
+							index_dep_tmp2 *= 18;
+							index_eo_tmp2 *= 18;
+						}
+					}
+					if (valid)
+					{
+						count += 1;
+						total_length += sol.size();
+						sol_len.emplace_back(sol.size());
+						if (count == sol_num)
+						{
+							return true;
+						}
 					}
 				}
 			}
@@ -1261,7 +1421,7 @@ struct xcross_analyzer2
 				std::ostringstream oss;
 				if (arg_sol_num > 1)
 				{
-					oss << "<td onclick=\"eo_solve(\'" << name << "\', " << converter(rot) << ")\">" << sol_len[0] << "<br>(" << static_cast<double>(total_length) / double(sol_num) << ")</td>";
+					oss << "<td class=" << converter_face(rot) << " onclick=\"eo_solve(\'" << name << "\', " << converter(rot) << ")\">" << round(double(total_length) * 10 / sol_num) / 10 << "</td>";
 				}
 				else
 				{
