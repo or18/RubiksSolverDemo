@@ -460,7 +460,7 @@ std::string ConvertScramble(std::string str)
 			rotation += name + " ";
 		}
 	}
-	return result2;
+	return result2 + "," + rotation;
 }
 
 struct State
@@ -534,23 +534,169 @@ std::unordered_map<std::string, State> moves = {
 	{"B2", State({35, 34, 33, 3, 4, 5, 6, 7, 8, 9, 10, 42, 12, 13, 39, 15, 16, 36, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 2, 1, 0, 17, 37, 38, 14, 40, 41, 11, 43, 44, 53, 52, 51, 50, 49, 48, 47, 46, 45})},
 	{"B'", State({42, 39, 36, 3, 4, 5, 6, 7, 8, 9, 10, 0, 12, 13, 1, 15, 16, 2, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 17, 14, 11, 33, 37, 38, 34, 40, 41, 35, 43, 44, 47, 50, 53, 46, 49, 52, 45, 48, 51})}};
 
-std::string ScrambleToState(std::string scramble){
-		std::vector<std::string> faces;
-		for (const auto& pair : moves) {
-			faces.emplace_back(pair.first);
-		}
-		State state;
-		std::string name;
-		std::istringstream iss(scramble);
-		while (iss >> name)
+std::string ScrambleToState(std::string scramble)
+{
+	std::vector<std::string> faces;
+	for (const auto &pair : moves)
+	{
+		faces.emplace_back(pair.first);
+	}
+	State state;
+	std::string name;
+	std::istringstream iss(scramble);
+	while (iss >> name)
+	{
+		if (!name.empty())
 		{
-			if (!name.empty())
+			state.apply_move(moves[name]);
+		}
+	}
+	std::string output = StateToInput(state);
+	return output;
+}
+
+std::unordered_map<std::string, std::vector<int>> rotations_edge = {
+	{"x", {5, 4, 20, 21, 13, 12, 22, 23, 1, 0, 16, 17, 9, 8, 18, 19, 2, 3, 6, 7, 10, 11, 14, 15}},
+	{"x2", {12, 13, 10, 11, 8, 9, 14, 15, 4, 5, 2, 3, 0, 1, 6, 7, 20, 21, 22, 23, 16, 17, 18, 19}},
+	{"x2'", {12, 13, 10, 11, 8, 9, 14, 15, 4, 5, 2, 3, 0, 1, 6, 7, 20, 21, 22, 23, 16, 17, 18, 19}},
+	{"x'", {9, 8, 16, 17, 1, 0, 18, 19, 13, 12, 20, 21, 5, 4, 22, 23, 10, 11, 14, 15, 2, 3, 6, 7}},
+	{"y", {6, 7, 0, 1, 2, 3, 4, 5, 14, 15, 8, 9, 10, 11, 12, 13, 19, 18, 23, 22, 17, 16, 21, 20}},
+	{"y2", {4, 5, 6, 7, 0, 1, 2, 3, 12, 13, 14, 15, 8, 9, 10, 11, 22, 23, 20, 21, 18, 19, 16, 17}},
+	{"y2'", {4, 5, 6, 7, 0, 1, 2, 3, 12, 13, 14, 15, 8, 9, 10, 11, 22, 23, 20, 21, 18, 19, 16, 17}},
+	{"y'", {2, 3, 4, 5, 6, 7, 0, 1, 10, 11, 12, 13, 14, 15, 8, 9, 21, 20, 17, 16, 23, 22, 19, 18}},
+	{"z", {17, 16, 11, 10, 21, 20, 3, 2, 19, 18, 15, 14, 23, 22, 7, 6, 9, 8, 1, 0, 13, 12, 5, 4}},
+	{"z2", {8, 9, 14, 15, 12, 13, 10, 11, 0, 1, 6, 7, 4, 5, 2, 3, 18, 19, 16, 17, 22, 23, 20, 21}},
+	{"z2'", {8, 9, 14, 15, 12, 13, 10, 11, 0, 1, 6, 7, 4, 5, 2, 3, 18, 19, 16, 17, 22, 23, 20, 21}},
+	{"z'", {19, 18, 7, 6, 23, 22, 15, 14, 17, 16, 3, 2, 21, 20, 11, 10, 1, 0, 9, 8, 5, 4, 13, 12}}};
+
+std::unordered_map<std::string, std::vector<int>> rotations_corner = {
+	{"x", {5, 3, 4, 22, 23, 21, 20, 18, 19, 7, 8, 6, 1, 2, 0, 11, 9, 10, 16, 17, 15, 14, 12, 13}},
+	{"x2", {21, 22, 23, 12, 13, 14, 15, 16, 17, 18, 19, 20, 3, 4, 5, 6, 7, 8, 9, 10, 11, 0, 1, 2}},
+	{"x2'", {21, 22, 23, 12, 13, 14, 15, 16, 17, 18, 19, 20, 3, 4, 5, 6, 7, 8, 9, 10, 11, 0, 1, 2}},
+	{"x'", {14, 12, 13, 1, 2, 0, 11, 9, 10, 16, 17, 15, 22, 23, 21, 20, 18, 19, 7, 8, 6, 5, 3, 4}},
+	{"y", {9, 10, 11, 0, 1, 2, 3, 4, 5, 6, 7, 8, 15, 16, 17, 18, 19, 20, 21, 22, 23, 12, 13, 14}},
+	{"y2", {6, 7, 8, 9, 10, 11, 0, 1, 2, 3, 4, 5, 18, 19, 20, 21, 22, 23, 12, 13, 14, 15, 16, 17}},
+	{"y2'", {6, 7, 8, 9, 10, 11, 0, 1, 2, 3, 4, 5, 18, 19, 20, 21, 22, 23, 12, 13, 14, 15, 16, 17}},
+	{"y'", {3, 4, 5, 6, 7, 8, 9, 10, 11, 0, 1, 2, 21, 22, 23, 12, 13, 14, 15, 16, 17, 18, 19, 20}},
+	{"z", {13, 14, 12, 23, 21, 22, 4, 5, 3, 2, 0, 1, 17, 15, 16, 10, 11, 9, 8, 6, 7, 19, 20, 18}},
+	{"z2", {15, 16, 17, 18, 19, 20, 21, 22, 23, 12, 13, 14, 9, 10, 11, 0, 1, 2, 3, 4, 5, 6, 7, 8}},
+	{"z2'", {15, 16, 17, 18, 19, 20, 21, 22, 23, 12, 13, 14, 9, 10, 11, 0, 1, 2, 3, 4, 5, 6, 7, 8}},
+	{"z'", {10, 11, 9, 8, 6, 7, 19, 20, 18, 17, 15, 16, 2, 0, 1, 13, 14, 12, 23, 21, 22, 4, 5, 3}}};
+
+struct mask
+{
+	std::string e_mask;
+	std::string c_mask;
+	mask(std::string arg_e_mask = std::string(24, '-'), std::string arg_c_mask = std::string(24, '-')) : e_mask(arg_e_mask), c_mask(arg_c_mask) {}
+
+	void apply_rotation(std::vector<int> &rotation_e, std::vector<int> &rotation_c)
+	{
+		std::string new_e_mask(24, '-');
+		std::string new_c_mask(24, '-');
+		for (int i = 0; i < 24; ++i)
+		{
+			new_e_mask[i] = e_mask[rotation_e[i]];
+			new_c_mask[i] = c_mask[rotation_c[i]];
+		}
+		e_mask = new_e_mask;
+		c_mask = new_c_mask;
+	}
+};
+
+std::vector<std::string> maskRotation(std::string &arg_e_mask, std::string &arg_c_mask, std::string &rotation_alg)
+{
+	mask m(arg_e_mask, arg_c_mask);
+	std::string rotation_alg_reversed = ReverseScramble(rotation_alg);
+	std::istringstream iss(rotation_alg_reversed);
+	std::string name;
+	while (iss >> name)
+	{
+		if (!name.empty())
+		{
+			m.apply_rotation(rotations_edge[rotation_reverse[name]], rotations_corner[rotation_reverse[name]]);
+		}
+	}
+	return {m.e_mask, m.c_mask};
+}
+
+std::string convertMask(std::string center, std::string input_e, std::string input_c, std::string rotation_alg)
+{
+	// de, ble, bre, fre, fle, lle
+	// blc, brc, frc, flc, llc
+	std::string input_e_tmp = input_e;
+	input_e[1] = input_e_tmp[3];
+	input_e[2] = input_e_tmp[4];
+	input_e[3] = input_e_tmp[2];
+	input_e[4] = input_e_tmp[1];
+	std::string input_c_tmp = input_c;
+	input_c[0] = input_c_tmp[2];
+	input_c[1] = input_c_tmp[3];
+	input_c[2] = input_c_tmp[0];
+	input_c[3] = input_c_tmp[1];
+	std::string center_mask(6, 'I');
+	std::string e_mask(24, 'I');
+	std::string c_mask(24, 'I');
+	std::fill(center_mask.begin(), center_mask.end(), center[0]);
+	if (input_e[0] != 'I')
+	{
+		for (int i = 8; i <= 14; i += 2)
+		{
+			e_mask[i] = input_e[0];
+			if (input_e[0] != '?')
 			{
-				state.apply_move(moves[name]);
+				e_mask[i + 1] = input_e[0];
 			}
 		}
-		std::string output = StateToInput(state);
-		return output;
+	}
+	for (int i = 1; i <= 4; ++i)
+	{
+		if (input_e[i] != 'I')
+		{
+			e_mask[14 + 2 * i] = input_e[i];
+			if (input_e[i] != '?')
+			{
+				e_mask[15 + 2 * i] = input_e[i];
+			}
+		}
+	}
+	if (input_e[5] != 'I')
+	{
+		for (int i = 0; i <= 6; i += 2)
+		{
+			e_mask[i] = input_e[5];
+			if (input_e[5] != '?')
+			{
+				e_mask[i + 1] = input_e[5];
+			}
+		}
+	}
+
+	for (int i = 0; i < 4; ++i)
+	{
+		if (input_c[i] != 'I')
+		{
+			c_mask[12 + 3 * i] = input_c[i];
+			if (input_c[i] != '?')
+			{
+				c_mask[13 + 3 * i] = input_c[i];
+				c_mask[14 + 3 * i] = input_c[i];
+			}
+		}
+	}
+	if (input_c[4] != 'I')
+	{
+		for (int i = 0; i <= 9; i += 3)
+		{
+			c_mask[i] = input_c[4];
+			if (input_c[4] != '?')
+			{
+				c_mask[i + 1] = input_c[4];
+				c_mask[i + 2] = input_c[4];
+			}
+		}
+	}
+	std::vector results = maskRotation(e_mask, c_mask, rotation_alg);
+	return results[0] + results[1] + center_mask;
 }
 
 EMSCRIPTEN_BINDINGS(my_module)
@@ -559,4 +705,5 @@ EMSCRIPTEN_BINDINGS(my_module)
 	emscripten::function("scr_reverse", &ReverseScramble);
 	emscripten::function("scr_converter", &ConvertScramble);
 	emscripten::function("ScrambleToState", &ScrambleToState);
+	emscripten::function("convertMask", &convertMask);
 }

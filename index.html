@@ -129,6 +129,7 @@
 
         details {
             border: 1px solid #41417f;
+            padding: 5px;
             margin: 10px 0;
         }
 
@@ -682,7 +683,107 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             <option translate="no" value="ULR">UFB</option>
             <option translate="no" value="UR">UR</option>
             <option translate="no" value="UL">UL</option>
-        </select>
+        </select><br>
+
+        <input type="checkbox" id="CheckboxAutoMaskSetting" class="custom-checkbox" checked>
+        <label translate="no" for="CheckboxAutoMaskSetting">Auto Stickering Setting </label>
+
+        <details id="maskOptions">
+            <summary id="summaryMaskOptions">Show Stickering Settings</summary>
+            <button id="autoSetMask" class="button medium" onclick="setStickeringOptionAuto()">Auto</button>
+            <button id="resetMask" class="button medium" onclick="resetStickeringOptions('-')">Reset</button><br><br>
+            <div id="maskOptionsCenterDiv">
+                <label for="maskOptionCenter">Centers: </label>
+                <select id="maskOptionCenter">
+                    <option value="-">Regular</option>
+                    <option value="D">Dim</option>
+                    <option value="I">Ignored</option>
+                </select>
+            </div>
+            <label for="maskOptionsEdge">Edges Options</label><br>
+            <div id="maskOptionsEdge">
+                <label for="maskOptionDE">Cross: </label>
+                <select id="maskOptionDE">
+                    <option value="-">Regular</option>
+                    <option value="D">Dim</option>
+                    <option value="?">Oriented</option>
+                    <option value="I">Ignored</option>
+                </select><br>
+                <label for="maskOptionBLE">BL Slot: </label>
+                <select id="maskOptionBLE">
+                    <option value="-">Regular</option>
+                    <option value="D">Dim</option>
+                    <option value="?">Oriented</option>
+                    <option value="I">Ignored</option>
+                </select><br>
+                <label for="maskOptionBRE">BR Slot: </label>
+                <select id="maskOptionBRE">
+                    <option value="-">Regular</option>
+                    <option value="D">Dim</option>
+                    <option value="?">Oriented</option>
+                    <option value="I">Ignored</option>
+                </select><br>
+                <label for="maskOptionFRE">FR Slot: </label>
+                <select id="maskOptionFRE">
+                    <option value="-">Regular</option>
+                    <option value="D">Dim</option>
+                    <option value="?">Oriented</option>
+                    <option value="I">Ignored</option>
+                </select><br>
+                <label for="maskOptionFLE">FL Slot: </label>
+                <select id="maskOptionFLE">
+                    <option value="-">Regular</option>
+                    <option value="D">Dim</option>
+                    <option value="?">Oriented</option>
+                    <option value="I">Ignored</option>
+                </select><br>
+                <label for="maskOptionLLE">LL: </label>
+                <select id="maskOptionLLE">
+                    <option value="-">Regular</option>
+                    <option value="D">Dim</option>
+                    <option value="?">Oriented</option>
+                    <option value="I">Ignored</option>
+                </select>
+            </div>
+            <label for="maskOptionsCorner">Corners Options</label><br>
+            <div id="maskOptionsCorner">
+                <label for="maskOptionBLC">BL Slot: </label>
+                <select id="maskOptionBLC">
+                    <option value="-">Regular</option>
+                    <option value="D">Dim</option>
+                    <option value="?">Oriented</option>
+                    <option value="I">Ignored</option>
+                </select><br>
+                <label for="maskOptionBRC">BR Slot: </label>
+                <select id="maskOptionBRC">
+                    <option value="-">Regular</option>
+                    <option value="D">Dim</option>
+                    <option value="?">Oriented</option>
+                    <option value="I">Ignored</option>
+                </select><br>
+                <label for="maskOptionFRC">FR Slot: </label>
+                <select id="maskOptionFRC">
+                    <option value="-">Regular</option>
+                    <option value="D">Dim</option>
+                    <option value="?">Oriented</option>
+                    <option value="I">Ignored</option>
+                </select><br>
+                <label for="maskOptionFLC">FL Slot: </label>
+                <select id="maskOptionFLC">
+                    <option value="-">Regular</option>
+                    <option value="D">Dim</option>
+                    <option value="?">Oriented</option>
+                    <option value="I">Ignored</option>
+                </select><br>
+                <label for="maskOptionLLC">LL: </label>
+                <select id="maskOptionLLC">
+                    <option value="-">Regular</option>
+                    <option value="D">Dim</option>
+                    <option value="?">Oriented</option>
+                    <option value="I">Ignored</option>
+                </select>
+            </div>
+        </details>
     </div>
     <a class="hidden" id="tp_alert">Two Phase Solver output 1 solution.<br></a>
     <button id="solveButton" class="button medium" onclick="startWorker()">Start</button><br>
@@ -752,12 +853,17 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             };
             window.convert = function (scramble) {
                 const result = Module.scr_converter(scramble);
-                return result;
+                const resultArray = result.split(',');
+                return resultArray.map(part => part.trim());
             };
             window.generateTwoPhaseInput = function (scramble) {
                 const result = Module.ScrambleToState(scramble);
                 return result;
-            }
+            };
+            window.convertMask = function (center_input, edge_input, corner_input, rotation_alg) {
+                const result = Module.convertMask(center_input, edge_input, corner_input, rotation_alg);
+                return result;
+            };
         };
     </script>
 
@@ -785,6 +891,243 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
         let list_pair_ptable;
         let list_eo_table;
         let sol_input = false;
+        let AutoMaskSetting = true;
+        let mask = {
+            orbits: {
+                EDGES: {
+                    pieces: [
+                        { facelets: ["regular", "regular"] },
+                        { facelets: ["regular", "regular"] },
+                        { facelets: ["regular", "regular"] },
+                        { facelets: ["regular", "regular"] },
+                        { facelets: ["regular", "regular"] },
+                        { facelets: ["regular", "regular"] },
+                        { facelets: ["regular", "regular"] },
+                        { facelets: ["regular", "regular"] },
+                        { facelets: ["regular", "regular"] },
+                        { facelets: ["regular", "regular"] },
+                        { facelets: ["regular", "regular"] },
+                        { facelets: ["regular", "regular"] },
+                    ],
+                },
+                CORNERS: {
+                    pieces: [
+                        { facelets: ["regular", "regular", "regular"] },
+                        { facelets: ["regular", "regular", "regular"] },
+                        { facelets: ["regular", "regular", "regular"] },
+                        { facelets: ["regular", "regular", "regular"] },
+                        { facelets: ["regular", "regular", "regular"] },
+                        { facelets: ["regular", "regular", "regular"] },
+                        { facelets: ["regular", "regular", "regular"] },
+                        { facelets: ["regular", "regular", "regular"] },
+                    ],
+                },
+                CENTERS: {
+                    pieces: [
+                        { facelets: ["regular"] },
+                        { facelets: ["regular"] },
+                        { facelets: ["regular"] },
+                        { facelets: ["regular"] },
+                        { facelets: ["regular"] },
+                        { facelets: ["regular"] },
+                    ],
+                },
+            },
+        };;
+
+        function getMaskInputs() {
+            const maskInputCenter = document.getElementById("maskOptionCenter").value;
+            const selectsEdges = document.querySelectorAll('#maskOptionsEdge select');
+            const selectsCorners = document.querySelectorAll('#maskOptionsCorner select');
+            const selectedValuesEdges = [];
+            const selectedValuesCorners = [];
+            selectsEdges.forEach(select => {
+                selectedValuesEdges.push(select.value);
+            });
+            selectsCorners.forEach(select => {
+                selectedValuesCorners.push(select.value);
+            });
+            const maskInputEdges = selectedValuesEdges.join('');
+            const maskInputCorners = selectedValuesCorners.join('');
+            return { maskInputCenter, maskInputEdges, maskInputCorners };
+        }
+
+        function resetStickeringOptions(option) {
+            const selectAll = document.querySelectorAll('#maskOptions select');
+            selectAll.forEach(select => {
+                select.value = option;
+            });
+        }
+
+        function setStickeringOptionsAutoF2LEdges(slot_edges, option) {
+            if (slot_edges !== '') {
+                const selectsEdges = slot_edges.split(' ');
+                const fixedSelectsEdges = selectsEdges.map(select => 'maskOption' + select + 'E');
+                fixedSelectsEdges.forEach(select => {
+                    const selectElement = document.querySelector(`#maskOptionsEdge select[id*="${select}"]`);
+                    if (selectElement) {
+                        selectElement.value = option;
+                    }
+                });
+            }
+        }
+
+        function setStickeringOptionsAutoF2LCorners(slot_corners, option) {
+            if (slot_corners !== '') {
+                const selectsCorners = slot_corners.split(' ');
+                const fixedSelectsCorners = selectsCorners.map(select => 'maskOption' + select + 'C');
+                fixedSelectsCorners.forEach(select => {
+                    const selectElement = document.querySelector(`#maskOptionsCorner select[id*="${select}"]`);
+                    if (selectElement) {
+                        selectElement.value = option;
+                    }
+                });
+            }
+        }
+
+        function setStickeringOptionsAutoEO(option) {
+            document.getElementById("maskOptionLLE").value = '?';
+            setStickeringOptionsAutoF2LEdges('BL BR FR FL', '?');
+        }
+
+        function setStickeringOptionAutoLL(ll) {
+            resetStickeringOptions('D');
+            document.getElementById("maskOptionLLE").value = 'I';
+            document.getElementById("maskOptionLLC").value = 'I';
+            if (ll !== '') {
+                const option_array = ll.split(' ');
+                option_array.forEach(option => {
+                    switch (option) {
+                        case 'CO':
+                            document.getElementById("maskOptionLLC").value = '?';
+                            break;
+                        case 'CP':
+                            document.getElementById("maskOptionLLC").value = '-';
+                            break;
+                        case 'EO':
+                            document.getElementById("maskOptionLLE").value = '?';
+                            break;
+                        case 'EP':
+                            document.getElementById("maskOptionLLE").value = '-';
+                            break;
+                    }
+                });
+            }
+        }
+
+        function setStickeringOptionAuto() {
+            const solver = document.getElementById("solver").value;
+            var slot, pslote, pslotc, ll;
+            switch (solver) {
+                case "F2L":
+                    resetStickeringOptions('I');
+                    document.getElementById("maskOptionCenter").value = '-';
+                    document.getElementById("maskOptionDE").value = '-';
+                    slot = document.getElementById("slot").value;
+                    setStickeringOptionsAutoF2LEdges(slot, '-');
+                    setStickeringOptionsAutoF2LCorners(slot, '-');
+                    break;
+                case "F2L2":
+                    resetStickeringOptions('I');
+                    document.getElementById("maskOptionCenter").value = '-';
+                    document.getElementById("maskOptionDE").value = '-';
+                    slot = document.getElementById("slot").value;
+                    setStickeringOptionsAutoF2LEdges(slot, '-');
+                    setStickeringOptionsAutoF2LCorners(slot, '-');
+                    break;
+                case "F2L_pair":
+                    resetStickeringOptions('I');
+                    document.getElementById("maskOptionCenter").value = '-';
+                    document.getElementById('maskOptionDE').value = '-';
+                    slot = document.getElementById("slot2").value + ' ' + document.getElementById("pair_slot").value;
+                    setStickeringOptionsAutoF2LEdges(slot, '-');
+                    setStickeringOptionsAutoF2LCorners(slot, '-');
+                    break;
+                case "PF2L":
+                    resetStickeringOptions('I');
+                    document.getElementById("maskOptionCenter").value = '-';
+                    document.getElementById('maskOptionDE').value = '-';
+                    pslote = document.getElementById("pslot_edge").value;
+                    pslotc = document.getElementById("pslot_corner").value;
+                    setStickeringOptionsAutoF2LEdges(pslote, '-');
+                    setStickeringOptionsAutoF2LCorners(pslotc, '-');
+                    break;
+                case "PF2L_pair":
+                    resetStickeringOptions('I');
+                    document.getElementById("maskOptionCenter").value = '-';
+                    document.getElementById('maskOptionDE').value = '-';
+                    pslote = document.getElementById("pslot_edge2").value + ' ' + document.getElementById("pair_pslot_edge").value;
+                    pslotc = document.getElementById("pslot_corner2").value + ' ' + document.getElementById("pair_pslot_corner").value;
+                    setStickeringOptionsAutoF2LEdges(pslote, '-');
+                    setStickeringOptionsAutoF2LCorners(pslotc, '-');
+                    break;
+                case "EOCross":
+                    resetStickeringOptions('I');
+                    document.getElementById("maskOptionCenter").value = '-';
+                    setStickeringOptionsAutoEO('?');
+                    document.getElementById('maskOptionDE').value = '-';
+                    slot = document.getElementById("slot_eo").value;
+                    setStickeringOptionsAutoF2LEdges(slot, '-');
+                    setStickeringOptionsAutoF2LCorners(slot, '-');
+                    break;
+                case "LS":
+                case "LS2":
+                    ll = document.getElementById("ll").value;
+                    setStickeringOptionAutoLL(ll);
+                    break;
+                case "LL":
+                case "LL2":
+                case "LU":
+                case "LU2":
+                    setStickeringOptionAutoLL('CP EP');
+                    break;
+            }
+        }
+
+        function mapFacelet(char) {
+            switch (char) {
+                case '-':
+                    return 'regular';
+                case 'D':
+                    return 'dim';
+                case 'I':
+                    return 'ignored';
+                case '?':
+                    return 'oriented';
+            }
+        }
+
+        function setMask(inputString) {
+            const edgesString = inputString.slice(0, 24);
+            const cornersString = inputString.slice(24, 48);
+            const centersString = inputString.slice(48, 54);
+            const edges = [];
+            for (let i = 0; i < edgesString.length; i += 2) {
+                edges.push({ facelets: [mapFacelet(edgesString[i]), mapFacelet(edgesString[i + 1])] });
+            }
+            const corners = [];
+            for (let i = 0; i < cornersString.length; i += 3) {
+                corners.push({ facelets: [mapFacelet(cornersString[i]), mapFacelet(cornersString[i + 1]), mapFacelet(cornersString[i + 2])] });
+            }
+            const centers = [];
+            for (let i = 0; i < centersString.length; i++) {
+                centers.push({ facelets: [mapFacelet(centersString[i])] });
+            }
+
+            mask = {
+                orbits: {
+                    EDGES: {
+                        pieces: edges,
+                    },
+                    CORNERS: {
+                        pieces: corners,
+                    },
+                    CENTERS: {
+                        pieces: centers,
+                    },
+                },
+            };
+        }
 
         function scr_fix(scr) {
             const fixed_scr = scr_fix2(scr);
@@ -1146,29 +1489,38 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                 const len = document.getElementById('len').value;
                 var restrict = document.getElementById('res').value;
                 document.getElementById("solveButton").textContent = "End";
+                var convertResult = convert(scr);
+                const result_moves = convertResult[0];
+                const result_rotation = convertResult[1] + " " + rot;
+                if (AutoMaskSetting) {
+                    setStickeringOptionAuto();
+                }
+                var mask_input = getMaskInputs();
+                const convertedMask = convertMask(mask_input.maskInputCenter, mask_input.maskInputEdges, mask_input.maskInputCorners, result_rotation);
+                setMask(convertedMask);
 
                 if (solver === "F2L" || solver === "LS" || solver === "LL" || solver == "LU") {
-                    const args = { solver: solver, scr: convert(scr), rot: rot, slot: slot, ll: ll, num: num, len: len, restrict: restrict };
+                    const args = { solver: solver, scr: result_moves, rot: rot, slot: slot, ll: ll, num: num, len: len, restrict: restrict };
                     worker = new Worker('src/crossSolver/worker.js');
                     worker.postMessage(args);
                 } else if (solver === "F2L2" || solver === "LS2" || solver === "LL2" || solver == "LU2") {
-                    const args = { solver: solver, scr: convert(scr), rot: rot, slot: slot, ll: ll, num: num, len: len, restrict: restrict };
+                    const args = { solver: solver, scr: result_moves, rot: rot, slot: slot, ll: ll, num: num, len: len, restrict: restrict };
                     worker = new Worker('src/highMemorySolver/worker2.js');
                     worker.postMessage(args);
                 } else if (solver === "PF2L") {
-                    const args = { solver: solver, scr: convert(scr), rot: rot, slot: pslot_e, pslot: pslot_c, num: num, len: len, restrict: restrict };
+                    const args = { solver: solver, scr: result_moves, rot: rot, slot: pslot_e, pslot: pslot_c, num: num, len: len, restrict: restrict };
                     worker = new Worker('src/pseudoCrossSolver/worker3.js');
                     worker.postMessage(args);
                 } else if (solver === "F2L_pair") {
-                    const args = { scr: convert(scr), rot: rot, slot: slot2, pslot: pair_slot, num: num, len: len, restrict: restrict };
+                    const args = { scr: result_moves, rot: rot, slot: slot2, pslot: pair_slot, num: num, len: len, restrict: restrict };
                     worker = new Worker('src/F2L_PairingSolver/worker_pairing.js');
                     worker.postMessage(args);
                 } else if (solver === "PF2L_pair") {
-                    const args = { scr: convert(scr), rot: rot, slot: pslot_e2, pslot: pslot_c2, a_slot: pair_pslot_e, a_pslot: pair_pslot_c, num: num, len: len, restrict: restrict };
+                    const args = { scr: result_moves, rot: rot, slot: pslot_e2, pslot: pslot_c2, a_slot: pair_pslot_e, a_pslot: pair_pslot_c, num: num, len: len, restrict: restrict };
                     worker = new Worker('src/pseudoPairingSolver/workerPseudoPairing.js');
                     worker.postMessage(args);
                 } else if (solver === "twophase") {
-                    const sol = min2phase.solve(generateTwoPhaseInput(convert(scr + " " + rot)));
+                    const sol = min2phase.solve(generateTwoPhaseInput(convert(scr + " " + rot)[0]));
                     appendSol(scr_fix2(scr2), rot + " " + sol);
                     const element = document.getElementById('result');
                     const content = document.createElement('a');
@@ -1176,7 +1528,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                     element.appendChild(content);
                     document.getElementById("solveButton").textContent = "Start";
                 } else if (solver === "EOCross") {
-                    const args = { scr: convert(scr), rot: rot, slot: slot3, num: num, len: len, restrict: restrict };
+                    const args = { scr: result_moves, rot: rot, slot: slot3, num: num, len: len, restrict: restrict };
                     worker = new Worker("src/EOCrossSolver/worker.js");
                     worker.postMessage(args);
                 }
@@ -1239,6 +1591,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                 details.appendChild(summary);
                 try {
                     const sim = createPlayer(scr_fix(scr), sol);
+                    sim.experimentalStickeringMaskOrbits = mask;
                     details.appendChild(sim);
                 } catch (e) {
                     if (messageCount === 1) {
@@ -1486,7 +1839,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                 if (option === "xxxcross" || option === "4x") {
                     xxxcross = true;
                 }
-                const args = { scramble: convert(scramble), cross: cross, x: xcross, xx: xxcross, xxx: xxxcross, n: sol_num, rot_set: rot_set };
+                const args = { scramble: convert(scramble)[0], cross: cross, x: xcross, xx: xxcross, xxx: xxxcross, n: sol_num, rot_set: rot_set };
                 worker2.postMessage(args);
             } catch (e) {
                 console.log(e.message);
@@ -1876,7 +2229,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                 if (option === "xxxcross" || option === "4x") {
                     xxxcross = true;
                 }
-                const args = { scramble: convert(scramble), cross: cross, x: xcross, xx: xxcross, xxx: xxxcross, n: sol_num, rot_set: rot_set };
+                const args = { scramble: convert(scramble)[0], cross: cross, x: xcross, xx: xxcross, xxx: xxxcross, n: sol_num, rot_set: rot_set };
                 worker3.postMessage(args);
             } catch (e) {
                 console.log(e.message);
@@ -2014,7 +2367,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                 if (option === "xxxcross" || option === "4x") {
                     xxxcross = true;
                 }
-                const args = { scramble: convert(scramble), cross: cross, x: xcross, xx: xxcross, xxx: xxxcross, n: sol_num, rot_set: rot_set };
+                const args = { scramble: convert(scramble)[0], cross: cross, x: xcross, xx: xxcross, xxx: xxxcross, n: sol_num, rot_set: rot_set };
                 worker4.postMessage(args);
             } catch (e) {
                 console.log(e.message);
@@ -2156,7 +2509,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                 if (option === "xxxcross" || option === "4x") {
                     xxxcross = true;
                 }
-                const args = { scramble: convert(scramble), cross: cross, x: xcross, xx: xxcross, xxx: xxxcross, n: sol_num, rot_set: rot_set };
+                const args = { scramble: convert(scramble)[0], cross: cross, x: xcross, xx: xxcross, xxx: xxxcross, n: sol_num, rot_set: rot_set };
                 worker5.postMessage(args);
             } catch (e) {
                 console.log(e.message);
@@ -2302,7 +2655,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                 if (option === "xxxcross" || option === "4x") {
                     xxxcross = true;
                 }
-                const args = { scramble: convert(scramble), cross: cross, x: xcross, xx: xxcross, xxx: xxxcross, n: sol_num, rot_set: rot_set };
+                const args = { scramble: convert(scramble)[0], cross: cross, x: xcross, xx: xxcross, xxx: xxxcross, n: sol_num, rot_set: rot_set };
                 worker6.postMessage(args);
             } catch (e) {
                 console.log(e.message);
@@ -2353,11 +2706,13 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
         const details_panalyzer = document.getElementById("panalyze");
         const details_pair_analyzer = document.getElementById("pair_analyze");
         const details_pair_panalyzer = document.getElementById("pair_panalyze");
+        const details_mask_options = document.getElementById("maskOptions");
         const summary_analyzer = document.getElementById("summary_analyzer");
         const summary_eo_analyzer = document.getElementById("summary_eo_analyzer");
         const summary_panalyzer = document.getElementById("summary_panalyzer");
         const summary_pair_analyzer = document.getElementById("summary_pair_analyzer");
         const summary_pair_panalyzer = document.getElementById("summary_pair_panalyzer");
+        const summary_mask_options = document.getElementById("summaryMaskOptions");
 
         details_analyzer.addEventListener('toggle', () => {
             if (details_analyzer.open) {
@@ -2396,6 +2751,21 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                 summary_pair_panalyzer.textContent = "Hide Analyzer";
             } else {
                 summary_pair_panalyzer.textContent = "Show Analyzer";
+            }
+        });
+
+        details_mask_options.addEventListener('toggle', () => {
+            if (details_mask_options.open) {
+                summary_mask_options.textContent = "Hide Stickering Settings";
+            } else {
+                summary_mask_options.textContent = "Show Stickering Settings";
+            }
+        });
+
+        document.getElementById('CheckboxAutoMaskSetting').addEventListener('click', function () {
+            AutoMaskSetting = document.getElementById('CheckboxAutoMaskSetting').checked;
+            if (!AutoMaskSetting) {
+                resetStickeringOptions('-');
             }
         });
 
