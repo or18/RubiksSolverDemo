@@ -289,10 +289,12 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
     <button id="gen" class="button medium" onclick="genscr()">Random</button>
     <button id="reverse" class="button medium" onclick="reverseScramble()">Reverse</button>
     <button id="mirror" class="button medium" onclick="mirrorScramble()">Mirror</button><br><br>
-    <div id="show"></div>
-    <pre id="links"
-        class="hidden"><a translate="no" id="link_alg_cubing" href="https://alg.cubing.net/" target="_blank" rel="noopener noreferrer">alg.cubing.net</a>  <a translate="no" id="link_cubedb" href="https://cubedb.net/?puzzle=3x3" target="_blank" rel="noopener noreferrer">cubedb.net</a></pre>
-
+    <details id="details_preview">
+        <summary id="summary_preview">Show Preview</summary>
+        <div id="show"></div>
+        <pre id="links"
+            class="hidden"><a translate="no" id="link_alg_cubing" href="https://alg.cubing.net/" target="_blank" rel="noopener noreferrer">alg.cubing.net</a>  <a translate="no" id="link_cubedb" href="https://cubedb.net/?puzzle=3x3" target="_blank" rel="noopener noreferrer">cubedb.net</a></pre>
+    </details>
     <details id="analyze">
         <summary id="summary_analyzer">Show Analyzer</summary><br>
         <label for="analyzer_rotation_option">Face Option: </label>
@@ -1502,7 +1504,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                     return;
                 }
 
-                if (typeof convert !== "function" || typeof generateTwoPhaseInput !== "function") {
+                if (typeof convert !== "function" || typeof generateTwoPhaseInput !== "function" || typeof convertMask !== "function") {
                     alert("Error: The required function is not initialized. Please reload the page manually.");
                     const element = document.getElementById('result');
                     const content = document.createElement('a');
@@ -1546,6 +1548,8 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                 const result_rotation = convertResult[1] + " " + rot;
                 if (AutoMaskSetting) {
                     setStickeringOptionAuto();
+                } else {
+                    setMaskTmp();
                 }
                 const mask_input = getMaskInputs();
                 const convertedMask = convertMask(mask_input.maskInputCenter, mask_input.maskInputEdges, mask_input.maskInputCorners, result_rotation);
@@ -2761,12 +2765,14 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
         const details_pair_analyzer = document.getElementById("pair_analyze");
         const details_pair_panalyzer = document.getElementById("pair_panalyze");
         const details_mask_options = document.getElementById("maskOptions");
+        const details_preview = document.getElementById("details_preview");
         const summary_analyzer = document.getElementById("summary_analyzer");
         const summary_eo_analyzer = document.getElementById("summary_eo_analyzer");
         const summary_panalyzer = document.getElementById("summary_panalyzer");
         const summary_pair_analyzer = document.getElementById("summary_pair_analyzer");
         const summary_pair_panalyzer = document.getElementById("summary_pair_panalyzer");
         const summary_mask_options = document.getElementById("summaryMaskOptions");
+        const summary_preview = document.getElementById("summary_preview");
 
         details_analyzer.addEventListener('toggle', () => {
             if (details_analyzer.open) {
@@ -2813,6 +2819,14 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                 summary_mask_options.textContent = "Hide Stickering Settings";
             } else {
                 summary_mask_options.textContent = "Show Stickering Settings";
+            }
+        });
+
+        details_preview.addEventListener('toggle', () => {
+            if (details_preview.open) {
+                summary_preview.textContent = "Hide Preview";
+            } else {
+                summary_preview.textContent = "Show Preview";
             }
         });
 
