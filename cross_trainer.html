@@ -5,8 +5,17 @@
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>Rubik's Cube Cross Trainer</title>
+    <meta name="description"
+        content="Simple Rubik's Cube Cross Trainer.">
+	<script async src="https://www.googletagmanager.com/gtag/js?id=G-MXJH30352W"></script>
 	<script async src="src/min2phase.js/min2phase.js"></script>
 	<script src="src/functions/functions.js"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
+        gtag('config', 'G-MXJH30352W');
+    </script>
 
 	<style>
 		header {
@@ -177,7 +186,7 @@
 
 <body>
 	<header id="header">
-		<h1>Rubik's Cube Cross Trainer (testing)</h1>
+		<h1>Rubik's Cube Cross Trainer</h1>
 	</header>
 	<label for="rot">Rotation: </label>
 	<select translate="no" id="rot">
@@ -581,18 +590,17 @@
 				var spaceElement2 = document.createElement('a');
 				spaceElement2.innerHTML = "&nbsp;";
 				details.appendChild(spaceElement2);
-				// const currentUrl = "https://or18.github.io/RubiksSolverDemo/";
-				// currentUrl.searchParams.set('scr', scr.replace(/ /g, '_').replace(/'/g, '-'));
-				// currentUrl.searchParams.set('rot', scr.replace(/ /g, '_').replace(/'/g, '-'));
-				// currentUrl.searchParams.set('index', `${messageCount}`);
-				// currentUrl.searchParams.set('sol', sol.replace(/ /g, '_').replace(/'/g, '-'));
-				// var link_element3 = document.createElement('a');
-				// link_element3.href = currentUrl;
-				// link_element3.target = '_blank';
-				// link_element3.rel = 'noopener noreferrer';
-				// link_element3.textContent = 'or18.github.io';
-				// link_element3.setAttribute('translate', 'no');
-				// details.appendChild(link_element3);
+				const currentUrl = new URL("https://or18.github.io/RubiksSolverDemo/");
+				currentUrl.searchParams.set('scramble', scr.replace(/ /g, '_').replace(/'/g, '-'));
+				currentUrl.searchParams.set('index', `${messageCount}`);
+				currentUrl.searchParams.set('sol', sol.replace(/ /g, '_').replace(/'/g, '-'));
+				var link_element3 = document.createElement('a');
+				link_element3.href = currentUrl;
+				link_element3.target = '_blank';
+				link_element3.rel = 'noopener noreferrer';
+				link_element3.textContent = 'or18.github.io';
+				link_element3.setAttribute('translate', 'no');
+				details.appendChild(link_element3);
 				element.appendChild(details);
 				document.getElementById("countLine").value = messageCount;
 			}
