@@ -4,8 +4,8 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Rubik's Cube X-Cross Trainer</title>
-	<meta name="description" content="Simple Rubik's Cube X-Cross Trainer.">
+	<title>Rubik's Cube EOCross Trainer</title>
+	<meta name="description" content="Simple Rubik's Cube EOCross Trainer.">
 	<script async src="https://www.googletagmanager.com/gtag/js?id=G-MXJH30352W"></script>
 	<script async src="src/min2phase.js/min2phase.js"></script>
 	<script src="src/functions/functions.js"></script>
@@ -185,11 +185,10 @@
 
 <body>
 	<header id="header">
-		<h1>Rubik's Cube X-Cross Trainer</h1>
+		<h1>Rubik's Cube EOCross Trainer</h1>
 	</header>
-	<a>Warning: This scrambler requires 900MB of memory and the initial scramble generation may take several seconds to
-		several tens of seconds for setup. </a><br><br>
-
+	<a>Warning: This scrambler requires 200MB of memory and the initial scramble generation may take several seconds for
+		setup. </a><br><br>
 	<label for="rot">Rotation: </label>
 	<select translate="no" id="rot">
 		<option translate="no" value="">None</option>
@@ -220,13 +219,6 @@
 		<option translate="no" value="x y">x y</option>
 		<option translate="no" value="x y2">x y2</option>
 		<option translate="no" value="x y'">x y'</option>
-	</select><br>
-	<label for="slot">Slot: </label>
-	<select translate="no" id="slot">
-		<option translate="no" value="BL">BL</option>
-		<option translate="no" value="BR">BR</option>
-		<option translate="no" value="FR">FR</option>
-		<option translate="no" value="FL">FL</option>
 	</select><br>
 	<label for="len">Length: </label>
 	<select translate="no" id="len">
@@ -372,25 +364,10 @@
 			},
 		};
 
-		const slotToEMask = {
-			'BL': '--IIII',
-			'BR': '-I-III',
-			'FR': '-II-II',
-			'FL': '-III-I'
-		};
-
-		const slotToCMask = {
-			'BL': '-IIII',
-			'BR': 'I-III',
-			'FR': 'II-II',
-			'FL': 'III-I'
-		};
-
 		function getMaskInputs() {
-			const slot = document.getElementById("slot").value;
 			const maskInputCenter = "-";
-			const maskInputEdges = slotToEMask[slot];
-			const maskInputCorners = slotToCMask[slot];
+			const maskInputEdges = "-?????";
+			const maskInputCorners = "IIIII";
 			return { maskInputCenter, maskInputEdges, maskInputCorners };
 		}
 
@@ -524,7 +501,6 @@
 				document.getElementById("result").innerHTML = "";
 				messageCount = 0;
 				const scr = scr_fix(document.getElementById("scr").innerHTML);
-				const slot = document.getElementById("slot").value;
 				const num = "100";
 				const len = "11";
 				const convertResult = convert(scr);
@@ -533,8 +509,8 @@
 				const mask_input = getMaskInputs();
 				const convertedMask = convertMask(mask_input.maskInputCenter, mask_input.maskInputEdges, mask_input.maskInputCorners, result_rotation);
 				setMask(convertedMask);
-				const args = { solver: "F2L", scr: result_moves, rot: "", slot: slot, ll: "", num: num, len: len, restrict: "UDLRFB" };
-				worker = new Worker('src/crossSolver/worker.js');
+				const args = { scr: result_moves, rot: "", slot: "", num: num, len: len, restrict: "UDLRFB" };
+				worker = new Worker('src/EOCrossSolver/worker.js');
 				worker.postMessage(args);
 				if (worker) {
 					worker.onmessage = function (event) {
@@ -618,9 +594,8 @@
 				spaceElement2.innerHTML = "&nbsp;";
 				details.appendChild(spaceElement2);
 				const currentUrl = new URL("https://or18.github.io/RubiksSolverDemo/");
+				currentUrl.searchParams.set('solver', `EOCross`);
 				currentUrl.searchParams.set('scramble', scr.replace(/ /g, '_').replace(/'/g, '-'));
-				const slot = document.getElementById("slot").value;
-				currentUrl.searchParams.set('slot', `${slot}`);
 				currentUrl.searchParams.set('index', `${messageCount}`);
 				currentUrl.searchParams.set('sol', sol.replace(/ /g, '_').replace(/'/g, '-'));
 				var link_element3 = document.createElement('a');
@@ -644,13 +619,6 @@
 			}
 		}
 
-		const slotToRot = {
-			'BL': "",
-			'BR': "y",
-			'FR': "y2",
-			'FL': "y'"
-		};
-
 		function genscr() {
 			if (typeof convert !== "function" || typeof generateTwoPhaseInput !== "function" || typeof convertMask !== "function" || typeof reverse !== "function") {
 				alert("Error: The required function is not initialized. Please reload the page manually.");
@@ -658,21 +626,20 @@
 			}
 			const sol_len = document.getElementById("len").value;
 			const rot = document.getElementById("rot").value;
-			const slot = document.getElementById("slot").value;
 			const mask_input = getMaskInputs();
 			const convertedMask = convertMask(mask_input.maskInputCenter, mask_input.maskInputEdges, mask_input.maskInputCorners, rot);
 			setMask(convertedMask);
 			var cube = min2phase.randomCube();
 			var solution = min2phase.solve(cube);
 			if (!worker2) {
-				worker2 = new Worker('src/xcrossTrainer/worker.js');
+				worker2 = new Worker('src/eocrossTrainer/worker.js');
 			}
 			var args = { scr: solution, len: sol_len };
 			worker2.postMessage(args);
 			if (worker2) {
 				worker2.onmessage = function (event) {
 					const ret = (event.data).split(",");
-					var scramble = min2phase.solve(generateTwoPhaseInputWrapper(convert(ret[1] + reverse(ret[0]) + slotToRot[slot])[0]));
+					var scramble = min2phase.solve(generateTwoPhaseInputWrapper(convert(ret[1] + reverse(ret[0]))[0]));
 					scramble = scr_fix(rot + scramble);
 					document.getElementById('scr').innerHTML = scramble;
 					try {

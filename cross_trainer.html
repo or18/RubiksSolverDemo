@@ -5,17 +5,16 @@
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>Rubik's Cube Cross Trainer</title>
-    <meta name="description"
-        content="Simple Rubik's Cube Cross Trainer.">
+	<meta name="description" content="Simple Rubik's Cube Cross Trainer.">
 	<script async src="https://www.googletagmanager.com/gtag/js?id=G-MXJH30352W"></script>
 	<script async src="src/min2phase.js/min2phase.js"></script>
 	<script src="src/functions/functions.js"></script>
-    <script>
-        window.dataLayer = window.dataLayer || [];
-        function gtag() { dataLayer.push(arguments); }
-        gtag('js', new Date());
-        gtag('config', 'G-MXJH30352W');
-    </script>
+	<script>
+		window.dataLayer = window.dataLayer || [];
+		function gtag() { dataLayer.push(arguments); }
+		gtag('js', new Date());
+		gtag('config', 'G-MXJH30352W');
+	</script>
 
 	<style>
 		header {
@@ -616,6 +615,10 @@
 		}
 
 		function genscr() {
+			if (typeof convert !== "function" || typeof generateTwoPhaseInput !== "function" || typeof convertMask !== "function" || typeof reverse !== "function") {
+				alert("Error: The required function is not initialized. Please reload the page manually.");
+				return;
+			}
 			const sol_len = document.getElementById("len").value;
 			const rot = document.getElementById("rot").value;
 			const mask_input = getMaskInputs();
