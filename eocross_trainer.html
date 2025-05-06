@@ -572,7 +572,7 @@
 						details.appendChild(content);
 					}
 				}
-				const { URL1: link1, URL2: link2 } = getLink(scr + "\n" + sol);
+				const { URL1: link1, URL2: link2 } = getLink(scr + "// setup\n" + sol);
 				var link_element1 = document.createElement('a');
 				link_element1.href = link1;
 				link_element1.target = '_blank';
@@ -595,7 +595,7 @@
 				details.appendChild(spaceElement2);
 				const currentUrl = new URL("https://or18.github.io/RubiksSolverDemo/");
 				currentUrl.searchParams.set('solver', `EOCross`);
-				currentUrl.searchParams.set('scramble', scr.replace(/ /g, '_').replace(/'/g, '-'));
+				currentUrl.searchParams.set('scramble', (scr + " // setup\n").replace(/ /g, '_').replace(/'/g, '-'));
 				currentUrl.searchParams.set('index', `${messageCount}`);
 				currentUrl.searchParams.set('sol', sol.replace(/ /g, '_').replace(/'/g, '-'));
 				var link_element3 = document.createElement('a');
