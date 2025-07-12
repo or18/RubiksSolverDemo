@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Rubik's Cube Pseudo X-Cross Trainer</title>
+	<meta name="description" content="Simple Rubik's Cube X-Cross Trainer.">
+	<script async src="https://www.googletagmanager.com/gtag/js?id=G-MXJH30352W"></script>
+	<script async src="src/min2phase.js/min2phase.js"></script>
+	<script src="src/functions/functions.js"></script>
+	<script>
+		window.dataLayer = window.dataLayer || [];
+		function gtag() { dataLayer.push(arguments); }
+		gtag('js', new Date());
+		gtag('config', 'G-MXJH30352W');
+	</script>
+
+	<style>
+		header {
+			padding: 2px;
+			text-align: center;
+			cursor: pointer;
+			background-color: #121212;
+		}
+
+		body {
+			font-family: Arial, sans-serif;
+			margin: 20px;
+			padding: 0;
+			background-color: #121212;
+		}
+
+		h1 {
+			font-family: Arial, sans-serif;
+			font-size: 24px;
+			text-align: center;
+			color: #ffffff;
+		}
+
+		h2,
+		label {
+			font-family: Arial, sans-serif;
+			font-size: 20px;
+			text-align: left;
+			color: #ffffff;
+		}
+
+		input {
+			font-family: Arial, sans-serif;
+			width: 100%;
+			max-width: 100px;
+			height: 40px;
+			font-size: 20px;
+			padding: 10px;
+			margin-bottom: 10px;
+			border: 1px solid #41417f;
+			border-radius: 4px;
+			box-sizing: border-box;
+			background-color: #1e1e1e;
+			color: #ffffff;
+		}
+
+		select {
+			font-family: Arial, sans-serif;
+			max-width: 200px;
+			font-size: 20px;
+			padding: 10px;
+			margin-bottom: 10px;
+			border: 1px solid #ffffff;
+			border-radius: 4px;
+			box-sizing: border-box;
+			background-color: #1e1e1e;
+			color: #ffffff;
+			cursor: pointer;
+		}
+
+		.button {
+			font-family: Arial, sans-serif;
+			width: 100%;
+			font-size: 20px;
+			padding: 10px;
+			background-color: #56567c;
+			color: #ffffff;
+			border: none;
+			border-radius: 4px;
+			cursor: pointer;
+		}
+
+		.medium {
+			max-width: 100px;
+		}
+
+		.small {
+			max-width: 40px;
+		}
+
+		button:hover {
+			background-color: #4a4a6d;
+		}
+
+		summary {
+			box-sizing: border-box;
+			display: block;
+			font-family: Arial, sans-serif;
+			padding: 10px;
+			font-size: 20px;
+			color: #ffffff;
+			width: 100%;
+			max-width: 750px;
+			cursor: pointer;
+		}
+
+		details {
+			border: 1px solid #41417f;
+			padding: 5px;
+			margin: 10px 0;
+		}
+
+		.hidden {
+			display: none;
+		}
+
+		.hidden_small {
+			visibility: hidden;
+		}
+
+		a,
+		pre {
+			color: #ffffff;
+			font-family: Arial, sans-serif;
+			font-size: 20px;
+		}
+
+		twisty-player {
+			margin: 0;
+			width: 100%;
+			max-width: 600px;
+		}
+
+		.custom-checkbox {
+			display: none;
+		}
+
+		.custom-checkbox+label {
+			position: relative;
+			padding-left: 33px;
+			cursor: pointer;
+			font-size: 20px;
+			color: #ffffff;
+			margin-right: 10x;
+		}
+
+		.custom-checkbox+label:before {
+			content: '';
+			position: absolute;
+			left: 0;
+			top: 50%;
+			transform: translateY(-50%);
+			width: 20px;
+			height: 20px;
+			border: 2px solid #41417f;
+			background-color: #1e1e1e;
+		}
+
+		.custom-checkbox:checked+label:before {
+			background-color: #41417f;
+			border-color: #41417f;
+		}
+
+		.custom-checkbox:checked+label:after {
+			content: '';
+			position: absolute;
+			left: 9px;
+			top: 5px;
+			width: 5px;
+			height: 10px;
+			border: solid white;
+			border-width: 0 2px 2px 0;
+			transform: rotate(45deg);
+		}
+	</style>
+
+</head>
+
+<body>
+	<header id="header">
+		<h1>Rubik's Cube Pseudo X-Cross Trainer</h1>
+	</header>
+	<a>Warning: This scrambler requires 900MB of memory and the initial scramble generation may take several seconds to
+		several tens of seconds for setup. </a><br><br>
+
+	<label for="rot">Rotation: </label>
+	<select translate="no" id="rot">
+		<option translate="no" value="">None</option>
+		<option translate="no" value="y">y</option>
+		<option translate="no" value="y2">y2</option>
+		<option translate="no" value="y'">y'</option>
+		<option translate="no" value="z2" selected>z2</option>
+		<option translate="no" value="z2 y">z2 y</option>
+		<option translate="no" value="z2 y2">z2 y2</option>
+		<option translate="no" value="z2 y'">z2 y'</option>
+		<option translate="no" value="z'">z'</option>
+		<option translate="no" value="z' y">z' y</option>
+		<option translate="no" value="z' y2">z' y2</option>
+		<option translate="no" value="z' y'">z' y'</option>
+		<option translate="no" value="z">z</option>
+		<option translate="no" value="z y">z y</option>
+		<option translate="no" value="z y2">z y2</option>
+		<option translate="no" value="z y'">z y'</option>
+		<option translate="no" value="x'">x'</option>
+		<option translate="no" value="x' y">x' y</option>
+		<option translate="no" value="x' y2">x' y2</option>
+		<option translate="no" value="x' y'">x' y'</option>
+		<option translate="no" value="x2">x2</option>
+		<option translate="no" value="x2 y">x2 y</option>
+		<option translate="no" value="x2 y2">x2 y2</option>
+		<option translate="no" value="x2 y'">x2 y'</option>
+		<option translate="no" value="x">x</option>
+		<option translate="no" value="x y">x y</option>
+		<option translate="no" value="x y2">x y2</option>
+		<option translate="no" value="x y'">x y'</option>
+	</select><br>
+	<label for="pslot_edge">Pseudo Slot Edge: </label>
+	<select translate="no" id="pslot_edge">
+		<option translate="no" value="BL">BL</option>
+		<option translate="no" value="BR">BR</option>
+		<option translate="no" value="FR">FR</option>
+		<option translate="no" value="FL">FL</option>
+	</select><br>
+	<label for="pslot_corner">Pseudo Slot Corner: </label>
+	<select translate="no" id="pslot_corner">
+		<option translate="no" value="BL">BL</option>
+		<option translate="no" value="BR">BR</option>
+		<option translate="no" value="FR">FR</option>
+		<option translate="no" value="FL">FL</option>
+	</select><br>
+	<label for="len">Length: </label>
+	<select translate="no" id="len">
+		<option translate="no" value="1">1</option>
+		<option translate="no" value="2">2</option>
+		<option translate="no" value="3">3</option>
+		<option translate="no" value="4">4</option>
+		<option translate="no" value="5">5</option>
+		<option translate="no" value="6">6</option>
+		<option translate="no" value="7" selected>7</option>
+		<option translate="no" value="8">8</option>
+		<option translate="no" value="9">9</option>
+		<option translate="no" value="10">10</option>
+	</select><br>
+	<button id="next" class="button medium" onclick="genscr()">Next</button><br>
+	<h2 id="scr"></h2>
+	<div id="show"></div>
+	<button id="solveButton" class="button medium" onclick="startWorker()">Solve</button><br>
+	<label for="countLine">Number of solutions: </label>
+	<input type="text" id="countLine" value="0" readonly>
+	<div id="result"></div>
+
+	<script type="module">
+		import { TwistyPlayer } from "https://cdn.cubing.net/v0/js/cubing/twisty";
+		function createPlayer(setup, sol) {
+			const player = new TwistyPlayer({
+				puzzle: "3x3x3",
+				experimentalSetupAlg: setup,
+				alg: sol,
+				background: "none"
+			});
+			return player;
+		}
+		window.createPlayer = createPlayer;
+	</script>
+
+	<script>
+		Module.onRuntimeInitialized = function () {
+			window.reverse = function (scr) {
+				const scr_fixed = scr_fix2(scr);
+				if (scr_fixed === "") {
+					return;
+				}
+				const lines = scr_fixed.split('\n');
+				const processedLines = [];
+				for (let i = lines.length - 1; i >= 0; i--) {
+					const line = lines[i];
+					const [alg, comment] = line.split('//');
+					const alg_revresed = Module.scr_reverse(alg.trim());
+					if (comment) {
+						processedLines.push(`${alg_revresed} // ${comment.trim()}`);
+					} else {
+						processedLines.push(alg_revresed);
+					}
+				}
+				const result = processedLines.join('\n');
+				return result.trim() + "\n";
+			};
+			window.mirror = function (scr) {
+				if (typeof Module.scr_mirror !== "function") {
+					alert("Error: The required function is not initialized. Please reload the page manually.");
+					return;
+				}
+				const scr_fixed = scr_fix2(scr);
+				if (scr_fixed === "") {
+					return;
+				}
+				const lines = scr_fixed.split('\n');
+				const processedLines = [];
+				for (let i = 0; i < lines.length; i++) {
+					const line = lines[i];
+					const [alg, comment] = line.split('//');
+					const alg_mirrored = Module.scr_mirror(alg.trim());
+					if (comment) {
+						processedLines.push(`${alg_mirrored} // ${comment.trim()}`);
+					} else {
+						processedLines.push(alg_mirrored);
+					}
+				}
+				const result = processedLines.join('\n');
+				return result.trim() + "\n";
+			};
+			window.convert = function (scramble) {
+				const result = Module.scr_converter(scramble);
+				const resultArray = result.split(',');
+				return resultArray.map(part => part.trim());
+			};
+			window.generateTwoPhaseInput = function (scramble) {
+				const result = Module.ScrambleToState(scramble);
+				return result;
+			};
+			window.convertMask = function (center_input, edge_input, corner_input, rotation_alg) {
+				const result = Module.convertMask(center_input, edge_input, corner_input, rotation_alg);
+				return result;
+			};
+		};
+	</script>
+
+	<script>
+		let worker;
+		let worker2;
+		let messageCount = 0;
+		let mask = {
+			orbits: {
+				EDGES: {
+					pieces: [
+						{ facelets: ["regular", "regular"] },
+						{ facelets: ["regular", "regular"] },
+						{ facelets: ["regular", "regular"] },
+						{ facelets: ["regular", "regular"] },
+						{ facelets: ["regular", "regular"] },
+						{ facelets: ["regular", "regular"] },
+						{ facelets: ["regular", "regular"] },
+						{ facelets: ["regular", "regular"] },
+						{ facelets: ["regular", "regular"] },
+						{ facelets: ["regular", "regular"] },
+						{ facelets: ["regular", "regular"] },
+						{ facelets: ["regular", "regular"] },
+					],
+				},
+				CORNERS: {
+					pieces: [
+						{ facelets: ["regular", "regular", "regular"] },
+						{ facelets: ["regular", "regular", "regular"] },
+						{ facelets: ["regular", "regular", "regular"] },
+						{ facelets: ["regular", "regular", "regular"] },
+						{ facelets: ["regular", "regular", "regular"] },
+						{ facelets: ["regular", "regular", "regular"] },
+						{ facelets: ["regular", "regular", "regular"] },
+						{ facelets: ["regular", "regular", "regular"] },
+					],
+				},
+				CENTERS: {
+					pieces: [
+						{ facelets: ["regular"] },
+						{ facelets: ["regular"] },
+						{ facelets: ["regular"] },
+						{ facelets: ["regular"] },
+						{ facelets: ["regular"] },
+						{ facelets: ["regular"] },
+					],
+				},
+			},
+		};
+
+		const slotToEMask = {
+			'BL': '--IIII',
+			'BR': '-I-III',
+			'FR': '-II-II',
+			'FL': '-III-I'
+		};
+
+		const slotToCMask = {
+			'BL': '-IIII',
+			'BR': 'I-III',
+			'FR': 'II-II',
+			'FL': 'III-I'
+		};
+
+		function getMaskInputs() {
+			const pslot_e = document.getElementById('pslot_edge').value;
+			const pslot_c = document.getElementById('pslot_corner').value;
+			const maskInputCenter = "-";
+			const maskInputEdges = slotToEMask[pslot_e];
+			const maskInputCorners = slotToCMask[pslot_c];
+			return { maskInputCenter, maskInputEdges, maskInputCorners };
+		}
+
+		function mapFacelet(char) {
+			switch (char) {
+				case '-':
+					return 'regular';
+				case 'D':
+					return 'dim';
+				case 'I':
+					return 'ignored';
+				case '?':
+					return 'oriented';
+			}
+		}
+
+		function setMask(inputString) {
+			const edgesString = inputString.slice(0, 24);
+			const cornersString = inputString.slice(24, 48);
+			const centersString = inputString.slice(48, 54);
+			const edges = [];
+			for (let i = 0; i < edgesString.length; i += 2) {
+				edges.push({ facelets: [mapFacelet(edgesString[i]), mapFacelet(edgesString[i + 1])] });
+			}
+			const corners = [];
+			for (let i = 0; i < cornersString.length; i += 3) {
+				corners.push({ facelets: [mapFacelet(cornersString[i]), mapFacelet(cornersString[i + 1]), mapFacelet(cornersString[i + 2])] });
+			}
+			const centers = [];
+			for (let i = 0; i < centersString.length; i++) {
+				centers.push({ facelets: [mapFacelet(centersString[i])] });
+			}
+			mask = {
+				orbits: {
+					EDGES: {
+						pieces: edges,
+					},
+					CORNERS: {
+						pieces: corners,
+					},
+					CENTERS: {
+						pieces: centers,
+					},
+				},
+			};
+		}
+
+		function scr_fix(scr) {
+			const fixed_scr = scr_fix2(scr);
+			const output = fixed_scr.split('\n')
+				.map(line => line.split('//')[0].trim())
+				.filter(line => line.length > 0)
+				.join('\n');
+			return output;
+		}
+
+		function scr_fix2(scr) {
+			const outputString = scr.split('\n').map(line => {
+				const commentIndex = line.indexOf('//');
+				if (commentIndex !== -1) {
+					const beforeComment = insertSpaces(line.slice(0, commentIndex));
+					const comment = line.slice(commentIndex);
+					return beforeComment + ' ' + comment.trim();
+				} else {
+					return insertSpaces(line);
+				}
+			}).join('\n');
+			return outputString;
+		}
+
+		function insertSpaces(input) {
+			const keys = ["U", "U2", "U2'", "U'", "D", "D2", "D2'", "D'", "L", "L2", "L2'", "L'", "R", "R2", "R2'", "R'", "F", "F2", "F2'", "F'", "B", "B2", "B2'", "B'", "u", "u2", "u2'", "u'", "d", "d2", "d2'", "d'", "l", "l2", "l2'", "l'", "r", "r2", "r2'", "r'", "f", "f2", "f2'", "f'", "b", "b2", "b2'", "b'", "Uw", "Uw2", "Uw2'", "Uw'", "Dw", "Dw2", "Dw2'", "Dw'", "Lw", "Lw2", "Lw2'", "Lw'", "Rw", "Rw2", "Rw2'", "Rw'", "Fw", "Fw2", "Fw2'", "Fw'", "Bw", "Bw2", "Bw2'", "Bw'", "M", "M2", "M2'", "M'", "S", "S2", "S2'", "S'", "E", "E2", "E2'", "E'", "x", "x2", "x2'", "x'", "y", "y2", "y2'", "y'", "z", "z2", "z2'", "z'"];
+			const regex = new RegExp(`(${keys.join('|')})`, 'g');
+			return input.replace(regex, ' $1').trim()
+				.replace(/\s+/g, ' ');
+		}
+
+		function replaceCharacters(input) {
+			return input
+				.replace(/'/g, '-')
+				.replace(/\n/g, '%0A')
+				.replace(/\//g, '%2F')
+				.replace(/ /g, '_');
+		}
+
+		function splitAtLastScramble(input) {
+			const scrambleRegex = /\/\/\s*setup/g;
+			const index = input.search(scrambleRegex);
+			if (index !== -1) {
+				const scrambleLineEnd = input.indexOf('\n', index);
+				const scrambleLine = input.slice(index, scrambleLineEnd !== -1 ? scrambleLineEnd : undefined).trim();
+				const aboveScramble = input.slice(0, scrambleLineEnd !== -1 ? scrambleLineEnd : input.length).trim();
+				const belowScramble = input.slice(index + scrambleLine.length).trim();
+				return { aboveScramble, belowScramble };
+			} else {
+				return { aboveScramble: input.trim(), belowScramble: '' };
+			}
+		}
+
+		function getLink(scr) {
+			const fixed_scr = scr_fix2(scr);
+			const { aboveScramble, belowScramble } = splitAtLastScramble(fixed_scr);
+			const transformedAbove = replaceCharacters(aboveScramble);
+			const transformedBelow = replaceCharacters(belowScramble);
+			const URL1 = "https://alg.cubing.net/?setup=" + transformedAbove + "&alg=" + transformedBelow + "%0A&puzzle=3x3x3";
+			const URL2 = "https://cubedb.net/?puzzle=3x3&scramble=" + transformedAbove + "&alg=" + transformedBelow + "%0A";
+			return { URL1, URL2 };
+		}
+
+		function startWorker() {
+			try {
+				if (worker) {
+					worker.terminate();
+					worker = null;
+					const element = document.getElementById('result');
+					const content = document.createElement('a');
+					content.innerHTML = "Search terminated.<br>";
+					element.appendChild(content);
+					return;
+				}
+
+				if (typeof convert !== "function" || typeof generateTwoPhaseInput !== "function" || typeof convertMask !== "function") {
+					alert("Error: The required function is not initialized. Please reload the page manually.");
+					const element = document.getElementById('result');
+					const content = document.createElement('a');
+					content.innerHTML = "Error: Search terminated due an error.<br>";
+					element.appendChild(content);
+					return;
+				}
+				document.getElementById("countLine").value = 0;
+				document.getElementById("result").innerHTML = "";
+				messageCount = 0;
+				const scr = scr_fix(document.getElementById("scr").innerHTML);
+				const pslot_e = document.getElementById('pslot_edge').value;
+				const pslot_c = document.getElementById('pslot_corner').value;
+				const num = "100";
+				const len = "11";
+				const convertResult = convert(scr);
+				const result_moves = convertResult[0];
+				const result_rotation = convertResult[1];
+				const mask_input = getMaskInputs();
+				const convertedMask = convertMask(mask_input.maskInputCenter, mask_input.maskInputEdges, mask_input.maskInputCorners, result_rotation);
+				setMask(convertedMask);
+				const args = { scr: result_moves, rot: "", slot: pslot_e, pslot: pslot_c, num: num, len: len, restrict: "UDLRFB" };
+				worker = new Worker('src/pseudoCrossSolver/worker3.js');
+				worker.postMessage(args);
+				if (worker) {
+					worker.onmessage = function (event) {
+						appendSol(scr, event.data);
+					};
+				}
+			} catch (e) {
+				console.log(e.message);
+				if (worker) {
+					worker.terminate();
+				}
+				worker = null;
+				const element = document.getElementById('result');
+				const content = document.createElement('a');
+				content.innerHTML = "Error: Search terminated due an error.<br>";
+				element.appendChild(content);
+				return;
+			}
+		}
+
+		function appendSol(scr, sol) {
+			const element = document.getElementById('result');
+			if (sol == "Search finished." || sol == "Already solved." || sol == "Error") {
+				if (worker) {
+					worker.terminate();
+				}
+				worker = null;
+				const element = document.getElementById('result');
+				const content = document.createElement('a');
+				if (sol == "Error") {
+					content.innerHTML = "Error: Search terminated due to an error.<br>";
+				} else if (sol === "Already solved.") {
+					content.innerHTML = "Already solved.<br>";
+				} else {
+					content.innerHTML = "Search finished.<br>";
+				}
+				element.appendChild(content);
+				return;
+			} else {
+				messageCount++;
+				const details = document.createElement('details');
+				if (messageCount === 1) {
+					details.setAttribute('open', '');
+				}
+				const summary = document.createElement('summary');
+				summary.textContent = messageCount + ": " + sol;
+				summary.setAttribute('translate', 'no');
+				details.appendChild(summary);
+				try {
+					const sim = createPlayer(scr, sol);
+					sim.experimentalStickeringMaskOrbits = mask;
+					details.appendChild(sim);
+				} catch (e) {
+					if (messageCount === 1) {
+						const lineBreak = document.createElement('br');
+						details.appendChild(lineBreak);
+						const content = document.createElement('a');
+						content.innerHTML = "Warning: Failed to create TwistyPlayer.<br>";
+						details.appendChild(content);
+					}
+				}
+				const { URL1: link1, URL2: link2 } = getLink(scr + "// setup\n" + sol);
+				var link_element1 = document.createElement('a');
+				link_element1.href = link1;
+				link_element1.target = '_blank';
+				link_element1.rel = 'noopener noreferrer';
+				link_element1.textContent = 'alg.cubing.net';
+				link_element1.setAttribute('translate', 'no');
+				details.appendChild(link_element1);
+				var spaceElement = document.createElement('a');
+				spaceElement.innerHTML = "&nbsp;";
+				details.appendChild(spaceElement);
+				var link_element2 = document.createElement('a');
+				link_element2.href = link2;
+				link_element2.target = '_blank';
+				link_element2.rel = 'noopener noreferrer';
+				link_element2.textContent = 'cubedb.net';
+				link_element2.setAttribute('translate', 'no');
+				details.appendChild(link_element2);
+				var spaceElement2 = document.createElement('a');
+				spaceElement2.innerHTML = "&nbsp;";
+				details.appendChild(spaceElement2);
+				const currentUrl = new URL("https://or18.github.io/RubiksSolverDemo/");
+				currentUrl.searchParams.set('solver', `PF2L`);
+				currentUrl.searchParams.set('scramble', (scr + " // setup\n").replace(/ /g, '_').replace(/'/g, '-'));
+				const pslot_e = document.getElementById('pslot_edge').value;
+				const pslot_c = document.getElementById('pslot_corner').value;
+				currentUrl.searchParams.set('pse', `${pslot_edge}`);
+				currentUrl.searchParams.set('psc', `${pslot_corner}`);
+				currentUrl.searchParams.set('index', `${messageCount}`);
+				currentUrl.searchParams.set('sol', sol.replace(/ /g, '_').replace(/'/g, '-'));
+				var link_element3 = document.createElement('a');
+				link_element3.href = currentUrl;
+				link_element3.target = '_blank';
+				link_element3.rel = 'noopener noreferrer';
+				link_element3.textContent = 'or18.github.io';
+				link_element3.setAttribute('translate', 'no');
+				details.appendChild(link_element3);
+				element.appendChild(details);
+				document.getElementById("countLine").value = messageCount;
+			}
+		}
+
+		function generateTwoPhaseInputWrapper(scr) {
+			if (typeof generateTwoPhaseInput !== "function") {
+				alert("Error: The required function is not initialized. Please reload the page manually.");
+				return;
+			} else {
+				return generateTwoPhaseInput(scr);
+			}
+		}
+
+		const slotToRot = {
+			'BL': "",
+			'BR': "y",
+			'FR': "y2",
+			'FL': "y'"
+		};
+
+		const conrerAlign = {
+			'BL': {
+				'BL': "",
+				'BR': "D",
+				'FR': "D2",
+				'FL': "D'"
+			},
+			'BR': {
+				'BL': "D'",
+				'BR': "",
+				'FR': "D",
+				'FL': "D2"
+			},
+			'FR': {
+				'BL': "D2",
+				'BR': "D'",
+				'FR': "",
+				'FL': "D"
+			},
+			'FL': {
+				'BL': "D",
+				'BR': "D2",
+				'FR': "D'",
+				'FL': ""
+			}
+		};
+
+		function genscr() {
+			if (typeof convert !== "function" || typeof generateTwoPhaseInput !== "function" || typeof convertMask !== "function" || typeof reverse !== "function") {
+				alert("Error: The required function is not initialized. Please reload the page manually.");
+				return;
+			}
+			const sol_len = document.getElementById("len").value;
+			const rot = document.getElementById("rot").value;
+			const pslot_e = document.getElementById('pslot_edge').value;
+			const pslot_c = document.getElementById('pslot_corner').value;
+			const mask_input = getMaskInputs();
+			const convertedMask = convertMask(mask_input.maskInputCenter, mask_input.maskInputEdges, mask_input.maskInputCorners, rot);
+			setMask(convertedMask);
+			var cube = min2phase.randomCube();
+			var solution = min2phase.solve(cube);
+			if (!worker2) {
+				worker2 = new Worker('src/pseudoXcrossTrainer/worker.js');
+			}
+			var args = { scr: solution, len: sol_len };
+			worker2.postMessage(args);
+			if (worker2) {
+				worker2.onmessage = function (event) {
+					const ret = (event.data).split(",");
+					var scramble = min2phase.solve(generateTwoPhaseInputWrapper(convert(ret[1] + reverse(conrerAlign[pslot_e][pslot_c] + ret[0]) + slotToRot[pslot_e])[0]));
+					scramble = scr_fix(rot + scramble);
+					document.getElementById('scr').innerHTML = scramble;
+					try {
+						document.getElementById('show').innerHTML = '';
+						const sim = createPlayer(scramble, '');
+						sim.experimentalStickeringMaskOrbits = mask;
+						sim.controlPanel = "none";
+						document.getElementById('show').appendChild(sim);
+					} catch (e) {
+						const content = document.createElement('a');
+						content.innerHTML = "Warning: Failed to create TwistyPlayer.<br>";
+						document.getElementById('show').appendChild(content);
+					}
+				};
+			}
+		}
+
+	</script>
+
+
+</body>
+
+</html>

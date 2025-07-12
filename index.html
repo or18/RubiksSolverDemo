@@ -260,14 +260,21 @@
     <h2>This is solver for Rubik's cube cross, X-cross, XX-cross, XXX-cross, XXXX-cross, free pair, last layer(OLL,
         ZBLS, ZBLL). Pseudo X-, XX-, XXX-cross and free pair solver also available. EOCross and X-, XX-, XXX-EOCross
         solver also available.</h2>
-    <a href="https://github.com/or18/RubiksSolverDemo" rel="noopener noreferrer">Source</a><br>
-    <a href="https://or18.github.io/RubiksSolverDemo/documents/description" rel="noopener noreferrer">Description and
-        Examples</a><br><br>
-    <a>Other Tools</a><br>
-    <a href="https://or18.github.io/RubiksSolverDemo/cross_trainer" rel="noopener noreferrer">Cross Trainer</a><br>
-    <a href="https://or18.github.io/RubiksSolverDemo/xcross_trainer" rel="noopener noreferrer">X-Cross Trainer</a><br>
-    <a href="https://or18.github.io/RubiksSolverDemo/eocross_trainer" rel="noopener noreferrer">EOCross Trainer</a><br>
-    <a href="https://or18.github.io/Rubiks-cube-xcross-solver/" rel="noopener noreferrer">Old Demo</a><br><br>
+    <a href="https://github.com/or18/RubiksSolverDemo" rel="noopener noreferrer"
+        style="white-space: nowrap;">Source</a><a>&nbsp;</a>
+    <a href="https://or18.github.io/RubiksSolverDemo/documents/description" rel="noopener noreferrer"
+        style="white-space: nowrap;">Examples</a><a>&nbsp;</a>
+    <a href="https://or18.github.io/Rubiks-cube-xcross-solver/" rel="noopener noreferrer"
+        style="white-space: nowrap;">Old Demo</a><br><br>
+    <a>Trainers:</a><br>
+    <a href="https://or18.github.io/RubiksSolverDemo/cross_trainer" rel="noopener noreferrer"
+        style="white-space: nowrap;">Cross</a><a>&nbsp;</a>
+    <a href="https://or18.github.io/RubiksSolverDemo/xcross_trainer" rel="noopener noreferrer"
+        style="white-space: nowrap;">X-Cross</a><a>&nbsp;</a>
+    <a href="https://or18.github.io/RubiksSolverDemo/eocross_trainer" rel="noopener noreferrer"
+        style="white-space: nowrap;">EOCross</a><a>&nbsp;</a>
+    <a href="https://or18.github.io/RubiksSolverDemo/pseudo_xcross_trainer" rel="noopener noreferrer"
+        style="white-space: nowrap;">Pseudo X-Cross</a><br><br>
     <label for="solver">Solver: </label><br>
     <select translate="no" id="solver" onchange="change(); updateUrlParams();">
         <option translate="no" value="F2L" selected>F2L Lite</option>
@@ -1571,7 +1578,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                     worker = new Worker('src/highMemorySolver/worker2.js');
                     worker.postMessage(args);
                 } else if (solver === "PF2L") {
-                    const args = { solver: solver, scr: result_moves, rot: rot, slot: pslot_e, pslot: pslot_c, num: num, len: len, restrict: restrict };
+                    const args = { scr: result_moves, rot: rot, slot: pslot_e, pslot: pslot_c, num: num, len: len, restrict: restrict };
                     worker = new Worker('src/pseudoCrossSolver/worker3.js');
                     worker.postMessage(args);
                 } else if (solver === "F2L_pair") {
