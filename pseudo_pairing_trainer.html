@@ -4,8 +4,8 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Rubik's Cube Free Pair Trainer</title>
-	<meta name="description" content="Simple Rubik's Cube Free Pair Trainer.">
+	<title>Rubik's Cube Pseudo Free Pair Trainer</title>
+	<meta name="description" content="Simple Rubik's Cube Pseudo Free Pair Trainer.">
 	<script async src="https://www.googletagmanager.com/gtag/js?id=G-MXJH30352W"></script>
 	<script async src="src/min2phase.js/min2phase.js"></script>
 	<script src="src/functions/functions.js"></script>
@@ -185,7 +185,7 @@
 
 <body>
 	<header id="header">
-		<h1>Rubik's Cube Free Pair Trainer</h1>
+		<h1>Rubik's Cube Pseudo Free Pair Trainer</h1>
 	</header>
 	<a>Warning: This scrambler requires 900MB of memory and the initial scramble generation may take several seconds to
 		several tens of seconds for setup. </a><br><br>
@@ -221,8 +221,15 @@
 		<option translate="no" value="x y2">x y2</option>
 		<option translate="no" value="x y'">x y'</option>
 	</select><br>
-	<label for="slot">Slot: </label>
-	<select translate="no" id="slot">
+	<label for="pslot_edge">Pseudo Slot Edge: </label>
+	<select translate="no" id="pslot_edge">
+		<option translate="no" value="BL">BL</option>
+		<option translate="no" value="BR">BR</option>
+		<option translate="no" value="FR">FR</option>
+		<option translate="no" value="FL">FL</option>
+	</select><br>
+	<label for="pslot_corner">Pseudo Slot Corner: </label>
+	<select translate="no" id="pslot_corner">
 		<option translate="no" value="BL">BL</option>
 		<option translate="no" value="BR">BR</option>
 		<option translate="no" value="FR">FR</option>
@@ -238,7 +245,6 @@
 		<option translate="no" value="6">6</option>
 		<option translate="no" value="7" selected>7</option>
 		<option translate="no" value="8">8</option>
-		<option translate="no" value="9">9</option>
 	</select><br>
 	<button id="next" class="button medium" onclick="genscr()">Next</button><br>
 	<h2 id="scr"></h2>
@@ -386,10 +392,11 @@
 		};
 
 		function getMaskInputs() {
-			const slot = document.getElementById("slot").value;
+			const pslot_e = document.getElementById('pslot_edge').value;
+			const pslot_c = document.getElementById('pslot_corner').value;
 			const maskInputCenter = "-";
-			const maskInputEdges = slotToEMask[slot];
-			const maskInputCorners = slotToCMask[slot];
+			const maskInputEdges = slotToEMask[pslot_e];
+			const maskInputCorners = slotToCMask[pslot_c];
 			return { maskInputCenter, maskInputEdges, maskInputCorners };
 		}
 
@@ -523,7 +530,8 @@
 				document.getElementById("result").innerHTML = "";
 				messageCount = 0;
 				const scr = scr_fix(document.getElementById("scr").innerHTML);
-				const slot = document.getElementById("slot").value;
+				const pslot_e = document.getElementById('pslot_edge').value;
+				const pslot_c = document.getElementById('pslot_corner').value;
 				const num = "100";
 				const len = "11";
 				const convertResult = convert(scr);
@@ -532,9 +540,10 @@
 				const mask_input = getMaskInputs();
 				const convertedMask = convertMask(mask_input.maskInputCenter, mask_input.maskInputEdges, mask_input.maskInputCorners, result_rotation);
 				setMask(convertedMask);
-				const args = { scr: result_moves, rot: "", slot: "", pslot: slot, num: num, len: len, restrict: "UDLRFB" };
-				worker = new Worker('src/F2L_PairingSolver/worker_pairing.js');
+				const args = { scr: result_moves, rot: "", slot: "", pslot: "", a_slot: pslot_e, a_pslot: pslot_c, num: num, len: len, restrict: "UDLRFB" };
+				worker = new Worker('src/pseudoPairingSolver/workerPseudoPairing.js');
 				worker.postMessage(args);
+
 				if (worker) {
 					worker.onmessage = function (event) {
 						appendSol(scr, event.data);
@@ -617,10 +626,12 @@
 				spaceElement2.innerHTML = "&nbsp;";
 				details.appendChild(spaceElement2);
 				const currentUrl = new URL("https://or18.github.io/RubiksSolverDemo/");
-				currentUrl.searchParams.set('solver', `F2L_pair`);
+				currentUrl.searchParams.set('solver', `PF2L_pair`);
 				currentUrl.searchParams.set('scramble', (scr + " // setup\n").replace(/ /g, '_').replace(/'/g, '-'));
-				const slot = document.getElementById("slot").value;
-				currentUrl.searchParams.set('aslot', `${slot}`);
+				const pslot_e = document.getElementById('pslot_edge').value;
+				const pslot_c = document.getElementById('pslot_corner').value;
+				currentUrl.searchParams.set('apse', `${pslot_e}`);
+				currentUrl.searchParams.set('apsc', `${pslot_c}`);
 				currentUrl.searchParams.set('index', `${messageCount}`);
 				currentUrl.searchParams.set('sol', sol.replace(/ /g, '_').replace(/'/g, '-'));
 				var link_element3 = document.createElement('a');
@@ -651,6 +662,33 @@
 			'FL': "y'"
 		};
 
+		const conrerAlign = {
+			'BL': {
+				'BL': "",
+				'BR': "D",
+				'FR': "D2",
+				'FL': "D'"
+			},
+			'BR': {
+				'BL': "D'",
+				'BR': "",
+				'FR': "D",
+				'FL': "D2"
+			},
+			'FR': {
+				'BL': "D2",
+				'BR': "D'",
+				'FR': "",
+				'FL': "D"
+			},
+			'FL': {
+				'BL': "D",
+				'BR': "D2",
+				'FR': "D'",
+				'FL': ""
+			}
+		};
+
 		function genscr() {
 			if (typeof convert !== "function" || typeof generateTwoPhaseInput !== "function" || typeof convertMask !== "function" || typeof reverse !== "function") {
 				alert("Error: The required function is not initialized. Please reload the page manually.");
@@ -658,21 +696,22 @@
 			}
 			const sol_len = document.getElementById("len").value;
 			const rot = document.getElementById("rot").value;
-			const slot = document.getElementById("slot").value;
+			const pslot_e = document.getElementById('pslot_edge').value;
+			const pslot_c = document.getElementById('pslot_corner').value;
 			const mask_input = getMaskInputs();
 			const convertedMask = convertMask(mask_input.maskInputCenter, mask_input.maskInputEdges, mask_input.maskInputCorners, rot);
 			setMask(convertedMask);
 			var cube = min2phase.randomCube();
 			var solution = min2phase.solve(cube);
 			if (!worker2) {
-				worker2 = new Worker('src/pairingTrainer/worker.js');
+				worker2 = new Worker('src/pseudoPairingTrainer/worker.js');
 			}
 			var args = { scr: solution, len: sol_len };
 			worker2.postMessage(args);
 			if (worker2) {
 				worker2.onmessage = function (event) {
 					const ret = (event.data).split(",");
-					var scramble = min2phase.solve(generateTwoPhaseInputWrapper(convert(ret[2] + reverse(ret[3]) + reverse(ret[0] + reverse(ret[1])) + slotToRot[slot])[0]));
+					var scramble = min2phase.solve(generateTwoPhaseInputWrapper(convert(ret[2] + reverse(ret[3]) + reverse(conrerAlign[pslot_e][pslot_c] + ret[0] + reverse(ret[1])) + slotToRot[pslot_e])[0]));
 					scramble = scr_fix(rot + scramble);
 					document.getElementById('scr').innerHTML = scramble;
 					try {
