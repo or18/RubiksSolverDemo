@@ -7,11 +7,11 @@ Online solver for Rubik's cube cross, xcross, free pair, last layer. Pseudo F2L 
 # Trainers
 [Cross trainer](https://or18.github.io/RubiksSolverDemo/cross_trainer)
 <br>
-[X-Cross trainer](https://or18.github.io/RubiksSolverDemo/xcross_trainer)
+[XCross trainer](https://or18.github.io/RubiksSolverDemo/xcross_trainer)
 <br>
 [Free Pair trainer](https://or18.github.io/RubiksSolverDemo/pairing_trainer)
 <br>
-[Pseudo X-Cross trainer](https://or18.github.io/RubiksSolverDemo/pseudo_xcross_trainer)
+[Pseudo XCross trainer](https://or18.github.io/RubiksSolverDemo/pseudo_xcross_trainer)
 <br>
 [Pseudo Free Pair trainer](https://or18.github.io/RubiksSolverDemo/pseudo_pairing_trainer)
 <br>
@@ -19,21 +19,21 @@ Online solver for Rubik's cube cross, xcross, free pair, last layer. Pseudo F2L 
 <br>
 
 # **Overview**
-This is an online solver for speedcubers that uses specific methods such as CFOP and ZZ. It is designed to perform solution searches for techniques like cross, X-Cross, and EOCross. Additionally, it supports the search for some algorithms for the last layer. 
+This is an online solver for speedcubers that uses specific methods such as CFOP and ZZ. It is designed to perform solution searches for techniques like cross, XCross, and EOCross. Additionally, it supports the search for some algorithms for the last layer. 
 
 # **Basic Functions and Notes**
 
   - The following 13 solvers are currently available.
   
-    - **F2L Lite**: Lite solver for cross, X-cross, XX-cross, XXX-cross, and XXXX-cross. Analyzer available.
+    - **F2L Lite**: Lite solver for cross, XCross, XXCross, XXXCross, and XXXXCross. Analyzer available.
 
     - **Pairing**: Lite solver for a free pair. Analyzer available.
 
-    - **Pseudo F2L Lite**: Lite solver for pseudo cross, X-cross, XX-cross, and XXX-cross. Analyzer available.
+    - **Pseudo F2L Lite**: Lite solver for pseudo cross, XCross, XXCross, and XXXCross. Analyzer available.
 
     - **Pseudo Pairing**: Lite solver for a pseudo free pair. Analyzer available.
 
-    - **EOCross**: Lite solver for EOCross, X-EOCross, XX-EOCross, XXX-EOCross, and XXXX-EOCross. Analyzer available.
+    - **EOCross**: Lite solver for EOCross, XEOCross, XXEOCross, XXXEOCross, and XXXXEOCross. Analyzer available.
 
     - **LL Substeps Lite**: Lite solver for last layer **CP**, **CO**, **EP**, and **EO**
 
@@ -43,7 +43,7 @@ This is an online solver for speedcubers that uses specific methods such as CFOP
 
     - **Two Phase**: Two Phase solver using [min2phase.js](https://github.com/cs0x7f/min2phase.js)
 
-    - **F2L**: Solver for cross, X-cross, XX-cross, XXX-cross, and XXXX-cross. **Recommended for use with PC**. Analyzer available.
+    - **F2L**: Solver for cross, XCross, XXCross, XXXCross, and XXXXCross. **Recommended for use with PC**. Analyzer available.
 
     - **LL Substeps**: Solver for last layer **CP**, **CO**, **EP**, and **EO**. **Recommended for use with PC**.
 
@@ -134,7 +134,7 @@ This is an online solver for speedcubers that uses specific methods such as CFOP
 
 - **Free Pair Corner**: Select a pseudo slot corner for solving the pseudo free pair from the slots other than the one selected in the **Pseudo Slot Corner**. 
 
-- **Last Layer Option**: Select from **CP**, **CO**, **EP**, and **EO**. If none of these options are selected, meaning **None** is chosen, it will function as XXXX-cross solver.
+- **Last Layer Option**: Select from **CP**, **CO**, **EP**, and **EO**. If none of these options are selected, meaning **None** is chosen, it will function as XXXXCross solver.
 
 - **Max Length**:  The maximum number of moves in HTM for the solution to be searched.
 
@@ -147,7 +147,7 @@ This is an online solver for speedcubers that uses specific methods such as CFOP
 # **Solver Descriptions and Examples**
 
 ## **F2L Lite**
-A set of solvers for Rubik's Cube cross, X-cross, XX-cross, XXX-cross, and XXXX-cross. It is used to search solutions for cross, X-cross, F2L, multi-slotting, and more. The **F2L** solver can perform the same search. Here are some examples. 
+A set of solvers for Rubik's Cube cross, XCross, XXCross, XXXCross, and XXXXCross. It is used to search solutions for cross, XCross, F2L, multi-slotting, and more. The **F2L** solver can perform the same search. Here are some examples. 
 
 - Search solutions for yellow cross. [[See on the website](https://or18.github.io/RubiksSolverDemo/?scramble=U-_B_R-_L-_F_U-_F2_D_R2_D2_B_L2_F2_U2_D2_F_D2_F-_U2_R2_%252F%252F_setup%250A&index=1&sol=B2_U-_L_F-_D2_L_)]
 
@@ -155,15 +155,15 @@ A set of solvers for Rubik's Cube cross, X-cross, XX-cross, XXX-cross, and XXXX-
 
 - Search solutions for white cross, when input a rotation alg in the **Scramble**. [[See on the website](https://or18.github.io/RubiksSolverDemo/?scramble=D2_F_L2_D_B2_L2_F2_R2_D2_B2_D2_U_F2_U2_B-_L_R_D_R-_F-_U_%252F%252F_setup%250A%250Az2_%252F%252F_inspection&index=1&sol=D_R_D2_L2_R-_B-_)]
 
-- Search solutions for white X-cross. [[See on the website](https://or18.github.io/RubiksSolverDemo/?scramble=D-_L-_U2_B_L_B2_R-_D_B2_R_D_R2_D2_F2_R2_L2_F2_D-_F2_D_L2_%252F%252F_setup%250A&index=1&sol=z2_L_R2_B2_U-_L_B-_R_F2_D-_&rot=z2&slot=BL)]
+- Search solutions for white XCross. [[See on the website](https://or18.github.io/RubiksSolverDemo/?scramble=D-_L-_U2_B_L_B2_R-_D_B2_R_D_R2_D2_F2_R2_L2_F2_D-_F2_D_L2_%252F%252F_setup%250A&index=1&sol=z2_L_R2_B2_U-_L_B-_R_F2_D-_&rot=z2&slot=BL)]
 
 - Search solutions for 1st F2L, setting **Move Restrict** to **URF**. [[See on the website](https://or18.github.io/RubiksSolverDemo/?scramble=F-_B-_U-_D2_F2_B_U-_R2_F-_R2_B2_D2_L2_U2_L_B2_L-_U2_B2_L2_F2_%252F%252F_setup%250A&index=1&sol=F2_R-_F-_U-_R_F-_&slot=BR&res=URF)]
 
-- Search solutions for white XX-cross. [[See on the website](https://or18.github.io/RubiksSolverDemo/?scramble=F2_U2_F-_R2_F_L2_F2_R2_U2_L2_F-_R2_U_F2_R_B2_F-_U2_F_R-_F2_%252F%252F_setup%250A&index=1&sol=z2_U_B2_U_B-_U_B2_R-_U-_F2_L2_D-_&slot=BL_FL&rot=z2)]
+- Search solutions for white XXCross. [[See on the website](https://or18.github.io/RubiksSolverDemo/?scramble=F2_U2_F-_R2_F_L2_F2_R2_U2_L2_F-_R2_U_F2_R_B2_F-_U2_F_R-_F2_%252F%252F_setup%250A&index=1&sol=z2_U_B2_U_B-_U_B2_R-_U-_F2_L2_D-_&slot=BL_FL&rot=z2)]
 
-- Search solutions for white XXX-cross. [[See on the website](https://or18.github.io/RubiksSolverDemo/?scramble=R_F-_L-_U-_F-_U2_D_R_U2_F2_R2_U_L2_D-_F2_R2_D-_L2_D-_F2_B-_%252F%252F_setup%250A&index=1&sol=z2_D-_L_R-_U-_L2_D_F_L_R2_F_R2_D2_&slot=BL_BR_FL&rot=z2)]
+- Search solutions for white XXXCross. [[See on the website](https://or18.github.io/RubiksSolverDemo/?scramble=R_F-_L-_U-_F-_U2_D_R_U2_F2_R2_U_L2_D-_F2_R2_D-_L2_D-_F2_B-_%252F%252F_setup%250A&index=1&sol=z2_D-_L_R-_U-_L2_D_F_L_R2_F_R2_D2_&slot=BL_BR_FL&rot=z2)]
 
-- Search solutions for white XXXX-cross (F2L skip). [[See on the website](https://or18.github.io/RubiksSolverDemo/?scramble=D-_B-_R_F2_D-_L-_F-_U-_L_U2_L2_D-_R2_F2_R2_F2_U2_B2_U_R2_%252F%252F_setup%250A&index=1&sol=z2_D_B_U_B-_U-_R-_F_L_F2_D_L2_F2_R-_&slot=BL_BR_FR_FL&rot=z2)]
+- Search solutions for white XXXXCross (F2L skip). [[See on the website](https://or18.github.io/RubiksSolverDemo/?scramble=D-_B-_R_F2_D-_L-_F-_U-_L_U2_L2_D-_R2_F2_R2_F2_U2_B2_U_R2_%252F%252F_setup%250A&index=1&sol=z2_D_B_U_B-_U-_R-_F_L_F2_D_L2_F2_R-_&slot=BL_BR_FR_FL&rot=z2)]
 
 - Search solutions for last two F2L slots, setting **Move Restrict** to **URF**. [[See on the website](https://or18.github.io/RubiksSolverDemo/?scramble=B-_U-_L2_D-_R_F_U_F_B_D2_F_D2_R2_F2_D2_B-_L2_U2_F2_D-_%252F%252F_setup&index=1&sol=U_F-_U-_R-_F_R-_F-_R2_U_F_&slot=BL_BR_FR_FL&res=UDRF)]
 
@@ -175,13 +175,13 @@ A set of solvers for a free pair. It is used to search solutions for cross with 
 - Search solutions for 3rd F2L and last pair, setting **Move Restrict** to **URF**.  [[See on the website](https://or18.github.io/RubiksSolverDemo/?scramble=R_D-_R_U_D2_L-_B_L2_U2_D2_R_F2_R-_D2_R_B2_R-_D2_R-_D_%252F%252F_setup%250A&index=1&sol=U2_R-_F-_U-_F2_R-_F-_R2_&solver=F2L_pair&slot2=BL_BR_FL&res=URF)]
 
 ## **Pseudo F2L Lite**
-A set of solvers for pseudo cross, X-cross, XX-cross, and XXX-cross. It is used to search solutions for pseudo X-cross, pseudo slotting, and more. Here are some examples.
+A set of solvers for pseudo cross, XCross, XXCross, and XXXCross. It is used to search solutions for pseudo XCross, pseudo slotting, and more. Here are some examples.
 
-- Search solutions for pseudo X-cross. [[See on the website](https://or18.github.io/RubiksSolverDemo/?scramble=L2_F_L-_F_R2_D-_L_U2_B_L-_D2_B2_R2_L_D2_R_U2_D2_F2_U2_R_%252F%252F_setup%250A&index=1&sol=U-_F2_L_U_R_B2_D2_B_&solver=PF2L&pse=BL)]
+- Search solutions for pseudo XCross. [[See on the website](https://or18.github.io/RubiksSolverDemo/?scramble=L2_F_L-_F_R2_D-_L_U2_B_L-_D2_B2_R2_L_D2_R_U2_D2_F2_U2_R_%252F%252F_setup%250A&index=1&sol=U-_F2_L_U_R_B2_D2_B_&solver=PF2L&pse=BL)]
 
-- Search solutions for adjecent pseudo XX-cross. [[See on the website](https://or18.github.io/RubiksSolverDemo/?scramble=F_R2_L_U_L2_U2_D_L_U_B_U2_B_R2_B_L2_U2_F-_R2_L2_U2_R2_%252F%252F_setup%250A&index=1&sol=B-_D-_L_R2_B-_L2_R-_D-_R_&solver=PF2L&pse=BL_BR&psc=BL_FL)]
+- Search solutions for adjecent pseudo XXCross. [[See on the website](https://or18.github.io/RubiksSolverDemo/?scramble=F_R2_L_U_L2_U2_D_L_U_B_U2_B_R2_B_L2_U2_F-_R2_L2_U2_R2_%252F%252F_setup%250A&index=1&sol=B-_D-_L_R2_B-_L2_R-_D-_R_&solver=PF2L&pse=BL_BR&psc=BL_FL)]
 
-- Search solutions for diagonal pseudo XX-cross. [[See on the website](https://or18.github.io/RubiksSolverDemo/?scramble=U-_D2_B2_R_F-_D_R_B2_U_R2_U_L2_D-_R2_U-_L2_U-_L2_B2_R-_%252F%252F_setup%250A&index=1&sol=z2_U2_L-_U-_F2_U2_B-_D2_F_L2_&solver=PF2L&pse=BL_FR&rot=z2&psc=BR_FL)]
+- Search solutions for diagonal pseudo XXCross. [[See on the website](https://or18.github.io/RubiksSolverDemo/?scramble=U-_D2_B2_R_F-_D_R_B2_U_R2_U_L2_D-_R2_U-_L2_U-_L2_B2_R-_%252F%252F_setup%250A&index=1&sol=z2_U2_L-_U-_F2_U2_B-_D2_F_L2_&solver=PF2L&pse=BL_FR&rot=z2&psc=BR_FL)]
 
 ## **Pseudo Pairing**
 A set of solvers for a pseudo free pair. It is used to search solutions for pseudo cross with a pseudo free pair,  some advanced pseudo slotting, and more. Here are some examples. 
@@ -191,15 +191,15 @@ A set of solvers for a pseudo free pair. It is used to search solutions for pseu
 - Search solutions for 3rd pseudo slot and last pseudo pair, setting **Move Restrict** to **UDR**. [[See on the website](https://or18.github.io/RubiksSolverDemo/?scramble=U-_F_U-_B2_U_F-_B2_D_F2_U-_F2_D_R2_D-_L2_U-_L2_U_%252F%252F_setup%250A&index=1&sol=D_R2_U-_R2_U_R-_U2_R-_&solver=PF2L_pair&pse2=BL_BR_FL&res=UDR)]
 
 ## **EOCross**
-A set of solvers for EOcross, X-EOcross, XX-EOcross, XXX-EOcross, and XXXX-EOCross. Here are some examples.
+A set of solvers for EOcross, XEOcross, XXEOcross, XXXEOcross, and XXXXEOCross. Here are some examples.
 
 - Search solutions for EOCross (LR). [[See on the website](https://or18.github.io/RubiksSolverDemo/?scramble=R-_F_D-_B_D2_L2_B2_D-_L-_D2_B_U2_L2_F-_L2_F-_R2_F_L2_U2_B_%252F%252F_setup%250A&index=1&sol=z2_F-_D-_B-_D2_L-_B_L2_&solver=EOCross&rot=z2)]
 
 - Search solutions for EOCross (FB). [[See on the website](https://or18.github.io/RubiksSolverDemo/?scramble=F-_D-_B2_D_B_D_R_U_F2_R-_F2_R_L2_F2_U2_R2_U2_R_B2_R-_U_%252F%252F_setup%250A&index=1&sol=z2_y-_U_L-_D_F_R_B2_&solver=EOCross&rot=z2_y-)]
 
-- Search solutions for X-EOCross (LR). [[See on the website](https://or18.github.io/RubiksSolverDemo/?scramble=F-_D-_F_R2_D-_B_L-_F_U_L2_D_R2_D2_L2_D_B2_R2_U_L2_D2_R-_%252F%252F_setup%250A&index=1&sol=U2_B2_D_R-_U2_F_D_L-_B-_D-_&solver=EOCross&slot3=BL)]
+- Search solutions for XEOCross (LR). [[See on the website](https://or18.github.io/RubiksSolverDemo/?scramble=F-_D-_F_R2_D-_B_L-_F_U_L2_D_R2_D2_L2_D_B2_R2_U_L2_D2_R-_%252F%252F_setup%250A&index=1&sol=U2_B2_D_R-_U2_F_D_L-_B-_D-_&solver=EOCross&slot3=BL)]
 
-- Search solutions for XX-EOCross (FB). [[See on the website](https://or18.github.io/RubiksSolverDemo/?scramble=U2_D-_F-_U_R2_L_U-_R_U2_R-_B2_L-_F2_L-_D2_R_F2_B2_D_%252F%252F_setup%250A&index=1&sol=y_L2_F2_R2_U2_L-_U-_F_L2_U-_L_F2_&solver=EOCross&slot3=BL_FL&rot=y)]
+- Search solutions for XXEOCross (FB). [[See on the website](https://or18.github.io/RubiksSolverDemo/?scramble=U2_D-_F-_U_R2_L_U-_R_U2_R-_B2_L-_F2_L-_D2_R_F2_B2_D_%252F%252F_setup%250A&index=1&sol=y_L2_F2_R2_U2_L-_U-_F_L2_U-_L_F2_&solver=EOCross&slot3=BL_FL&rot=y)]
 
 
 ## **LL Substeps Lite**
@@ -221,5 +221,3 @@ A solver for last layer. Note that AUF can remain. It is used to search solution
 
 ## **LL AUF Lite**
 A solver for last layer and AUF. The **LL AUF** solver can perform the same search. It is recommended to use **LL Lite** or **LL** solver.
-
-
