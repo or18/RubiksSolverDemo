@@ -48,7 +48,7 @@ This is an online solver for speedcubers that uses specific methods such as CFOP
 
     - **LL AUF**: Solver for last layer and AUF. **Recommended for use with PC**.
 
-  - The last four solver, **F2L**, **LL Substeps**, **LL**, and **LL AUF**, can search much faster than their corresponding lite solver, but they requires more memory and take longer to set up.
+  - The last four solver, **F2L**, **LL Substeps**, **LL**, and **LL AUF**, can search much faster than their corresponding lite solver, but they require more memory and take longer to set up.
 
   -  Some solvers come with an analyzer that solves for each pattern one at a time and displays the shortest number of moves in HTM in a table. The numbered cells in this table act as buttons to start the search with that condition. You can click the header to sort the table by its columns. Also, you can select the faces to analyze from **U**, **D**, **L**, **R**, **F**, and **B**.
 
