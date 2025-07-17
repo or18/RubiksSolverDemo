@@ -64,10 +64,10 @@ This is an online solver for speedcubers that uses specific methods such as CFOP
     | **LL Substeps Lite**   | 50 MB   | -   |
     | **LL Lite**   | 50 MB   | -   |
     | **LL AUF Lite**   | 50 MB   | -   |
-    | **F2L**   | 1.6 GB   | 100 MB   |
-    | **LL Substeps**   | 1.6 GB   | -   |
-    | **LL**   | 1.6 GB   | -   |
-    | **LL AUF**   | 1.6 GB   | -   |
+    | **F2L**   | 600 MB   | 100 MB   |
+    | **LL Substeps**   | 600 MB   | -   |
+    | **LL**   | 600 MB   | -   |
+    | **LL AUF**   | 600 MB   | -   |
 
 - The scramble is saved in a temporary array each time **Scramble** is edited. You can navigate to the previous or next input in the history by pressing the **[⬅️]** or **[➡️]** button. If there is no previous or next history, the corresponding button will not appear.
 

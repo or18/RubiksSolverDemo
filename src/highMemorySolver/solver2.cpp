@@ -456,54 +456,29 @@ std::vector<int> create_multi_move_table2(int n, int c, int pn, int size, const 
 	return move_table;
 }
 
-std::vector<int> create_prune_table(int index1, int index2, int size1, int size2, int depth, const std::vector<int> &table1, const std::vector<int> &table2)
+std::vector<unsigned char> create_prune_table(int index1, int index2, int size1, int size2, int depth, const std::vector<int> &table1, const std::vector<int> &table2)
 {
 	int size = size1 * size2;
-	std::vector<int> prune_table(size, -1);
+	std::vector<unsigned char> prune_table(size, 255);
 	int start = index1 * size2 + index2;
 	int next_i;
 	int index1_tmp;
 	int index2_tmp;
-	int index1_tmp_end;
-	int index2_tmp_end;
 	int next_d;
 	prune_table[start] = 0;
 	for (int d = 0; d < depth; ++d)
 	{
 		next_d = d + 1;
-		for (int i = start; i < size; ++i)
+		for (int i = 0; i < size; ++i)
 		{
 			if (prune_table[i] == d)
 			{
 				index1_tmp = (i / size2) * 18;
 				index2_tmp = (i % size2) * 18;
-				index1_tmp_end = index1_tmp + 18;
-				index2_tmp_end = index2_tmp + 18;
-				for (int j = index1_tmp, k = index2_tmp; j < index1_tmp_end && k < index2_tmp_end; ++j, ++k)
+				for (int j = 0; j < 18; ++j)
 				{
-					next_i = table1[j] * size2 + table2[k];
-					if (prune_table[next_i] == -1)
-					{
-						prune_table[next_i] = next_d;
-					}
-				}
-			}
-		}
-		for (int i = 0; i < start; ++i)
-		{
-			if (prune_table[i] == d)
-			{
-				index1_tmp = (i / size2) * 18;
-				index2_tmp = (i % size2) * 18;
-				index1_tmp_end = index1_tmp + 18;
-				index2_tmp_end = index2_tmp + 18;
-				for (int j = index1_tmp, k = index2_tmp; j < index1_tmp_end && k < index2_tmp_end; ++j, ++k)
-				{
-					next_i = table1[j] * size2 + table2[k];
-					if (prune_table[next_i] == -1)
-					{
-						prune_table[next_i] = next_d;
-					}
+					next_i = table1[index1_tmp + j] * size2 + table2[index2_tmp + j];
+					prune_table[next_i] = prune_table[next_i] == 255 ? next_d : prune_table[next_i];
 				}
 			}
 		}
@@ -511,7 +486,7 @@ std::vector<int> create_prune_table(int index1, int index2, int size1, int size2
 	return prune_table;
 }
 
-void create_prune_table2(int index1, int index2, int size1, int size2, int depth, const std::vector<int> &table1, const std::vector<int> &table2, std::vector<int> &prune_table)
+void create_prune_table2(int index1, int index2, int size1, int size2, int depth, const std::vector<int> &table1, const std::vector<int> &table2, std::vector<unsigned char> &prune_table)
 {
 	int size = size1 * size2;
 	int start = index1 * size2 + index2;
@@ -525,7 +500,7 @@ void create_prune_table2(int index1, int index2, int size1, int size2, int depth
 	for (int j = 0; j < 18; ++j)
 	{
 		next_i = table1[index1_tmp + j] + table2[index2_tmp + j];
-		prune_table[next_i] = prune_table[next_i] == -1 ? 1 : prune_table[next_i];
+		prune_table[next_i] = prune_table[next_i] == 255 ? 1 : prune_table[next_i];
 	}
 	for (int d = 1; d < depth; ++d)
 	{
@@ -539,7 +514,7 @@ void create_prune_table2(int index1, int index2, int size1, int size2, int depth
 				for (int j = 0; j < 18; ++j)
 				{
 					next_i = table1[index1_tmp + j] + table2[index2_tmp + j];
-					prune_table[next_i] = prune_table[next_i] == -1 ? next_d : prune_table[next_i];
+					prune_table[next_i] = prune_table[next_i] == 255 ? next_d : prune_table[next_i];
 				}
 			}
 		}
@@ -573,7 +548,7 @@ struct cross_search
 	int count;
 	std::vector<int> edge_move_table;
 	std::vector<int> multi_move_table;
-	std::vector<int> prune_table;
+	std::vector<unsigned char> prune_table;
 	std::vector<int> alg;
 	std::vector<std::string> restrict;
 	std::vector<int> move_restrict;
@@ -584,6 +559,7 @@ struct cross_search
 	int index2_tmp;
 	int prune_tmp;
 	std::string tmp;
+	int current_max_depth;
 
 	cross_search()
 	{
@@ -610,7 +586,7 @@ struct cross_search
 			{
 				continue;
 			}
-			sol.emplace_back(i);
+			sol[current_max_depth - depth] = i;
 			if (depth == 1)
 			{
 				if (prune_tmp == 0)
@@ -664,7 +640,6 @@ struct cross_search
 			{
 				return true;
 			}
-			sol.pop_back();
 		}
 		return false;
 	}
@@ -701,6 +676,8 @@ struct cross_search
 			index2 *= 18;
 			for (int d = prune_tmp; d <= max_length; d++)
 			{
+				current_max_depth = d;
+				sol.resize(d);
 				if (depth_limited_search(index1, index2, d, 324))
 				{
 					break;
@@ -723,7 +700,7 @@ struct xcross_search
 	std::vector<int> edge_move_table;
 	std::vector<int> corner_move_table;
 	std::vector<int> multi_move_table;
-	std::vector<int> prune_table1;
+	std::vector<unsigned char> prune_table1;
 	std::vector<int> alg;
 	std::vector<std::string> restrict;
 	std::vector<int> move_restrict;
@@ -734,6 +711,7 @@ struct xcross_search
 	int index2_tmp;
 	int prune1_tmp;
 	std::string tmp;
+	int current_max_depth;
 
 	xcross_search()
 	{
@@ -741,7 +719,7 @@ struct xcross_search
 		corner_move_table = create_corner_move_table();
 		multi_move_table = create_multi_move_table2(5, 2, 12, 24 * 22 * 20 * 18 * 16, edge_move_table);
 		ma = create_ma_table();
-		prune_table1 = std::vector<int>(24 * 22 * 20 * 18 * 16 * 24, -1);
+		prune_table1 = std::vector<unsigned char>(24 * 22 * 20 * 18 * 16 * 24, 255);
 	}
 
 	bool depth_limited_search(int arg_index1, int arg_index2, int depth, int prev)
@@ -759,7 +737,7 @@ struct xcross_search
 			{
 				continue;
 			}
-			sol.emplace_back(i);
+			sol[current_max_depth - depth] = i;
 			if (depth == 1)
 			{
 				if (prune1_tmp == 0)
@@ -812,7 +790,6 @@ struct xcross_search
 			{
 				return true;
 			}
-			sol.pop_back();
 		}
 		return false;
 	}
@@ -853,6 +830,8 @@ struct xcross_search
 			index2 *= 18;
 			for (int d = prune1_tmp; d <= max_length; d++)
 			{
+				current_max_depth = d;
+				sol.resize(d);
 				if (depth_limited_search(index1, index2, d, 324))
 				{
 					break;
@@ -876,8 +855,8 @@ struct xxcross_search
 	std::vector<int> edge_move_table;
 	std::vector<int> corner_move_table;
 	std::vector<int> multi_move_table;
-	std::vector<int> prune_table1;
-	std::vector<int> prune_table2;
+	std::vector<unsigned char> prune_table1;
+	std::vector<unsigned char> prune_table2;
 	std::vector<int> alg;
 	std::vector<std::string> restrict;
 	std::vector<int> move_restrict;
@@ -893,6 +872,7 @@ struct xxcross_search
 	int prune1_tmp;
 	int prune2_tmp;
 	std::string tmp;
+	int current_max_depth;
 
 	xxcross_search()
 	{
@@ -900,8 +880,8 @@ struct xxcross_search
 		corner_move_table = create_corner_move_table();
 		multi_move_table = create_multi_move_table2(5, 2, 12, 24 * 22 * 20 * 18 * 16, edge_move_table);
 		ma = create_ma_table();
-		prune_table1 = std::vector<int>(24 * 22 * 20 * 18 * 16 * 24, -1);
-		prune_table2 = std::vector<int>(24 * 22 * 20 * 18 * 16 * 24, -1);
+		prune_table1 = std::vector<unsigned char>(24 * 22 * 20 * 18 * 16 * 24, 255);
+		prune_table2 = std::vector<unsigned char>(24 * 22 * 20 * 18 * 16 * 24, 255);
 	}
 
 	bool depth_limited_search(int arg_index1, int arg_index2, int arg_index3, int arg_index4, int depth, int prev)
@@ -926,7 +906,7 @@ struct xxcross_search
 			{
 				continue;
 			}
-			sol.emplace_back(i);
+			sol[current_max_depth - depth] = i;
 			if (depth == 1)
 			{
 				if (prune1_tmp == 0 && prune2_tmp == 0)
@@ -984,7 +964,6 @@ struct xxcross_search
 			{
 				return true;
 			}
-			sol.pop_back();
 		}
 		return false;
 	}
@@ -1034,6 +1013,8 @@ struct xxcross_search
 			index4 *= 18;
 			for (int d = std::max(prune1_tmp, prune2_tmp); d <= max_length; d++)
 			{
+				current_max_depth = d;
+				sol.resize(d);
 				if (depth_limited_search(index1, index2, index3, index4, d, 324))
 				{
 					break;
@@ -1058,9 +1039,9 @@ struct xxxcross_search
 	std::vector<int> edge_move_table;
 	std::vector<int> corner_move_table;
 	std::vector<int> multi_move_table;
-	std::vector<int> prune_table1;
-	std::vector<int> prune_table2;
-	std::vector<int> prune_table3;
+	std::vector<unsigned char> prune_table1;
+	std::vector<unsigned char> prune_table2;
+	std::vector<unsigned char> prune_table3;
 	std::vector<int> alg;
 	std::vector<std::string> restrict;
 	std::vector<int> move_restrict;
@@ -1081,6 +1062,7 @@ struct xxxcross_search
 	int prune2_tmp;
 	int prune3_tmp;
 	std::string tmp;
+	int current_max_depth;
 
 	xxxcross_search()
 	{
@@ -1088,9 +1070,9 @@ struct xxxcross_search
 		corner_move_table = create_corner_move_table();
 		multi_move_table = create_multi_move_table2(5, 2, 12, 24 * 22 * 20 * 18 * 16, edge_move_table);
 		ma = create_ma_table();
-		prune_table1 = std::vector<int>(24 * 22 * 20 * 18 * 16 * 24, -1);
-		prune_table2 = std::vector<int>(24 * 22 * 20 * 18 * 16 * 24, -1);
-		prune_table3 = std::vector<int>(24 * 22 * 20 * 18 * 16 * 24, -1);
+		prune_table1 = std::vector<unsigned char>(24 * 22 * 20 * 18 * 16 * 24, 255);
+		prune_table2 = std::vector<unsigned char>(24 * 22 * 20 * 18 * 16 * 24, 255);
+		prune_table3 = std::vector<unsigned char>(24 * 22 * 20 * 18 * 16 * 24, 255);
 	}
 
 	bool depth_limited_search(int arg_index1, int arg_index2, int arg_index3, int arg_index4, int arg_index5, int arg_index6, int depth, int prev)
@@ -1122,7 +1104,7 @@ struct xxxcross_search
 			{
 				continue;
 			}
-			sol.emplace_back(i);
+			sol[current_max_depth - depth] = i;
 			if (depth == 1)
 			{
 				if (prune1_tmp == 0 && prune2_tmp == 0 && prune3_tmp == 0)
@@ -1185,7 +1167,6 @@ struct xxxcross_search
 			{
 				return true;
 			}
-			sol.pop_back();
 		}
 		return false;
 	}
@@ -1244,6 +1225,8 @@ struct xxxcross_search
 			index6 *= 18;
 			for (int d = std::max(prune1_tmp, std::max(prune2_tmp, prune3_tmp)); d <= max_length; d++)
 			{
+				current_max_depth = d;
+				sol.resize(d);
 				if (depth_limited_search(index1, index2, index3, index4, index5, index6, d, 324))
 				{
 					break;
@@ -1265,10 +1248,10 @@ struct xxxxcross_search
 	std::vector<int> edge_move_table;
 	std::vector<int> corner_move_table;
 	std::vector<int> multi_move_table;
-	std::vector<int> prune_table1;
-	std::vector<int> prune_table2;
-	std::vector<int> prune_table3;
-	std::vector<int> prune_table4;
+	std::vector<unsigned char> prune_table1;
+	std::vector<unsigned char> prune_table2;
+	std::vector<unsigned char> prune_table3;
+	std::vector<unsigned char> prune_table4;
 	std::vector<int> alg;
 	std::vector<std::string> restrict;
 	std::vector<int> move_restrict;
@@ -1294,6 +1277,7 @@ struct xxxxcross_search
 	int prune3_tmp;
 	int prune4_tmp;
 	std::string tmp;
+	int current_max_depth;
 
 	xxxxcross_search()
 	{
@@ -1301,10 +1285,10 @@ struct xxxxcross_search
 		corner_move_table = create_corner_move_table();
 		multi_move_table = create_multi_move_table2(5, 2, 12, 24 * 22 * 20 * 18 * 16, edge_move_table);
 		ma = create_ma_table();
-		prune_table1 = std::vector<int>(24 * 22 * 20 * 18 * 16 * 24, -1);
-		prune_table2 = std::vector<int>(24 * 22 * 20 * 18 * 16 * 24, -1);
-		prune_table3 = std::vector<int>(24 * 22 * 20 * 18 * 16 * 24, -1);
-		prune_table4 = std::vector<int>(24 * 22 * 20 * 18 * 16 * 24, -1);
+		prune_table1 = std::vector<unsigned char>(24 * 22 * 20 * 18 * 16 * 24, 255);
+		prune_table2 = std::vector<unsigned char>(24 * 22 * 20 * 18 * 16 * 24, 255);
+		prune_table3 = std::vector<unsigned char>(24 * 22 * 20 * 18 * 16 * 24, 255);
+		prune_table4 = std::vector<unsigned char>(24 * 22 * 20 * 18 * 16 * 24, 255);
 	}
 
 	bool depth_limited_search(int arg_index1, int arg_index2, int arg_index3, int arg_index4, int arg_index5, int arg_index6, int arg_index7, int arg_index8, int depth, int prev)
@@ -1343,7 +1327,7 @@ struct xxxxcross_search
 			{
 				continue;
 			}
-			sol.emplace_back(i);
+			sol[current_max_depth - depth] = i;
 			if (depth == 1)
 			{
 				if (prune1_tmp == 0 && prune2_tmp == 0 && prune3_tmp == 0 && prune4_tmp == 0)
@@ -1411,7 +1395,6 @@ struct xxxxcross_search
 			{
 				return true;
 			}
-			sol.pop_back();
 		}
 		return false;
 	}
@@ -1475,6 +1458,8 @@ struct xxxxcross_search
 			index8 *= 18;
 			for (int d = std::max(prune1_tmp, std::max(prune2_tmp, std::max(prune3_tmp, prune4_tmp))); d <= max_length; d++)
 			{
+				current_max_depth = d;
+				sol.resize(d);
 				if (depth_limited_search(index1, index2, index3, index4, index5, index6, index7, index8, d, 324))
 				{
 					break;
@@ -1506,10 +1491,10 @@ struct LL_substeps_search
 	std::vector<int> cp_move_table;
 	std::vector<int> co_move_table;
 	std::vector<int> multi_move_table;
-	std::vector<int> prune_table1;
-	std::vector<int> prune_table2;
-	std::vector<int> prune_table3;
-	std::vector<int> prune_table4;
+	std::vector<unsigned char> prune_table1;
+	std::vector<unsigned char> prune_table2;
+	std::vector<unsigned char> prune_table3;
+	std::vector<unsigned char> prune_table4;
 	std::vector<int> alg;
 	std::vector<std::string> restrict;
 	std::vector<int> move_restrict;
@@ -1543,6 +1528,7 @@ struct LL_substeps_search
 	int prune3_tmp;
 	int prune4_tmp;
 	std::string tmp;
+	int current_max_depth;
 
 	LL_substeps_search()
 	{
@@ -1564,10 +1550,10 @@ struct LL_substeps_search
 		{
 			ep_move_table[i] *= 18;
 		}
-		prune_table1 = std::vector<int>(24 * 22 * 20 * 18 * 16 * 24, -1);
-		prune_table2 = std::vector<int>(24 * 22 * 20 * 18 * 16 * 24, -1);
-		prune_table3 = std::vector<int>(24 * 22 * 20 * 18 * 16 * 24, -1);
-		prune_table4 = std::vector<int>(24 * 22 * 20 * 18 * 16 * 24, -1);
+		prune_table1 = std::vector<unsigned char>(24 * 22 * 20 * 18 * 16 * 24, 255);
+		prune_table2 = std::vector<unsigned char>(24 * 22 * 20 * 18 * 16 * 24, 255);
+		prune_table3 = std::vector<unsigned char>(24 * 22 * 20 * 18 * 16 * 24, 255);
+		prune_table4 = std::vector<unsigned char>(24 * 22 * 20 * 18 * 16 * 24, 255);
 	}
 
 	bool depth_limited_search(int arg_index1, int arg_index2, int arg_index3, int arg_index4, int arg_index5, int arg_index6, int arg_index7, int arg_index8, int arg_index_cp, int arg_index_co, int arg_index_ep, int arg_index_eo, int depth, int prev)
@@ -1610,7 +1596,7 @@ struct LL_substeps_search
 			index_co_tmp = co_move_table[arg_index_co + i];
 			index_ep_tmp = ep_move_table[arg_index_ep + i];
 			index_eo_tmp = eo_move_table[arg_index_eo + i];
-			sol.emplace_back(i);
+			sol[current_max_depth - depth] = i;
 			if (depth == 1)
 			{
 				if (prune1_tmp == 0 && prune2_tmp == 0 && prune3_tmp == 0 && prune4_tmp == 0 && (solve_ep || (index_ep_tmp == 105480 || index_ep_tmp == 105534 || index_ep_tmp == 105948 || index_ep_tmp == 108090)) && (solve_cp || (index_cp_tmp == 0 || index_cp_tmp == 54 || index_cp_tmp == 324 || index_cp_tmp == 1170)) && (solve_co || index_co_tmp == 0) && (solve_eo || index_eo_tmp == 0))
@@ -1678,7 +1664,6 @@ struct LL_substeps_search
 			{
 				return true;
 			}
-			sol.pop_back();
 		}
 		return false;
 	}
@@ -1754,6 +1739,8 @@ struct LL_substeps_search
 			index8 *= 18;
 			for (int d = std::max(prune1_tmp, std::max(prune2_tmp, std::max(prune3_tmp, prune4_tmp))); d <= max_length; d++)
 			{
+				current_max_depth = d;
+				sol.resize(d);
 				if (depth_limited_search(index1, index2, index3, index4, index5, index6, index7, index8, index_cp, index_co, index_ep, index_eo, d, 324))
 				{
 					break;
@@ -1781,10 +1768,10 @@ struct LL_search
 	std::vector<int> cp_move_table;
 	std::vector<int> co_move_table;
 	std::vector<int> multi_move_table;
-	std::vector<int> prune_table1;
-	std::vector<int> prune_table2;
-	std::vector<int> prune_table3;
-	std::vector<int> prune_table4;
+	std::vector<unsigned char> prune_table1;
+	std::vector<unsigned char> prune_table2;
+	std::vector<unsigned char> prune_table3;
+	std::vector<unsigned char> prune_table4;
 	std::vector<int> alg;
 	std::vector<std::string> restrict;
 	std::vector<int> move_restrict;
@@ -1818,6 +1805,7 @@ struct LL_search
 	int prune3_tmp;
 	int prune4_tmp;
 	std::string tmp;
+	int current_max_depth;
 
 	LL_search()
 	{
@@ -1839,10 +1827,10 @@ struct LL_search
 		{
 			ep_move_table[i] *= 18;
 		}
-		prune_table1 = std::vector<int>(24 * 22 * 20 * 18 * 16 * 24, -1);
-		prune_table2 = std::vector<int>(24 * 22 * 20 * 18 * 16 * 24, -1);
-		prune_table3 = std::vector<int>(24 * 22 * 20 * 18 * 16 * 24, -1);
-		prune_table4 = std::vector<int>(24 * 22 * 20 * 18 * 16 * 24, -1);
+		prune_table1 = std::vector<unsigned char>(24 * 22 * 20 * 18 * 16 * 24, 255);
+		prune_table2 = std::vector<unsigned char>(24 * 22 * 20 * 18 * 16 * 24, 255);
+		prune_table3 = std::vector<unsigned char>(24 * 22 * 20 * 18 * 16 * 24, 255);
+		prune_table4 = std::vector<unsigned char>(24 * 22 * 20 * 18 * 16 * 24, 255);
 	}
 
 	bool depth_limited_search(int arg_index1, int arg_index2, int arg_index3, int arg_index4, int arg_index5, int arg_index6, int arg_index7, int arg_index8, int arg_index_cp, int arg_index_co, int arg_index_ep, int arg_index_eo, int depth, int prev)
@@ -1885,7 +1873,7 @@ struct LL_search
 			index_co_tmp = co_move_table[arg_index_co + i];
 			index_ep_tmp = ep_move_table[arg_index_ep + i];
 			index_eo_tmp = eo_move_table[arg_index_eo + i];
-			sol.emplace_back(i);
+			sol[current_max_depth - depth] = i;
 			if (depth == 1)
 			{
 				if (prune1_tmp == 0 && prune2_tmp == 0 && prune3_tmp == 0 && prune4_tmp == 0 && ((index_ep_tmp == 105480 && index_cp_tmp == 0) || (index_ep_tmp == 105948 && index_cp_tmp == 324) || (index_ep_tmp == 108090 && index_cp_tmp == 1170) || (index_ep_tmp == 105534 && index_cp_tmp == 54)) && index_co_tmp == 0 && index_eo_tmp == 0)
@@ -1953,7 +1941,6 @@ struct LL_search
 			{
 				return true;
 			}
-			sol.pop_back();
 		}
 		return false;
 	}
@@ -2025,6 +2012,8 @@ struct LL_search
 			index8 *= 18;
 			for (int d = std::max(prune1_tmp, std::max(prune2_tmp, std::max(prune3_tmp, prune4_tmp))); d <= max_length; d++)
 			{
+				current_max_depth = d;
+				sol.resize(d);
 				if (depth_limited_search(index1, index2, index3, index4, index5, index6, index7, index8, index_cp, index_co, index_ep, index_eo, d, 324))
 				{
 					break;
@@ -2052,10 +2041,10 @@ struct LL_AUF_search
 	std::vector<int> cp_move_table;
 	std::vector<int> co_move_table;
 	std::vector<int> multi_move_table;
-	std::vector<int> prune_table1;
-	std::vector<int> prune_table2;
-	std::vector<int> prune_table3;
-	std::vector<int> prune_table4;
+	std::vector<unsigned char> prune_table1;
+	std::vector<unsigned char> prune_table2;
+	std::vector<unsigned char> prune_table3;
+	std::vector<unsigned char> prune_table4;
 	std::vector<int> alg;
 	std::vector<std::string> restrict;
 	std::vector<int> move_restrict;
@@ -2089,6 +2078,7 @@ struct LL_AUF_search
 	int prune3_tmp;
 	int prune4_tmp;
 	std::string tmp;
+	int current_max_depth;
 
 	LL_AUF_search()
 	{
@@ -2110,10 +2100,10 @@ struct LL_AUF_search
 		{
 			ep_move_table[i] *= 18;
 		}
-		prune_table1 = std::vector<int>(24 * 22 * 20 * 18 * 16 * 24, -1);
-		prune_table2 = std::vector<int>(24 * 22 * 20 * 18 * 16 * 24, -1);
-		prune_table3 = std::vector<int>(24 * 22 * 20 * 18 * 16 * 24, -1);
-		prune_table4 = std::vector<int>(24 * 22 * 20 * 18 * 16 * 24, -1);
+		prune_table1 = std::vector<unsigned char>(24 * 22 * 20 * 18 * 16 * 24, 255);
+		prune_table2 = std::vector<unsigned char>(24 * 22 * 20 * 18 * 16 * 24, 255);
+		prune_table3 = std::vector<unsigned char>(24 * 22 * 20 * 18 * 16 * 24, 255);
+		prune_table4 = std::vector<unsigned char>(24 * 22 * 20 * 18 * 16 * 24, 255);
 	}
 
 	bool depth_limited_search(int arg_index1, int arg_index2, int arg_index3, int arg_index4, int arg_index5, int arg_index6, int arg_index7, int arg_index8, int arg_index_cp, int arg_index_co, int arg_index_ep, int arg_index_eo, int depth, int prev)
@@ -2156,7 +2146,7 @@ struct LL_AUF_search
 			index_co_tmp = co_move_table[arg_index_co + i];
 			index_ep_tmp = ep_move_table[arg_index_ep + i];
 			index_eo_tmp = eo_move_table[arg_index_eo + i];
-			sol.emplace_back(i);
+			sol[current_max_depth - depth] = i;
 			if (depth == 1)
 			{
 				if (prune1_tmp == 0 && prune2_tmp == 0 && prune3_tmp == 0 && prune4_tmp == 0 && index_ep_tmp == 105480 && index_cp_tmp == 0 && index_co_tmp == 0 && index_eo_tmp == 0)
@@ -2181,7 +2171,6 @@ struct LL_AUF_search
 			{
 				return true;
 			}
-			sol.pop_back();
 		}
 		return false;
 	}
@@ -2253,6 +2242,8 @@ struct LL_AUF_search
 			index8 *= 18;
 			for (int d = std::max(prune1_tmp, std::max(prune2_tmp, std::max(prune3_tmp, prune4_tmp))); d <= max_length; d++)
 			{
+				current_max_depth = d;
+				sol.resize(d);
 				if (depth_limited_search(index1, index2, index3, index4, index5, index6, index7, index8, index_cp, index_co, index_ep, index_eo, d, 324))
 				{
 					break;
