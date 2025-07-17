@@ -56,14 +56,14 @@ This is an online solver for speedcubers that uses specific methods such as CFOP
 
     | Solver | Single Search | Analyzer |
     |-----------|-----------|-----------|
-    | **F2L Lite**   | 100 MB   | 100 MB   |
+    | **F2L Lite**   | 50 MB   | 50 MB   |
     | **Pairing**   | 100 MB   | 200 MB   |
     | **Pseudo F2L Lite**   | 100 MB   | 100 MB   |
     | **Pseudo Pairing**   | 100 MB   | 400 MB   |
     | **EOCross**   | 200 MB   | 200 MB   |
-    | **LL Substeps Lite**   | 100 MB   | -   |
-    | **LL Lite**   | 100 MB   | -   |
-    | **LL AUF Lite**   | 100 MB   | -   |
+    | **LL Substeps Lite**   | 50 MB   | -   |
+    | **LL Lite**   | 50 MB   | -   |
+    | **LL AUF Lite**   | 50 MB   | -   |
     | **F2L**   | 1.6 GB   | 100 MB   |
     | **LL Substeps**   | 1.6 GB   | -   |
     | **LL**   | 1.6 GB   | -   |
