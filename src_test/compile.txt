@@ -1,0 +1,20 @@
+setup
+../../emsdk/emsdk_env.sh 
+
+crossAnalyzer 
+em++ analyzer.cpp -o analyzer.js -O3 -msimd128 -flto -s TOTAL_MEMORY=50MB -s WASM=1 --bind
+
+crossSolver
+em++ solver.cpp -o solver.js -O3 -msimd128 -flto -s TOTAL_MEMORY=50MB -s WASM=1 --bind
+
+crosssTariner
+em++ solver.cpp -o solver.js -O3 -msimd128 -flto -s WASM=1 --bind
+
+EOCrossAnalyzer
+em++ analyzer.cpp -o analyzer.js -O3 -msimd128 -flto -s TOTAL_MEMORY=100MB -s WASM=1 --bind
+
+EOCrossSolver
+em++ solver.cpp -o solver.js -O3 -msimd128 -flto -s TOTAL_MEMORY=100MB -s WASM=1 --bind
+
+eocrossTrainer
+em++ solver.cpp -o solver.js -O3 -msimd128 -flto -s TOTAL_MEMORY=50MB -s WASM=1 --bind
