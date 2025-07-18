@@ -666,6 +666,8 @@ struct cross_search
 		index_eo *= 18;
 		for (int d = prune_tmp; d <= 10; d++)
 		{
+			current_max_depth = d;
+			sol.resize(d);
 			if (depth_limited_search(index_dep, index_eo, d, 324))
 			{
 				break;

@@ -320,10 +320,10 @@ std::vector<int> create_multi_move_table(int n, int c, int pn, int size, const s
     return move_table;
 }
 
-void create_prune_table(int index1, int index2, int size1, int size2, int depth, const std::vector<int> &table1, const std::vector<int> &table2, std::vector<int> &prune_table, std::vector<std::vector<int>> &index_list)
+void create_prune_table(int index1, int index2, int size1, int size2, int depth, const std::vector<int> &table1, const std::vector<int> &table2, std::vector<unsigned char> &prune_table, std::vector<std::vector<int>> &index_list)
 {
     int size = size1 * size2;
-    prune_table = std::vector<int>(size, -1);
+    prune_table = std::vector<unsigned char>(size, 255);
     index_list = std::vector<std::vector<int>>(8);
     std::vector<int> num_list = {15, 158, 1394, 9809, 46381, 97254, 34966, 102};
     int start = index1 * size2 + index2;
@@ -347,7 +347,7 @@ void create_prune_table(int index1, int index2, int size1, int size2, int depth,
                 for (int j = 0; j < 18; ++j)
                 {
                     next_i = table1[index1_tmp + j] * size2 + table2[index2_tmp + j];
-                    if (prune_table[next_i] == -1)
+                    if (prune_table[next_i] == 255)
                     {
                         prune_table[next_i] = next_d;
                         index_list[d][num] = next_i;
@@ -386,7 +386,7 @@ struct cross_search
     int count;
     std::vector<int> edge_move_table;
     std::vector<int> multi_move_table;
-    std::vector<int> prune_table;
+    std::vector<unsigned char> prune_table;
     std::vector<std::vector<int>> index_list;
     std::vector<int> alg;
     std::vector<std::string> restrict;
@@ -400,6 +400,7 @@ struct cross_search
     std::string tmp;
     std::mt19937 generator;
     std::vector<int> num_list;
+    int current_max_depth;
 
     cross_search()
     {
@@ -430,7 +431,7 @@ struct cross_search
             {
                 continue;
             }
-            sol.emplace_back(i);
+            sol[current_max_depth - depth] = i;
             if (depth == 1)
             {
                 if (prune_tmp == 0)
@@ -483,7 +484,6 @@ struct cross_search
             {
                 return true;
             }
-            sol.pop_back();
         }
         return false;
     }
@@ -503,6 +503,8 @@ struct cross_search
         rotation = "";
         for (int d = len; d <= 8; d++)
         {
+            current_max_depth = d;
+            sol.resize(d);
             if (depth_limited_search(index1, index2, d, 324))
             {
                 break;
@@ -532,6 +534,8 @@ struct cross_search
         index2 *= 18;
         for (int d = prune_tmp; d <= 8; d++)
         {
+            current_max_depth = d;
+            sol.resize(d);
             if (depth_limited_search(index1, index2, d, 324))
             {
                 break;

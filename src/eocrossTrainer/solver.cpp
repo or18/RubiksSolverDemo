@@ -387,10 +387,10 @@ std::vector<int> create_multi_move_table2(int n, int c, int pn, int size, const 
 	return move_table;
 }
 
-std::vector<int> create_prune_table(int index1, int index2, int size1, int size2, int depth, const std::vector<int> &table1, const std::vector<int> &table2)
+std::vector<unsigned char> create_prune_table(int index1, int index2, int size1, int size2, int depth, const std::vector<int> &table1, const std::vector<int> &table2)
 {
 	int size = size1 * size2;
-	std::vector<int> prune_table(size, -1);
+	std::vector<unsigned char> prune_table(size, 255);
 	int start = index1 * size2 + index2;
 	int next_i;
 	int index1_tmp;
@@ -409,7 +409,7 @@ std::vector<int> create_prune_table(int index1, int index2, int size1, int size2
 				for (int j = 0; j < 18; ++j)
 				{
 					next_i = table1[index1_tmp + j] * size2 + table2[index2_tmp + j];
-					prune_table[next_i] = prune_table[next_i] == -1 ? next_d : prune_table[next_i];
+					prune_table[next_i] = prune_table[next_i] == 255 ? next_d : prune_table[next_i];
 				}
 			}
 		}
@@ -417,7 +417,7 @@ std::vector<int> create_prune_table(int index1, int index2, int size1, int size2
 	return prune_table;
 }
 
-void create_prune_table2(int index1, int index2, int size1, int size2, int depth, const std::vector<int> &table1, const std::vector<int> &table2, std::vector<int> &prune_table)
+void create_prune_table2(int index1, int index2, int size1, int size2, int depth, const std::vector<int> &table1, const std::vector<int> &table2, std::vector<unsigned char> &prune_table)
 {
 	int size = size1 * size2;
 	int start = index1 * size2 + index2;
@@ -431,7 +431,7 @@ void create_prune_table2(int index1, int index2, int size1, int size2, int depth
 	for (int j = 0; j < 18; ++j)
 	{
 		next_i = table1[index1_tmp + j] + table2[index2_tmp + j];
-		prune_table[next_i] = prune_table[next_i] == -1 ? 1 : prune_table[next_i];
+		prune_table[next_i] = prune_table[next_i] == 255 ? 1 : prune_table[next_i];
 	}
 	for (int d = 1; d < depth; ++d)
 	{
@@ -445,17 +445,17 @@ void create_prune_table2(int index1, int index2, int size1, int size2, int depth
 				for (int j = 0; j < 18; ++j)
 				{
 					next_i = table1[index1_tmp + j] + table2[index2_tmp + j];
-					prune_table[next_i] = prune_table[next_i] == -1 ? next_d : prune_table[next_i];
+					prune_table[next_i] = prune_table[next_i] == 255 ? next_d : prune_table[next_i];
 				}
 			}
 		}
 	}
 }
 
-void create_prune_table3(int index1, int index2, int size1, int size2, int depth, const std::vector<int> &table1, const std::vector<int> &table2, std::vector<int> &prune_table, std::vector<std::vector<int>> &index_list)
+void create_prune_table3(int index1, int index2, int size1, int size2, int depth, const std::vector<int> &table1, const std::vector<int> &table2, std::vector<unsigned char> &prune_table, std::vector<std::vector<int>> &index_list)
 {
 	int size = size1 * size2;
-	prune_table = std::vector<int>(size, -1);
+	prune_table = std::vector<unsigned char>(size, 255);
 	index_list = std::vector<std::vector<int>>(10);
 	std::vector<int> num_list = {15, 178, 1982, 21041, 204732, 1645039, 8477633, 12917628, 1061851, 140};
 	int start = index1 * size2 + index2;
@@ -479,7 +479,7 @@ void create_prune_table3(int index1, int index2, int size1, int size2, int depth
 				for (int j = 0; j < 18; ++j)
 				{
 					next_i = table1[index1_tmp + j] * size2 + table2[index2_tmp + j];
-					if (prune_table[next_i] == -1)
+					if (prune_table[next_i] == 255)
 					{
 						prune_table[next_i] = next_d;
 						index_list[d][num] = next_i;
@@ -518,7 +518,7 @@ struct cross_search
 	int count;
 	std::vector<int> dep_move_table;
 	std::vector<int> eo_move_table;
-	std::vector<int> prune_table_dep_eo;
+	std::vector<unsigned char> prune_table_dep_eo;
 	std::vector<std::vector<int>> index_list;
 	std::vector<int> alg;
 	std::vector<std::string> restrict;
@@ -532,6 +532,7 @@ struct cross_search
 	std::string tmp;
 	std::mt19937 generator;
 	std::vector<int> num_list;
+	int current_max_depth;
 
 	cross_search()
 	{
@@ -563,7 +564,7 @@ struct cross_search
 			{
 				continue;
 			}
-			sol.emplace_back(i);
+			sol[current_max_depth - depth] = i;
 			if (depth == 1)
 			{
 				if (prune_tmp == 0)
@@ -616,7 +617,6 @@ struct cross_search
 			{
 				return true;
 			}
-			sol.pop_back();
 		}
 		return false;
 	}
@@ -636,6 +636,8 @@ struct cross_search
 		rotation = "";
 		for (int d = len; d <= 10; d++)
 		{
+			current_max_depth = d;
+			sol.resize(d);
 			if (depth_limited_search(index_dep, index_eo, d, 324))
 			{
 				break;
@@ -664,6 +666,8 @@ struct cross_search
 		index_eo *= 18;
 		for (int d = prune_tmp; d <= 10; d++)
 		{
+			current_max_depth = d;
+			sol.resize(d);
 			if (depth_limited_search(index_dep, index_eo, d, 324))
 			{
 				break;

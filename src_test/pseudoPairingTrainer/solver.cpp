@@ -320,7 +320,7 @@ void create_prune_table2(int index1, int index2, int size1, int size2, int depth
 {
 	int size = size1 * size2;
 	index_list = std::vector<std::vector<int>>(8);
-	prune_table = std::vector<int>(size, -1);
+	prune_table = std::vector<unsigned char>(size, 255);
 	std::vector<int> num_list = {816, 9256, 103681, 1012687, 7689281, 32089788, 30868369, 1216774};
 	int start = index1 * size2 + index2;
 	int next_i;

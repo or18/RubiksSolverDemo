@@ -57,17 +57,17 @@ This is an online solver for speedcubers that uses specific methods such as CFOP
     | Solver | Single Search | Analyzer |
     |-----------|-----------|-----------|
     | **F2L Lite**   | 50 MB   | 50 MB   |
-    | **Pairing**   | 100 MB   | 200 MB   |
-    | **Pseudo F2L Lite**   | 100 MB   | 100 MB   |
-    | **Pseudo Pairing**   | 100 MB   | 400 MB   |
-    | **EOCross**   | 200 MB   | 200 MB   |
+    | **Pairing**   | 50 MB   | 100 MB   |
+    | **Pseudo F2L Lite**   | 50 MB   | 50 MB   |
+    | **Pseudo Pairing**   | 50 MB   | 200 MB   |
+    | **EOCross**   | 100 MB   | 100 MB   |
     | **LL Substeps Lite**   | 50 MB   | -   |
     | **LL Lite**   | 50 MB   | -   |
     | **LL AUF Lite**   | 50 MB   | -   |
-    | **F2L**   | 600 MB   | 100 MB   |
-    | **LL Substeps**   | 600 MB   | -   |
-    | **LL**   | 600 MB   | -   |
-    | **LL AUF**   | 600 MB   | -   |
+    | **F2L**   | 700 MB   | 50 MB   |
+    | **LL Substeps**   | 700 MB   | -   |
+    | **LL**   | 700 MB   | -   |
+    | **LL AUF**   | 700 MB   | -   |
 
 - The scramble is saved in a temporary array each time **Scramble** is edited. You can navigate to the previous or next input in the history by pressing the **[⬅️]** or **[➡️]** button. If there is no previous or next history, the corresponding button will not appear.
 
