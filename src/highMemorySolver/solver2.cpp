@@ -456,7 +456,7 @@ std::vector<int> create_multi_move_table2(int n, int c, int pn, int size, const 
 	return move_table;
 }
 
-std::vector<unsigned char> create_prune_table(int index1, int index2, int size1, int size2, int depth, const std::vector<int> &table1, const std::vector<int> &table2)
+std::vector<unsigned char> create_prune_table(int index1, int index2, int size1, int size2, int depth, const std::vector<int> &table1, const std::vector<int> &table2, std::vector<int> &move_restrict)
 {
 	int size = size1 * size2;
 	std::vector<unsigned char> prune_table(size, 255);
@@ -466,6 +466,8 @@ std::vector<unsigned char> create_prune_table(int index1, int index2, int size1,
 	int index2_tmp;
 	int next_d;
 	prune_table[start] = 0;
+	int num = 1;
+	int num_old = 1;
 	for (int d = 0; d < depth; ++d)
 	{
 		next_d = d + 1;
@@ -475,18 +477,27 @@ std::vector<unsigned char> create_prune_table(int index1, int index2, int size1,
 			{
 				index1_tmp = (i / size2) * 18;
 				index2_tmp = (i % size2) * 18;
-				for (int j = 0; j < 18; ++j)
+				for (int j : move_restrict)
 				{
 					next_i = table1[index1_tmp + j] * size2 + table2[index2_tmp + j];
-					prune_table[next_i] = prune_table[next_i] == 255 ? next_d : prune_table[next_i];
+					if (prune_table[next_i] == 255)
+					{
+						prune_table[next_i] = next_d;
+						num += 1;
+					}
 				}
 			}
 		}
+		if (num == num_old)
+		{
+			break;
+		}
+		num_old = num;
 	}
 	return prune_table;
 }
 
-void create_prune_table2(int index1, int index2, int size1, int size2, int depth, const std::vector<int> &table1, const std::vector<int> &table2, std::vector<unsigned char> &prune_table)
+void create_prune_table2(int index1, int index2, int size1, int size2, int depth, const std::vector<int> &table1, const std::vector<int> &table2, std::vector<unsigned char> &prune_table, std::vector<int> &move_restrict)
 {
 	int size = size1 * size2;
 	int start = index1 * size2 + index2;
@@ -497,12 +508,9 @@ void create_prune_table2(int index1, int index2, int size1, int size2, int depth
 	prune_table[start] = 0;
 	index1_tmp = index1 * 24;
 	index2_tmp = index2 * 18;
-	for (int j = 0; j < 18; ++j)
-	{
-		next_i = table1[index1_tmp + j] + table2[index2_tmp + j];
-		prune_table[next_i] = prune_table[next_i] == 255 ? 1 : prune_table[next_i];
-	}
-	for (int d = 1; d < depth; ++d)
+	int num = 1;
+	int num_old = 1;
+	for (int d = 0; d < depth; ++d)
 	{
 		next_d = d + 1;
 		for (int i = 0; i < size; ++i)
@@ -511,13 +519,22 @@ void create_prune_table2(int index1, int index2, int size1, int size2, int depth
 			{
 				index1_tmp = (i / size2) * 24;
 				index2_tmp = (i % size2) * 18;
-				for (int j = 0; j < 18; ++j)
+				for (int j : move_restrict)
 				{
 					next_i = table1[index1_tmp + j] + table2[index2_tmp + j];
-					prune_table[next_i] = prune_table[next_i] == 255 ? next_d : prune_table[next_i];
+					if (prune_table[next_i] == 255)
+					{
+						prune_table[next_i] = next_d;
+						num += 1;
+					}
 				}
 			}
 		}
+		if (num == num_old)
+		{
+			break;
+		}
+		num_old = num;
 	}
 }
 
@@ -567,7 +584,6 @@ struct cross_search
 		multi_move_table = create_multi_move_table(2, 2, 12, 24 * 22, edge_move_table);
 		index1 = 416;
 		index2 = 520;
-		prune_table = create_prune_table(index1, index2, 24 * 22, 24 * 22, 9, multi_move_table, multi_move_table);
 		ma = create_ma_table();
 	}
 
@@ -665,8 +681,13 @@ struct cross_search
 			auto it = std::find(move_names.begin(), move_names.end(), name);
 			move_restrict.emplace_back(std::distance(move_names.begin(), it));
 		}
+		prune_table = create_prune_table(index1, index2, 24 * 22, 24 * 22, 20, multi_move_table, multi_move_table, move_restrict);
 		prune_tmp = prune_table[index1 * 528 + index2];
-		if (prune_tmp == 0)
+		if (prune_tmp == 255)
+        {
+            update("Unsolvable.");
+        }
+        else if (prune_tmp == 0)
 		{
 			update("Already solved.");
 		}
@@ -802,18 +823,18 @@ struct xcross_search
 		max_length = arg_max_length;
 		sol_num = arg_sol_num;
 		restrict = arg_restrict;
-		std::vector<int> alg = AlgRotation(StringToAlg(scramble), rotation);
-		std::vector<int> edge_index = {2989056, 2989088, 2989120, 2989152};
-		std::vector<int> corner_index = {12, 15, 18, 21};
-		index1 = edge_index[slot1];
-		index2 = corner_index[slot1];
-		create_prune_table2(index1, index2, 24 * 22 * 20 * 18 * 16, 24, 10, multi_move_table, corner_move_table, prune_table1);
-		count = 0;
 		for (std::string name : restrict)
 		{
 			auto it = std::find(move_names.begin(), move_names.end(), name);
 			move_restrict.emplace_back(std::distance(move_names.begin(), it));
 		}
+		std::vector<int> alg = AlgRotation(StringToAlg(scramble), rotation);
+		std::vector<int> edge_index = {2989056, 2989088, 2989120, 2989152};
+		std::vector<int> corner_index = {12, 15, 18, 21};
+		index1 = edge_index[slot1];
+		index2 = corner_index[slot1];
+		create_prune_table2(index1, index2, 24 * 22 * 20 * 18 * 16, 24, 20, multi_move_table, corner_move_table, prune_table1, move_restrict);
+		count = 0;
 		index1 *= 24;
 		for (int m : alg)
 		{
@@ -821,7 +842,11 @@ struct xcross_search
 			index2 = corner_move_table[index2 * 18 + m];
 		}
 		prune1_tmp = prune_table1[index1 + index2];
-		if (prune1_tmp == 0)
+		if (prune1_tmp == 255)
+        {
+            update("Unsolvable.");
+        }
+        else if (prune1_tmp == 0)
 		{
 			update("Already solved.");
 		}
@@ -977,21 +1002,21 @@ struct xxcross_search
 		max_length = arg_max_length;
 		sol_num = arg_sol_num;
 		restrict = arg_restrict;
-		std::vector<int> alg = AlgRotation(StringToAlg(scramble), rotation);
-		std::vector<int> edge_index = {2989056, 2989088, 2989120, 2989152};
-		std::vector<int> corner_index = {12, 15, 18, 21};
-		index1 = edge_index[slot1];
-		index2 = corner_index[slot1];
-		create_prune_table2(index1, index2, 24 * 22 * 20 * 18 * 16, 24, 10, multi_move_table, corner_move_table, prune_table1);
-		index3 = edge_index[slot2];
-		index4 = corner_index[slot2];
-		create_prune_table2(index3, index4, 24 * 22 * 20 * 18 * 16, 24, 10, multi_move_table, corner_move_table, prune_table2);
-		count = 0;
 		for (std::string name : restrict)
 		{
 			auto it = std::find(move_names.begin(), move_names.end(), name);
 			move_restrict.emplace_back(std::distance(move_names.begin(), it));
 		}
+		std::vector<int> alg = AlgRotation(StringToAlg(scramble), rotation);
+		std::vector<int> edge_index = {2989056, 2989088, 2989120, 2989152};
+		std::vector<int> corner_index = {12, 15, 18, 21};
+		index1 = edge_index[slot1];
+		index2 = corner_index[slot1];
+		create_prune_table2(index1, index2, 24 * 22 * 20 * 18 * 16, 24, 20, multi_move_table, corner_move_table, prune_table1, move_restrict);
+		index3 = edge_index[slot2];
+		index4 = corner_index[slot2];
+		create_prune_table2(index3, index4, 24 * 22 * 20 * 18 * 16, 24, 20, multi_move_table, corner_move_table, prune_table2, move_restrict);
+		count = 0;
 		index1 *= 24;
 		index3 *= 24;
 		for (int m : alg)
@@ -1003,7 +1028,11 @@ struct xxcross_search
 		}
 		prune1_tmp = prune_table1[index1 + index2];
 		prune2_tmp = prune_table2[index3 + index4];
-		if (prune1_tmp == 0 && prune2_tmp == 0)
+		if (prune1_tmp == 255 || prune2_tmp == 255)
+        {
+            update("Unsolvable.");
+        }
+        else if (prune1_tmp == 0 && prune2_tmp == 0)
 		{
 			update("Already solved.");
 		}
@@ -1181,24 +1210,24 @@ struct xxxcross_search
 		max_length = arg_max_length;
 		sol_num = arg_sol_num;
 		restrict = arg_restrict;
-		std::vector<int> alg = AlgRotation(StringToAlg(scramble), rotation);
-		std::vector<int> edge_index = {2989056, 2989088, 2989120, 2989152};
-		std::vector<int> corner_index = {12, 15, 18, 21};
-		index1 = edge_index[slot1];
-		index2 = corner_index[slot1];
-		create_prune_table2(index1, index2, 24 * 22 * 20 * 18 * 16, 24, 10, multi_move_table, corner_move_table, prune_table1);
-		index3 = edge_index[slot2];
-		index4 = corner_index[slot2];
-		create_prune_table2(index3, index4, 24 * 22 * 20 * 18 * 16, 24, 10, multi_move_table, corner_move_table, prune_table2);
-		index5 = edge_index[slot3];
-		index6 = corner_index[slot3];
-		create_prune_table2(index5, index6, 24 * 22 * 20 * 18 * 16, 24, 10, multi_move_table, corner_move_table, prune_table3);
-		count = 0;
 		for (std::string name : restrict)
 		{
 			auto it = std::find(move_names.begin(), move_names.end(), name);
 			move_restrict.emplace_back(std::distance(move_names.begin(), it));
 		}
+		std::vector<int> alg = AlgRotation(StringToAlg(scramble), rotation);
+		std::vector<int> edge_index = {2989056, 2989088, 2989120, 2989152};
+		std::vector<int> corner_index = {12, 15, 18, 21};
+		index1 = edge_index[slot1];
+		index2 = corner_index[slot1];
+		create_prune_table2(index1, index2, 24 * 22 * 20 * 18 * 16, 24, 20, multi_move_table, corner_move_table, prune_table1, move_restrict);
+		index3 = edge_index[slot2];
+		index4 = corner_index[slot2];
+		create_prune_table2(index3, index4, 24 * 22 * 20 * 18 * 16, 24, 20, multi_move_table, corner_move_table, prune_table2, move_restrict);
+		index5 = edge_index[slot3];
+		index6 = corner_index[slot3];
+		create_prune_table2(index5, index6, 24 * 22 * 20 * 18 * 16, 24, 20, multi_move_table, corner_move_table, prune_table3, move_restrict);
+		count = 0;
 		index1 *= 24;
 		index3 *= 24;
 		index5 *= 24;
@@ -1214,7 +1243,11 @@ struct xxxcross_search
 		prune1_tmp = prune_table1[index1 + index2];
 		prune2_tmp = prune_table2[index3 + index4];
 		prune3_tmp = prune_table3[index5 + index6];
-		if (prune1_tmp == 0 && prune2_tmp == 0 && prune3_tmp == 0)
+		if (prune1_tmp == 255 || prune2_tmp == 255 || prune3_tmp == 255)
+        {
+            update("Unsolvable.");
+        }
+        else if (prune1_tmp == 0 && prune2_tmp == 0 && prune3_tmp == 0)
 		{
 			update("Already solved.");
 		}
@@ -1406,27 +1439,27 @@ struct xxxxcross_search
 		max_length = arg_max_length;
 		sol_num = arg_sol_num;
 		restrict = arg_restrict;
-		std::vector<int> alg = AlgRotation(StringToAlg(scramble), rotation);
-		std::vector<int> edge_index = {2989056, 2989088, 2989120, 2989152};
-		std::vector<int> corner_index = {12, 15, 18, 21};
-		index1 = edge_index[0];
-		index2 = corner_index[0];
-		create_prune_table2(index1, index2, 24 * 22 * 20 * 18 * 16, 24, 10, multi_move_table, corner_move_table, prune_table1);
-		index3 = edge_index[1];
-		index4 = corner_index[1];
-		create_prune_table2(index3, index4, 24 * 22 * 20 * 18 * 16, 24, 10, multi_move_table, corner_move_table, prune_table2);
-		index5 = edge_index[2];
-		index6 = corner_index[2];
-		create_prune_table2(index5, index6, 24 * 22 * 20 * 18 * 16, 24, 10, multi_move_table, corner_move_table, prune_table3);
-		index7 = edge_index[3];
-		index8 = corner_index[3];
-		create_prune_table2(index7, index8, 24 * 22 * 20 * 18 * 16, 24, 10, multi_move_table, corner_move_table, prune_table4);
-		count = 0;
 		for (std::string name : restrict)
 		{
 			auto it = std::find(move_names.begin(), move_names.end(), name);
 			move_restrict.emplace_back(std::distance(move_names.begin(), it));
 		}
+		std::vector<int> alg = AlgRotation(StringToAlg(scramble), rotation);
+		std::vector<int> edge_index = {2989056, 2989088, 2989120, 2989152};
+		std::vector<int> corner_index = {12, 15, 18, 21};
+		index1 = edge_index[0];
+		index2 = corner_index[0];
+		create_prune_table2(index1, index2, 24 * 22 * 20 * 18 * 16, 24, 20, multi_move_table, corner_move_table, prune_table1, move_restrict);
+		index3 = edge_index[1];
+		index4 = corner_index[1];
+		create_prune_table2(index3, index4, 24 * 22 * 20 * 18 * 16, 24, 20, multi_move_table, corner_move_table, prune_table2, move_restrict);
+		index5 = edge_index[2];
+		index6 = corner_index[2];
+		create_prune_table2(index5, index6, 24 * 22 * 20 * 18 * 16, 24, 20, multi_move_table, corner_move_table, prune_table3, move_restrict);
+		index7 = edge_index[3];
+		index8 = corner_index[3];
+		create_prune_table2(index7, index8, 24 * 22 * 20 * 18 * 16, 24, 20, multi_move_table, corner_move_table, prune_table4, move_restrict);
+		count = 0;
 		index1 *= 24;
 		index3 *= 24;
 		index5 *= 24;
@@ -1446,7 +1479,11 @@ struct xxxxcross_search
 		prune2_tmp = prune_table2[index3 + index4];
 		prune3_tmp = prune_table3[index5 + index6];
 		prune4_tmp = prune_table4[index7 + index8];
-		if (prune1_tmp == 0 && prune2_tmp == 0 && prune3_tmp == 0 && prune4_tmp == 0)
+		if (prune1_tmp == 255 || prune2_tmp == 255 || prune3_tmp == 255 || prune4_tmp == 255)
+        {
+            update("Unsolvable.");
+        }
+        else if (prune1_tmp == 0 && prune2_tmp == 0 && prune3_tmp == 0 && prune4_tmp == 0)
 		{
 			update("Already solved.");
 		}
@@ -1679,27 +1716,27 @@ struct LL_substeps_search
 		max_length = arg_max_length;
 		sol_num = arg_sol_num;
 		restrict = arg_restrict;
-		std::vector<int> alg = AlgRotation(StringToAlg(scramble), rotation);
-		std::vector<int> edge_index = {2989056, 2989088, 2989120, 2989152};
-		std::vector<int> corner_index = {12, 15, 18, 21};
-		index1 = edge_index[0];
-		index2 = corner_index[0];
-		create_prune_table2(index1, index2, 24 * 22 * 20 * 18 * 16, 24, 10, multi_move_table, corner_move_table, prune_table1);
-		index3 = edge_index[1];
-		index4 = corner_index[1];
-		create_prune_table2(index3, index4, 24 * 22 * 20 * 18 * 16, 24, 10, multi_move_table, corner_move_table, prune_table2);
-		index5 = edge_index[2];
-		index6 = corner_index[2];
-		create_prune_table2(index5, index6, 24 * 22 * 20 * 18 * 16, 24, 10, multi_move_table, corner_move_table, prune_table3);
-		index7 = edge_index[3];
-		index8 = corner_index[3];
-		create_prune_table2(index7, index8, 24 * 22 * 20 * 18 * 16, 24, 10, multi_move_table, corner_move_table, prune_table4);
-		count = 0;
 		for (std::string name : restrict)
 		{
 			auto it = std::find(move_names.begin(), move_names.end(), name);
 			move_restrict.emplace_back(std::distance(move_names.begin(), it));
 		}
+		std::vector<int> alg = AlgRotation(StringToAlg(scramble), rotation);
+		std::vector<int> edge_index = {2989056, 2989088, 2989120, 2989152};
+		std::vector<int> corner_index = {12, 15, 18, 21};
+		index1 = edge_index[0];
+		index2 = corner_index[0];
+		create_prune_table2(index1, index2, 24 * 22 * 20 * 18 * 16, 24, 20, multi_move_table, corner_move_table, prune_table1, move_restrict);
+		index3 = edge_index[1];
+		index4 = corner_index[1];
+		create_prune_table2(index3, index4, 24 * 22 * 20 * 18 * 16, 24, 20, multi_move_table, corner_move_table, prune_table2, move_restrict);
+		index5 = edge_index[2];
+		index6 = corner_index[2];
+		create_prune_table2(index5, index6, 24 * 22 * 20 * 18 * 16, 24, 20, multi_move_table, corner_move_table, prune_table3, move_restrict);
+		index7 = edge_index[3];
+		index8 = corner_index[3];
+		create_prune_table2(index7, index8, 24 * 22 * 20 * 18 * 16, 24, 20, multi_move_table, corner_move_table, prune_table4, move_restrict);
+		count = 0;
 		index1 *= 24;
 		index3 *= 24;
 		index5 *= 24;
@@ -1727,7 +1764,11 @@ struct LL_substeps_search
 		prune2_tmp = prune_table2[index3 + index4];
 		prune3_tmp = prune_table3[index5 + index6];
 		prune4_tmp = prune_table4[index7 + index8];
-		if (prune1_tmp == 0 && prune2_tmp == 0 && prune3_tmp == 0 && prune4_tmp == 0 && (solve_ep || (index_ep == 105480 || index_ep == 105534 || index_ep == 105948 || index_ep == 108090)) && (solve_cp || (index_cp == 0 || index_cp == 54 || index_cp == 324 || index_cp == 1170)) && (solve_co || index_co == 0) && (solve_eo || index_eo == 0))
+		if (prune1_tmp == 255 || prune2_tmp == 255 || prune3_tmp == 255 || prune4_tmp == 255)
+        {
+            update("Unsolvable.");
+        }
+        else if (prune1_tmp == 0 && prune2_tmp == 0 && prune3_tmp == 0 && prune4_tmp == 0 && (solve_ep || (index_ep == 105480 || index_ep == 105534 || index_ep == 105948 || index_ep == 108090)) && (solve_cp || (index_cp == 0 || index_cp == 54 || index_cp == 324 || index_cp == 1170)) && (solve_co || index_co == 0) && (solve_eo || index_eo == 0))
 		{
 			update("Already solved.");
 		}
@@ -1952,27 +1993,27 @@ struct LL_search
 		max_length = arg_max_length;
 		sol_num = arg_sol_num;
 		restrict = arg_restrict;
-		std::vector<int> alg = AlgRotation(StringToAlg(scramble), rotation);
-		std::vector<int> edge_index = {2989056, 2989088, 2989120, 2989152};
-		std::vector<int> corner_index = {12, 15, 18, 21};
-		index1 = edge_index[0];
-		index2 = corner_index[0];
-		create_prune_table2(index1, index2, 24 * 22 * 20 * 18 * 16, 24, 10, multi_move_table, corner_move_table, prune_table1);
-		index3 = edge_index[1];
-		index4 = corner_index[1];
-		create_prune_table2(index3, index4, 24 * 22 * 20 * 18 * 16, 24, 10, multi_move_table, corner_move_table, prune_table2);
-		index5 = edge_index[2];
-		index6 = corner_index[2];
-		create_prune_table2(index5, index6, 24 * 22 * 20 * 18 * 16, 24, 10, multi_move_table, corner_move_table, prune_table3);
-		index7 = edge_index[3];
-		index8 = corner_index[3];
-		create_prune_table2(index7, index8, 24 * 22 * 20 * 18 * 16, 24, 10, multi_move_table, corner_move_table, prune_table4);
-		count = 0;
 		for (std::string name : restrict)
 		{
 			auto it = std::find(move_names.begin(), move_names.end(), name);
 			move_restrict.emplace_back(std::distance(move_names.begin(), it));
 		}
+		std::vector<int> alg = AlgRotation(StringToAlg(scramble), rotation);
+		std::vector<int> edge_index = {2989056, 2989088, 2989120, 2989152};
+		std::vector<int> corner_index = {12, 15, 18, 21};
+		index1 = edge_index[0];
+		index2 = corner_index[0];
+		create_prune_table2(index1, index2, 24 * 22 * 20 * 18 * 16, 24, 20, multi_move_table, corner_move_table, prune_table1, move_restrict);
+		index3 = edge_index[1];
+		index4 = corner_index[1];
+		create_prune_table2(index3, index4, 24 * 22 * 20 * 18 * 16, 24, 20, multi_move_table, corner_move_table, prune_table2, move_restrict);
+		index5 = edge_index[2];
+		index6 = corner_index[2];
+		create_prune_table2(index5, index6, 24 * 22 * 20 * 18 * 16, 24, 20, multi_move_table, corner_move_table, prune_table3, move_restrict);
+		index7 = edge_index[3];
+		index8 = corner_index[3];
+		create_prune_table2(index7, index8, 24 * 22 * 20 * 18 * 16, 24, 20, multi_move_table, corner_move_table, prune_table4, move_restrict);
+		count = 0;
 		index1 *= 24;
 		index3 *= 24;
 		index5 *= 24;
@@ -2000,7 +2041,11 @@ struct LL_search
 		prune2_tmp = prune_table2[index3 + index4];
 		prune3_tmp = prune_table3[index5 + index6];
 		prune4_tmp = prune_table4[index7 + index8];
-		if (prune1_tmp == 0 && prune2_tmp == 0 && prune3_tmp == 0 && prune4_tmp == 0 && ((index_ep == 105480 && index_cp == 0) || (index_ep == 105948 && index_cp == 324) || (index_ep == 108090 && index_cp == 1170) || (index_ep == 105534 && index_cp == 54)) && index_co == 0 && index_eo == 0)
+		if (prune1_tmp == 255 || prune2_tmp == 255 || prune3_tmp == 255 || prune4_tmp == 255)
+        {
+            update("Unsolvable.");
+        }
+        else if (prune1_tmp == 0 && prune2_tmp == 0 && prune3_tmp == 0 && prune4_tmp == 0 && ((index_ep == 105480 && index_cp == 0) || (index_ep == 105948 && index_cp == 324) || (index_ep == 108090 && index_cp == 1170) || (index_ep == 105534 && index_cp == 54)) && index_co == 0 && index_eo == 0)
 		{
 			update("Already solved.");
 		}
@@ -2182,27 +2227,27 @@ struct LL_AUF_search
 		max_length = arg_max_length;
 		sol_num = arg_sol_num;
 		restrict = arg_restrict;
-		std::vector<int> alg = AlgRotation(StringToAlg(scramble), rotation);
-		std::vector<int> edge_index = {2989056, 2989088, 2989120, 2989152};
-		std::vector<int> corner_index = {12, 15, 18, 21};
-		index1 = edge_index[0];
-		index2 = corner_index[0];
-		create_prune_table2(index1, index2, 24 * 22 * 20 * 18 * 16, 24, 10, multi_move_table, corner_move_table, prune_table1);
-		index3 = edge_index[1];
-		index4 = corner_index[1];
-		create_prune_table2(index3, index4, 24 * 22 * 20 * 18 * 16, 24, 10, multi_move_table, corner_move_table, prune_table2);
-		index5 = edge_index[2];
-		index6 = corner_index[2];
-		create_prune_table2(index5, index6, 24 * 22 * 20 * 18 * 16, 24, 10, multi_move_table, corner_move_table, prune_table3);
-		index7 = edge_index[3];
-		index8 = corner_index[3];
-		create_prune_table2(index7, index8, 24 * 22 * 20 * 18 * 16, 24, 10, multi_move_table, corner_move_table, prune_table4);
-		count = 0;
 		for (std::string name : restrict)
 		{
 			auto it = std::find(move_names.begin(), move_names.end(), name);
 			move_restrict.emplace_back(std::distance(move_names.begin(), it));
 		}
+		std::vector<int> alg = AlgRotation(StringToAlg(scramble), rotation);
+		std::vector<int> edge_index = {2989056, 2989088, 2989120, 2989152};
+		std::vector<int> corner_index = {12, 15, 18, 21};
+		index1 = edge_index[0];
+		index2 = corner_index[0];
+		create_prune_table2(index1, index2, 24 * 22 * 20 * 18 * 16, 24, 20, multi_move_table, corner_move_table, prune_table1, move_restrict);
+		index3 = edge_index[1];
+		index4 = corner_index[1];
+		create_prune_table2(index3, index4, 24 * 22 * 20 * 18 * 16, 24, 20, multi_move_table, corner_move_table, prune_table2, move_restrict);
+		index5 = edge_index[2];
+		index6 = corner_index[2];
+		create_prune_table2(index5, index6, 24 * 22 * 20 * 18 * 16, 24, 20, multi_move_table, corner_move_table, prune_table3, move_restrict);
+		index7 = edge_index[3];
+		index8 = corner_index[3];
+		create_prune_table2(index7, index8, 24 * 22 * 20 * 18 * 16, 24, 20, multi_move_table, corner_move_table, prune_table4, move_restrict);
+		count = 0;
 		index1 *= 24;
 		index3 *= 24;
 		index5 *= 24;
@@ -2230,7 +2275,11 @@ struct LL_AUF_search
 		prune2_tmp = prune_table2[index3 + index4];
 		prune3_tmp = prune_table3[index5 + index6];
 		prune4_tmp = prune_table4[index7 + index8];
-		if (prune1_tmp == 0 && prune2_tmp == 0 && prune3_tmp == 0 && prune4_tmp == 0 && index_ep == 105480 && index_cp == 0 && index_co == 0 && index_eo == 0)
+		if (prune1_tmp == 255 || prune2_tmp == 255 || prune3_tmp == 255 || prune4_tmp == 255)
+        {
+            update("Unsolvable.");
+        }
+        else if (prune1_tmp == 0 && prune2_tmp == 0 && prune3_tmp == 0 && prune4_tmp == 0 && index_ep == 105480 && index_cp == 0 && index_co == 0 && index_eo == 0)
 		{
 			update("Already solved.");
 		}

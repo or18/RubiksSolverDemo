@@ -1626,7 +1626,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
 
         function appendSol(scr, sol) {
             const element = document.getElementById('result');
-            if (sol == "Search finished." || sol == "Already solved." || sol == "Error") {
+            if (sol == "Search finished." || sol == "Already solved." || sol == "Error" || sol == "Unsolvable.") {
                 if (worker) {
                     worker.terminate();
                 }
@@ -1637,8 +1637,10 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                     content.innerHTML = "Error: Search terminated due to an error.<br>";
                 } else if (sol === "Already solved.") {
                     content.innerHTML = "Already solved.<br>";
-                } else {
+                } else if (sol === "Search finished.") {
                     content.innerHTML = "Search finished.<br>";
+                } else {
+                    content.innerHTML = "Unsolvable.<br>";
                 }
                 element.appendChild(content);
                 document.getElementById("solveButton").textContent = "Start";
