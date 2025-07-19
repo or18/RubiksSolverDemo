@@ -667,6 +667,12 @@ struct cross_search
 		max_length = arg_max_length;
 		sol_num = arg_sol_num;
 		restrict = arg_restrict;
+		for (std::string name : restrict)
+		{
+			auto it = std::find(move_names.begin(), move_names.end(), name);
+			move_restrict.emplace_back(std::distance(move_names.begin(), it));
+		}
+		prune_table = create_prune_table(index1, index2, 24 * 22, 24 * 22, 20, multi_move_table, multi_move_table, move_restrict);
 		std::vector<int> alg = AlgRotation(StringToAlg(scramble), rotation);
 		index1 = 416;
 		index2 = 520;
@@ -676,12 +682,6 @@ struct cross_search
 			index1 = multi_move_table[index1 * 18 + m];
 			index2 = multi_move_table[index2 * 18 + m];
 		}
-		for (std::string name : restrict)
-		{
-			auto it = std::find(move_names.begin(), move_names.end(), name);
-			move_restrict.emplace_back(std::distance(move_names.begin(), it));
-		}
-		prune_table = create_prune_table(index1, index2, 24 * 22, 24 * 22, 20, multi_move_table, multi_move_table, move_restrict);
 		prune_tmp = prune_table[index1 * 528 + index2];
 		if (prune_tmp == 255)
         {
