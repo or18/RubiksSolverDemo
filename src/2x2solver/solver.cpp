@@ -337,7 +337,7 @@ std::vector<int> create_multi_move_table(int n, int c, int pn, int size, const s
 	return move_table;
 }
 
-void create_prune_table(const std::vector<int> &table1, const std::vector<int> &table2, std::vector<unsigned char> &prune_table, std::vector<int> &move_restrict)
+void create_prune_table(const std::vector<int> &table1, const std::vector<int> &table2, std::vector<unsigned char> &prune_table, std::vector<int> &move_restrict, int prune_depth)
 {
 	int size = 88179840;
 	int size2 = 2187;
@@ -375,7 +375,7 @@ void create_prune_table(const std::vector<int> &table1, const std::vector<int> &
 	}
 	int num = 24;
 	int num_old = 24;
-	for (int d = 0; d < 8; ++d)
+	for (int d = 0; d < prune_depth; ++d)
 	{
 		next_d = d + 1;
 		for (int i = 0; i < size; ++i)
@@ -526,7 +526,7 @@ struct search
 		return false;
 	}
 
-	void start_search(std::string arg_scramble = "", std::string arg_rotation = "", int arg_sol_num = 100, int arg_max_length = 12, std::vector<std::string> arg_restrict = move_names)
+	void start_search(std::string arg_scramble = "", std::string arg_rotation = "", int arg_sol_num = 100, int arg_max_length = 12, std::vector<std::string> arg_restrict = move_names, int prune_depth = 8)
 	{
 		scramble = arg_scramble;
 		rotation = arg_rotation;
@@ -538,7 +538,7 @@ struct search
 			auto it = std::find(move_names.begin(), move_names.end(), name);
 			move_restrict.emplace_back(std::distance(move_names.begin(), it));
 		};
-		create_prune_table(cp_move_table, co_move_table, prune_table, move_restrict);
+		create_prune_table(cp_move_table, co_move_table, prune_table, move_restrict, prune_depth);
 		std::vector<int> alg = AlgRotation(StringToAlg(scramble), rotation);
 		index1 = 0;
 		index2 = 0;
@@ -571,11 +571,12 @@ struct search
 	}
 };
 
-void solve(std::string scramble, std::string rotation, std::string sol_num, std::string max_length, std::string restrict)
+void solve(std::string scramble, std::string rotation, std::string sol_num, std::string max_length, std::string restrict, std::string prune_depth)
 {
 	int count = 0;
 	int num = std::stoi(sol_num);
 	int len = std::stoi(max_length);
+	int prune = std::stoi(prune_depth);
 	std::vector<int> slot;
 	std::vector<std::string> move_restrict;
 	for (char c : restrict)
@@ -586,7 +587,7 @@ void solve(std::string scramble, std::string rotation, std::string sol_num, std:
 		move_restrict.emplace_back(face + "'");
 	}
 	search cs;
-	cs.start_search(scramble, rotation, num, len, move_restrict);
+	cs.start_search(scramble, rotation, num, len, move_restrict, prune);
 }
 
 EMSCRIPTEN_BINDINGS(my_module)
