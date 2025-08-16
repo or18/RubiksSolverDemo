@@ -6,6 +6,7 @@
 #include <unordered_map>
 #include <string>
 #include <sstream>
+#include <cstdlib>
 
 EM_JS(void, update, (const char *str), {
 	postMessage(UTF8ToString(str));
@@ -17,8 +18,9 @@ struct State
 	std::vector<int> co;
 	std::vector<int> ep;
 	std::vector<int> eo;
+	std::vector<int> center;
 
-	State(std::vector<int> arg_cp = {0, 1, 2, 3, 4, 5, 6, 7}, std::vector<int> arg_co = {0, 0, 0, 0, 0, 0, 0, 0}, std::vector<int> arg_ep = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11}, std::vector<int> arg_eo = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}) : cp(arg_cp), co(arg_co), ep(arg_ep), eo(arg_eo) {}
+	State(std::vector<int> arg_cp = {0, 1, 2, 3, 4, 5, 6, 7}, std::vector<int> arg_co = {0, 0, 0, 0, 0, 0, 0, 0}, std::vector<int> arg_ep = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11}, std::vector<int> arg_eo = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, std::vector<int> arg_center = {0, 1, 2, 3, 4, 5}) : cp(arg_cp), co(arg_co), ep(arg_ep), eo(arg_eo), center(arg_center) {}
 
 	State apply_move(State move)
 	{
@@ -26,6 +28,7 @@ struct State
 		std::vector<int> new_co;
 		std::vector<int> new_ep;
 		std::vector<int> new_eo;
+		std::vector<int> new_center;
 		for (int i = 0; i < 8; ++i)
 		{
 			int p = move.cp[i];
@@ -38,7 +41,12 @@ struct State
 			new_ep.emplace_back(ep[p]);
 			new_eo.emplace_back((eo[p] + move.eo[i]) % 2);
 		}
-		return State(new_cp, new_co, new_ep, new_eo);
+		for (int i = 0; i < 6; ++i)
+		{
+			int p = move.center[i];
+			new_center.emplace_back(center[p]);
+		}
+		return State(new_cp, new_co, new_ep, new_eo, new_center);
 	}
 
 	State apply_move_edge(State move, int e)
@@ -51,7 +59,7 @@ struct State
 		int index_next = std::distance(move.ep.begin(), it);
 		new_ep[index_next] = e;
 		new_eo[index_next] = (eo[index] + move.eo[index_next]) % 2;
-		return State(cp, co, new_ep, new_eo);
+		return State(cp, co, new_ep, new_eo, center);
 	}
 
 	State apply_move_corner(State move, int c)
@@ -64,31 +72,144 @@ struct State
 		int index_next = std::distance(move.cp.begin(), it);
 		new_cp[index_next] = c;
 		new_co[index_next] = (co[index] + move.co[index_next]) % 3;
-		return State(new_cp, new_co, ep, eo);
+		return State(new_cp, new_co, ep, eo, center);
 	}
 };
 
 std::unordered_map<std::string, State> moves = {
-	{"U", State({3, 0, 1, 2, 4, 5, 6, 7}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 7, 4, 5, 6, 8, 9, 10, 11}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0})},
-	{"U2", State({2, 3, 0, 1, 4, 5, 6, 7}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 6, 7, 4, 5, 8, 9, 10, 11}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0})},
-	{"U'", State({1, 2, 3, 0, 4, 5, 6, 7}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 5, 6, 7, 4, 8, 9, 10, 11}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0})},
-	{"D", State({0, 1, 2, 3, 5, 6, 7, 4}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 8}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0})},
-	{"D2", State({0, 1, 2, 3, 6, 7, 4, 5}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 5, 6, 7, 10, 11, 8, 9}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0})},
-	{"D'", State({0, 1, 2, 3, 7, 4, 5, 6}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 5, 6, 7, 11, 8, 9, 10}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0})},
-	{"L", State({4, 1, 2, 0, 7, 5, 6, 3}, {2, 0, 0, 1, 1, 0, 0, 2}, {11, 1, 2, 7, 4, 5, 6, 0, 8, 9, 10, 3}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0})},
-	{"L2", State({7, 1, 2, 4, 3, 5, 6, 0}, {0, 0, 0, 0, 0, 0, 0, 0}, {3, 1, 2, 0, 4, 5, 6, 11, 8, 9, 10, 7}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0})},
-	{"L'", State({3, 1, 2, 7, 0, 5, 6, 4}, {2, 0, 0, 1, 1, 0, 0, 2}, {7, 1, 2, 11, 4, 5, 6, 3, 8, 9, 10, 0}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0})},
-	{"R", State({0, 2, 6, 3, 4, 1, 5, 7}, {0, 1, 2, 0, 0, 2, 1, 0}, {0, 5, 9, 3, 4, 2, 6, 7, 8, 1, 10, 11}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0})},
-	{"R2", State({0, 6, 5, 3, 4, 2, 1, 7}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 2, 1, 3, 4, 9, 6, 7, 8, 5, 10, 11}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0})},
-	{"R'", State({0, 5, 1, 3, 4, 6, 2, 7}, {0, 1, 2, 0, 0, 2, 1, 0}, {0, 9, 5, 3, 4, 1, 6, 7, 8, 2, 10, 11}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0})},
-	{"F", State({0, 1, 3, 7, 4, 5, 2, 6}, {0, 0, 1, 2, 0, 0, 2, 1}, {0, 1, 6, 10, 4, 5, 3, 7, 8, 9, 2, 11}, {0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 1, 0})},
-	{"F2", State({0, 1, 7, 6, 4, 5, 3, 2}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 3, 2, 4, 5, 10, 7, 8, 9, 6, 11}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0})},
-	{"F'", State({0, 1, 6, 2, 4, 5, 7, 3}, {0, 0, 1, 2, 0, 0, 2, 1}, {0, 1, 10, 6, 4, 5, 2, 7, 8, 9, 3, 11}, {0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 1, 0})},
-	{"B", State({1, 5, 2, 3, 0, 4, 6, 7}, {1, 2, 0, 0, 2, 1, 0, 0}, {4, 8, 2, 3, 1, 5, 6, 7, 0, 9, 10, 11}, {1, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0})},
-	{"B2", State({5, 4, 2, 3, 1, 0, 6, 7}, {0, 0, 0, 0, 0, 0, 0, 0}, {1, 0, 2, 3, 8, 5, 6, 7, 4, 9, 10, 11}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0})},
-	{"B'", State({4, 0, 2, 3, 5, 1, 6, 7}, {1, 2, 0, 0, 2, 1, 0, 0}, {8, 4, 2, 3, 0, 5, 6, 7, 1, 9, 10, 11}, {1, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0})}};
+	{"U", State({3, 0, 1, 2, 4, 5, 6, 7}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 7, 4, 5, 6, 8, 9, 10, 11}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 5})},
+	{"U2", State({2, 3, 0, 1, 4, 5, 6, 7}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 6, 7, 4, 5, 8, 9, 10, 11}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 5})},
+	{"U'", State({1, 2, 3, 0, 4, 5, 6, 7}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 5, 6, 7, 4, 8, 9, 10, 11}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 5})},
+	{"D", State({0, 1, 2, 3, 5, 6, 7, 4}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 8}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 5})},
+	{"D2", State({0, 1, 2, 3, 6, 7, 4, 5}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 5, 6, 7, 10, 11, 8, 9}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 5})},
+	{"D'", State({0, 1, 2, 3, 7, 4, 5, 6}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 5, 6, 7, 11, 8, 9, 10}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 5})},
+	{"L", State({4, 1, 2, 0, 7, 5, 6, 3}, {2, 0, 0, 1, 1, 0, 0, 2}, {11, 1, 2, 7, 4, 5, 6, 0, 8, 9, 10, 3}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 5})},
+	{"L2", State({7, 1, 2, 4, 3, 5, 6, 0}, {0, 0, 0, 0, 0, 0, 0, 0}, {3, 1, 2, 0, 4, 5, 6, 11, 8, 9, 10, 7}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 5})},
+	{"L'", State({3, 1, 2, 7, 0, 5, 6, 4}, {2, 0, 0, 1, 1, 0, 0, 2}, {7, 1, 2, 11, 4, 5, 6, 3, 8, 9, 10, 0}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 5})},
+	{"R", State({0, 2, 6, 3, 4, 1, 5, 7}, {0, 1, 2, 0, 0, 2, 1, 0}, {0, 5, 9, 3, 4, 2, 6, 7, 8, 1, 10, 11}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 5})},
+	{"R2", State({0, 6, 5, 3, 4, 2, 1, 7}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 2, 1, 3, 4, 9, 6, 7, 8, 5, 10, 11}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 5})},
+	{"R'", State({0, 5, 1, 3, 4, 6, 2, 7}, {0, 1, 2, 0, 0, 2, 1, 0}, {0, 9, 5, 3, 4, 1, 6, 7, 8, 2, 10, 11}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 5})},
+	{"F", State({0, 1, 3, 7, 4, 5, 2, 6}, {0, 0, 1, 2, 0, 0, 2, 1}, {0, 1, 6, 10, 4, 5, 3, 7, 8, 9, 2, 11}, {0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 1, 0}, {0, 1, 2, 3, 4, 5})},
+	{"F2", State({0, 1, 7, 6, 4, 5, 3, 2}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 3, 2, 4, 5, 10, 7, 8, 9, 6, 11}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 5})},
+	{"F'", State({0, 1, 6, 2, 4, 5, 7, 3}, {0, 0, 1, 2, 0, 0, 2, 1}, {0, 1, 10, 6, 4, 5, 2, 7, 8, 9, 3, 11}, {0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 1, 0}, {0, 1, 2, 3, 4, 5})},
+	{"B", State({1, 5, 2, 3, 0, 4, 6, 7}, {1, 2, 0, 0, 2, 1, 0, 0}, {4, 8, 2, 3, 1, 5, 6, 7, 0, 9, 10, 11}, {1, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0}, {0, 1, 2, 3, 4, 5})},
+	{"B2", State({5, 4, 2, 3, 1, 0, 6, 7}, {0, 0, 0, 0, 0, 0, 0, 0}, {1, 0, 2, 3, 8, 5, 6, 7, 4, 9, 10, 11}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 5})},
+	{"B'", State({4, 0, 2, 3, 5, 1, 6, 7}, {1, 2, 0, 0, 2, 1, 0, 0}, {8, 4, 2, 3, 0, 5, 6, 7, 1, 9, 10, 11}, {1, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0}, {0, 1, 2, 3, 4, 5})},
+	{"u", State({0, 1, 2, 3, 5, 6, 7, 4}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 8}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 4, 5, 3, 2})},
+	{"u2", State({0, 1, 2, 3, 6, 7, 4, 5}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 5, 6, 7, 10, 11, 8, 9}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 3, 2, 5, 4})},
+	{"u'", State({0, 1, 2, 3, 7, 4, 5, 6}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 5, 6, 7, 11, 8, 9, 10}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 5, 4, 2, 3})},
+	{"d", State({3, 0, 1, 2, 4, 5, 6, 7}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 7, 4, 5, 6, 8, 9, 10, 11}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 5, 4, 2, 3})},
+	{"d2", State({2, 3, 0, 1, 4, 5, 6, 7}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 6, 7, 4, 5, 8, 9, 10, 11}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 3, 2, 5, 4})},
+	{"d'", State({1, 2, 3, 0, 4, 5, 6, 7}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 5, 6, 7, 4, 8, 9, 10, 11}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 4, 5, 3, 2})},
+	{"l", State({0, 2, 6, 3, 4, 1, 5, 7}, {0, 1, 2, 0, 0, 2, 1, 0}, {0, 5, 9, 3, 4, 2, 6, 7, 8, 1, 10, 11}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {5, 4, 2, 3, 0, 1})},
+	{"l2", State({0, 6, 5, 3, 4, 2, 1, 7}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 2, 1, 3, 4, 9, 6, 7, 8, 5, 10, 11}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {1, 0, 2, 3, 5, 4})},
+	{"l'", State({0, 5, 1, 3, 4, 6, 2, 7}, {0, 1, 2, 0, 0, 2, 1, 0}, {0, 9, 5, 3, 4, 1, 6, 7, 8, 2, 10, 11}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {4, 5, 2, 3, 1, 0})},
+	{"r", State({4, 1, 2, 0, 7, 5, 6, 3}, {2, 0, 0, 1, 1, 0, 0, 2}, {11, 1, 2, 7, 4, 5, 6, 0, 8, 9, 10, 3}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {4, 5, 2, 3, 1, 0})},
+	{"r2", State({7, 1, 2, 4, 3, 5, 6, 0}, {0, 0, 0, 0, 0, 0, 0, 0}, {3, 1, 2, 0, 4, 5, 6, 11, 8, 9, 10, 7}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {1, 0, 2, 3, 5, 4})},
+	{"r'", State({3, 1, 2, 7, 0, 5, 6, 4}, {2, 0, 0, 1, 1, 0, 0, 2}, {7, 1, 2, 11, 4, 5, 6, 3, 8, 9, 10, 0}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {5, 4, 2, 3, 0, 1})},
+	{"f", State({1, 5, 2, 3, 0, 4, 6, 7}, {1, 2, 0, 0, 2, 1, 0, 0}, {4, 8, 2, 3, 1, 5, 6, 7, 0, 9, 10, 11}, {1, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0}, {2, 3, 1, 0, 4, 5})},
+	{"f2", State({5, 4, 2, 3, 1, 0, 6, 7}, {0, 0, 0, 0, 0, 0, 0, 0}, {1, 0, 2, 3, 8, 5, 6, 7, 4, 9, 10, 11}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {1, 0, 3, 2, 4, 5})},
+	{"f'", State({4, 0, 2, 3, 5, 1, 6, 7}, {1, 2, 0, 0, 2, 1, 0, 0}, {8, 4, 2, 3, 0, 5, 6, 7, 1, 9, 10, 11}, {1, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0}, {3, 2, 0, 1, 4, 5})},
+	{"b", State({0, 1, 3, 7, 4, 5, 2, 6}, {0, 0, 1, 2, 0, 0, 2, 1}, {0, 1, 6, 10, 4, 5, 3, 7, 8, 9, 2, 11}, {0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 1, 0}, {3, 2, 0, 1, 4, 5})},
+	{"b2", State({0, 1, 7, 6, 4, 5, 3, 2}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 3, 2, 4, 5, 10, 7, 8, 9, 6, 11}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {1, 0, 3, 2, 4, 5})},
+	{"b'", State({0, 1, 6, 2, 4, 5, 7, 3}, {0, 0, 1, 2, 0, 0, 2, 1}, {0, 1, 10, 6, 4, 5, 2, 7, 8, 9, 3, 11}, {0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 1, 0}, {2, 3, 1, 0, 4, 5})},
+	{"M", State({3, 2, 6, 7, 0, 1, 5, 4}, {2, 1, 2, 1, 1, 2, 1, 2}, {7, 5, 9, 11, 4, 2, 6, 3, 8, 1, 10, 0}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {5, 4, 2, 3, 0, 1})},
+	{"M2", State({7, 6, 5, 4, 3, 2, 1, 0}, {0, 0, 0, 0, 0, 0, 0, 0}, {3, 2, 1, 0, 4, 9, 6, 11, 8, 5, 10, 7}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {1, 0, 2, 3, 5, 4})},
+	{"M'", State({4, 5, 1, 0, 7, 6, 2, 3}, {2, 1, 2, 1, 1, 2, 1, 2}, {11, 9, 5, 7, 4, 1, 6, 0, 8, 2, 10, 3}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {4, 5, 2, 3, 1, 0})},
+	{"E", State({3, 0, 1, 2, 7, 4, 5, 6}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 7, 4, 5, 6, 11, 8, 9, 10}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 5, 4, 2, 3})},
+	{"E2", State({2, 3, 0, 1, 6, 7, 4, 5}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 6, 7, 4, 5, 10, 11, 8, 9}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 3, 2, 5, 4})},
+	{"E'", State({1, 2, 3, 0, 5, 6, 7, 4}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 5, 6, 7, 4, 9, 10, 11, 8}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 4, 5, 3, 2})},
+	{"S", State({1, 5, 6, 2, 0, 4, 7, 3}, {1, 2, 1, 2, 2, 1, 2, 1}, {4, 8, 10, 6, 1, 5, 2, 7, 0, 9, 3, 11}, {1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 0}, {2, 3, 1, 0, 4, 5})},
+	{"S2", State({5, 4, 7, 6, 1, 0, 3, 2}, {0, 0, 0, 0, 0, 0, 0, 0}, {1, 0, 3, 2, 8, 5, 10, 7, 4, 9, 6, 11}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {1, 0, 3, 2, 4, 5})},
+	{"S'", State({4, 0, 3, 7, 5, 1, 2, 6}, {1, 2, 1, 2, 2, 1, 2, 1}, {8, 4, 6, 10, 0, 5, 3, 7, 1, 9, 2, 11}, {1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 0}, {3, 2, 0, 1, 4, 5})},
+	{"x", State({0, 1, 2, 3, 4, 5, 6, 7}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {4, 5, 2, 3, 1, 0})},
+	{"x2", State({0, 1, 2, 3, 4, 5, 6, 7}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {1, 0, 2, 3, 5, 4})},
+	{"x'", State({0, 1, 2, 3, 4, 5, 6, 7}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {5, 4, 2, 3, 0, 1})},
+	{"y", State({0, 1, 2, 3, 4, 5, 6, 7}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 4, 5, 3, 2})},
+	{"y2", State({0, 1, 2, 3, 4, 5, 6, 7}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 3, 2, 5, 4})},
+	{"y'", State({0, 1, 2, 3, 4, 5, 6, 7}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 5, 4, 2, 3})},
+	{"z", State({0, 1, 2, 3, 4, 5, 6, 7}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {2, 3, 1, 0, 4, 5})},
+	{"z2", State({0, 1, 2, 3, 4, 5, 6, 7}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {1, 0, 3, 2, 4, 5})},
+	{"z'", State({0, 1, 2, 3, 4, 5, 6, 7}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {3, 2, 0, 1, 4, 5})}};
 
-std::vector<std::string> move_names = {"U", "U2", "U'", "D", "D2", "D'", "L", "L2", "L'", "R", "R2", "R'", "F", "F2", "F'", "B", "B2", "B'"};
+struct VectorHash
+{
+	std::size_t operator()(const std::vector<int> &vec) const
+	{
+		std::size_t hash = 0;
+		for (int num : vec)
+		{
+			hash ^= std::hash<int>()(num) + 0x9e3779b9 + (hash << 6) + (hash >> 2);
+		}
+		return hash;
+	}
+};
+
+struct VectorEqual
+{
+	bool operator()(const std::vector<int> &lhs, const std::vector<int> &rhs) const
+	{
+		return lhs == rhs;
+	}
+};
+
+std::unordered_map<std::vector<int>, int, VectorHash, VectorEqual> center_to_index =
+	{
+		{{0, 1, 2, 3, 4, 5}, 0},
+		{{0, 1, 4, 5, 3, 2}, 1},
+		{{0, 1, 3, 2, 5, 4}, 2},
+		{{0, 1, 5, 4, 2, 3}, 3},
+		{{1, 0, 3, 2, 4, 5}, 4},
+		{{1, 0, 4, 5, 2, 3}, 5},
+		{{1, 0, 2, 3, 5, 4}, 6},
+		{{1, 0, 5, 4, 3, 2}, 7},
+		{{3, 2, 0, 1, 4, 5}, 8},
+		{{3, 2, 4, 5, 1, 0}, 9},
+		{{3, 2, 1, 0, 5, 4}, 10},
+		{{3, 2, 5, 4, 0, 1}, 11},
+		{{2, 3, 1, 0, 4, 5}, 12},
+		{{2, 3, 4, 5, 0, 1}, 13},
+		{{2, 3, 0, 1, 5, 4}, 14},
+		{{2, 3, 5, 4, 1, 0}, 15},
+		{{5, 4, 2, 3, 0, 1}, 16},
+		{{5, 4, 0, 1, 3, 2}, 17},
+		{{5, 4, 3, 2, 1, 0}, 18},
+		{{5, 4, 1, 0, 2, 3}, 19},
+		{{4, 5, 2, 3, 1, 0}, 20},
+		{{4, 5, 1, 0, 3, 2}, 21},
+		{{4, 5, 3, 2, 0, 1}, 22},
+		{{4, 5, 0, 1, 2, 3}, 23}};
+
+std::vector<std::vector<int>> index_to_center =
+	{
+		{0, 1, 2, 3, 4, 5},
+		{0, 1, 4, 5, 3, 2},
+		{0, 1, 3, 2, 5, 4},
+		{0, 1, 5, 4, 2, 3},
+		{1, 0, 3, 2, 4, 5},
+		{1, 0, 4, 5, 2, 3},
+		{1, 0, 2, 3, 5, 4},
+		{1, 0, 5, 4, 3, 2},
+		{3, 2, 0, 1, 4, 5},
+		{3, 2, 4, 5, 1, 0},
+		{3, 2, 1, 0, 5, 4},
+		{3, 2, 5, 4, 0, 1},
+		{2, 3, 1, 0, 4, 5},
+		{2, 3, 4, 5, 0, 1},
+		{2, 3, 0, 1, 5, 4},
+		{2, 3, 5, 4, 1, 0},
+		{5, 4, 2, 3, 0, 1},
+		{5, 4, 0, 1, 3, 2},
+		{5, 4, 3, 2, 1, 0},
+		{5, 4, 1, 0, 2, 3},
+		{4, 5, 2, 3, 1, 0},
+		{4, 5, 1, 0, 3, 2},
+		{4, 5, 3, 2, 0, 1},
+		{4, 5, 0, 1, 2, 3}};
+
+std::vector<std::string> move_names = {"U", "U2", "U'", "D", "D2", "D'", "L", "L2", "L'", "R", "R2", "R'", "F", "F2", "F'", "B", "B2", "B'", "u", "u2", "u'", "d", "d2", "d'", "l", "l2", "l'", "r", "r2", "r'", "f", "f2", "f'", "b", "b2", "b'", "M", "M2", "M'", "E", "E2", "E'", "S", "S2", "S'", "x", "x2", "x'", "y", "y2", "y'", "z", "z2", "z'"};
+
+std::vector<std::string> rotation_names = {"x", "x2", "x'", "y", "y2", "y'", "z", "z2", "z'"};
 
 std::string AlgToString(std::vector<int> &alg)
 {
@@ -119,66 +240,80 @@ std::vector<int> StringToAlg(std::string str)
 	return alg;
 }
 
-std::vector<int> AlgConvertRotation(std::vector<int> alg, std::string rotation)
+std::vector<std::vector<int>> rotationMap =
+	{
+		{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44},
+		{0, 1, 2, 3, 4, 5, 15, 16, 17, 12, 13, 14, 6, 7, 8, 9, 10, 11, 18, 19, 20, 21, 22, 23, 33, 34, 35, 30, 31, 32, 24, 25, 26, 27, 28, 29, 44, 43, 42, 39, 40, 41, 36, 37, 38},
+		{0, 1, 2, 3, 4, 5, 9, 10, 11, 6, 7, 8, 15, 16, 17, 12, 13, 14, 18, 19, 20, 21, 22, 23, 27, 28, 29, 24, 25, 26, 33, 34, 35, 30, 31, 32, 38, 37, 36, 39, 40, 41, 44, 43, 42},
+		{0, 1, 2, 3, 4, 5, 12, 13, 14, 15, 16, 17, 9, 10, 11, 6, 7, 8, 18, 19, 20, 21, 22, 23, 30, 31, 32, 33, 34, 35, 27, 28, 29, 24, 25, 26, 42, 43, 44, 39, 40, 41, 38, 37, 36},
+		{3, 4, 5, 0, 1, 2, 9, 10, 11, 6, 7, 8, 12, 13, 14, 15, 16, 17, 21, 22, 23, 18, 19, 20, 27, 28, 29, 24, 25, 26, 30, 31, 32, 33, 34, 35, 38, 37, 36, 41, 40, 39, 42, 43, 44},
+		{3, 4, 5, 0, 1, 2, 12, 13, 14, 15, 16, 17, 6, 7, 8, 9, 10, 11, 21, 22, 23, 18, 19, 20, 30, 31, 32, 33, 34, 35, 24, 25, 26, 27, 28, 29, 42, 43, 44, 41, 40, 39, 36, 37, 38},
+		{3, 4, 5, 0, 1, 2, 6, 7, 8, 9, 10, 11, 15, 16, 17, 12, 13, 14, 21, 22, 23, 18, 19, 20, 24, 25, 26, 27, 28, 29, 33, 34, 35, 30, 31, 32, 36, 37, 38, 41, 40, 39, 44, 43, 42},
+		{3, 4, 5, 0, 1, 2, 15, 16, 17, 12, 13, 14, 9, 10, 11, 6, 7, 8, 21, 22, 23, 18, 19, 20, 33, 34, 35, 30, 31, 32, 27, 28, 29, 24, 25, 26, 44, 43, 42, 41, 40, 39, 38, 37, 36},
+		{6, 7, 8, 9, 10, 11, 3, 4, 5, 0, 1, 2, 12, 13, 14, 15, 16, 17, 24, 25, 26, 27, 28, 29, 21, 22, 23, 18, 19, 20, 30, 31, 32, 33, 34, 35, 39, 40, 41, 38, 37, 36, 42, 43, 44},
+		{15, 16, 17, 12, 13, 14, 3, 4, 5, 0, 1, 2, 6, 7, 8, 9, 10, 11, 33, 34, 35, 30, 31, 32, 21, 22, 23, 18, 19, 20, 24, 25, 26, 27, 28, 29, 39, 40, 41, 42, 43, 44, 36, 37, 38},
+		{9, 10, 11, 6, 7, 8, 3, 4, 5, 0, 1, 2, 15, 16, 17, 12, 13, 14, 27, 28, 29, 24, 25, 26, 21, 22, 23, 18, 19, 20, 33, 34, 35, 30, 31, 32, 39, 40, 41, 36, 37, 38, 44, 43, 42},
+		{12, 13, 14, 15, 16, 17, 3, 4, 5, 0, 1, 2, 9, 10, 11, 6, 7, 8, 30, 31, 32, 33, 34, 35, 21, 22, 23, 18, 19, 20, 27, 28, 29, 24, 25, 26, 39, 40, 41, 44, 43, 42, 38, 37, 36},
+		{9, 10, 11, 6, 7, 8, 0, 1, 2, 3, 4, 5, 12, 13, 14, 15, 16, 17, 27, 28, 29, 24, 25, 26, 18, 19, 20, 21, 22, 23, 30, 31, 32, 33, 34, 35, 41, 40, 39, 36, 37, 38, 42, 43, 44},
+		{12, 13, 14, 15, 16, 17, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 30, 31, 32, 33, 34, 35, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 41, 40, 39, 44, 43, 42, 36, 37, 38},
+		{6, 7, 8, 9, 10, 11, 0, 1, 2, 3, 4, 5, 15, 16, 17, 12, 13, 14, 24, 25, 26, 27, 28, 29, 18, 19, 20, 21, 22, 23, 33, 34, 35, 30, 31, 32, 41, 40, 39, 38, 37, 36, 44, 43, 42},
+		{15, 16, 17, 12, 13, 14, 0, 1, 2, 3, 4, 5, 9, 10, 11, 6, 7, 8, 33, 34, 35, 30, 31, 32, 18, 19, 20, 21, 22, 23, 27, 28, 29, 24, 25, 26, 41, 40, 39, 42, 43, 44, 38, 37, 36},
+		{12, 13, 14, 15, 16, 17, 6, 7, 8, 9, 10, 11, 3, 4, 5, 0, 1, 2, 30, 31, 32, 33, 34, 35, 24, 25, 26, 27, 28, 29, 21, 22, 23, 18, 19, 20, 36, 37, 38, 44, 43, 42, 39, 40, 41},
+		{6, 7, 8, 9, 10, 11, 15, 16, 17, 12, 13, 14, 3, 4, 5, 0, 1, 2, 24, 25, 26, 27, 28, 29, 33, 34, 35, 30, 31, 32, 21, 22, 23, 18, 19, 20, 44, 43, 42, 38, 37, 36, 39, 40, 41},
+		{15, 16, 17, 12, 13, 14, 9, 10, 11, 6, 7, 8, 3, 4, 5, 0, 1, 2, 33, 34, 35, 30, 31, 32, 27, 28, 29, 24, 25, 26, 21, 22, 23, 18, 19, 20, 38, 37, 36, 42, 43, 44, 39, 40, 41},
+		{9, 10, 11, 6, 7, 8, 12, 13, 14, 15, 16, 17, 3, 4, 5, 0, 1, 2, 27, 28, 29, 24, 25, 26, 30, 31, 32, 33, 34, 35, 21, 22, 23, 18, 19, 20, 42, 43, 44, 36, 37, 38, 39, 40, 41},
+		{15, 16, 17, 12, 13, 14, 6, 7, 8, 9, 10, 11, 0, 1, 2, 3, 4, 5, 33, 34, 35, 30, 31, 32, 24, 25, 26, 27, 28, 29, 18, 19, 20, 21, 22, 23, 36, 37, 38, 42, 43, 44, 41, 40, 39},
+		{9, 10, 11, 6, 7, 8, 15, 16, 17, 12, 13, 14, 0, 1, 2, 3, 4, 5, 27, 28, 29, 24, 25, 26, 33, 34, 35, 30, 31, 32, 18, 19, 20, 21, 22, 23, 44, 43, 42, 36, 37, 38, 41, 40, 39},
+		{12, 13, 14, 15, 16, 17, 9, 10, 11, 6, 7, 8, 0, 1, 2, 3, 4, 5, 30, 31, 32, 33, 34, 35, 27, 28, 29, 24, 25, 26, 18, 19, 20, 21, 22, 23, 38, 37, 36, 44, 43, 42, 41, 40, 39},
+		{6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 0, 1, 2, 3, 4, 5, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 18, 19, 20, 21, 22, 23, 42, 43, 44, 38, 37, 36, 41, 40, 39}};
+
+std::vector<std::vector<int>> rotationMapReverse =
+	{
+		{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44},
+		{0, 1, 2, 3, 4, 5, 12, 13, 14, 15, 16, 17, 9, 10, 11, 6, 7, 8, 18, 19, 20, 21, 22, 23, 30, 31, 32, 33, 34, 35, 27, 28, 29, 24, 25, 26, 42, 43, 44, 39, 40, 41, 38, 37, 36},
+		{0, 1, 2, 3, 4, 5, 9, 10, 11, 6, 7, 8, 15, 16, 17, 12, 13, 14, 18, 19, 20, 21, 22, 23, 27, 28, 29, 24, 25, 26, 33, 34, 35, 30, 31, 32, 38, 37, 36, 39, 40, 41, 44, 43, 42},
+		{0, 1, 2, 3, 4, 5, 15, 16, 17, 12, 13, 14, 6, 7, 8, 9, 10, 11, 18, 19, 20, 21, 22, 23, 33, 34, 35, 30, 31, 32, 24, 25, 26, 27, 28, 29, 44, 43, 42, 39, 40, 41, 36, 37, 38},
+		{3, 4, 5, 0, 1, 2, 9, 10, 11, 6, 7, 8, 12, 13, 14, 15, 16, 17, 21, 22, 23, 18, 19, 20, 27, 28, 29, 24, 25, 26, 30, 31, 32, 33, 34, 35, 38, 37, 36, 41, 40, 39, 42, 43, 44},
+		{3, 4, 5, 0, 1, 2, 12, 13, 14, 15, 16, 17, 6, 7, 8, 9, 10, 11, 21, 22, 23, 18, 19, 20, 30, 31, 32, 33, 34, 35, 24, 25, 26, 27, 28, 29, 42, 43, 44, 41, 40, 39, 36, 37, 38},
+		{3, 4, 5, 0, 1, 2, 6, 7, 8, 9, 10, 11, 15, 16, 17, 12, 13, 14, 21, 22, 23, 18, 19, 20, 24, 25, 26, 27, 28, 29, 33, 34, 35, 30, 31, 32, 36, 37, 38, 41, 40, 39, 44, 43, 42},
+		{3, 4, 5, 0, 1, 2, 15, 16, 17, 12, 13, 14, 9, 10, 11, 6, 7, 8, 21, 22, 23, 18, 19, 20, 33, 34, 35, 30, 31, 32, 27, 28, 29, 24, 25, 26, 44, 43, 42, 41, 40, 39, 38, 37, 36},
+		{9, 10, 11, 6, 7, 8, 0, 1, 2, 3, 4, 5, 12, 13, 14, 15, 16, 17, 27, 28, 29, 24, 25, 26, 18, 19, 20, 21, 22, 23, 30, 31, 32, 33, 34, 35, 41, 40, 39, 36, 37, 38, 42, 43, 44},
+		{9, 10, 11, 6, 7, 8, 12, 13, 14, 15, 16, 17, 3, 4, 5, 0, 1, 2, 27, 28, 29, 24, 25, 26, 30, 31, 32, 33, 34, 35, 21, 22, 23, 18, 19, 20, 42, 43, 44, 36, 37, 38, 39, 40, 41},
+		{9, 10, 11, 6, 7, 8, 3, 4, 5, 0, 1, 2, 15, 16, 17, 12, 13, 14, 27, 28, 29, 24, 25, 26, 21, 22, 23, 18, 19, 20, 33, 34, 35, 30, 31, 32, 39, 40, 41, 36, 37, 38, 44, 43, 42},
+		{9, 10, 11, 6, 7, 8, 15, 16, 17, 12, 13, 14, 0, 1, 2, 3, 4, 5, 27, 28, 29, 24, 25, 26, 33, 34, 35, 30, 31, 32, 18, 19, 20, 21, 22, 23, 44, 43, 42, 36, 37, 38, 41, 40, 39},
+		{6, 7, 8, 9, 10, 11, 3, 4, 5, 0, 1, 2, 12, 13, 14, 15, 16, 17, 24, 25, 26, 27, 28, 29, 21, 22, 23, 18, 19, 20, 30, 31, 32, 33, 34, 35, 39, 40, 41, 38, 37, 36, 42, 43, 44},
+		{6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 0, 1, 2, 3, 4, 5, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 18, 19, 20, 21, 22, 23, 42, 43, 44, 38, 37, 36, 41, 40, 39},
+		{6, 7, 8, 9, 10, 11, 0, 1, 2, 3, 4, 5, 15, 16, 17, 12, 13, 14, 24, 25, 26, 27, 28, 29, 18, 19, 20, 21, 22, 23, 33, 34, 35, 30, 31, 32, 41, 40, 39, 38, 37, 36, 44, 43, 42},
+		{6, 7, 8, 9, 10, 11, 15, 16, 17, 12, 13, 14, 3, 4, 5, 0, 1, 2, 24, 25, 26, 27, 28, 29, 33, 34, 35, 30, 31, 32, 21, 22, 23, 18, 19, 20, 44, 43, 42, 38, 37, 36, 39, 40, 41},
+		{15, 16, 17, 12, 13, 14, 6, 7, 8, 9, 10, 11, 0, 1, 2, 3, 4, 5, 33, 34, 35, 30, 31, 32, 24, 25, 26, 27, 28, 29, 18, 19, 20, 21, 22, 23, 36, 37, 38, 42, 43, 44, 41, 40, 39},
+		{15, 16, 17, 12, 13, 14, 0, 1, 2, 3, 4, 5, 9, 10, 11, 6, 7, 8, 33, 34, 35, 30, 31, 32, 18, 19, 20, 21, 22, 23, 27, 28, 29, 24, 25, 26, 41, 40, 39, 42, 43, 44, 38, 37, 36},
+		{15, 16, 17, 12, 13, 14, 9, 10, 11, 6, 7, 8, 3, 4, 5, 0, 1, 2, 33, 34, 35, 30, 31, 32, 27, 28, 29, 24, 25, 26, 21, 22, 23, 18, 19, 20, 38, 37, 36, 42, 43, 44, 39, 40, 41},
+		{15, 16, 17, 12, 13, 14, 3, 4, 5, 0, 1, 2, 6, 7, 8, 9, 10, 11, 33, 34, 35, 30, 31, 32, 21, 22, 23, 18, 19, 20, 24, 25, 26, 27, 28, 29, 39, 40, 41, 42, 43, 44, 36, 37, 38},
+		{12, 13, 14, 15, 16, 17, 6, 7, 8, 9, 10, 11, 3, 4, 5, 0, 1, 2, 30, 31, 32, 33, 34, 35, 24, 25, 26, 27, 28, 29, 21, 22, 23, 18, 19, 20, 36, 37, 38, 44, 43, 42, 39, 40, 41},
+		{12, 13, 14, 15, 16, 17, 3, 4, 5, 0, 1, 2, 9, 10, 11, 6, 7, 8, 30, 31, 32, 33, 34, 35, 21, 22, 23, 18, 19, 20, 27, 28, 29, 24, 25, 26, 39, 40, 41, 44, 43, 42, 38, 37, 36},
+		{12, 13, 14, 15, 16, 17, 9, 10, 11, 6, 7, 8, 0, 1, 2, 3, 4, 5, 30, 31, 32, 33, 34, 35, 27, 28, 29, 24, 25, 26, 18, 19, 20, 21, 22, 23, 38, 37, 36, 44, 43, 42, 41, 40, 39},
+		{12, 13, 14, 15, 16, 17, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 30, 31, 32, 33, 34, 35, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 41, 40, 39, 44, 43, 42, 36, 37, 38}};
+
+std::vector<int> converter = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 3, 4, 5, 0, 1, 2, 9, 10, 11, 6, 7, 8, 15, 16, 17, 12, 13, 14, 18, 19, 20, 21, 22, 23, 24, 25, 26};
+
+std::vector<int> AlgRotation(std::vector<int> &alg, std::vector<int> &rotation_alg, std::vector<std::vector<int>> &table)
 {
-	if (rotation.empty())
+	if (rotation_alg.empty())
 	{
 		return alg;
 	}
-	std::vector<int> face_list_0 = {0, 1, 2, 3, 4, 5};
-	std::vector<int> face_list;
-	if (rotation == "x")
+	int l = alg.size();
+	std::vector<int> ret(l, 0);
+	int c = 0;
+	for (int r : rotation_alg)
 	{
-		face_list = {5, 4, 2, 3, 0, 1};
+		c = table[c][r];
 	}
-	else if (rotation == "x2")
+	for (int i = 0; i < l; ++i)
 	{
-		face_list = {1, 0, 2, 3, 5, 4};
+		ret[i] = rotationMap[c][alg[i]];
 	}
-	else if (rotation == "x'")
-	{
-		face_list = {4, 5, 2, 3, 1, 0};
-	}
-	else if (rotation == "y")
-	{
-		face_list = {0, 1, 5, 4, 2, 3};
-	}
-	else if (rotation == "y2")
-	{
-		face_list = {0, 1, 3, 2, 5, 4};
-	}
-	else if (rotation == "y'")
-	{
-		face_list = {0, 1, 4, 5, 3, 2};
-	}
-	else if (rotation == "z")
-	{
-		face_list = {3, 2, 0, 1, 4, 5};
-	}
-	else if (rotation == "z2")
-	{
-		face_list = {1, 0, 3, 2, 4, 5};
-	}
-	else if (rotation == "z'")
-	{
-		face_list = {2, 3, 1, 0, 4, 5};
-	}
-	for (size_t i = 0; i < alg.size(); ++i)
-	{
-		alg[i] = 3 * face_list[alg[i] / 3] + alg[i] % 3;
-	}
-	return alg;
-}
-
-std::vector<int> AlgRotation(std::vector<int> alg, std::string rotation_algString)
-{
-	std::istringstream iss(rotation_algString);
-	std::string rot;
-	while (iss >> rot)
-	{
-		alg = AlgConvertRotation(alg, rot);
-	}
-	return alg;
+	return ret;
 }
 
 std::vector<std::vector<int>> c_array = {{0}, {1, 1, 1, 1, 1}, {1, 2, 4, 8, 16, 32}, {1, 3, 9, 27, 81, 243}};
@@ -236,7 +371,7 @@ inline void index_to_array(std::vector<int> &p, int index, int n, int c, int pn)
 	}
 	for (int i = 0; i < n; ++i)
 	{
-		p[n - i - 1] = 18 * (c * p[n - i - 1] + o_index % c);
+		p[n - i - 1] = 27 * (c * p[n - i - 1] + o_index % c);
 		o_index /= c;
 	}
 }
@@ -267,7 +402,7 @@ inline void index_to_o(std::vector<int> &o, int index, int c, int pn)
 
 std::vector<int> create_edge_move_table()
 {
-	std::vector<int> move_table(24 * 18, -1);
+	std::vector<int> move_table(24 * 27, -1);
 	int index;
 	for (int i = 0; i < 24; ++i)
 	{
@@ -275,15 +410,23 @@ std::vector<int> create_edge_move_table()
 		std::vector<int> eo(12, -1);
 		std::vector<int> cp(8, 0);
 		std::vector<int> co(8, 0);
+		std::vector<int> center = {0, 1, 2, 3, 4, 5};
 		ep[i / 2] = i / 2;
 		eo[i / 2] = i % 2;
-		State state(cp, co, ep, eo);
+		State state(cp, co, ep, eo, center);
 		for (int j = 0; j < 18; ++j)
 		{
 			State new_state = state.apply_move_edge(moves[move_names[j]], i / 2);
 			auto it = std::find(new_state.ep.begin(), new_state.ep.end(), i / 2);
 			index = std::distance(new_state.ep.begin(), it);
-			move_table[18 * i + j] = 2 * index + new_state.eo[index];
+			move_table[27 * i + j] = 2 * index + new_state.eo[index];
+		}
+		for (int j = 0; j < 9; ++j)
+		{
+			State new_state = state.apply_move_edge(moves[move_names[36 + j]], i / 2);
+			auto it = std::find(new_state.ep.begin(), new_state.ep.end(), i / 2);
+			index = std::distance(new_state.ep.begin(), it);
+			move_table[27 * i + 18 + j] = 2 * index + new_state.eo[index];
 		}
 	}
 	return move_table;
@@ -291,21 +434,28 @@ std::vector<int> create_edge_move_table()
 
 std::vector<int> create_ep_move_table()
 {
-	std::vector<int> move_table(12 * 18, -1);
+	std::vector<int> move_table(12 * 27, -1);
 	for (int i = 0; i < 12; ++i)
 	{
 		std::vector<int> ep(12, -1);
 		std::vector<int> eo(12, -1);
 		std::vector<int> cp(8, 0);
 		std::vector<int> co(8, 0);
+		std::vector<int> center = {0, 1, 2, 3, 4, 5};
 		ep[i] = i;
 		eo[i] = 0;
-		State state(cp, co, ep, eo);
+		State state(cp, co, ep, eo, center);
 		for (int j = 0; j < 18; ++j)
 		{
 			State new_state = state.apply_move_edge(moves[move_names[j]], i);
 			auto it = std::find(new_state.ep.begin(), new_state.ep.end(), i);
-			move_table[18 * i + j] = std::distance(new_state.ep.begin(), it);
+			move_table[27 * i + j] = std::distance(new_state.ep.begin(), it);
+		}
+		for (int j = 0; j < 9; ++j)
+		{
+			State new_state = state.apply_move_edge(moves[move_names[36 + j]], i);
+			auto it = std::find(new_state.ep.begin(), new_state.ep.end(), i);
+			move_table[27 * i + 18 + j] = std::distance(new_state.ep.begin(), it);
 		}
 	}
 	return move_table;
@@ -313,19 +463,25 @@ std::vector<int> create_ep_move_table()
 
 std::vector<int> create_eo_move_table()
 {
-	std::vector<int> move_table(2048 * 18, -1);
+	std::vector<int> move_table(2048 * 27, -1);
 	for (int i = 0; i < 2048; ++i)
 	{
 		std::vector<int> ep(12, 0);
 		std::vector<int> eo(12, 0);
 		std::vector<int> cp(8, 0);
 		std::vector<int> co(8, 0);
+		std::vector<int> center = {0, 1, 2, 3, 4, 5};
 		index_to_o(eo, i, 2, 12);
-		State state(cp, co, ep, eo);
+		State state(cp, co, ep, eo, center);
 		for (int j = 0; j < 18; ++j)
 		{
 			State new_state = state.apply_move(moves[move_names[j]]);
-			move_table[18 * i + j] = 18 * o_to_index(new_state.eo, 2, 12);
+			move_table[27 * i + j] = 27 * o_to_index(new_state.eo, 2, 12);
+		}
+		for (int j = 0; j < 9; ++j)
+		{
+			State new_state = state.apply_move(moves[move_names[36 + j]]);
+			move_table[27 * i + 18 + j] = 27 * o_to_index(new_state.eo, 2, 12);
 		}
 	}
 	return move_table;
@@ -333,7 +489,7 @@ std::vector<int> create_eo_move_table()
 
 std::vector<int> create_corner_move_table()
 {
-	std::vector<int> move_table(24 * 18, -1);
+	std::vector<int> move_table(24 * 27, -1);
 	int index;
 	for (int i = 0; i < 24; ++i)
 	{
@@ -341,15 +497,23 @@ std::vector<int> create_corner_move_table()
 		std::vector<int> eo(12, 0);
 		std::vector<int> cp(8, -1);
 		std::vector<int> co(8, -1);
+		std::vector<int> center = {0, 1, 2, 3, 4, 5};
 		cp[i / 3] = i / 3;
 		co[i / 3] = i % 3;
-		State state(cp, co, ep, eo);
+		State state(cp, co, ep, eo, center);
 		for (int j = 0; j < 18; ++j)
 		{
 			State new_state = state.apply_move_corner(moves[move_names[j]], i / 3);
 			auto it = std::find(new_state.cp.begin(), new_state.cp.end(), i / 3);
 			index = std::distance(new_state.cp.begin(), it);
-			move_table[18 * i + j] = 3 * index + new_state.co[index];
+			move_table[27 * i + j] = 3 * index + new_state.co[index];
+		}
+		for (int j = 0; j < 9; ++j)
+		{
+			State new_state = state.apply_move_corner(moves[move_names[36 + j]], i / 3);
+			auto it = std::find(new_state.cp.begin(), new_state.cp.end(), i / 3);
+			index = std::distance(new_state.cp.begin(), it);
+			move_table[27 * i + 18 + j] = 3 * index + new_state.co[index];
 		}
 	}
 	return move_table;
@@ -357,21 +521,28 @@ std::vector<int> create_corner_move_table()
 
 std::vector<int> create_cp_move_table()
 {
-	std::vector<int> move_table(8 * 18, 0);
+	std::vector<int> move_table(8 * 27, 0);
 	for (int i = 0; i < 8; ++i)
 	{
 		std::vector<int> ep(12, 0);
 		std::vector<int> eo(12, 0);
 		std::vector<int> cp(8, -1);
 		std::vector<int> co(8, -1);
+		std::vector<int> center = {0, 1, 2, 3, 4, 5};
 		cp[i] = i;
 		co[i] = 0;
-		State state(cp, co, ep, eo);
+		State state(cp, co, ep, eo, center);
 		for (int j = 0; j < 18; ++j)
 		{
 			State new_state = state.apply_move_corner(moves[move_names[j]], i);
 			auto it = std::find(new_state.cp.begin(), new_state.cp.end(), i);
-			move_table[18 * i + j] = std::distance(new_state.cp.begin(), it);
+			move_table[27 * i + j] = std::distance(new_state.cp.begin(), it);
+		}
+		for (int j = 0; j < 9; ++j)
+		{
+			State new_state = state.apply_move_corner(moves[move_names[36 + j]], i);
+			auto it = std::find(new_state.cp.begin(), new_state.cp.end(), i);
+			move_table[27 * i + 18 + j] = std::distance(new_state.cp.begin(), it);
 		}
 	}
 	return move_table;
@@ -379,37 +550,62 @@ std::vector<int> create_cp_move_table()
 
 std::vector<int> create_co_move_table()
 {
-	std::vector<int> move_table(2187 * 18, 0);
+	std::vector<int> move_table(2187 * 27, 0);
 	for (int i = 0; i < 2187; ++i)
 	{
 		std::vector<int> ep(12, 0);
 		std::vector<int> eo(12, 0);
 		std::vector<int> cp(8, 0);
 		std::vector<int> co(8, 0);
+		std::vector<int> center = {0, 1, 2, 3, 4, 5};
 		index_to_o(co, i, 3, 8);
-		State state(cp, co, ep, eo);
+		State state(cp, co, ep, eo, center);
 		for (int j = 0; j < 18; ++j)
 		{
 			State new_state = state.apply_move(moves[move_names[j]]);
-			move_table[18 * i + j] = 18 * o_to_index(new_state.co, 3, 8);
+			move_table[27 * i + j] = 27 * o_to_index(new_state.co, 3, 8);
+		}
+		for (int j = 0; j < 9; ++j)
+		{
+			State new_state = state.apply_move(moves[move_names[36 + j]]);
+			move_table[27 * i + 18 + j] = 27 * o_to_index(new_state.co, 3, 8);
 		}
 	}
 	return move_table;
 }
 
-std::vector<int> create_multi_move_table(int n, int c, int pn, int size, const std::vector<int> &table)
+std::vector<std::vector<int>> create_center_move_table()
 {
-	std::vector<int> move_table(size * 18, -1);
+	std::vector<std::vector<int>> move_table(24, std::vector<int>(54, 0));
+	for (int i = 0; i < 24; ++i)
+	{
+		std::vector<int> ep(12, 0);
+		std::vector<int> eo(12, 0);
+		std::vector<int> cp(8, 0);
+		std::vector<int> co(8, 0);
+		std::vector<int> center = index_to_center[i];
+		State state(cp, co, ep, eo, center);
+		for (int j = 0; j < 54; ++j)
+		{
+			State new_state = state.apply_move(moves[move_names[j]]);
+			move_table[i][j] = center_to_index[new_state.center];
+		}
+	}
+	return move_table;
+}
+
+void create_multi_move_table(int n, int c, int pn, int size, std::vector<int> &move_table, const std::vector<int> &table)
+{
 	int tmp;
 	int tmp_i;
 	std::vector<int> a(n);
 	std::vector<int> b(n);
-	std::vector<int> inv_move = {2, 1, 0, 5, 4, 3, 8, 7, 6, 11, 10, 9, 14, 13, 12, 17, 16, 15};
+	std::vector<int> inv_move = {2, 1, 0, 5, 4, 3, 8, 7, 6, 11, 10, 9, 14, 13, 12, 17, 16, 15, 20, 19, 18, 23, 22, 21, 26, 25, 24};
 	for (int i = 0; i < size; ++i)
 	{
 		index_to_array(a, i, n, c, pn);
-		tmp_i = i * 18;
-		for (int j = 0; j < 18; ++j)
+		tmp_i = i * 27;
+		for (int j = 0; j < 27; ++j)
 		{
 			if (move_table[tmp_i + j] == -1)
 			{
@@ -419,47 +615,18 @@ std::vector<int> create_multi_move_table(int n, int c, int pn, int size, const s
 				}
 				tmp = array_to_index(b, n, c, pn);
 				move_table[tmp_i + j] = tmp;
-				move_table[18 * tmp + inv_move[j]] = i;
+				move_table[27 * tmp + inv_move[j]] = i;
 			}
 		}
 	}
-	return move_table;
 }
 
-std::vector<int> create_multi_move_table2(int n, int c, int pn, int size, const std::vector<int> &table)
-{
-	std::vector<int> move_table(size * 24, -1);
-	int tmp;
-	int tmp_i;
-	std::vector<int> a(n);
-	std::vector<int> b(n);
-	std::vector<int> inv_move = {2, 1, 0, 5, 4, 3, 8, 7, 6, 11, 10, 9, 14, 13, 12, 17, 16, 15};
-	for (int i = 0; i < size; ++i)
-	{
-		index_to_array(a, i, n, c, pn);
-		tmp_i = i * 24;
-		for (int j = 0; j < 18; ++j)
-		{
-			if (move_table[tmp_i + j] == -1)
-			{
-				for (int k = 0; k < n; ++k)
-				{
-					b[k] = table[a[k] + j];
-				}
-				tmp = 24 * array_to_index(b, n, c, pn);
-				move_table[tmp_i + j] = tmp;
-				move_table[tmp + inv_move[j]] = tmp_i;
-			}
-		}
-	}
-	return move_table;
-}
-
-void create_prune_table2(int index2, int depth, const std::vector<int> &table1, const std::vector<int> &table2, std::vector<unsigned char> &prune_table)
+void create_prune_table2(int index2, int depth, const std::vector<int> &table1, const std::vector<int> &table2, std::vector<unsigned char> &prune_table, std::vector<int> &move_restrict, std::vector<unsigned char> &tmp_array, std::vector<std::vector<int>> &center_move_table)
 {
 	int size1 = 190080;
 	int size2 = 24;
 	int size = size1 * size2;
+	tmp_array = std::vector<unsigned char>(size, 0);
 	int next_i;
 	int index1_tmp;
 	int index2_tmp;
@@ -467,9 +634,13 @@ void create_prune_table2(int index2, int depth, const std::vector<int> &table1, 
 	std::vector<int> a = {16, 18, 20, 22};
 	int index1 = array_to_index(a, 4, 2, 12);
 	prune_table[index1 * size2 + index2] = 0;
-	prune_table[table1[index1 * 24 + 3] + table2[index2 * 18 + 3]] = 0;
-	prune_table[table1[index1 * 24 + 4] + table2[index2 * 18 + 4]] = 0;
-	prune_table[table1[index1 * 24 + 5] + table2[index2 * 18 + 5]] = 0;
+	prune_table[table1[index1 * 27 + 3] * size2 + table2[index2 * 27 + 3]] = 0;
+	prune_table[table1[index1 * 27 + 4] * size2 + table2[index2 * 27 + 4]] = 0;
+	prune_table[table1[index1 * 27 + 5] * size2 + table2[index2 * 27 + 5]] = 0;
+	int num = 4;
+	int num_old = 4;
+	int m;
+	int center = 0;
 	for (int d = 0; d < depth; ++d)
 	{
 		next_d = d + 1;
@@ -477,28 +648,45 @@ void create_prune_table2(int index2, int depth, const std::vector<int> &table1, 
 		{
 			if (prune_table[i] == d)
 			{
-				index1_tmp = (i / size2) * 24;
-				index2_tmp = (i % size2) * 18;
-				for (int j = 0; j < 18; ++j)
+				index1_tmp = (i / size2) * 27;
+				index2_tmp = (i % size2) * 27;
+				center = tmp_array[i];
+				for (int j : move_restrict)
 				{
-					next_i = table1[index1_tmp + j] + table2[index2_tmp + j];
-					prune_table[next_i] = prune_table[next_i] == 255 ? next_d : prune_table[next_i];
+					m = converter[rotationMapReverse[center][j]];
+					next_i = table1[index1_tmp + m] * size2 + table2[index2_tmp + m];
+					if (prune_table[next_i] == 255)
+					{
+						tmp_array[next_i] = center_move_table[center][j];
+						prune_table[next_i] = next_d;
+						num += 1;
+					}
 				}
 			}
 		}
+		if (num == num_old)
+		{
+			break;
+		}
+		num_old = num;
 	}
 }
 
-void create_prune_table3(int index3, int index2, int depth, const std::vector<int> &table1, const std::vector<int> &table2, std::vector<unsigned char> &prune_table)
+void create_prune_table3(int index3, int index2, int size1, int size2, int depth, const std::vector<int> &table1, const std::vector<int> &table2, std::vector<unsigned char> &prune_table, std::vector<int> &move_restrict, std::vector<unsigned char> &tmp_array, std::vector<std::vector<int>> &center_move_table)
 {
-	int size1 = 190080;
-	int size2 = 24;
 	int size = size1 * size2;
+	tmp_array = std::vector<unsigned char>(size, 0);
+	std::vector<int> a = {16, 18, 20, 22};
+	int index1 = array_to_index(a, 4, 2, 12);
+	int start = index1 * size2 + index2;
 	int next_i;
 	int index1_tmp;
 	int index2_tmp;
 	int next_d;
-	int num_filled = 0;
+	prune_table[start] = 0;
+	prune_table[table1[index1 * 27 + 3] * size2 + table2[index2 * 27 + 3]] = 0;
+	prune_table[table1[index1 * 27 + 4] * size2 + table2[index2 * 27 + 4]] = 0;
+	prune_table[table1[index1 * 27 + 5] * size2 + table2[index2 * 27 + 5]] = 0;
 	std::vector<std::string> appl_moves;
 	std::vector<int> tmp_moves;
 	if (index3 == 0)
@@ -521,40 +709,38 @@ void create_prune_table3(int index3, int index2, int depth, const std::vector<in
 		appl_moves = {"L' U L", "L' U' L", "F U F'", "F U' F'"};
 		tmp_moves = {3, 4, 5, 0};
 	}
-	std::vector<int> a = {16, 18, 20, 22};
-	int index1 = array_to_index(a, 4, 2, 12);
-	prune_table[index1 * size2 + index2] = 0;
-	prune_table[table1[index1 * 24 + 3] + table2[index2 * 18 + 3]] = 0;
-	prune_table[table1[index1 * 24 + 4] + table2[index2 * 18 + 4]] = 0;
-	prune_table[table1[index1 * 24 + 5] + table2[index2 * 18 + 5]] = 0;
 	for (int i = 0; i < 4; i++)
 	{
-		int index1_tmp_2 = index1 * 24;
+		int index1_tmp_2 = index1;
 		int index2_tmp_2 = index2;
-		index1_tmp_2 = table1[index1_tmp_2 + tmp_moves[index2 / 3 - 4]];
-		index2_tmp_2 = table2[index2_tmp_2 * 18 + tmp_moves[index2 / 3 - 4]];
+		index1_tmp_2 = table1[index1_tmp_2 * 27 + tmp_moves[index2 / 3 - 4]];
+		index2_tmp_2 = table2[index2_tmp_2 * 27 + tmp_moves[index2 / 3 - 4]];
 		for (int m : StringToAlg(appl_moves[i]))
 		{
-			index1_tmp_2 = table1[index1_tmp_2 + m];
-			index2_tmp_2 = table2[index2_tmp_2 * 18 + m];
+			index1_tmp_2 = table1[index1_tmp_2 * 27 + m];
+			index2_tmp_2 = table2[index2_tmp_2 * 27 + m];
 		}
-		prune_table[index1_tmp_2 + index2_tmp_2] = 0;
-		prune_table[table1[index1_tmp_2 + 3] + table2[index2_tmp_2 * 18 + 3]] = 0;
-		prune_table[table1[index1_tmp_2 + 4] + table2[index2_tmp_2 * 18 + 4]] = 0;
-		prune_table[table1[index1_tmp_2 + 5] + table2[index2_tmp_2 * 18 + 5]] = 0;
-		prune_table[table1[index1_tmp_2] + table2[index2_tmp_2 * 18]] = 0;
-		prune_table[table1[table1[index1_tmp_2] + 3] + table2[table2[index2_tmp_2 * 18] * 18 + 3]] = 0;
-		prune_table[table1[table1[index1_tmp_2] + 4] + table2[table2[index2_tmp_2 * 18] * 18 + 4]] = 0;
-		prune_table[table1[table1[index1_tmp_2] + 5] + table2[table2[index2_tmp_2 * 18] * 18 + 5]] = 0;
-		prune_table[table1[index1_tmp_2 + 1] + table2[index2_tmp_2 * 18 + 1]] = 0;
-		prune_table[table1[table1[index1_tmp_2 + 1] + 3] + table2[table2[index2_tmp_2 * 18 + 1] * 18 + 3]] = 0;
-		prune_table[table1[table1[index1_tmp_2 + 1] + 4] + table2[table2[index2_tmp_2 * 18 + 1] * 18 + 4]] = 0;
-		prune_table[table1[table1[index1_tmp_2 + 1] + 5] + table2[table2[index2_tmp_2 * 18 + 1] * 18 + 5]] = 0;
-		prune_table[table1[index1_tmp_2 + 2] + table2[index2_tmp_2 * 18 + 2]] = 0;
-		prune_table[table1[table1[index1_tmp_2 + 2] + 3] + table2[table2[index2_tmp_2 * 18 + 2] * 18 + 3]] = 0;
-		prune_table[table1[table1[index1_tmp_2 + 2] + 4] + table2[table2[index2_tmp_2 * 18 + 2] * 18 + 4]] = 0;
-		prune_table[table1[table1[index1_tmp_2 + 2] + 5] + table2[table2[index2_tmp_2 * 18 + 2] * 18 + 5]] = 0;
+		prune_table[index1_tmp_2 * size2 + index2_tmp_2] = 0;
+		prune_table[table1[index1_tmp_2 * 27 + 3] * size2 + table2[index2_tmp_2 * 27 + 3]] = 0;
+		prune_table[table1[index1_tmp_2 * 27 + 4] * size2 + table2[index2_tmp_2 * 27 + 4]] = 0;
+		prune_table[table1[index1_tmp_2 * 27 + 5] * size2 + table2[index2_tmp_2 * 27 + 5]] = 0;
+		prune_table[table1[index1_tmp_2 * 27] * size2 + table2[index2_tmp_2 * 27]] = 0;
+		prune_table[table1[table1[index1_tmp_2 * 27] * 27 + 3] * size2 + table2[table2[index2_tmp_2 * 27] * 27 + 3]] = 0;
+		prune_table[table1[table1[index1_tmp_2 * 27] * 27 + 4] * size2 + table2[table2[index2_tmp_2 * 27] * 27 + 4]] = 0;
+		prune_table[table1[table1[index1_tmp_2 * 27] * 27 + 5] * size2 + table2[table2[index2_tmp_2 * 27] * 27 + 5]] = 0;
+		prune_table[table1[index1_tmp_2 * 27 + 1] * size2 + table2[index2_tmp_2 * 27 + 1]] = 0;
+		prune_table[table1[table1[index1_tmp_2 * 27 + 1] * 27 + 3] * size2 + table2[table2[index2_tmp_2 * 27 + 1] * 27 + 3]] = 0;
+		prune_table[table1[table1[index1_tmp_2 * 27 + 1] * 27 + 4] * size2 + table2[table2[index2_tmp_2 * 27 + 1] * 27 + 4]] = 0;
+		prune_table[table1[table1[index1_tmp_2 * 27 + 1] * 27 + 5] * size2 + table2[table2[index2_tmp_2 * 27 + 1] * 27 + 5]] = 0;
+		prune_table[table1[index1_tmp_2 * 27 + 2] * size2 + table2[index2_tmp_2 * 27 + 2]] = 0;
+		prune_table[table1[table1[index1_tmp_2 * 27 + 2] * 27 + 3] * size2 + table2[table2[index2_tmp_2 * 27 + 2] * 27 + 3]] = 0;
+		prune_table[table1[table1[index1_tmp_2 * 27 + 2] * 27 + 4] * size2 + table2[table2[index2_tmp_2 * 27 + 2] * 27 + 4]] = 0;
+		prune_table[table1[table1[index1_tmp_2 * 27 + 2] * 27 + 5] * size2 + table2[table2[index2_tmp_2 * 27 + 2] * 27 + 5]] = 0;
 	}
+	int num = 1;
+	int num_old = 1;
+	int m;
+	int center = 0;
 	for (int d = 0; d < depth; ++d)
 	{
 		next_d = d + 1;
@@ -562,80 +748,97 @@ void create_prune_table3(int index3, int index2, int depth, const std::vector<in
 		{
 			if (prune_table[i] == d)
 			{
-				index1_tmp = (i / size2) * 24;
-				index2_tmp = (i % size2) * 18;
-				for (int j = 0; j < 18; ++j)
+				index1_tmp = (i / size2) * 27;
+				index2_tmp = (i % size2) * 27;
+				center = tmp_array[i];
+				for (int j : move_restrict)
 				{
-					next_i = table1[index1_tmp + j] + table2[index2_tmp + j];
-					prune_table[next_i] = prune_table[next_i] == 255 ? next_d : prune_table[next_i];
+					m = converter[rotationMapReverse[center][j]];
+					next_i = table1[index1_tmp + m] * size2 + table2[index2_tmp + m];
+					if (prune_table[next_i] == 255)
+					{
+						tmp_array[next_i] = center_move_table[center][j];
+						prune_table[next_i] = next_d;
+						num += 1;
+					}
 				}
 			}
 		}
+		if (num == num_old)
+		{
+			break;
+		}
+		num_old = num;
 	}
 }
 
-void create_prune_table_edge_corner(int index1, int index2, int size1, int size2, int depth, const std::vector<int> &table1, const std::vector<int> &table2, std::vector<unsigned char> &prune_table)
+void create_prune_table4(int index3, int index2, int size1, int size2, int depth, const std::vector<int> &table1, const std::vector<int> &table2, std::vector<unsigned char> &prune_table, std::vector<int> &move_restrict, std::vector<unsigned char> &tmp_array, std::vector<std::vector<int>> &center_move_table)
 {
 	int size = size1 * size2;
-	int start = index1 * size2 + index2;
+	tmp_array = std::vector<unsigned char>(size, 0);
+	int start = index3 * size2 + index2;
 	int next_i;
-	int index1_tmp;
+	int index3_tmp;
 	int index2_tmp;
 	int next_d;
 	prune_table[start] = 0;
-	prune_table[table1[index1 * 18 + 3] * size2 + table2[index2 * 18 + 3]] = 0;
-	prune_table[table1[index1 * 18 + 4] * size2 + table2[index2 * 18 + 4]] = 0;
-	prune_table[table1[index1 * 18 + 5] * size2 + table2[index2 * 18 + 5]] = 0;
+	prune_table[table1[index3 * 27 + 3] * size2 + table2[index2 * 27 + 3]] = 0;
+	prune_table[table1[index3 * 27 + 4] * size2 + table2[index2 * 27 + 4]] = 0;
+	prune_table[table1[index3 * 27 + 5] * size2 + table2[index2 * 27 + 5]] = 0;
 	std::vector<std::string> appl_moves;
 	std::vector<int> tmp_moves;
-	if (index1 == 0)
+	if (index3 == 0)
 	{
 		appl_moves = {"L U L'", "L U' L'", "B' U B", "B' U' B"};
 		tmp_moves = {0, 3, 4, 5};
 	}
-	if (index1 == 2)
+	if (index3 == 2)
 	{
 		appl_moves = {"R' U R", "R' U' R", "B U B'", "B U' B'"};
 		tmp_moves = {5, 0, 3, 4};
 	}
-	if (index1 == 4)
+	if (index3 == 4)
 	{
 		appl_moves = {"R U R'", "R U' R'", "F' U F", "F' U' F"};
 		tmp_moves = {4, 5, 0, 3};
 	}
-	if (index1 == 6)
+	if (index3 == 6)
 	{
 		appl_moves = {"L' U L", "L' U' L", "F U F'", "F U' F'"};
 		tmp_moves = {3, 4, 5, 0};
 	}
 	for (int i = 0; i < 4; i++)
 	{
-		int index1_tmp_2 = index1;
+		int index3_tmp_2 = index3;
 		int index2_tmp_2 = index2;
-		index1_tmp_2 = table1[index1_tmp_2 * 18 + tmp_moves[index2 / 3 - 4]];
-		index2_tmp_2 = table2[index2_tmp_2 * 18 + tmp_moves[index2 / 3 - 4]];
+		index3_tmp_2 = table1[index3_tmp_2 * 27 + tmp_moves[index2 / 3 - 4]];
+		index2_tmp_2 = table2[index2_tmp_2 * 27 + tmp_moves[index2 / 3 - 4]];
 		for (int m : StringToAlg(appl_moves[i]))
 		{
-			index1_tmp_2 = table1[index1_tmp_2 * 18 + m];
-			index2_tmp_2 = table2[index2_tmp_2 * 18 + m];
+			index3_tmp_2 = table1[index3_tmp_2 * 27 + m];
+			index2_tmp_2 = table2[index2_tmp_2 * 27 + m];
 		}
-		prune_table[index1_tmp_2 * size2 + index2_tmp_2] = 0;
-		prune_table[table1[index1_tmp_2 * 18 + 3] * size2 + table2[index2_tmp_2 * 18 + 3]] = 0;
-		prune_table[table1[index1_tmp_2 * 18 + 4] * size2 + table2[index2_tmp_2 * 18 + 4]] = 0;
-		prune_table[table1[index1_tmp_2 * 18 + 5] * size2 + table2[index2_tmp_2 * 18 + 5]] = 0;
-		prune_table[table1[index1_tmp_2 * 18] * size2 + table2[index2_tmp_2 * 18]] = 0;
-		prune_table[table1[table1[index1_tmp_2 * 18] * 18 + 3] * size2 + table2[table2[index2_tmp_2 * 18] * 18 + 3]] = 0;
-		prune_table[table1[table1[index1_tmp_2 * 18] * 18 + 4] * size2 + table2[table2[index2_tmp_2 * 18] * 18 + 4]] = 0;
-		prune_table[table1[table1[index1_tmp_2 * 18] * 18 + 5] * size2 + table2[table2[index2_tmp_2 * 18] * 18 + 5]] = 0;
-		prune_table[table1[index1_tmp_2 * 18 + 1] * size2 + table2[index2_tmp_2 * 18 + 1]] = 0;
-		prune_table[table1[table1[index1_tmp_2 * 18 + 1] * 18 + 3] * size2 + table2[table2[index2_tmp_2 * 18 + 1] * 18 + 3]] = 0;
-		prune_table[table1[table1[index1_tmp_2 * 18 + 1] * 18 + 4] * size2 + table2[table2[index2_tmp_2 * 18 + 1] * 18 + 4]] = 0;
-		prune_table[table1[table1[index1_tmp_2 * 18 + 1] * 18 + 5] * size2 + table2[table2[index2_tmp_2 * 18 + 1] * 18 + 5]] = 0;
-		prune_table[table1[index1_tmp_2 * 18 + 2] * size2 + table2[index2_tmp_2 * 18 + 2]] = 0;
-		prune_table[table1[table1[index1_tmp_2 * 18 + 2] * 18 + 3] * size2 + table2[table2[index2_tmp_2 * 18 + 2] * 18 + 3]] = 0;
-		prune_table[table1[table1[index1_tmp_2 * 18 + 2] * 18 + 4] * size2 + table2[table2[index2_tmp_2 * 18 + 2] * 18 + 4]] = 0;
-		prune_table[table1[table1[index1_tmp_2 * 18 + 2] * 18 + 5] * size2 + table2[table2[index2_tmp_2 * 18 + 2] * 18 + 5]] = 0;
+		prune_table[index3_tmp_2 * size2 + index2_tmp_2] = 0;
+		prune_table[table1[index3_tmp_2 * 27 + 3] * size2 + table2[index2_tmp_2 * 27 + 3]] = 0;
+		prune_table[table1[index3_tmp_2 * 27 + 4] * size2 + table2[index2_tmp_2 * 27 + 4]] = 0;
+		prune_table[table1[index3_tmp_2 * 27 + 5] * size2 + table2[index2_tmp_2 * 27 + 5]] = 0;
+		prune_table[table1[index3_tmp_2 * 27] * size2 + table2[index2_tmp_2 * 27]] = 0;
+		prune_table[table1[table1[index3_tmp_2 * 27] * 27 + 3] * size2 + table2[table2[index2_tmp_2 * 27] * 27 + 3]] = 0;
+		prune_table[table1[table1[index3_tmp_2 * 27] * 27 + 4] * size2 + table2[table2[index2_tmp_2 * 27] * 27 + 4]] = 0;
+		prune_table[table1[table1[index3_tmp_2 * 27] * 27 + 5] * size2 + table2[table2[index2_tmp_2 * 27] * 27 + 5]] = 0;
+		prune_table[table1[index3_tmp_2 * 27 + 1] * size2 + table2[index2_tmp_2 * 27 + 1]] = 0;
+		prune_table[table1[table1[index3_tmp_2 * 27 + 1] * 27 + 3] * size2 + table2[table2[index2_tmp_2 * 27 + 1] * 27 + 3]] = 0;
+		prune_table[table1[table1[index3_tmp_2 * 27 + 1] * 27 + 4] * size2 + table2[table2[index2_tmp_2 * 27 + 1] * 27 + 4]] = 0;
+		prune_table[table1[table1[index3_tmp_2 * 27 + 1] * 27 + 5] * size2 + table2[table2[index2_tmp_2 * 27 + 1] * 27 + 5]] = 0;
+		prune_table[table1[index3_tmp_2 * 27 + 2] * size2 + table2[index2_tmp_2 * 27 + 2]] = 0;
+		prune_table[table1[table1[index3_tmp_2 * 27 + 2] * 27 + 3] * size2 + table2[table2[index2_tmp_2 * 27 + 2] * 27 + 3]] = 0;
+		prune_table[table1[table1[index3_tmp_2 * 27 + 2] * 27 + 4] * size2 + table2[table2[index2_tmp_2 * 27 + 2] * 27 + 4]] = 0;
+		prune_table[table1[table1[index3_tmp_2 * 27 + 2] * 27 + 5] * size2 + table2[table2[index2_tmp_2 * 27 + 2] * 27 + 5]] = 0;
 	}
+	int num = 1;
+	int num_old = 1;
+	int m;
+	int center = 0;
 	for (int d = 0; d < depth; ++d)
 	{
 		next_d = d + 1;
@@ -643,30 +846,81 @@ void create_prune_table_edge_corner(int index1, int index2, int size1, int size2
 		{
 			if (prune_table[i] == d)
 			{
-				index1_tmp = (i / size2) * 18;
-				index2_tmp = (i % size2) * 18;
-				for (int j = 0; j < 18; ++j)
+				index3_tmp = (i / size2) * 27;
+				index2_tmp = (i % size2) * 27;
+				center = tmp_array[i];
+				for (int j : move_restrict)
 				{
-					next_i = table1[index1_tmp + j] * size2 + table2[index2_tmp + j];
-					prune_table[next_i] = prune_table[next_i] == 255 ? next_d : prune_table[next_i];
+					m = converter[rotationMapReverse[center][j]];
+					next_i = table1[index3_tmp + m] * size2 + table2[index2_tmp + m];
+					if (prune_table[next_i] == 255)
+					{
+						tmp_array[next_i] = center_move_table[center][j];
+						prune_table[next_i] = next_d;
+						num += 1;
+					}
 				}
 			}
 		}
+		if (num == num_old)
+		{
+			break;
+		}
+		num_old = num;
 	}
 }
 
 std::vector<bool> create_ma_table()
 {
-	std::vector<bool> ma;
-	bool condition;
-	for (int prev = 0; prev < 19; ++prev)
+	std::vector<bool> ma(46 * 45, false);
+	for (int prev = 0; prev < 45; ++prev)
 	{
-		for (int i = 0; i < 18; ++i)
+		for (int i = 0; i < 45; ++i)
 		{
-			condition = (prev < 18) &&
-						(i / 3 == prev / 3 ||
-						 ((i / 3) / 2 == (prev / 3) / 2 && (prev / 3) % 2 > (i / 3) % 2));
-			ma.emplace_back(condition);
+			if ((prev < 18 && i < 18) || (prev < 36 && prev >= 18 && i < 36 && i >= 18))
+			{
+				if (i / 3 == prev / 3)
+				{
+					ma[prev * 45 + i] = true;
+				}
+				else if ((i / 3) / 2 == (prev / 3) / 2 && (prev / 3) % 2 > (i / 3) % 2)
+				{
+					ma[prev * 45 + i] = true;
+				}
+			}
+			else if ((prev >= 18 && prev < 36 && i < 18) || (prev < 18 && i >= 18 && i < 36))
+			{
+				if (converter[i] / 3 == converter[prev] / 3)
+				{
+					ma[prev * 45 + i] = true;
+				}
+				else if ((converter[i] / 3) / 2 == (converter[prev] / 3) / 2 && (converter[prev] / 3) % 2 > (converter[i] / 3) % 2)
+				{
+					ma[prev * 45 + i] = true;
+				}
+			}
+			else if (prev >= 36 && i < 36)
+			{
+				if (prev / 3 == 13 && (converter[i] / 3) / 2 == 0)
+				{
+					ma[prev * 45 + i] = true;
+				}
+				else if (prev / 3 == 12 && (converter[i] / 3) / 2 == 1)
+				{
+					ma[prev * 45 + i] = true;
+				}
+				else if (prev / 3 == 14 && (converter[i] / 3) / 2 == 2)
+				{
+					ma[prev * 45 + i] = true;
+				}
+			}
+			else if (prev >= 36 && i >= 36)
+			{
+				if (i / 3 == prev / 3)
+				{
+					ma[prev * 45 + i] = true;
+				}
+			}
 		}
 	}
 	return ma;
@@ -682,6 +936,8 @@ struct xcross_search
 	int max_length;
 	int sol_num;
 	int count;
+	std::vector<std::vector<int>> center_move_table;
+	std::vector<unsigned char> tmp_array;
 	std::vector<int> edge_move_table;
 	std::vector<int> corner_move_table;
 	std::vector<int> multi_move_table;
@@ -701,19 +957,22 @@ struct xcross_search
 	int prune1_tmp;
 	int edge_prune1_tmp;
 	std::string tmp;
-	int current_max_depth;
+	int m;
+	int m_tmp;
 
 	xcross_search()
 	{
+		center_move_table = create_center_move_table();
 		edge_move_table = create_edge_move_table();
 		corner_move_table = create_corner_move_table();
-		multi_move_table = create_multi_move_table2(4, 2, 12, 24 * 22 * 20 * 18, edge_move_table);
+		multi_move_table = std::vector<int>(24 * 22 * 20 * 18 * 27, -1);
+		create_multi_move_table(4, 2, 12, 24 * 22 * 20 * 18, multi_move_table, edge_move_table);
 		ma = create_ma_table();
 		prune_table1 = std::vector<unsigned char>(24 * 22 * 20 * 18 * 24, 255);
 		edge_corner_prune_table1 = std::vector<unsigned char>(24 * 24, 255);
 	}
 
-	bool depth_limited_search(int arg_index1, int arg_index2, int arg_index3, int depth, int prev)
+	bool depth_limited_search(int arg_index1, int arg_index2, int arg_index3, int depth, int prev, int center)
 	{
 		for (int i : move_restrict)
 		{
@@ -721,10 +980,11 @@ struct xcross_search
 			{
 				continue;
 			}
-			index1_tmp = multi_move_table[arg_index1 + i];
-			index2_tmp = corner_move_table[arg_index2 + i];
-			index3_tmp = edge_move_table[arg_index3 + i];
-			prune1_tmp = prune_table1[index1_tmp + index2_tmp];
+			m = converter[rotationMapReverse[center][i]];
+			index1_tmp = multi_move_table[arg_index1 + m];
+			index2_tmp = corner_move_table[arg_index2 + m];
+			index3_tmp = edge_move_table[arg_index3 + m];
+			prune1_tmp = prune_table1[index1_tmp * 24 + index2_tmp];
 			if (prune1_tmp >= depth)
 			{
 				continue;
@@ -734,7 +994,7 @@ struct xcross_search
 			{
 				continue;
 			}
-			sol[current_max_depth - depth] = i;
+			sol.emplace_back(i);
 			if (depth == 1)
 			{
 				if (prune1_tmp == 0 && edge_prune1_tmp == 0)
@@ -742,12 +1002,15 @@ struct xcross_search
 					bool valid = true;
 					int l = static_cast<int>(sol.size());
 					int c = 0;
+					int center_tmp = 0;
 					int index1_tmp2 = index1;
 					int index2_tmp2 = index2;
 					int index3_tmp2 = index3;
 					for (int j : sol)
 					{
-						if (index1_tmp2 == multi_move_table[index1_tmp2 + j] && index2_tmp2 == corner_move_table[index2_tmp2 + j] * 18 && index3_tmp2 == edge_move_table[index3_tmp2 + j] * 18)
+						m_tmp = converter[rotationMapReverse[center_tmp][j]];
+						center_tmp = center_move_table[center_tmp][j];
+						if (index1_tmp2 == multi_move_table[index1_tmp2 + m_tmp] * 27 && index2_tmp2 == corner_move_table[index2_tmp2 + m_tmp] * 27 && index3_tmp2 == edge_move_table[index3_tmp2 + m_tmp] * 27)
 						{
 							valid = false;
 							break;
@@ -755,16 +1018,17 @@ struct xcross_search
 						else
 						{
 							c += 1;
-							index1_tmp2 = multi_move_table[index1_tmp2 + j];
-							index2_tmp2 = corner_move_table[index2_tmp2 + j];
-							index3_tmp2 = edge_move_table[index3_tmp2 + j];
-							if (c < l && (prune_table1[index1_tmp2 + index2_tmp2] == 0 && edge_corner_prune_table1[index3_tmp2 * 24 + index2_tmp2] == 0))
+							index1_tmp2 = multi_move_table[index1_tmp2 + m_tmp];
+							index2_tmp2 = corner_move_table[index2_tmp2 + m_tmp];
+							index3_tmp2 = edge_move_table[index3_tmp2 + m_tmp];
+							if (c < l && (prune_table1[index1_tmp2 * 24 + index2_tmp2] == 0 && edge_corner_prune_table1[index3_tmp2 * 24 + index2_tmp2] == 0))
 							{
 								valid = false;
 								break;
 							}
-							index2_tmp2 *= 18;
-							index3_tmp2 *= 18;
+							index1_tmp2 *= 27;
+							index2_tmp2 *= 27;
+							index3_tmp2 *= 27;
 						}
 					}
 					if (valid)
@@ -786,10 +1050,11 @@ struct xcross_search
 					}
 				}
 			}
-			else if (depth_limited_search(index1_tmp, index2_tmp * 18, index3_tmp * 18, depth - 1, i * 18))
+			else if (depth_limited_search(index1_tmp * 27, index2_tmp * 27, index3_tmp * 27, depth - 1, i * 45, center_move_table[center][i]))
 			{
 				return true;
 			}
+			sol.pop_back();
 		}
 		return false;
 	}
@@ -803,7 +1068,14 @@ struct xcross_search
 		max_length = arg_max_length;
 		sol_num = arg_sol_num;
 		restrict = arg_restrict;
-		std::vector<int> alg = AlgRotation(StringToAlg(scramble), rotation);
+		std::vector<int> scramble_alg = StringToAlg(scramble);
+		std::vector<int> rotation_alg = StringToAlg(rotation);
+		std::vector<int> alg = AlgRotation(scramble_alg, rotation_alg, center_move_table);
+		for (std::string name : restrict)
+		{
+			auto it = std::find(move_names.begin(), move_names.end(), name);
+			move_restrict.emplace_back(std::distance(move_names.begin(), it));
+		}
 		std::vector<int> edge_index = {187520, 187520, 187520, 187520};
 		std::vector<int> single_edge_index = {0, 2, 4, 6};
 		std::vector<int> corner_index = {12, 15, 18, 21};
@@ -811,36 +1083,33 @@ struct xcross_search
 		index2 = corner_index[pslot1];
 		index3 = single_edge_index[slot1];
 		edge_solved1 = index3;
-		create_prune_table3(index3, index2, 10, multi_move_table, corner_move_table, prune_table1);
-		create_prune_table_edge_corner(index3, index2, 24, 24, 8, edge_move_table, corner_move_table, edge_corner_prune_table1);
+		create_prune_table3(index3, index2, 24 * 22 * 20 * 18, 24, 20, multi_move_table, corner_move_table, prune_table1, move_restrict, tmp_array, center_move_table);
+		create_prune_table4(index3, index2, 24, 24, 20, edge_move_table, corner_move_table, edge_corner_prune_table1, move_restrict, tmp_array, center_move_table);
 		count = 0;
-		for (std::string name : restrict)
-		{
-			auto it = std::find(move_names.begin(), move_names.end(), name);
-			move_restrict.emplace_back(std::distance(move_names.begin(), it));
-		}
-		index1 *= 24;
 		for (int m : alg)
 		{
-			index1 = multi_move_table[index1 + m];
-			index2 = corner_move_table[index2 * 18 + m];
-			index3 = edge_move_table[index3 * 18 + m];
+			index1 = multi_move_table[index1 * 27 + m];
+			index2 = corner_move_table[index2 * 27 + m];
+			index3 = edge_move_table[index3 * 27 + m];
 		}
-		prune1_tmp = prune_table1[index1 + index2];
+		prune1_tmp = prune_table1[index1 * 24 + index2];
 		edge_prune1_tmp = edge_corner_prune_table1[index3 * 24 + index2];
-		if (prune1_tmp == 0 && edge_prune1_tmp == 0)
+		if (prune1_tmp == 255 || edge_prune1_tmp == 255)
+		{
+			update("Unsolvable.");
+		}
+		else if (prune1_tmp == 0 && edge_prune1_tmp == 0)
 		{
 			update("Already solved.");
 		}
 		else
 		{
-			index2 *= 18;
-			index3 *= 18;
+			index1 *= 27;
+			index2 *= 27;
+			index3 *= 27;
 			for (int d = prune1_tmp; d <= max_length; d++)
 			{
-				current_max_depth = d;
-				sol.resize(d);
-				if (depth_limited_search(index1, index2, index3, d, 324))
+				if (depth_limited_search(index1, index2, index3, d, 2025, 0))
 				{
 					break;
 				}
@@ -862,6 +1131,8 @@ struct xxcross_search
 	int max_length;
 	int sol_num;
 	int count;
+	std::vector<std::vector<int>> center_move_table;
+	std::vector<unsigned char> tmp_array;
 	std::vector<int> edge_move_table;
 	std::vector<int> corner_move_table;
 	std::vector<int> multi_move_table;
@@ -890,20 +1161,23 @@ struct xxcross_search
 	int edge_prune1_tmp;
 	int prune2_tmp;
 	std::string tmp;
-	int current_max_depth;
+	int m;
+	int m_tmp;
 
 	xxcross_search()
 	{
+		center_move_table = create_center_move_table();
 		edge_move_table = create_edge_move_table();
 		corner_move_table = create_corner_move_table();
-		multi_move_table = create_multi_move_table2(4, 2, 12, 24 * 22 * 20 * 18, edge_move_table);
+		multi_move_table = std::vector<int>(24 * 22 * 20 * 18 * 27, -1);
+		create_multi_move_table(4, 2, 12, 24 * 22 * 20 * 18, multi_move_table, edge_move_table);
 		ma = create_ma_table();
 		prune_table1 = std::vector<unsigned char>(24 * 22 * 20 * 18 * 24, 255);
 		prune_table2 = std::vector<unsigned char>(24 * 22 * 20 * 18 * 24, 255);
 		edge_corner_prune_table1 = std::vector<unsigned char>(24 * 24, 255);
 	}
 
-	bool depth_limited_search(int arg_index1, int arg_index2, int arg_index4, int arg_index5, int arg_index6, int depth, int prev)
+	bool depth_limited_search(int arg_index1, int arg_index2, int arg_index4, int arg_index5, int arg_index6, int depth, int prev, int center)
 	{
 		for (int i : move_restrict)
 		{
@@ -911,10 +1185,11 @@ struct xxcross_search
 			{
 				continue;
 			}
-			index1_tmp = multi_move_table[arg_index1 + i];
-			index2_tmp = corner_move_table[arg_index2 + i];
-			index5_tmp = edge_move_table[arg_index5 + i];
-			prune1_tmp = prune_table1[index1_tmp + index2_tmp];
+			m = converter[rotationMapReverse[center][i]];
+			index1_tmp = multi_move_table[arg_index1 + m];
+			index2_tmp = corner_move_table[arg_index2 + m];
+			index5_tmp = edge_move_table[arg_index5 + m];
+			prune1_tmp = prune_table1[index1_tmp * 24 + index2_tmp];
 			if (prune1_tmp >= depth)
 			{
 				continue;
@@ -924,14 +1199,14 @@ struct xxcross_search
 			{
 				continue;
 			}
-			index4_tmp = corner_move_table[arg_index4 + i];
-			index6_tmp = edge_move_table[arg_index6 + i];
-			prune2_tmp = prune_table2[index1_tmp + index4_tmp];
+			index4_tmp = corner_move_table[arg_index4 + m];
+			index6_tmp = edge_move_table[arg_index6 + m];
+			prune2_tmp = prune_table2[index1_tmp * 24 + index4_tmp];
 			if (prune2_tmp >= depth)
 			{
 				continue;
 			}
-			sol[current_max_depth - depth] = i;
+			sol.emplace_back(i);
 			if (depth == 1)
 			{
 				if (prune1_tmp == 0 && prune2_tmp == 0 && edge_prune1_tmp == 0 && index6_tmp == edge_solved2)
@@ -939,6 +1214,7 @@ struct xxcross_search
 					bool valid = true;
 					int l = static_cast<int>(sol.size());
 					int c = 0;
+					int center_tmp = 0;
 					int index1_tmp2 = index1;
 					int index2_tmp2 = index2;
 					int index4_tmp2 = index4;
@@ -946,7 +1222,9 @@ struct xxcross_search
 					int index6_tmp2 = index6;
 					for (int j : sol)
 					{
-						if (index1_tmp2 == multi_move_table[index1_tmp2 + j] && index2_tmp2 == corner_move_table[index2_tmp2 + j] * 18 && index4_tmp2 == corner_move_table[index4_tmp2 + j] * 18 && index5_tmp2 == edge_move_table[index5_tmp2 + j] * 18 && index6_tmp2 == edge_move_table[index6_tmp2 + j] * 18)
+						m_tmp = converter[rotationMapReverse[center_tmp][j]];
+						center_tmp = center_move_table[center_tmp][j];
+						if (index1_tmp2 == multi_move_table[index1_tmp2 + m_tmp] * 27 && index2_tmp2 == corner_move_table[index2_tmp2 + m_tmp] * 27 && index4_tmp2 == corner_move_table[index4_tmp2 + m_tmp] * 27 && index5_tmp2 == edge_move_table[index5_tmp2 + m_tmp] * 27 && index6_tmp2 == edge_move_table[index6_tmp2 + m_tmp] * 27)
 						{
 							valid = false;
 							break;
@@ -954,20 +1232,21 @@ struct xxcross_search
 						else
 						{
 							c += 1;
-							index1_tmp2 = multi_move_table[index1_tmp2 + j];
-							index2_tmp2 = corner_move_table[index2_tmp2 + j];
-							index4_tmp2 = corner_move_table[index4_tmp2 + j];
-							index5_tmp2 = edge_move_table[index5_tmp2 + j];
-							index6_tmp2 = edge_move_table[index6_tmp2 + j];
-							if (c < l && (prune_table1[index1_tmp2 + index2_tmp2] == 0 && prune_table2[index1_tmp2 + index4_tmp2] == 0 && edge_corner_prune_table1[index5_tmp2 * 24 + index2_tmp2] == 0 && index6_tmp2 == edge_solved2))
+							index1_tmp2 = multi_move_table[index1_tmp2 + m_tmp];
+							index2_tmp2 = corner_move_table[index2_tmp2 + m_tmp];
+							index4_tmp2 = corner_move_table[index4_tmp2 + m_tmp];
+							index5_tmp2 = edge_move_table[index5_tmp2 + m_tmp];
+							index6_tmp2 = edge_move_table[index6_tmp2 + m_tmp];
+							if (c < l && (prune_table1[index1_tmp2 * 24 + index2_tmp2] == 0 && prune_table2[index1_tmp2 * 24 + index4_tmp2] == 0 && edge_corner_prune_table1[index5_tmp2 * 24 + index2_tmp2] == 0 && index6_tmp2 == edge_solved2))
 							{
 								valid = false;
 								break;
 							}
-							index2_tmp2 *= 18;
-							index4_tmp2 *= 18;
-							index5_tmp2 *= 18;
-							index6_tmp2 *= 18;
+							index1_tmp2 *= 27;
+							index2_tmp2 *= 27;
+							index4_tmp2 *= 27;
+							index5_tmp2 *= 27;
+							index6_tmp2 *= 27;
 						}
 					}
 					if (valid)
@@ -989,10 +1268,11 @@ struct xxcross_search
 					}
 				}
 			}
-			else if (depth_limited_search(index1_tmp, index2_tmp * 18, index4_tmp * 18, index5_tmp * 18, index6_tmp * 18, depth - 1, i * 18))
+			else if (depth_limited_search(index1_tmp * 27, index2_tmp * 27, index4_tmp * 27, index5_tmp * 27, index6_tmp * 27, depth - 1, i * 45, center_move_table[center][i]))
 			{
 				return true;
 			}
+			sol.pop_back();
 		}
 		return false;
 	}
@@ -1008,7 +1288,14 @@ struct xxcross_search
 		max_length = arg_max_length;
 		sol_num = arg_sol_num;
 		restrict = arg_restrict;
-		std::vector<int> alg = AlgRotation(StringToAlg(scramble), rotation);
+		std::vector<int> scramble_alg = StringToAlg(scramble);
+		std::vector<int> rotation_alg = StringToAlg(rotation);
+		std::vector<int> alg = AlgRotation(scramble_alg, rotation_alg, center_move_table);
+		for (std::string name : restrict)
+		{
+			auto it = std::find(move_names.begin(), move_names.end(), name);
+			move_restrict.emplace_back(std::distance(move_names.begin(), it));
+		}
 		std::vector<int> edge_index = {187520, 187520, 187520, 187520};
 		std::vector<int> single_edge_index = {0, 2, 4, 6};
 		std::vector<int> corner_index = {12, 15, 18, 21};
@@ -1016,45 +1303,42 @@ struct xxcross_search
 		index2 = corner_index[pslot1];
 		index5 = single_edge_index[slot1];
 		edge_solved1 = index5;
-		create_prune_table3(index5, index2, 10, multi_move_table, corner_move_table, prune_table1);
-		create_prune_table_edge_corner(index5, index2, 24, 24, 8, edge_move_table, corner_move_table, edge_corner_prune_table1);
+		create_prune_table3(index5, index2, 24 * 22 * 20 * 18, 24, 20, multi_move_table, corner_move_table, prune_table1, move_restrict, tmp_array, center_move_table);
+		create_prune_table4(index5, index2, 24, 24, 20, edge_move_table, corner_move_table, edge_corner_prune_table1, move_restrict, tmp_array, center_move_table);
 		index4 = corner_index[pslot2];
 		index6 = single_edge_index[slot2];
 		edge_solved2 = index6;
-		create_prune_table2(index4, 10, multi_move_table, corner_move_table, prune_table2);
+		create_prune_table2(index4, 20, multi_move_table, corner_move_table, prune_table2, move_restrict, tmp_array, center_move_table);
 		count = 0;
-		for (std::string name : restrict)
-		{
-			auto it = std::find(move_names.begin(), move_names.end(), name);
-			move_restrict.emplace_back(std::distance(move_names.begin(), it));
-		}
-		index1 *= 24;
 		for (int m : alg)
 		{
-			index1 = multi_move_table[index1 + m];
-			index2 = corner_move_table[index2 * 18 + m];
-			index4 = corner_move_table[index4 * 18 + m];
-			index5 = edge_move_table[index5 * 18 + m];
-			index6 = edge_move_table[index6 * 18 + m];
+			index1 = multi_move_table[index1 * 27 + m];
+			index2 = corner_move_table[index2 * 27 + m];
+			index4 = corner_move_table[index4 * 27 + m];
+			index5 = edge_move_table[index5 * 27 + m];
+			index6 = edge_move_table[index6 * 27 + m];
 		}
-		prune1_tmp = prune_table1[index1 + index2];
-		prune2_tmp = prune_table2[index1 + index4];
+		prune1_tmp = prune_table1[index1 * 24 + index2];
+		prune2_tmp = prune_table2[index1 * 24 + index4];
 		edge_prune1_tmp = edge_corner_prune_table1[index5 * 24 + index2];
-		if (prune1_tmp == 0 && prune2_tmp == 0 && edge_prune1_tmp == 0 && index6 == edge_solved2)
+		if (prune1_tmp == 255 || prune2_tmp == 255 || edge_prune1_tmp == 255)
+		{
+			update("Unsolvable.");
+		}
+		else if (prune1_tmp == 0 && prune2_tmp == 0 && edge_prune1_tmp == 0 && index6 == edge_solved2)
 		{
 			update("Already solved.");
 		}
 		else
 		{
-			index2 *= 18;
-			index4 *= 18;
-			index5 *= 18;
-			index6 *= 18;
+			index1 *= 27;
+			index2 *= 27;
+			index4 *= 27;
+			index5 *= 27;
+			index6 *= 27;
 			for (int d = std::max(prune1_tmp, prune2_tmp); d <= max_length; d++)
 			{
-				current_max_depth = d;
-				sol.resize(d);
-				if (depth_limited_search(index1, index2, index4, index5, index6, d, 324))
+				if (depth_limited_search(index1, index2, index4, index5, index6, d, 2025, 0))
 				{
 					break;
 				}
@@ -1078,6 +1362,8 @@ struct xxxcross_search
 	int max_length;
 	int sol_num;
 	int count;
+	std::vector<std::vector<int>> center_move_table;
+	std::vector<unsigned char> tmp_array;
 	std::vector<int> edge_move_table;
 	std::vector<int> corner_move_table;
 	std::vector<int> multi_move_table;
@@ -1115,13 +1401,16 @@ struct xxxcross_search
 	int prune2_tmp;
 	int prune3_tmp;
 	std::string tmp;
-	int current_max_depth;
+	int m;
+	int m_tmp;
 
 	xxxcross_search()
 	{
+		center_move_table = create_center_move_table();
 		edge_move_table = create_edge_move_table();
 		corner_move_table = create_corner_move_table();
-		multi_move_table = create_multi_move_table2(4, 2, 12, 24 * 22 * 20 * 18, edge_move_table);
+		multi_move_table = std::vector<int>(24 * 22 * 20 * 18 * 27, -1);
+		create_multi_move_table(4, 2, 12, 24 * 22 * 20 * 18, multi_move_table, edge_move_table);
 		ma = create_ma_table();
 		prune_table1 = std::vector<unsigned char>(24 * 22 * 20 * 18 * 24, 255);
 		prune_table2 = std::vector<unsigned char>(24 * 22 * 20 * 18 * 24, 255);
@@ -1129,7 +1418,7 @@ struct xxxcross_search
 		edge_corner_prune_table1 = std::vector<unsigned char>(24 * 24, 255);
 	}
 
-	bool depth_limited_search(int arg_index1, int arg_index2, int arg_index4, int arg_index6, int arg_index7, int arg_index8, int arg_index9, int depth, int prev)
+	bool depth_limited_search(int arg_index1, int arg_index2, int arg_index4, int arg_index6, int arg_index7, int arg_index8, int arg_index9, int depth, int prev, int center)
 	{
 		for (int i : move_restrict)
 		{
@@ -1137,10 +1426,11 @@ struct xxxcross_search
 			{
 				continue;
 			}
-			index1_tmp = multi_move_table[arg_index1 + i];
-			index2_tmp = corner_move_table[arg_index2 + i];
-			index7_tmp = edge_move_table[arg_index7 + i];
-			prune1_tmp = prune_table1[index1_tmp + index2_tmp];
+			m = converter[rotationMapReverse[center][i]];
+			index1_tmp = multi_move_table[arg_index1 + m];
+			index2_tmp = corner_move_table[arg_index2 + m];
+			index7_tmp = edge_move_table[arg_index7 + m];
+			prune1_tmp = prune_table1[index1_tmp * 24 + index2_tmp];
 			if (prune1_tmp >= depth)
 			{
 				continue;
@@ -1150,21 +1440,21 @@ struct xxxcross_search
 			{
 				continue;
 			}
-			index4_tmp = corner_move_table[arg_index4 + i];
-			index8_tmp = edge_move_table[arg_index8 + i];
-			prune2_tmp = prune_table2[index1_tmp + index4_tmp];
+			index4_tmp = corner_move_table[arg_index4 + m];
+			index8_tmp = edge_move_table[arg_index8 + m];
+			prune2_tmp = prune_table2[index1_tmp * 24 + index4_tmp];
 			if (prune2_tmp >= depth)
 			{
 				continue;
 			}
-			index6_tmp = corner_move_table[arg_index6 + i];
-			index9_tmp = edge_move_table[arg_index9 + i];
-			prune3_tmp = prune_table3[index1_tmp + index6_tmp];
+			index6_tmp = corner_move_table[arg_index6 + m];
+			index9_tmp = edge_move_table[arg_index9 + m];
+			prune3_tmp = prune_table3[index1_tmp * 24 + index6_tmp];
 			if (prune3_tmp >= depth)
 			{
 				continue;
 			}
-			sol[current_max_depth - depth] = i;
+			sol.emplace_back(i);
 			if (depth == 1)
 			{
 				if (prune1_tmp == 0 && prune2_tmp == 0 && prune3_tmp == 0 && edge_prune1_tmp == 0 && index8_tmp == edge_solved2 && index9_tmp == edge_solved3)
@@ -1172,6 +1462,7 @@ struct xxxcross_search
 					bool valid = true;
 					int l = static_cast<int>(sol.size());
 					int c = 0;
+					int center_tmp = 0;
 					int index1_tmp2 = index1;
 					int index2_tmp2 = index2;
 					int index4_tmp2 = index4;
@@ -1181,7 +1472,9 @@ struct xxxcross_search
 					int index9_tmp2 = index9;
 					for (int j : sol)
 					{
-						if (index1_tmp2 == multi_move_table[index1_tmp2 + j] && index2_tmp2 == corner_move_table[index2_tmp2 + j] * 18 && index4_tmp2 == corner_move_table[index4_tmp2 + j] * 18 && index6_tmp2 == corner_move_table[index6_tmp2 + j] * 18 && index7_tmp2 == edge_move_table[index7_tmp2 + j] * 18 && index8_tmp2 == edge_move_table[index8_tmp2 + j] * 18 && index9_tmp2 == edge_move_table[index9_tmp2 + j] * 18)
+						m_tmp = converter[rotationMapReverse[center_tmp][j]];
+						center_tmp = center_move_table[center_tmp][j];
+						if (index1_tmp2 == multi_move_table[index1_tmp2 + m_tmp] * 27 && index2_tmp2 == corner_move_table[index2_tmp2 + m_tmp] * 27 && index4_tmp2 == corner_move_table[index4_tmp2 + m_tmp] * 27 && index6_tmp2 == corner_move_table[index6_tmp2 + m_tmp] * 27 && index7_tmp2 == edge_move_table[index7_tmp2 + m_tmp] * 27 && index8_tmp2 == edge_move_table[index8_tmp2 + m_tmp] * 27 && index9_tmp2 == edge_move_table[index9_tmp2 + m_tmp] * 27)
 						{
 							valid = false;
 							break;
@@ -1189,24 +1482,25 @@ struct xxxcross_search
 						else
 						{
 							c += 1;
-							index1_tmp2 = multi_move_table[index1_tmp2 + j];
-							index2_tmp2 = corner_move_table[index2_tmp2 + j];
-							index4_tmp2 = corner_move_table[index4_tmp2 + j];
-							index6_tmp2 = corner_move_table[index6_tmp2 + j];
-							index7_tmp2 = edge_move_table[index7_tmp2 + j];
-							index8_tmp2 = edge_move_table[index8_tmp2 + j];
-							index9_tmp2 = edge_move_table[index9_tmp2 + j];
-							if (c < l && (prune_table1[index1_tmp2 + index2_tmp2] == 0 && prune_table2[index1_tmp2 + index4_tmp2] == 0 && prune_table3[index1_tmp2 + index6_tmp2] == 0 && edge_corner_prune_table1[index7_tmp2 * 24 + index2_tmp2] == 0 && index8_tmp2 == edge_solved2 && index9_tmp2 == edge_solved3))
+							index1_tmp2 = multi_move_table[index1_tmp2 + m_tmp];
+							index2_tmp2 = corner_move_table[index2_tmp2 + m_tmp];
+							index4_tmp2 = corner_move_table[index4_tmp2 + m_tmp];
+							index6_tmp2 = corner_move_table[index6_tmp2 + m_tmp];
+							index7_tmp2 = edge_move_table[index7_tmp2 + m_tmp];
+							index8_tmp2 = edge_move_table[index8_tmp2 + m_tmp];
+							index9_tmp2 = edge_move_table[index9_tmp2 + m_tmp];
+							if (c < l && (prune_table1[index1_tmp2 * 24 + index2_tmp2] == 0 && prune_table2[index1_tmp2 * 24 + index4_tmp2] == 0 && prune_table3[index1_tmp2 * 24 + index6_tmp2] == 0 && edge_corner_prune_table1[index7_tmp2 * 24 + index2_tmp2] == 0 && index8_tmp2 == edge_solved2 && index9_tmp2 == edge_solved3))
 							{
 								valid = false;
 								break;
 							}
-							index2_tmp2 *= 18;
-							index4_tmp2 *= 18;
-							index6_tmp2 *= 18;
-							index7_tmp2 *= 18;
-							index8_tmp2 *= 18;
-							index9_tmp2 *= 18;
+							index1_tmp2 *= 27;
+							index2_tmp2 *= 27;
+							index4_tmp2 *= 27;
+							index6_tmp2 *= 27;
+							index7_tmp2 *= 27;
+							index8_tmp2 *= 27;
+							index9_tmp2 *= 27;
 						}
 					}
 					if (valid)
@@ -1228,10 +1522,11 @@ struct xxxcross_search
 					}
 				}
 			}
-			else if (depth_limited_search(index1_tmp, index2_tmp * 18, index4_tmp * 18, index6_tmp * 18, index7_tmp * 18, index8_tmp * 18, index9_tmp * 18, depth - 1, i * 18))
+			else if (depth_limited_search(index1_tmp * 27, index2_tmp * 27, index4_tmp * 27, index6_tmp * 27, index7_tmp * 27, index8_tmp * 27, index9_tmp * 27, depth - 1, i * 45, center_move_table[center][i]))
 			{
 				return true;
 			}
+			sol.pop_back();
 		}
 		return false;
 	}
@@ -1249,7 +1544,14 @@ struct xxxcross_search
 		max_length = arg_max_length;
 		sol_num = arg_sol_num;
 		restrict = arg_restrict;
-		std::vector<int> alg = AlgRotation(StringToAlg(scramble), rotation);
+		std::vector<int> scramble_alg = StringToAlg(scramble);
+		std::vector<int> rotation_alg = StringToAlg(rotation);
+		std::vector<int> alg = AlgRotation(scramble_alg, rotation_alg, center_move_table);
+		for (std::string name : restrict)
+		{
+			auto it = std::find(move_names.begin(), move_names.end(), name);
+			move_restrict.emplace_back(std::distance(move_names.begin(), it));
+		}
 		std::vector<int> edge_index = {187520, 187520, 187520, 187520};
 		std::vector<int> single_edge_index = {0, 2, 4, 6};
 		std::vector<int> corner_index = {12, 15, 18, 21};
@@ -1257,54 +1559,51 @@ struct xxxcross_search
 		index2 = corner_index[pslot1];
 		index7 = single_edge_index[slot1];
 		edge_solved1 = index7;
-		create_prune_table3(index7, index2, 10, multi_move_table, corner_move_table, prune_table1);
-		create_prune_table_edge_corner(index7, index2, 24, 24, 8, edge_move_table, corner_move_table, edge_corner_prune_table1);
+		create_prune_table3(index7, index2, 24 * 22 * 20 * 18, 24, 20, multi_move_table, corner_move_table, prune_table1, move_restrict, tmp_array, center_move_table);
+		create_prune_table4(index7, index2, 24, 24, 20, edge_move_table, corner_move_table, edge_corner_prune_table1, move_restrict, tmp_array, center_move_table);
 		index4 = corner_index[pslot2];
 		index8 = single_edge_index[slot2];
 		edge_solved2 = index8;
-		create_prune_table2(index4, 10, multi_move_table, corner_move_table, prune_table2);
+		create_prune_table2(index4, 20, multi_move_table, corner_move_table, prune_table2, move_restrict, tmp_array, center_move_table);
 		index6 = corner_index[pslot3];
 		index9 = single_edge_index[slot3];
 		edge_solved3 = index9;
-		create_prune_table2(index6, 10, multi_move_table, corner_move_table, prune_table3);
+		create_prune_table2(index6, 20, multi_move_table, corner_move_table, prune_table3, move_restrict, tmp_array, center_move_table);
 		count = 0;
-		for (std::string name : restrict)
-		{
-			auto it = std::find(move_names.begin(), move_names.end(), name);
-			move_restrict.emplace_back(std::distance(move_names.begin(), it));
-		}
-		index1 *= 24;
 		for (int m : alg)
 		{
-			index1 = multi_move_table[index1 + m];
-			index2 = corner_move_table[index2 * 18 + m];
-			index4 = corner_move_table[index4 * 18 + m];
-			index6 = corner_move_table[index6 * 18 + m];
-			index7 = edge_move_table[index7 * 18 + m];
-			index8 = edge_move_table[index8 * 18 + m];
-			index9 = edge_move_table[index9 * 18 + m];
+			index1 = multi_move_table[index1 * 27 + m];
+			index2 = corner_move_table[index2 * 27 + m];
+			index4 = corner_move_table[index4 * 27 + m];
+			index6 = corner_move_table[index6 * 27 + m];
+			index7 = edge_move_table[index7 * 27 + m];
+			index8 = edge_move_table[index8 * 27 + m];
+			index9 = edge_move_table[index9 * 27 + m];
 		}
-		prune1_tmp = prune_table1[index1 + index2];
-		prune2_tmp = prune_table2[index1 + index4];
-		prune3_tmp = prune_table3[index1 + index6];
+		prune1_tmp = prune_table1[index1 * 24 + index2];
+		prune2_tmp = prune_table2[index1 * 24 + index4];
+		prune3_tmp = prune_table3[index1 * 24 + index6];
 		edge_prune1_tmp = edge_corner_prune_table1[index7 * 24 + index2];
-		if (prune1_tmp == 0 && prune2_tmp == 0 && prune3_tmp == 0 && edge_prune1_tmp == 0 && index8 == edge_solved2 && index9 == edge_solved3)
+		if (prune1_tmp == 255 || prune2_tmp == 255 || prune3_tmp == 255 || edge_prune1_tmp == 255)
+		{
+			update("Unsolvable.");
+		}
+		else if (prune1_tmp == 0 && prune2_tmp == 0 && prune3_tmp == 0 && edge_prune1_tmp == 0 && index8 == edge_solved2 && index9 == edge_solved3)
 		{
 			update("Already solved.");
 		}
 		else
 		{
-			index2 *= 18;
-			index4 *= 18;
-			index6 *= 18;
-			index7 *= 18;
-			index8 *= 18;
-			index9 *= 18;
+			index1 *= 27;
+			index2 *= 27;
+			index4 *= 27;
+			index6 *= 27;
+			index7 *= 27;
+			index8 *= 27;
+			index9 *= 27;
 			for (int d = std::max(prune1_tmp, std::max(prune2_tmp, prune3_tmp)); d <= max_length; d++)
 			{
-				current_max_depth = d;
-				sol.resize(d);
-				if (depth_limited_search(index1, index2, index4, index6, index7, index8, index9, d, 324))
+				if (depth_limited_search(index1, index2, index4, index6, index7, index8, index9, d, 2025, 0))
 				{
 					break;
 				}
@@ -1330,6 +1629,8 @@ struct xxxxcross_search
 	int max_length;
 	int sol_num;
 	int count;
+	std::vector<std::vector<int>> center_move_table;
+	std::vector<unsigned char> tmp_array;
 	std::vector<int> edge_move_table;
 	std::vector<int> corner_move_table;
 	std::vector<int> multi_move_table;
@@ -1376,13 +1677,16 @@ struct xxxxcross_search
 	int prune3_tmp;
 	int prune4_tmp;
 	std::string tmp;
-	int current_max_depth;
+	int m;
+	int m_tmp;
 
 	xxxxcross_search()
 	{
+		center_move_table = create_center_move_table();
 		edge_move_table = create_edge_move_table();
 		corner_move_table = create_corner_move_table();
-		multi_move_table = create_multi_move_table2(4, 2, 12, 24 * 22 * 20 * 18, edge_move_table);
+		multi_move_table = std::vector<int>(24 * 22 * 20 * 18 * 27, -1);
+		create_multi_move_table(4, 2, 12, 24 * 22 * 20 * 18, multi_move_table, edge_move_table);
 		ma = create_ma_table();
 		prune_table1 = std::vector<unsigned char>(24 * 22 * 20 * 18 * 24, 255);
 		prune_table2 = std::vector<unsigned char>(24 * 22 * 20 * 18 * 24, 255);
@@ -1391,7 +1695,7 @@ struct xxxxcross_search
 		edge_corner_prune_table1 = std::vector<unsigned char>(24 * 24, 255);
 	}
 
-	bool depth_limited_search(int arg_index1, int arg_index2, int arg_index4, int arg_index6, int arg_index8, int arg_index9, int arg_index10, int arg_index11, int arg_index12, int depth, int prev)
+	bool depth_limited_search(int arg_index1, int arg_index2, int arg_index4, int arg_index6, int arg_index8, int arg_index9, int arg_index10, int arg_index11, int arg_index12, int depth, int prev, int center)
 	{
 		for (int i : move_restrict)
 		{
@@ -1399,10 +1703,11 @@ struct xxxxcross_search
 			{
 				continue;
 			}
-			index1_tmp = multi_move_table[arg_index1 + i];
-			index2_tmp = corner_move_table[arg_index2 + i];
-			index9_tmp = edge_move_table[arg_index9 + i];
-			prune1_tmp = prune_table1[index1_tmp + index2_tmp];
+			m = converter[rotationMapReverse[center][i]];
+			index1_tmp = multi_move_table[arg_index1 + m];
+			index2_tmp = corner_move_table[arg_index2 + m];
+			index9_tmp = edge_move_table[arg_index9 + m];
+			prune1_tmp = prune_table1[index1_tmp * 24 + index2_tmp];
 			if (prune1_tmp >= depth)
 			{
 				continue;
@@ -1412,28 +1717,28 @@ struct xxxxcross_search
 			{
 				continue;
 			}
-			index4_tmp = corner_move_table[arg_index4 + i];
-			index10_tmp = edge_move_table[arg_index10 + i];
-			prune2_tmp = prune_table2[index1_tmp + index4_tmp];
+			index4_tmp = corner_move_table[arg_index4 + m];
+			index10_tmp = edge_move_table[arg_index10 + m];
+			prune2_tmp = prune_table2[index1_tmp * 24 + index4_tmp];
 			if (prune2_tmp >= depth)
 			{
 				continue;
 			}
-			index6_tmp = corner_move_table[arg_index6 + i];
-			index11_tmp = edge_move_table[arg_index11 + i];
-			prune3_tmp = prune_table3[index1_tmp + index6_tmp];
+			index6_tmp = corner_move_table[arg_index6 + m];
+			index11_tmp = edge_move_table[arg_index11 + m];
+			prune3_tmp = prune_table3[index1_tmp * 24 + index6_tmp];
 			if (prune3_tmp >= depth)
 			{
 				continue;
 			}
-			index8_tmp = corner_move_table[arg_index8 + i];
-			index12_tmp = edge_move_table[arg_index12 + i];
-			prune4_tmp = prune_table4[index1_tmp + index8_tmp];
+			index8_tmp = corner_move_table[arg_index8 + m];
+			index12_tmp = edge_move_table[arg_index12 + m];
+			prune4_tmp = prune_table4[index1_tmp * 24 + index8_tmp];
 			if (prune4_tmp >= depth)
 			{
 				continue;
 			}
-			sol[current_max_depth - depth] = i;
+			sol.emplace_back(i);
 			if (depth == 1)
 			{
 				if (prune1_tmp == 0 && prune2_tmp == 0 && prune3_tmp == 0 && prune4_tmp == 0 && edge_prune1_tmp == 0 && index10_tmp == edge_solved2 && index11_tmp == edge_solved3 && index12_tmp == edge_solved4)
@@ -1441,6 +1746,7 @@ struct xxxxcross_search
 					bool valid = true;
 					int l = static_cast<int>(sol.size());
 					int c = 0;
+					int center_tmp = 0;
 					int index1_tmp2 = index1;
 					int index2_tmp2 = index2;
 					int index4_tmp2 = index4;
@@ -1452,7 +1758,9 @@ struct xxxxcross_search
 					int index12_tmp2 = index12;
 					for (int j : sol)
 					{
-						if (index1_tmp2 == multi_move_table[index1_tmp2 + j] && index2_tmp2 == corner_move_table[index2_tmp2 + j] * 18 && index4_tmp2 == corner_move_table[index4_tmp2 + j] * 18 && index6_tmp2 == corner_move_table[index6_tmp2 + j] * 18 && index8_tmp2 == corner_move_table[index8_tmp2 + j] * 18 && index9_tmp2 == edge_move_table[index9_tmp2 + j] * 18 && index10_tmp2 == edge_move_table[index10_tmp2 + j] * 18 && index11_tmp2 == edge_move_table[index11_tmp2 + j] * 18 && index12_tmp2 == edge_move_table[index12_tmp2 + j] * 18)
+						m_tmp = converter[rotationMapReverse[center_tmp][j]];
+						center_tmp = center_move_table[center_tmp][j];
+						if (index1_tmp2 == multi_move_table[index1_tmp2 + m_tmp] * 27 && index2_tmp2 == corner_move_table[index2_tmp2 + m_tmp] * 27 && index4_tmp2 == corner_move_table[index4_tmp2 + m_tmp] * 27 && index6_tmp2 == corner_move_table[index6_tmp2 + m_tmp] * 27 && index8_tmp2 == corner_move_table[index8_tmp2 + m_tmp] * 27 && index9_tmp2 == edge_move_table[index9_tmp2 + m_tmp] * 27 && index10_tmp2 == edge_move_table[index10_tmp2 + m_tmp] * 27 && index11_tmp2 == edge_move_table[index11_tmp2 + m_tmp] * 27 && index12_tmp2 == edge_move_table[index12_tmp2 + m_tmp] * 27)
 						{
 							valid = false;
 							break;
@@ -1460,28 +1768,29 @@ struct xxxxcross_search
 						else
 						{
 							c += 1;
-							index1_tmp2 = multi_move_table[index1_tmp2 + j];
-							index2_tmp2 = corner_move_table[index2_tmp2 + j];
-							index4_tmp2 = corner_move_table[index4_tmp2 + j];
-							index6_tmp2 = corner_move_table[index6_tmp2 + j];
-							index8_tmp2 = corner_move_table[index8_tmp2 + j];
-							index9_tmp2 = edge_move_table[index9_tmp2 + j];
-							index10_tmp2 = edge_move_table[index10_tmp2 + j];
-							index11_tmp2 = edge_move_table[index11_tmp2 + j];
-							index12_tmp2 = edge_move_table[index12_tmp2 + j];
-							if (c < l && (prune_table1[index1_tmp2 + index2_tmp2] == 0 && prune_table2[index1_tmp2 + index4_tmp2] == 0 && prune_table3[index1_tmp2 + index6_tmp2] == 0 && prune_table4[index1_tmp2 + index8_tmp2] == 0 && edge_corner_prune_table1[index9_tmp2 * 24 + index2_tmp2] == 0 && index10_tmp2 == edge_solved2 && index11_tmp2 == edge_solved3 && index12_tmp2 == edge_solved4))
+							index1_tmp2 = multi_move_table[index1_tmp2 + m_tmp];
+							index2_tmp2 = corner_move_table[index2_tmp2 + m_tmp];
+							index4_tmp2 = corner_move_table[index4_tmp2 + m_tmp];
+							index6_tmp2 = corner_move_table[index6_tmp2 + m_tmp];
+							index8_tmp2 = corner_move_table[index8_tmp2 + m_tmp];
+							index9_tmp2 = edge_move_table[index9_tmp2 + m_tmp];
+							index10_tmp2 = edge_move_table[index10_tmp2 + m_tmp];
+							index11_tmp2 = edge_move_table[index11_tmp2 + m_tmp];
+							index12_tmp2 = edge_move_table[index12_tmp2 + m_tmp];
+							if (c < l && (prune_table1[index1_tmp2 * 24 + index2_tmp2] == 0 && prune_table2[index1_tmp2 * 24 + index4_tmp2] == 0 && prune_table3[index1_tmp2 * 24 + index6_tmp2] == 0 && prune_table4[index1_tmp2 * 24 + index8_tmp2] == 0 && edge_corner_prune_table1[index9_tmp2 * 24 + index2_tmp2] == 0 && index10_tmp2 == edge_solved2 && index11_tmp2 == edge_solved3 && index12_tmp2 == edge_solved4))
 							{
 								valid = false;
 								break;
 							}
-							index2_tmp2 *= 18;
-							index4_tmp2 *= 18;
-							index6_tmp2 *= 18;
-							index8_tmp2 *= 18;
-							index9_tmp2 *= 18;
-							index10_tmp2 *= 18;
-							index11_tmp2 *= 18;
-							index12_tmp2 *= 18;
+							index1_tmp2 *= 27;
+							index2_tmp2 *= 27;
+							index4_tmp2 *= 27;
+							index6_tmp2 *= 27;
+							index8_tmp2 *= 27;
+							index9_tmp2 *= 27;
+							index10_tmp2 *= 27;
+							index11_tmp2 *= 27;
+							index12_tmp2 *= 27;
 						}
 					}
 					if (valid)
@@ -1503,10 +1812,11 @@ struct xxxxcross_search
 					}
 				}
 			}
-			else if (depth_limited_search(index1_tmp, index2_tmp * 18, index4_tmp * 18, index6_tmp * 18, index8_tmp * 18, index9_tmp * 18, index10_tmp * 18, index11_tmp * 18, index12_tmp * 18, depth - 1, i * 18))
+			else if (depth_limited_search(index1_tmp * 27, index2_tmp * 27, index4_tmp * 27, index6_tmp * 27, index8_tmp * 27, index9_tmp * 27, index10_tmp * 27, index11_tmp * 27, index12_tmp * 27, depth - 1, i * 45, center_move_table[center][i]))
 			{
 				return true;
 			}
+			sol.pop_back();
 		}
 		return false;
 	}
@@ -1526,7 +1836,14 @@ struct xxxxcross_search
 		max_length = arg_max_length;
 		sol_num = arg_sol_num;
 		restrict = arg_restrict;
-		std::vector<int> alg = AlgRotation(StringToAlg(scramble), rotation);
+		std::vector<int> scramble_alg = StringToAlg(scramble);
+		std::vector<int> rotation_alg = StringToAlg(rotation);
+		std::vector<int> alg = AlgRotation(scramble_alg, rotation_alg, center_move_table);
+		for (std::string name : restrict)
+		{
+			auto it = std::find(move_names.begin(), move_names.end(), name);
+			move_restrict.emplace_back(std::distance(move_names.begin(), it));
+		}
 		std::vector<int> edge_index = {187520, 187520, 187520, 187520};
 		std::vector<int> single_edge_index = {0, 2, 4, 6};
 		std::vector<int> corner_index = {12, 15, 18, 21};
@@ -1534,63 +1851,60 @@ struct xxxxcross_search
 		index2 = corner_index[pslot1];
 		index9 = single_edge_index[slot1];
 		edge_solved1 = index9;
-		create_prune_table3(index9, index2, 10, multi_move_table, corner_move_table, prune_table1);
-		create_prune_table_edge_corner(index9, index2, 24, 24, 8, edge_move_table, corner_move_table, edge_corner_prune_table1);
+		create_prune_table3(index9, index2, 24 * 22 * 20 * 18, 24, 20, multi_move_table, corner_move_table, prune_table1, move_restrict, tmp_array, center_move_table);
+		create_prune_table4(index9, index2, 24, 24, 20, edge_move_table, corner_move_table, edge_corner_prune_table1, move_restrict, tmp_array, center_move_table);
 		index4 = corner_index[pslot2];
 		index10 = single_edge_index[slot2];
 		edge_solved2 = index10;
-		create_prune_table2(index4, 10, multi_move_table, corner_move_table, prune_table2);
+		create_prune_table2(index4, 20, multi_move_table, corner_move_table, prune_table2, move_restrict, tmp_array, center_move_table);
 		index6 = corner_index[pslot3];
 		index11 = single_edge_index[slot3];
 		edge_solved3 = index11;
-		create_prune_table2(index6, 10, multi_move_table, corner_move_table, prune_table3);
+		create_prune_table2(index6, 20, multi_move_table, corner_move_table, prune_table3, move_restrict, tmp_array, center_move_table);
 		index8 = corner_index[pslot4];
 		index12 = single_edge_index[slot4];
 		edge_solved4 = index12;
-		create_prune_table2(index8, 10, multi_move_table, corner_move_table, prune_table4);
+		create_prune_table2(index8, 20, multi_move_table, corner_move_table, prune_table4, move_restrict, tmp_array, center_move_table);
 		count = 0;
-		for (std::string name : restrict)
-		{
-			auto it = std::find(move_names.begin(), move_names.end(), name);
-			move_restrict.emplace_back(std::distance(move_names.begin(), it));
-		}
-		index1 *= 24;
 		for (int m : alg)
 		{
-			index1 = multi_move_table[index1 + m];
-			index2 = corner_move_table[index2 * 18 + m];
-			index4 = corner_move_table[index4 * 18 + m];
-			index6 = corner_move_table[index6 * 18 + m];
-			index8 = corner_move_table[index8 * 18 + m];
-			index9 = edge_move_table[index9 * 18 + m];
-			index10 = edge_move_table[index10 * 18 + m];
-			index11 = edge_move_table[index11 * 18 + m];
-			index12 = edge_move_table[index12 * 18 + m];
+			index1 = multi_move_table[index1 * 27 + m];
+			index2 = corner_move_table[index2 * 27 + m];
+			index4 = corner_move_table[index4 * 27 + m];
+			index6 = corner_move_table[index6 * 27 + m];
+			index8 = corner_move_table[index8 * 27 + m];
+			index9 = edge_move_table[index9 * 27 + m];
+			index10 = edge_move_table[index10 * 27 + m];
+			index11 = edge_move_table[index11 * 27 + m];
+			index12 = edge_move_table[index12 * 27 + m];
 		}
-		prune1_tmp = prune_table1[index1 + index2];
-		prune2_tmp = prune_table2[index1 + index4];
-		prune3_tmp = prune_table3[index1 + index6];
-		prune4_tmp = prune_table4[index1 + index8];
+		prune1_tmp = prune_table1[index1 * 24 + index2];
+		prune2_tmp = prune_table2[index1 * 24 + index4];
+		prune3_tmp = prune_table3[index1 * 24 + index6];
+		prune4_tmp = prune_table4[index1 * 24 + index8];
 		edge_prune1_tmp = edge_corner_prune_table1[index9 * 24 + index2];
-		if (prune1_tmp == 0 && prune2_tmp == 0 && prune3_tmp == 0 && prune4_tmp == 0 && edge_prune1_tmp == 0 && index10 == edge_solved2 && index11 == edge_solved3 && index12 == edge_solved4)
+		if (prune1_tmp == 255 || prune2_tmp == 255 || prune3_tmp == 255 || prune4_tmp == 255 || edge_prune1_tmp == 255)
+		{
+			update("Unsolvable.");
+		}
+		else if (prune1_tmp == 0 && prune2_tmp == 0 && prune3_tmp == 0 && prune4_tmp == 0 && edge_prune1_tmp == 0 && index10 == edge_solved2 && index11 == edge_solved3 && index12 == edge_solved4)
 		{
 			update("Already solved.");
 		}
 		else
 		{
-			index2 *= 18;
-			index4 *= 18;
-			index6 *= 18;
-			index8 *= 18;
-			index9 *= 18;
-			index10 *= 18;
-			index11 *= 18;
-			index12 *= 18;
+			index1 *= 27;
+			index2 *= 27;
+			index4 *= 27;
+			index6 *= 27;
+			index8 *= 27;
+			index9 *= 27;
+			index10 *= 27;
+			index11 *= 27;
+			index12 *= 27;
 			for (int d = std::max(prune1_tmp, std::max(prune2_tmp, std::max(prune3_tmp, prune4_tmp))); d <= max_length; d++)
 			{
-				current_max_depth = d;
-				sol.resize(d);
-				if (depth_limited_search(index1, index2, index4, index6, index8, index9, index10, index11, index12, d, 324))
+				if (depth_limited_search(index1, index2, index4, index6, index8, index9, index10, index11, index12, d, 2025, 0))
 				{
 					break;
 				}

@@ -23,7 +23,7 @@ F2L_PairingSolver
 em++ pairing_solver.cpp -o pairing_solver.js -O3 -msimd128 -flto -s TOTAL_MEMORY=50MB -s WASM=1 --bind
 
 highMemorySolver
-em++ solver2.cpp -o solver2.js -O3 -msimd128 -flto -s TOTAL_MEMORY=700MB -s WASM=1 --bind
+em++ solver2.cpp -o solver2.js -O3 -msimd128 -flto -s TOTAL_MEMORY=800MB -s WASM=1 --bind
 
 pairAnalyzer
 em++ analyzer.cpp -o analyzer.js -O3 -msimd128 -flto -s TOTAL_MEMORY=100MB -s WASM=1 --bind

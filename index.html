@@ -264,8 +264,8 @@
         style="white-space: nowrap;">Source</a><a>&nbsp;</a>
     <a href="https://or18.github.io/Rubiks-cube-xcross-solver/" rel="noopener noreferrer"
         style="white-space: nowrap;">Old Demo</a>
-	<a href="https://or18.github.io/RubiksSolverDemo/2x2x2" rel="noopener noreferrer"
-        style="white-space: nowrap;">2x2x2 Solver</a><br><br>
+    <a href="https://or18.github.io/RubiksSolverDemo/2x2x2" rel="noopener noreferrer" style="white-space: nowrap;">2x2x2
+        Solver</a><br><br>
     <a>Trainers:</a><br>
     <a href="https://or18.github.io/RubiksSolverDemo/cross_trainer" rel="noopener noreferrer"
         style="white-space: nowrap;">Cross</a><a>&nbsp;</a>
@@ -315,7 +315,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
         <label for="analyzer_rotation_option">Face Option: </label>
         <fieldset id="analyzer_rotation_option">
             <input type="checkbox" id="checkboxD_analyzer" class="custom-checkbox analyzer" value="D" checked>
-            <label translate="no" translate="no" for="checkboxD_analyzer">D</label>
+            <label translate="no" for="checkboxD_analyzer">D</label>
             <input type="checkbox" id="checkboxU_analyzer" class="custom-checkbox analyzer" value="U">
             <label translate="no" for="checkboxU_analyzer">U</label>
             <input type="checkbox" id="checkboxL_analyzer" class="custom-checkbox analyzer" value="L">
@@ -348,7 +348,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
         <label for="eo_analyzer_rotation_option">Face Option: </label>
         <fieldset id="eo_analyzer_rotation_option">
             <input type="checkbox" id="checkboxD_eo_analyzer" class="custom-checkbox eo_analyzer" value="D" checked>
-            <label translate="no" translate="no" for="checkboxD_eo_analyzer">D</label>
+            <label translate="no" for="checkboxD_eo_analyzer">D</label>
             <input type="checkbox" id="checkboxU_eo_analyzer" class="custom-checkbox eo_analyzer" value="U">
             <label translate="no" for="checkboxU_eo_analyzer">U</label>
             <input type="checkbox" id="checkboxL_eo_analyzer" class="custom-checkbox eo_analyzer" value="L">
@@ -681,26 +681,38 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
         <label for="num">Max Count: </label>
         <input type="number" id="num" value="20" min=1 required onchange="updateUrlParams()"><br>
         <label for="res">Move Restrict: </label>
-        <select translate="no" id="res" onchange="updateUrlParams()">
-            <option translate="no" value="UDLRFB">UDLRFB</option>
-            <option translate="no" value="UDRF">UDRF</option>
-            <option translate="no" value="UDLF">UDLF</option>
-            <option translate="no" value="UDRB">UDRB</option>
-            <option translate="no" value="UDLB">UDLB</option>
-            <option translate="no" value="UDLR">UDLR</option>
-            <option translate="no" value="URFB">URFB</option>
-            <option translate="no" value="ULFB">ULFB</option>
-            <option translate="no" value="URF">URF</option>
-            <option translate="no" value="ULF">ULF</option>
-            <option translate="no" value="URB">URB</option>
-            <option translate="no" value="ULB">ULB</option>
-            <option translate="no" value="UDR">UDR</option>
-            <option translate="no" value="UDL">UDL</option>
-            <option translate="no" value="ULR">ULR</option>
-            <option translate="no" value="ULR">UFB</option>
-            <option translate="no" value="UR">UR</option>
-            <option translate="no" value="UL">UL</option>
-        </select><br>
+        <fieldset translate="no" id="res" onchange="updateUrlParams()">
+            <input type="checkbox" id="checkboxU_restrict" class="custom-checkbox restrict" value="U" checked>
+            <label translate="no" for="checkboxU_restrict">U</label>
+            <input type="checkbox" id="checkboxD_restrict" class="custom-checkbox restrict" value="D" checked>
+            <label translate="no" for="checkboxD_restrict">D</label>
+            <input type="checkbox" id="checkboxL_restrict" class="custom-checkbox restrict" value="L" checked>
+            <label translate="no" for="checkboxL_restrict">L</label>
+            <input type="checkbox" id="checkboxR_restrict" class="custom-checkbox restrict" value="R" checked>
+            <label translate="no" for="checkboxR_restrict">R</label>
+            <input type="checkbox" id="checkboxF_restrict" class="custom-checkbox restrict" value="F" checked>
+            <label translate="no" for="checkboxF_restrict">F</label>
+            <input type="checkbox" id="checkboxB_restrict" class="custom-checkbox restrict" value="B" checked>
+            <label translate="no" for="checkboxB_restrict">B</label><br><br>
+            <input type="checkbox" id="checkboxu_restrict" class="custom-checkbox restrict" value="u">
+            <label translate="no" for="checkboxu_restrict">u</label>
+            <input type="checkbox" id="checkboxd_restrict" class="custom-checkbox restrict" value="d">
+            <label translate="no" for="checkboxd_restrict">d</label>
+            <input type="checkbox" id="checkboxl_restrict" class="custom-checkbox restrict" value="l">
+            <label translate="no" for="checkboxl_restrict">l</label>
+            <input type="checkbox" id="checkboxr_restrict" class="custom-checkbox restrict" value="r">
+            <label translate="no" for="checkboxr_restrict">r</label>
+            <input type="checkbox" id="checkboxf_restrict" class="custom-checkbox restrict" value="f">
+            <label translate="no" for="checkboxf_restrict">f</label>
+            <input type="checkbox" id="checkboxb_restrict" class="custom-checkbox restrict" value="b">
+            <label translate="no" for="checkboxb_restrict">b</label><br><br>
+            <input type="checkbox" id="checkboxM_restrict" class="custom-checkbox restrict" value="M">
+            <label translate="no" for="checkboxM_restrict">M</label>
+            <input type="checkbox" id="checkboxE_restrict" class="custom-checkbox restrict" value="E">
+            <label translate="no" for="checkboxE_restrict">E</label>
+            <input type="checkbox" id="checkboxS_restrict" class="custom-checkbox restrict" value="S">
+            <label translate="no" for="checkboxS_restrict">S</label>
+        </fieldset><br>
 
         <input type="checkbox" id="CheckboxAutoMaskSetting" class="custom-checkbox" checked>
         <label for="CheckboxAutoMaskSetting">Auto Stickering Setting </label>
@@ -1421,6 +1433,33 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             'res'
         ];
 
+        function getRestrict() {
+            const checkboxes = document.querySelectorAll('#res .restrict');
+            const values = [];
+            checkboxes.forEach(function (checkbox) {
+                if (checkbox.checked) {
+                    values.push(checkbox.value);
+                }
+            });
+            const rot_set = values.join('');
+            return rot_set
+        }
+
+        function setRestrict(rot_string) {
+            const allCheckboxes = document.querySelectorAll('#res input[type="checkbox"]');
+            allCheckboxes.forEach(checkbox => {
+                checkbox.checked = false;
+            });
+            for (let i = 0; i < rot_string.length; i++) {
+                const char = rot_string.charAt(i);
+                const checkboxId = `checkbox${char}_restrict`;
+                const checkbox = document.getElementById(checkboxId);
+                if (checkbox) {
+                    checkbox.checked = true;
+                }
+            }
+        }
+
         function updateUrlParams() {
             const solver = document.getElementById('solver').value;
             const url = new URL(window.location.href);
@@ -1433,6 +1472,13 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                         if (newValue !== '') {
                             newValue = encodeURIComponent(scr_fix2(newValue).replace(/ /g, '_').replace(/'/g, '-'));
                             url.searchParams.set(key, newValue);
+                        } else {
+                            url.searchParams.delete(key);
+                        }
+                    } else if (id === 'res') {
+                        const rot_string = getRestrict();
+                        if (newValue !== defaultValueTmp[id]) {
+                            url.searchParams.set(key, rot_string);
                         } else {
                             url.searchParams.delete(key);
                         }
@@ -1463,7 +1509,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             if (solver !== "twophase") {
                 document.getElementById('len').value = urlParams.get(idToKeyMap['len']) ? urlParams.get(idToKeyMap['len']) : defaultValues[solver]['len'];
                 document.getElementById('num').value = urlParams.get(idToKeyMap['num']) ? urlParams.get(idToKeyMap['num']) : defaultValues[solver]['num'];
-                document.getElementById('res').value = urlParams.get(idToKeyMap['res']) ? urlParams.get(idToKeyMap['res']) : defaultValues[solver]['res'];
+                setRestrict(urlParams.get(idToKeyMap['res']) ? urlParams.get(idToKeyMap['res']) : defaultValues[solver]['res'])
             }
             if (solver === "F2L" || solver === "F2L2") {
                 document.getElementById('slot').value = urlParams.get(idToKeyMap['slot']) ? urlParams.get(idToKeyMap['slot']).replace(/_/g, ' ') : defaultValues[solver]['slot'];
@@ -1559,7 +1605,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                 const ll = document.getElementById('ll').value
                 const num = document.getElementById('num').value;
                 const len = document.getElementById('len').value;
-                const restrict = document.getElementById('res').value;
+                const restrict = getRestrict();
                 document.getElementById("solveButton").textContent = "End";
                 const convertResult = convert(scr);
                 const result_moves = convertResult[0];
@@ -1939,7 +1985,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             document.getElementById('slot').value = slot_option;
             document.getElementById('num').value = 20;
             document.getElementById('len').value = 20;
-            document.getElementById('res').value = "UDLRFB";
+            setRestrict('UDLRFB');
             updateUrlParams();
             if (worker) {
                 startWorker();
@@ -2333,7 +2379,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             document.getElementById('pslot_corner').value = pslot_option;
             document.getElementById('num').value = 20;
             document.getElementById('len').value = 20;
-            document.getElementById('res').value = "UDLRFB";
+            setRestrict('UDLRFB');
             updateUrlParams();
             if (worker) {
                 startWorker();
@@ -2471,7 +2517,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             document.getElementById('pair_slot').value = pslot_option;
             document.getElementById('num').value = 20;
             document.getElementById('len').value = 20;
-            document.getElementById('res').value = "UDLRFB";
+            setRestrict('UDLRFB');
             updateUrlParams();
             if (worker) {
                 startWorker();
@@ -2616,7 +2662,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             document.getElementById('pair_pslot_corner').value = a_pslot_option;
             document.getElementById('num').value = 20;
             document.getElementById('len').value = 20;
-            document.getElementById('res').value = "UDLRFB";
+            setRestrict('UDLRFB');
             updateUrlParams();
             if (worker) {
                 startWorker();
@@ -2757,7 +2803,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             document.getElementById('slot_eo').value = slot_option;
             document.getElementById('num').value = 20;
             document.getElementById('len').value = 20;
-            document.getElementById('res').value = "UDLRFB";
+            setRestrict('UDLRFB');
             updateUrlParams();
             if (worker) {
                 startWorker();
