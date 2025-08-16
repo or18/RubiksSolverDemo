@@ -2112,7 +2112,7 @@ struct LL_substeps_search
             index10 *= 27;
             index11 *= 27;
             index12 *= 27;
-            for (int d = std::max(prune1_tmp, std::max(prune2_tmp, std::max(prune3_tmp, prune4_tmp))) + 1; d <= max_length; d++)
+            for (int d = std::max(prune1_tmp, std::max(prune2_tmp, std::max(prune3_tmp, prune4_tmp))); d <= max_length; d++)
             {
                 if (depth_limited_search(index1, index2, index4, index6, index8, index9, index10, index11, index12, index_cp, index_co, index_ep, index_eo, d, 2025, 0))
                 {
@@ -2421,7 +2421,7 @@ struct LL_search
             index10 *= 27;
             index11 *= 27;
             index12 *= 27;
-            for (int d = std::max(prune1_tmp, std::max(prune2_tmp, std::max(prune3_tmp, prune4_tmp))) * 7; d <= max_length; d++)
+            for (int d = std::max(prune1_tmp, std::max(prune2_tmp, std::max(prune3_tmp, prune4_tmp))); d <= max_length; d++)
             {
                 if (depth_limited_search(index1, index2, index4, index6, index8, index9, index10, index11, index12, index_cp, index_co, index_ep, index_eo, d, 2025, 0))
                 {
