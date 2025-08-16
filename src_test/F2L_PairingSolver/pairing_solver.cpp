@@ -1090,6 +1090,8 @@ struct xxcross_search
                     int index6_tmp2 = index6;
                     for (int j : sol)
                     {
+                        m_tmp = converter[rotationMapReverse[center_tmp][j]];
+                        center_tmp = center_move_table[center_tmp][j];
                         if (index1_tmp2 == multi_move_table[index1_tmp2 + m_tmp] * 27 && index2_tmp2 == corner_move_table[index2_tmp2 + m_tmp] * 27 && index4_tmp2 == corner_move_table[index4_tmp2 + m_tmp] * 27 && index5_tmp2 == edge_move_table[index5_tmp2 + m_tmp] * 27 && index6_tmp2 == edge_move_table[index6_tmp2 + m_tmp] * 27)
                         {
                             valid = false;
