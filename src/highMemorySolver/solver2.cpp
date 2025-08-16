@@ -2182,6 +2182,7 @@ struct LL_search
 					bool valid = true;
 					int l = static_cast<int>(sol.size());
 					int c = 0;
+					int center_tmp = 0;
 					int index1_tmp2 = index1;
 					int index2_tmp2 = index2;
 					int index3_tmp2 = index3;
@@ -2197,6 +2198,8 @@ struct LL_search
 					for (int j : sol)
 					{
 						c += 1;
+                        m_tmp = converter[rotationMapReverse[center_tmp][j]];
+                        center_tmp = center_move_table[center_tmp][j];
 						index1_tmp2 = multi_move_table[index1_tmp2 + m_tmp];
 						index2_tmp2 = corner_move_table[index2_tmp2 + m_tmp];
 						index3_tmp2 = multi_move_table[index3_tmp2 + m_tmp];
