@@ -6,6 +6,7 @@
 #include <unordered_map>
 #include <string>
 #include <sstream>
+#include <bitset>
 
 EM_JS(void, update, (const char *str), {
 	postMessage(UTF8ToString(str));
@@ -241,57 +242,57 @@ std::vector<int> StringToAlg(std::string str)
 
 std::vector<std::vector<int>> rotationMap =
 	{
-		{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44},
-		{0, 1, 2, 3, 4, 5, 15, 16, 17, 12, 13, 14, 6, 7, 8, 9, 10, 11, 18, 19, 20, 21, 22, 23, 33, 34, 35, 30, 31, 32, 24, 25, 26, 27, 28, 29, 44, 43, 42, 39, 40, 41, 36, 37, 38},
-		{0, 1, 2, 3, 4, 5, 9, 10, 11, 6, 7, 8, 15, 16, 17, 12, 13, 14, 18, 19, 20, 21, 22, 23, 27, 28, 29, 24, 25, 26, 33, 34, 35, 30, 31, 32, 38, 37, 36, 39, 40, 41, 44, 43, 42},
-		{0, 1, 2, 3, 4, 5, 12, 13, 14, 15, 16, 17, 9, 10, 11, 6, 7, 8, 18, 19, 20, 21, 22, 23, 30, 31, 32, 33, 34, 35, 27, 28, 29, 24, 25, 26, 42, 43, 44, 39, 40, 41, 38, 37, 36},
-		{3, 4, 5, 0, 1, 2, 9, 10, 11, 6, 7, 8, 12, 13, 14, 15, 16, 17, 21, 22, 23, 18, 19, 20, 27, 28, 29, 24, 25, 26, 30, 31, 32, 33, 34, 35, 38, 37, 36, 41, 40, 39, 42, 43, 44},
-		{3, 4, 5, 0, 1, 2, 12, 13, 14, 15, 16, 17, 6, 7, 8, 9, 10, 11, 21, 22, 23, 18, 19, 20, 30, 31, 32, 33, 34, 35, 24, 25, 26, 27, 28, 29, 42, 43, 44, 41, 40, 39, 36, 37, 38},
-		{3, 4, 5, 0, 1, 2, 6, 7, 8, 9, 10, 11, 15, 16, 17, 12, 13, 14, 21, 22, 23, 18, 19, 20, 24, 25, 26, 27, 28, 29, 33, 34, 35, 30, 31, 32, 36, 37, 38, 41, 40, 39, 44, 43, 42},
-		{3, 4, 5, 0, 1, 2, 15, 16, 17, 12, 13, 14, 9, 10, 11, 6, 7, 8, 21, 22, 23, 18, 19, 20, 33, 34, 35, 30, 31, 32, 27, 28, 29, 24, 25, 26, 44, 43, 42, 41, 40, 39, 38, 37, 36},
-		{6, 7, 8, 9, 10, 11, 3, 4, 5, 0, 1, 2, 12, 13, 14, 15, 16, 17, 24, 25, 26, 27, 28, 29, 21, 22, 23, 18, 19, 20, 30, 31, 32, 33, 34, 35, 39, 40, 41, 38, 37, 36, 42, 43, 44},
-		{15, 16, 17, 12, 13, 14, 3, 4, 5, 0, 1, 2, 6, 7, 8, 9, 10, 11, 33, 34, 35, 30, 31, 32, 21, 22, 23, 18, 19, 20, 24, 25, 26, 27, 28, 29, 39, 40, 41, 42, 43, 44, 36, 37, 38},
-		{9, 10, 11, 6, 7, 8, 3, 4, 5, 0, 1, 2, 15, 16, 17, 12, 13, 14, 27, 28, 29, 24, 25, 26, 21, 22, 23, 18, 19, 20, 33, 34, 35, 30, 31, 32, 39, 40, 41, 36, 37, 38, 44, 43, 42},
-		{12, 13, 14, 15, 16, 17, 3, 4, 5, 0, 1, 2, 9, 10, 11, 6, 7, 8, 30, 31, 32, 33, 34, 35, 21, 22, 23, 18, 19, 20, 27, 28, 29, 24, 25, 26, 39, 40, 41, 44, 43, 42, 38, 37, 36},
-		{9, 10, 11, 6, 7, 8, 0, 1, 2, 3, 4, 5, 12, 13, 14, 15, 16, 17, 27, 28, 29, 24, 25, 26, 18, 19, 20, 21, 22, 23, 30, 31, 32, 33, 34, 35, 41, 40, 39, 36, 37, 38, 42, 43, 44},
-		{12, 13, 14, 15, 16, 17, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 30, 31, 32, 33, 34, 35, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 41, 40, 39, 44, 43, 42, 36, 37, 38},
-		{6, 7, 8, 9, 10, 11, 0, 1, 2, 3, 4, 5, 15, 16, 17, 12, 13, 14, 24, 25, 26, 27, 28, 29, 18, 19, 20, 21, 22, 23, 33, 34, 35, 30, 31, 32, 41, 40, 39, 38, 37, 36, 44, 43, 42},
-		{15, 16, 17, 12, 13, 14, 0, 1, 2, 3, 4, 5, 9, 10, 11, 6, 7, 8, 33, 34, 35, 30, 31, 32, 18, 19, 20, 21, 22, 23, 27, 28, 29, 24, 25, 26, 41, 40, 39, 42, 43, 44, 38, 37, 36},
-		{12, 13, 14, 15, 16, 17, 6, 7, 8, 9, 10, 11, 3, 4, 5, 0, 1, 2, 30, 31, 32, 33, 34, 35, 24, 25, 26, 27, 28, 29, 21, 22, 23, 18, 19, 20, 36, 37, 38, 44, 43, 42, 39, 40, 41},
-		{6, 7, 8, 9, 10, 11, 15, 16, 17, 12, 13, 14, 3, 4, 5, 0, 1, 2, 24, 25, 26, 27, 28, 29, 33, 34, 35, 30, 31, 32, 21, 22, 23, 18, 19, 20, 44, 43, 42, 38, 37, 36, 39, 40, 41},
-		{15, 16, 17, 12, 13, 14, 9, 10, 11, 6, 7, 8, 3, 4, 5, 0, 1, 2, 33, 34, 35, 30, 31, 32, 27, 28, 29, 24, 25, 26, 21, 22, 23, 18, 19, 20, 38, 37, 36, 42, 43, 44, 39, 40, 41},
-		{9, 10, 11, 6, 7, 8, 12, 13, 14, 15, 16, 17, 3, 4, 5, 0, 1, 2, 27, 28, 29, 24, 25, 26, 30, 31, 32, 33, 34, 35, 21, 22, 23, 18, 19, 20, 42, 43, 44, 36, 37, 38, 39, 40, 41},
-		{15, 16, 17, 12, 13, 14, 6, 7, 8, 9, 10, 11, 0, 1, 2, 3, 4, 5, 33, 34, 35, 30, 31, 32, 24, 25, 26, 27, 28, 29, 18, 19, 20, 21, 22, 23, 36, 37, 38, 42, 43, 44, 41, 40, 39},
-		{9, 10, 11, 6, 7, 8, 15, 16, 17, 12, 13, 14, 0, 1, 2, 3, 4, 5, 27, 28, 29, 24, 25, 26, 33, 34, 35, 30, 31, 32, 18, 19, 20, 21, 22, 23, 44, 43, 42, 36, 37, 38, 41, 40, 39},
-		{12, 13, 14, 15, 16, 17, 9, 10, 11, 6, 7, 8, 0, 1, 2, 3, 4, 5, 30, 31, 32, 33, 34, 35, 27, 28, 29, 24, 25, 26, 18, 19, 20, 21, 22, 23, 38, 37, 36, 44, 43, 42, 41, 40, 39},
-		{6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 0, 1, 2, 3, 4, 5, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 18, 19, 20, 21, 22, 23, 42, 43, 44, 38, 37, 36, 41, 40, 39}};
+		{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53},
+		{0, 1, 2, 3, 4, 5, 15, 16, 17, 12, 13, 14, 6, 7, 8, 9, 10, 11, 18, 19, 20, 21, 22, 23, 33, 34, 35, 30, 31, 32, 24, 25, 26, 27, 28, 29, 44, 43, 42, 39, 40, 41, 36, 37, 38, 51, 52, 53, 48, 49, 50, 47, 46, 45},
+		{0, 1, 2, 3, 4, 5, 9, 10, 11, 6, 7, 8, 15, 16, 17, 12, 13, 14, 18, 19, 20, 21, 22, 23, 27, 28, 29, 24, 25, 26, 33, 34, 35, 30, 31, 32, 38, 37, 36, 39, 40, 41, 44, 43, 42, 47, 46, 45, 48, 49, 50, 53, 52, 51},
+		{0, 1, 2, 3, 4, 5, 12, 13, 14, 15, 16, 17, 9, 10, 11, 6, 7, 8, 18, 19, 20, 21, 22, 23, 30, 31, 32, 33, 34, 35, 27, 28, 29, 24, 25, 26, 42, 43, 44, 39, 40, 41, 38, 37, 36, 53, 52, 51, 48, 49, 50, 45, 46, 47},
+		{3, 4, 5, 0, 1, 2, 9, 10, 11, 6, 7, 8, 12, 13, 14, 15, 16, 17, 21, 22, 23, 18, 19, 20, 27, 28, 29, 24, 25, 26, 30, 31, 32, 33, 34, 35, 38, 37, 36, 41, 40, 39, 42, 43, 44, 47, 46, 45, 50, 49, 48, 51, 52, 53},
+		{3, 4, 5, 0, 1, 2, 12, 13, 14, 15, 16, 17, 6, 7, 8, 9, 10, 11, 21, 22, 23, 18, 19, 20, 30, 31, 32, 33, 34, 35, 24, 25, 26, 27, 28, 29, 42, 43, 44, 41, 40, 39, 36, 37, 38, 53, 52, 51, 50, 49, 48, 47, 46, 45},
+		{3, 4, 5, 0, 1, 2, 6, 7, 8, 9, 10, 11, 15, 16, 17, 12, 13, 14, 21, 22, 23, 18, 19, 20, 24, 25, 26, 27, 28, 29, 33, 34, 35, 30, 31, 32, 36, 37, 38, 41, 40, 39, 44, 43, 42, 45, 46, 47, 50, 49, 48, 53, 52, 51},
+		{3, 4, 5, 0, 1, 2, 15, 16, 17, 12, 13, 14, 9, 10, 11, 6, 7, 8, 21, 22, 23, 18, 19, 20, 33, 34, 35, 30, 31, 32, 27, 28, 29, 24, 25, 26, 44, 43, 42, 41, 40, 39, 38, 37, 36, 51, 52, 53, 50, 49, 48, 45, 46, 47},
+		{6, 7, 8, 9, 10, 11, 3, 4, 5, 0, 1, 2, 12, 13, 14, 15, 16, 17, 24, 25, 26, 27, 28, 29, 21, 22, 23, 18, 19, 20, 30, 31, 32, 33, 34, 35, 39, 40, 41, 38, 37, 36, 42, 43, 44, 48, 49, 50, 47, 46, 45, 51, 52, 53},
+		{15, 16, 17, 12, 13, 14, 3, 4, 5, 0, 1, 2, 6, 7, 8, 9, 10, 11, 33, 34, 35, 30, 31, 32, 21, 22, 23, 18, 19, 20, 24, 25, 26, 27, 28, 29, 39, 40, 41, 42, 43, 44, 36, 37, 38, 48, 49, 50, 53, 52, 51, 47, 46, 45},
+		{9, 10, 11, 6, 7, 8, 3, 4, 5, 0, 1, 2, 15, 16, 17, 12, 13, 14, 27, 28, 29, 24, 25, 26, 21, 22, 23, 18, 19, 20, 33, 34, 35, 30, 31, 32, 39, 40, 41, 36, 37, 38, 44, 43, 42, 48, 49, 50, 45, 46, 47, 53, 52, 51},
+		{12, 13, 14, 15, 16, 17, 3, 4, 5, 0, 1, 2, 9, 10, 11, 6, 7, 8, 30, 31, 32, 33, 34, 35, 21, 22, 23, 18, 19, 20, 27, 28, 29, 24, 25, 26, 39, 40, 41, 44, 43, 42, 38, 37, 36, 48, 49, 50, 51, 52, 53, 45, 46, 47},
+		{9, 10, 11, 6, 7, 8, 0, 1, 2, 3, 4, 5, 12, 13, 14, 15, 16, 17, 27, 28, 29, 24, 25, 26, 18, 19, 20, 21, 22, 23, 30, 31, 32, 33, 34, 35, 41, 40, 39, 36, 37, 38, 42, 43, 44, 50, 49, 48, 45, 46, 47, 51, 52, 53},
+		{12, 13, 14, 15, 16, 17, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 30, 31, 32, 33, 34, 35, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 41, 40, 39, 44, 43, 42, 36, 37, 38, 50, 49, 48, 51, 52, 53, 47, 46, 45},
+		{6, 7, 8, 9, 10, 11, 0, 1, 2, 3, 4, 5, 15, 16, 17, 12, 13, 14, 24, 25, 26, 27, 28, 29, 18, 19, 20, 21, 22, 23, 33, 34, 35, 30, 31, 32, 41, 40, 39, 38, 37, 36, 44, 43, 42, 50, 49, 48, 47, 46, 45, 53, 52, 51},
+		{15, 16, 17, 12, 13, 14, 0, 1, 2, 3, 4, 5, 9, 10, 11, 6, 7, 8, 33, 34, 35, 30, 31, 32, 18, 19, 20, 21, 22, 23, 27, 28, 29, 24, 25, 26, 41, 40, 39, 42, 43, 44, 38, 37, 36, 50, 49, 48, 53, 52, 51, 45, 46, 47},
+		{12, 13, 14, 15, 16, 17, 6, 7, 8, 9, 10, 11, 3, 4, 5, 0, 1, 2, 30, 31, 32, 33, 34, 35, 24, 25, 26, 27, 28, 29, 21, 22, 23, 18, 19, 20, 36, 37, 38, 44, 43, 42, 39, 40, 41, 45, 46, 47, 51, 52, 53, 50, 49, 48},
+		{6, 7, 8, 9, 10, 11, 15, 16, 17, 12, 13, 14, 3, 4, 5, 0, 1, 2, 24, 25, 26, 27, 28, 29, 33, 34, 35, 30, 31, 32, 21, 22, 23, 18, 19, 20, 44, 43, 42, 38, 37, 36, 39, 40, 41, 51, 52, 53, 47, 46, 45, 50, 49, 48},
+		{15, 16, 17, 12, 13, 14, 9, 10, 11, 6, 7, 8, 3, 4, 5, 0, 1, 2, 33, 34, 35, 30, 31, 32, 27, 28, 29, 24, 25, 26, 21, 22, 23, 18, 19, 20, 38, 37, 36, 42, 43, 44, 39, 40, 41, 47, 46, 45, 53, 52, 51, 50, 49, 48},
+		{9, 10, 11, 6, 7, 8, 12, 13, 14, 15, 16, 17, 3, 4, 5, 0, 1, 2, 27, 28, 29, 24, 25, 26, 30, 31, 32, 33, 34, 35, 21, 22, 23, 18, 19, 20, 42, 43, 44, 36, 37, 38, 39, 40, 41, 53, 52, 51, 45, 46, 47, 50, 49, 48},
+		{15, 16, 17, 12, 13, 14, 6, 7, 8, 9, 10, 11, 0, 1, 2, 3, 4, 5, 33, 34, 35, 30, 31, 32, 24, 25, 26, 27, 28, 29, 18, 19, 20, 21, 22, 23, 36, 37, 38, 42, 43, 44, 41, 40, 39, 45, 46, 47, 53, 52, 51, 48, 49, 50},
+		{9, 10, 11, 6, 7, 8, 15, 16, 17, 12, 13, 14, 0, 1, 2, 3, 4, 5, 27, 28, 29, 24, 25, 26, 33, 34, 35, 30, 31, 32, 18, 19, 20, 21, 22, 23, 44, 43, 42, 36, 37, 38, 41, 40, 39, 51, 52, 53, 45, 46, 47, 48, 49, 50},
+		{12, 13, 14, 15, 16, 17, 9, 10, 11, 6, 7, 8, 0, 1, 2, 3, 4, 5, 30, 31, 32, 33, 34, 35, 27, 28, 29, 24, 25, 26, 18, 19, 20, 21, 22, 23, 38, 37, 36, 44, 43, 42, 41, 40, 39, 47, 46, 45, 51, 52, 53, 48, 49, 50},
+		{6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 0, 1, 2, 3, 4, 5, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 18, 19, 20, 21, 22, 23, 42, 43, 44, 38, 37, 36, 41, 40, 39, 53, 52, 51, 47, 46, 45, 48, 49, 50}};
 
 std::vector<std::vector<int>> rotationMapReverse =
 	{
-		{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44},
-		{0, 1, 2, 3, 4, 5, 12, 13, 14, 15, 16, 17, 9, 10, 11, 6, 7, 8, 18, 19, 20, 21, 22, 23, 30, 31, 32, 33, 34, 35, 27, 28, 29, 24, 25, 26, 42, 43, 44, 39, 40, 41, 38, 37, 36},
-		{0, 1, 2, 3, 4, 5, 9, 10, 11, 6, 7, 8, 15, 16, 17, 12, 13, 14, 18, 19, 20, 21, 22, 23, 27, 28, 29, 24, 25, 26, 33, 34, 35, 30, 31, 32, 38, 37, 36, 39, 40, 41, 44, 43, 42},
-		{0, 1, 2, 3, 4, 5, 15, 16, 17, 12, 13, 14, 6, 7, 8, 9, 10, 11, 18, 19, 20, 21, 22, 23, 33, 34, 35, 30, 31, 32, 24, 25, 26, 27, 28, 29, 44, 43, 42, 39, 40, 41, 36, 37, 38},
-		{3, 4, 5, 0, 1, 2, 9, 10, 11, 6, 7, 8, 12, 13, 14, 15, 16, 17, 21, 22, 23, 18, 19, 20, 27, 28, 29, 24, 25, 26, 30, 31, 32, 33, 34, 35, 38, 37, 36, 41, 40, 39, 42, 43, 44},
-		{3, 4, 5, 0, 1, 2, 12, 13, 14, 15, 16, 17, 6, 7, 8, 9, 10, 11, 21, 22, 23, 18, 19, 20, 30, 31, 32, 33, 34, 35, 24, 25, 26, 27, 28, 29, 42, 43, 44, 41, 40, 39, 36, 37, 38},
-		{3, 4, 5, 0, 1, 2, 6, 7, 8, 9, 10, 11, 15, 16, 17, 12, 13, 14, 21, 22, 23, 18, 19, 20, 24, 25, 26, 27, 28, 29, 33, 34, 35, 30, 31, 32, 36, 37, 38, 41, 40, 39, 44, 43, 42},
-		{3, 4, 5, 0, 1, 2, 15, 16, 17, 12, 13, 14, 9, 10, 11, 6, 7, 8, 21, 22, 23, 18, 19, 20, 33, 34, 35, 30, 31, 32, 27, 28, 29, 24, 25, 26, 44, 43, 42, 41, 40, 39, 38, 37, 36},
-		{9, 10, 11, 6, 7, 8, 0, 1, 2, 3, 4, 5, 12, 13, 14, 15, 16, 17, 27, 28, 29, 24, 25, 26, 18, 19, 20, 21, 22, 23, 30, 31, 32, 33, 34, 35, 41, 40, 39, 36, 37, 38, 42, 43, 44},
-		{9, 10, 11, 6, 7, 8, 12, 13, 14, 15, 16, 17, 3, 4, 5, 0, 1, 2, 27, 28, 29, 24, 25, 26, 30, 31, 32, 33, 34, 35, 21, 22, 23, 18, 19, 20, 42, 43, 44, 36, 37, 38, 39, 40, 41},
-		{9, 10, 11, 6, 7, 8, 3, 4, 5, 0, 1, 2, 15, 16, 17, 12, 13, 14, 27, 28, 29, 24, 25, 26, 21, 22, 23, 18, 19, 20, 33, 34, 35, 30, 31, 32, 39, 40, 41, 36, 37, 38, 44, 43, 42},
-		{9, 10, 11, 6, 7, 8, 15, 16, 17, 12, 13, 14, 0, 1, 2, 3, 4, 5, 27, 28, 29, 24, 25, 26, 33, 34, 35, 30, 31, 32, 18, 19, 20, 21, 22, 23, 44, 43, 42, 36, 37, 38, 41, 40, 39},
-		{6, 7, 8, 9, 10, 11, 3, 4, 5, 0, 1, 2, 12, 13, 14, 15, 16, 17, 24, 25, 26, 27, 28, 29, 21, 22, 23, 18, 19, 20, 30, 31, 32, 33, 34, 35, 39, 40, 41, 38, 37, 36, 42, 43, 44},
-		{6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 0, 1, 2, 3, 4, 5, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 18, 19, 20, 21, 22, 23, 42, 43, 44, 38, 37, 36, 41, 40, 39},
-		{6, 7, 8, 9, 10, 11, 0, 1, 2, 3, 4, 5, 15, 16, 17, 12, 13, 14, 24, 25, 26, 27, 28, 29, 18, 19, 20, 21, 22, 23, 33, 34, 35, 30, 31, 32, 41, 40, 39, 38, 37, 36, 44, 43, 42},
-		{6, 7, 8, 9, 10, 11, 15, 16, 17, 12, 13, 14, 3, 4, 5, 0, 1, 2, 24, 25, 26, 27, 28, 29, 33, 34, 35, 30, 31, 32, 21, 22, 23, 18, 19, 20, 44, 43, 42, 38, 37, 36, 39, 40, 41},
-		{15, 16, 17, 12, 13, 14, 6, 7, 8, 9, 10, 11, 0, 1, 2, 3, 4, 5, 33, 34, 35, 30, 31, 32, 24, 25, 26, 27, 28, 29, 18, 19, 20, 21, 22, 23, 36, 37, 38, 42, 43, 44, 41, 40, 39},
-		{15, 16, 17, 12, 13, 14, 0, 1, 2, 3, 4, 5, 9, 10, 11, 6, 7, 8, 33, 34, 35, 30, 31, 32, 18, 19, 20, 21, 22, 23, 27, 28, 29, 24, 25, 26, 41, 40, 39, 42, 43, 44, 38, 37, 36},
-		{15, 16, 17, 12, 13, 14, 9, 10, 11, 6, 7, 8, 3, 4, 5, 0, 1, 2, 33, 34, 35, 30, 31, 32, 27, 28, 29, 24, 25, 26, 21, 22, 23, 18, 19, 20, 38, 37, 36, 42, 43, 44, 39, 40, 41},
-		{15, 16, 17, 12, 13, 14, 3, 4, 5, 0, 1, 2, 6, 7, 8, 9, 10, 11, 33, 34, 35, 30, 31, 32, 21, 22, 23, 18, 19, 20, 24, 25, 26, 27, 28, 29, 39, 40, 41, 42, 43, 44, 36, 37, 38},
-		{12, 13, 14, 15, 16, 17, 6, 7, 8, 9, 10, 11, 3, 4, 5, 0, 1, 2, 30, 31, 32, 33, 34, 35, 24, 25, 26, 27, 28, 29, 21, 22, 23, 18, 19, 20, 36, 37, 38, 44, 43, 42, 39, 40, 41},
-		{12, 13, 14, 15, 16, 17, 3, 4, 5, 0, 1, 2, 9, 10, 11, 6, 7, 8, 30, 31, 32, 33, 34, 35, 21, 22, 23, 18, 19, 20, 27, 28, 29, 24, 25, 26, 39, 40, 41, 44, 43, 42, 38, 37, 36},
-		{12, 13, 14, 15, 16, 17, 9, 10, 11, 6, 7, 8, 0, 1, 2, 3, 4, 5, 30, 31, 32, 33, 34, 35, 27, 28, 29, 24, 25, 26, 18, 19, 20, 21, 22, 23, 38, 37, 36, 44, 43, 42, 41, 40, 39},
-		{12, 13, 14, 15, 16, 17, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 30, 31, 32, 33, 34, 35, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 41, 40, 39, 44, 43, 42, 36, 37, 38}};
+		{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53},
+		{0, 1, 2, 3, 4, 5, 12, 13, 14, 15, 16, 17, 9, 10, 11, 6, 7, 8, 18, 19, 20, 21, 22, 23, 30, 31, 32, 33, 34, 35, 27, 28, 29, 24, 25, 26, 42, 43, 44, 39, 40, 41, 38, 37, 36, 53, 52, 51, 48, 49, 50, 45, 46, 47},
+		{0, 1, 2, 3, 4, 5, 9, 10, 11, 6, 7, 8, 15, 16, 17, 12, 13, 14, 18, 19, 20, 21, 22, 23, 27, 28, 29, 24, 25, 26, 33, 34, 35, 30, 31, 32, 38, 37, 36, 39, 40, 41, 44, 43, 42, 47, 46, 45, 48, 49, 50, 53, 52, 51},
+		{0, 1, 2, 3, 4, 5, 15, 16, 17, 12, 13, 14, 6, 7, 8, 9, 10, 11, 18, 19, 20, 21, 22, 23, 33, 34, 35, 30, 31, 32, 24, 25, 26, 27, 28, 29, 44, 43, 42, 39, 40, 41, 36, 37, 38, 51, 52, 53, 48, 49, 50, 47, 46, 45},
+		{3, 4, 5, 0, 1, 2, 9, 10, 11, 6, 7, 8, 12, 13, 14, 15, 16, 17, 21, 22, 23, 18, 19, 20, 27, 28, 29, 24, 25, 26, 30, 31, 32, 33, 34, 35, 38, 37, 36, 41, 40, 39, 42, 43, 44, 47, 46, 45, 50, 49, 48, 51, 52, 53},
+		{3, 4, 5, 0, 1, 2, 12, 13, 14, 15, 16, 17, 6, 7, 8, 9, 10, 11, 21, 22, 23, 18, 19, 20, 30, 31, 32, 33, 34, 35, 24, 25, 26, 27, 28, 29, 42, 43, 44, 41, 40, 39, 36, 37, 38, 53, 52, 51, 50, 49, 48, 47, 46, 45},
+		{3, 4, 5, 0, 1, 2, 6, 7, 8, 9, 10, 11, 15, 16, 17, 12, 13, 14, 21, 22, 23, 18, 19, 20, 24, 25, 26, 27, 28, 29, 33, 34, 35, 30, 31, 32, 36, 37, 38, 41, 40, 39, 44, 43, 42, 45, 46, 47, 50, 49, 48, 53, 52, 51},
+		{3, 4, 5, 0, 1, 2, 15, 16, 17, 12, 13, 14, 9, 10, 11, 6, 7, 8, 21, 22, 23, 18, 19, 20, 33, 34, 35, 30, 31, 32, 27, 28, 29, 24, 25, 26, 44, 43, 42, 41, 40, 39, 38, 37, 36, 51, 52, 53, 50, 49, 48, 45, 46, 47},
+		{9, 10, 11, 6, 7, 8, 0, 1, 2, 3, 4, 5, 12, 13, 14, 15, 16, 17, 27, 28, 29, 24, 25, 26, 18, 19, 20, 21, 22, 23, 30, 31, 32, 33, 34, 35, 41, 40, 39, 36, 37, 38, 42, 43, 44, 50, 49, 48, 45, 46, 47, 51, 52, 53},
+		{9, 10, 11, 6, 7, 8, 12, 13, 14, 15, 16, 17, 3, 4, 5, 0, 1, 2, 27, 28, 29, 24, 25, 26, 30, 31, 32, 33, 34, 35, 21, 22, 23, 18, 19, 20, 42, 43, 44, 36, 37, 38, 39, 40, 41, 53, 52, 51, 45, 46, 47, 50, 49, 48},
+		{9, 10, 11, 6, 7, 8, 3, 4, 5, 0, 1, 2, 15, 16, 17, 12, 13, 14, 27, 28, 29, 24, 25, 26, 21, 22, 23, 18, 19, 20, 33, 34, 35, 30, 31, 32, 39, 40, 41, 36, 37, 38, 44, 43, 42, 48, 49, 50, 45, 46, 47, 53, 52, 51},
+		{9, 10, 11, 6, 7, 8, 15, 16, 17, 12, 13, 14, 0, 1, 2, 3, 4, 5, 27, 28, 29, 24, 25, 26, 33, 34, 35, 30, 31, 32, 18, 19, 20, 21, 22, 23, 44, 43, 42, 36, 37, 38, 41, 40, 39, 51, 52, 53, 45, 46, 47, 48, 49, 50},
+		{6, 7, 8, 9, 10, 11, 3, 4, 5, 0, 1, 2, 12, 13, 14, 15, 16, 17, 24, 25, 26, 27, 28, 29, 21, 22, 23, 18, 19, 20, 30, 31, 32, 33, 34, 35, 39, 40, 41, 38, 37, 36, 42, 43, 44, 48, 49, 50, 47, 46, 45, 51, 52, 53},
+		{6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 0, 1, 2, 3, 4, 5, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 18, 19, 20, 21, 22, 23, 42, 43, 44, 38, 37, 36, 41, 40, 39, 53, 52, 51, 47, 46, 45, 48, 49, 50},
+		{6, 7, 8, 9, 10, 11, 0, 1, 2, 3, 4, 5, 15, 16, 17, 12, 13, 14, 24, 25, 26, 27, 28, 29, 18, 19, 20, 21, 22, 23, 33, 34, 35, 30, 31, 32, 41, 40, 39, 38, 37, 36, 44, 43, 42, 50, 49, 48, 47, 46, 45, 53, 52, 51},
+		{6, 7, 8, 9, 10, 11, 15, 16, 17, 12, 13, 14, 3, 4, 5, 0, 1, 2, 24, 25, 26, 27, 28, 29, 33, 34, 35, 30, 31, 32, 21, 22, 23, 18, 19, 20, 44, 43, 42, 38, 37, 36, 39, 40, 41, 51, 52, 53, 47, 46, 45, 50, 49, 48},
+		{15, 16, 17, 12, 13, 14, 6, 7, 8, 9, 10, 11, 0, 1, 2, 3, 4, 5, 33, 34, 35, 30, 31, 32, 24, 25, 26, 27, 28, 29, 18, 19, 20, 21, 22, 23, 36, 37, 38, 42, 43, 44, 41, 40, 39, 45, 46, 47, 53, 52, 51, 48, 49, 50},
+		{15, 16, 17, 12, 13, 14, 0, 1, 2, 3, 4, 5, 9, 10, 11, 6, 7, 8, 33, 34, 35, 30, 31, 32, 18, 19, 20, 21, 22, 23, 27, 28, 29, 24, 25, 26, 41, 40, 39, 42, 43, 44, 38, 37, 36, 50, 49, 48, 53, 52, 51, 45, 46, 47},
+		{15, 16, 17, 12, 13, 14, 9, 10, 11, 6, 7, 8, 3, 4, 5, 0, 1, 2, 33, 34, 35, 30, 31, 32, 27, 28, 29, 24, 25, 26, 21, 22, 23, 18, 19, 20, 38, 37, 36, 42, 43, 44, 39, 40, 41, 47, 46, 45, 53, 52, 51, 50, 49, 48},
+		{15, 16, 17, 12, 13, 14, 3, 4, 5, 0, 1, 2, 6, 7, 8, 9, 10, 11, 33, 34, 35, 30, 31, 32, 21, 22, 23, 18, 19, 20, 24, 25, 26, 27, 28, 29, 39, 40, 41, 42, 43, 44, 36, 37, 38, 48, 49, 50, 53, 52, 51, 47, 46, 45},
+		{12, 13, 14, 15, 16, 17, 6, 7, 8, 9, 10, 11, 3, 4, 5, 0, 1, 2, 30, 31, 32, 33, 34, 35, 24, 25, 26, 27, 28, 29, 21, 22, 23, 18, 19, 20, 36, 37, 38, 44, 43, 42, 39, 40, 41, 45, 46, 47, 51, 52, 53, 50, 49, 48},
+		{12, 13, 14, 15, 16, 17, 3, 4, 5, 0, 1, 2, 9, 10, 11, 6, 7, 8, 30, 31, 32, 33, 34, 35, 21, 22, 23, 18, 19, 20, 27, 28, 29, 24, 25, 26, 39, 40, 41, 44, 43, 42, 38, 37, 36, 48, 49, 50, 51, 52, 53, 45, 46, 47},
+		{12, 13, 14, 15, 16, 17, 9, 10, 11, 6, 7, 8, 0, 1, 2, 3, 4, 5, 30, 31, 32, 33, 34, 35, 27, 28, 29, 24, 25, 26, 18, 19, 20, 21, 22, 23, 38, 37, 36, 44, 43, 42, 41, 40, 39, 47, 46, 45, 51, 52, 53, 48, 49, 50},
+		{12, 13, 14, 15, 16, 17, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 30, 31, 32, 33, 34, 35, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 41, 40, 39, 44, 43, 42, 36, 37, 38, 50, 49, 48, 51, 52, 53, 47, 46, 45}};
 
 std::vector<int> converter = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 3, 4, 5, 0, 1, 2, 9, 10, 11, 6, 7, 8, 15, 16, 17, 12, 13, 14, 18, 19, 20, 21, 22, 23, 24, 25, 26};
 
@@ -640,6 +641,21 @@ void create_prune_table_cross(int depth, const std::vector<int> &table1, const s
 	int num_old = 4;
 	int m;
 	int center = 0;
+	int center_tmp;
+	std::bitset<27> computed;
+	std::vector<int> move_restrict_move;
+	std::vector<int> move_restrict_rot;
+	for (int i : move_restrict)
+	{
+		if (i < 45)
+		{
+			move_restrict_move.emplace_back(i);
+		}
+		else
+		{
+			move_restrict_rot.emplace_back(i);
+		}
+	}
 	for (int d = 0; d < depth; ++d)
 	{
 		next_d = d + 1;
@@ -650,15 +666,48 @@ void create_prune_table_cross(int depth, const std::vector<int> &table1, const s
 				index1_tmp = (i / size2) * 27;
 				index2_tmp = (i % size2) * 27;
 				center = tmp_array[i];
-				for (int j : move_restrict)
+				for (int j : move_restrict_move)
 				{
-					m = converter[rotationMapReverse[center][j]];
-					next_i = table1[index1_tmp + m] * size2 + table2[index2_tmp + m];
-					if (prune_table[next_i] == 255)
+					computed.reset();
+					if (j >= 45)
 					{
-						tmp_array[next_i] = center_move_table[center][j];
-						prune_table[next_i] = next_d;
-						num += 1;
+						continue;
+					}
+					m = converter[rotationMapReverse[center][j]];
+					if (!computed[m])
+					{
+						next_i = table1[index1_tmp + m] * size2 + table2[index2_tmp + m];
+						if (prune_table[next_i] == 255)
+						{
+							tmp_array[next_i] = center_move_table[center][j];
+							prune_table[next_i] = next_d;
+							num += 1;
+						}
+						computed.set(m);
+					}
+					else
+					{
+						continue;
+					}
+					for (int r : move_restrict_rot)
+					{
+						center_tmp = center_move_table[center][r];
+						m = converter[rotationMapReverse[center_tmp][j]];
+						if (!computed[m])
+						{
+							next_i = table1[index1_tmp + m] * size2 + table2[index2_tmp + m];
+							if (prune_table[next_i] == 255)
+							{
+								tmp_array[next_i] = center_move_table[center][j];
+								prune_table[next_i] = next_d;
+								num += 1;
+							}
+							computed.set(m);
+						}
+						else
+						{
+							continue;
+						}
 					}
 				}
 			}
@@ -691,6 +740,21 @@ void create_prune_table_xcross(int index2, int depth, const std::vector<int> &ta
 	int num_old = 4;
 	int m;
 	int center = 0;
+	int center_tmp;
+	std::bitset<27> computed;
+	std::vector<int> move_restrict_move;
+	std::vector<int> move_restrict_rot;
+	for (int i : move_restrict)
+	{
+		if (i < 45)
+		{
+			move_restrict_move.emplace_back(i);
+		}
+		else
+		{
+			move_restrict_rot.emplace_back(i);
+		}
+	}
 	for (int d = 0; d < depth; ++d)
 	{
 		next_d = d + 1;
@@ -701,15 +765,48 @@ void create_prune_table_xcross(int index2, int depth, const std::vector<int> &ta
 				index1_tmp = (i / size2) * 27;
 				index2_tmp = (i % size2) * 27;
 				center = tmp_array[i];
-				for (int j : move_restrict)
+				for (int j : move_restrict_move)
 				{
-					m = converter[rotationMapReverse[center][j]];
-					next_i = table1[index1_tmp + m] * size2 + table2[index2_tmp + m];
-					if (prune_table[next_i] == 255)
+					computed.reset();
+					if (j >= 45)
 					{
-						tmp_array[next_i] = center_move_table[center][j];
-						prune_table[next_i] = next_d;
-						num += 1;
+						continue;
+					}
+					m = converter[rotationMapReverse[center][j]];
+					if (!computed[m])
+					{
+						next_i = table1[index1_tmp + m] * size2 + table2[index2_tmp + m];
+						if (prune_table[next_i] == 255)
+						{
+							tmp_array[next_i] = center_move_table[center][j];
+							prune_table[next_i] = next_d;
+							num += 1;
+						}
+						computed.set(m);
+					}
+					else
+					{
+						continue;
+					}
+					for (int r : move_restrict_rot)
+					{
+						center_tmp = center_move_table[center][r];
+						m = converter[rotationMapReverse[center_tmp][j]];
+						if (!computed[m])
+						{
+							next_i = table1[index1_tmp + m] * size2 + table2[index2_tmp + m];
+							if (prune_table[next_i] == 255)
+							{
+								tmp_array[next_i] = center_move_table[center][j];
+								prune_table[next_i] = next_d;
+								num += 1;
+							}
+							computed.set(m);
+						}
+						else
+						{
+							continue;
+						}
 					}
 				}
 			}
@@ -724,53 +821,23 @@ void create_prune_table_xcross(int index2, int depth, const std::vector<int> &ta
 
 std::vector<bool> create_ma_table()
 {
-	std::vector<bool> ma(46 * 45, false);
-	for (int prev = 0; prev < 45; ++prev)
+	std::vector<bool> ma(28 * 27, false);
+	for (int prev = 0; prev < 28; ++prev)
 	{
-		for (int i = 0; i < 45; ++i)
+		for (int i = 0; i < 27; ++i)
 		{
-			if ((prev < 18 && i < 18) || (prev < 36 && prev >= 18 && i < 36 && i >= 18))
+			if (prev < 18 && i < 18)
 			{
 				if (i / 3 == prev / 3)
 				{
-					ma[prev * 45 + i] = true;
-				}
-				else if ((i / 3) / 2 == (prev / 3) / 2 && (prev / 3) % 2 > (i / 3) % 2)
-				{
-					ma[prev * 45 + i] = true;
+					ma[prev * 27 + i] = true;
 				}
 			}
-			else if ((prev >= 18 && prev < 36 && i < 18) || (prev < 18 && i >= 18 && i < 36))
-			{
-				if (converter[i] / 3 == converter[prev] / 3)
-				{
-					ma[prev * 45 + i] = true;
-				}
-				else if ((converter[i] / 3) / 2 == (converter[prev] / 3) / 2 && (converter[prev] / 3) % 2 > (converter[i] / 3) % 2)
-				{
-					ma[prev * 45 + i] = true;
-				}
-			}
-			else if (prev >= 36 && i < 36)
-			{
-				if (prev / 3 == 13 && (converter[i] / 3) / 2 == 0)
-				{
-					ma[prev * 45 + i] = true;
-				}
-				else if (prev / 3 == 12 && (converter[i] / 3) / 2 == 1)
-				{
-					ma[prev * 45 + i] = true;
-				}
-				else if (prev / 3 == 14 && (converter[i] / 3) / 2 == 2)
-				{
-					ma[prev * 45 + i] = true;
-				}
-			}
-			else if (prev >= 36 && i >= 36)
+			else if (prev >= 18 && i >= 18)
 			{
 				if (i / 3 == prev / 3)
 				{
-					ma[prev * 45 + i] = true;
+					ma[prev * 27 + i] = true;
 				}
 			}
 		}
@@ -794,7 +861,10 @@ struct cross_search
 	std::vector<int> alg;
 	std::vector<std::string> restrict;
 	std::vector<int> move_restrict;
+	std::vector<int> move_restrict_move;
+	std::vector<int> move_restrict_rot;
 	std::vector<bool> ma;
+	std::vector<bool> ma2;
 	int index1;
 	int index2;
 	int index1_tmp;
@@ -803,6 +873,10 @@ struct cross_search
 	std::string tmp;
 	int m;
 	int m_tmp;
+	std::vector<int> center_offset;
+	int max_rot_count;
+	std::string post_moves;
+	int initial_center;
 
 	cross_search()
 	{
@@ -816,15 +890,19 @@ struct cross_search
 		prune_table = std::vector<unsigned char>(24 * 22 * 24 * 22, 255);
 	}
 
-	bool depth_limited_search(int arg_index1, int arg_index2, int depth, int prev, int center)
+	bool depth_limited_search(int arg_index1, int arg_index2, int depth, int prev, int center, int rot_count, int aprev)
 	{
-		for (int i : move_restrict)
+		for (int i : move_restrict_move)
 		{
-			if (ma[prev + i])
+			if (ma2[aprev + i])
 			{
 				continue;
 			}
 			m = converter[rotationMapReverse[center][i]];
+			if (ma[prev + m])
+			{
+				continue;
+			}
 			index1_tmp = multi_move_table[arg_index1 + m];
 			index2_tmp = multi_move_table[arg_index2 + m];
 			prune_tmp = prune_table[index1_tmp * 528 + index2_tmp];
@@ -838,13 +916,41 @@ struct cross_search
 				if (prune_tmp == 0)
 				{
 					bool valid = true;
+					bool p_valid = false;
+					bool center_valid = false;
 					int l = static_cast<int>(sol.size());
 					int c = 0;
-					int center_tmp = 0;
+					int rot_count_tmp = 0;
+					int center_tmp = initial_center;
 					int index1_tmp2 = index1;
 					int index2_tmp2 = index2;
 					for (int j : sol)
 					{
+						center_valid = false;
+						if (j >= 45)
+						{
+							center_tmp = center_move_table[center_tmp][j];
+							c++;
+							rot_count_tmp++;
+							if (rot_count_tmp > max_rot_count)
+							{
+								valid = false;
+								break;
+							}
+							for (int center_tmp2 : center_offset)
+							{
+								if (center_tmp == center_tmp2)
+								{
+									center_valid = true;
+								}
+							}
+							if (c < l && center_valid && p_valid)
+							{
+								valid = false;
+								break;
+							}
+							continue;
+						}
 						m_tmp = converter[rotationMapReverse[center_tmp][j]];
 						center_tmp = center_move_table[center_tmp][j];
 						if (index1_tmp2 == multi_move_table[index1_tmp2 + m_tmp] * 27 && index2_tmp2 == multi_move_table[index2_tmp2 + m_tmp] * 27)
@@ -857,25 +963,36 @@ struct cross_search
 							c += 1;
 							index1_tmp2 = multi_move_table[index1_tmp2 + m_tmp];
 							index2_tmp2 = multi_move_table[index2_tmp2 + m_tmp];
+							for (int center_tmp2 : center_offset)
+							{
+								if (center_tmp == center_tmp2)
+								{
+									center_valid = true;
+								}
+							}
 							if (c < l && prune_table[index1_tmp2 * 528 + index2_tmp2] == 0)
 							{
-								valid = false;
-								break;
+								p_valid = true;
+								if (center_valid)
+								{
+									valid = false;
+									break;
+								}
 							}
 							index1_tmp2 *= 27;
 							index2_tmp2 *= 27;
 						}
 					}
-					if (valid)
+					if (valid && center_valid)
 					{
 						count += 1;
 						if (rotation == "")
 						{
-							tmp = AlgToString(sol);
+							tmp = post_moves + AlgToString(sol);
 						}
 						else
 						{
-							tmp = rotation + " " + AlgToString(sol);
+							tmp = rotation + " " + post_moves + AlgToString(sol);
 						}
 						update(tmp.c_str());
 						if (count == sol_num)
@@ -885,7 +1002,122 @@ struct cross_search
 					}
 				}
 			}
-			else if (depth_limited_search(index1_tmp * 27, index2_tmp * 27, depth - 1, i * 45, center_move_table[center][i]))
+			else if (depth_limited_search(index1_tmp * 27, index2_tmp * 27, depth - 1, m * 27, center_move_table[center][i], rot_count, i * 54))
+			{
+				return true;
+			}
+			sol.pop_back();
+		}
+		for (int i : move_restrict_rot)
+		{
+			if (ma2[aprev + i])
+			{
+				continue;
+			}
+			if (rot_count >= max_rot_count)
+			{
+				continue;
+			}
+			index1_tmp = arg_index1 / 27;
+			index2_tmp = arg_index2 / 27;
+			prune_tmp = prune_table[index1_tmp * 528 + index2_tmp];
+			if (prune_tmp >= depth)
+			{
+				continue;
+			}
+			sol.emplace_back(i);
+			if (depth == 1)
+			{
+				if (prune_tmp == 0)
+				{
+					bool valid = true;
+					bool p_valid = false;
+					bool center_valid = false;
+					int l = static_cast<int>(sol.size());
+					int c = 0;
+					int rot_count_tmp = 0;
+					int center_tmp = initial_center;
+					int index1_tmp2 = index1;
+					int index2_tmp2 = index2;
+					for (int j : sol)
+					{
+						center_valid = false;
+						if (j >= 45)
+						{
+							center_tmp = center_move_table[center_tmp][j];
+							c++;
+							rot_count_tmp++;
+							if (rot_count_tmp > max_rot_count)
+							{
+								valid = false;
+								break;
+							}
+							for (int center_tmp2 : center_offset)
+							{
+								if (center_tmp == center_tmp2)
+								{
+									center_valid = true;
+								}
+							}
+							if (c < l && center_valid && p_valid)
+							{
+								valid = false;
+								break;
+							}
+							continue;
+						}
+						m_tmp = converter[rotationMapReverse[center_tmp][j]];
+						center_tmp = center_move_table[center_tmp][j];
+						if (index1_tmp2 == multi_move_table[index1_tmp2 + m_tmp] * 27 && index2_tmp2 == multi_move_table[index2_tmp2 + m_tmp] * 27)
+						{
+							valid = false;
+							break;
+						}
+						else
+						{
+							c += 1;
+							index1_tmp2 = multi_move_table[index1_tmp2 + m_tmp];
+							index2_tmp2 = multi_move_table[index2_tmp2 + m_tmp];
+							for (int center_tmp2 : center_offset)
+							{
+								if (center_tmp == center_tmp2)
+								{
+									center_valid = true;
+								}
+							}
+							if (c < l && prune_table[index1_tmp2 * 528 + index2_tmp2] == 0)
+							{
+								p_valid = true;
+								if (center_valid)
+								{
+									valid = false;
+									break;
+								}
+							}
+							index1_tmp2 *= 27;
+							index2_tmp2 *= 27;
+						}
+					}
+					if (valid && center_valid)
+					{
+						count += 1;
+						if (rotation == "")
+						{
+							tmp = post_moves + AlgToString(sol);
+						}
+						else
+						{
+							tmp = rotation + " " + post_moves + AlgToString(sol);
+						}
+						update(tmp.c_str());
+						if (count == sol_num)
+						{
+							return true;
+						}
+					}
+				}
+			}
+			else if (depth_limited_search(index1_tmp * 27, index2_tmp * 27, depth, prev, center_move_table[center][i], rot_count + 1, i * 54))
 			{
 				return true;
 			}
@@ -894,31 +1126,74 @@ struct cross_search
 		return false;
 	}
 
-	void start_search(std::string arg_scramble = "", std::string arg_rotation = "", int arg_sol_num = 100, int arg_max_length = 8, std::vector<std::string> arg_restrict = move_names)
+	void start_search(std::string arg_scramble = "", std::string arg_rotation = "", int arg_sol_num = 100, int arg_max_length = 8, const std::vector<std::string> &arg_restrict = move_names, std::string arg_post_alg = "", const std::vector<int> &arg_center_offset = {0}, int arg_max_rot_count = 0, const std::vector<bool> &arg_ma2 = std::vector<bool>(55 * 54, false))
 	{
 		scramble = arg_scramble;
 		rotation = arg_rotation;
 		max_length = arg_max_length;
 		sol_num = arg_sol_num;
 		restrict = arg_restrict;
-		std::vector<int> scramble_alg = StringToAlg(scramble);
-		std::vector<int> rotation_alg = StringToAlg(rotation);
-		std::vector<int> alg = AlgRotation(scramble_alg, rotation_alg, center_move_table);
-		index1 = 416;
-		index2 = 520;
-		count = 0;
-		for (int m : alg)
-		{
-			index1 = multi_move_table[index1 * 27 + m];
-			index2 = multi_move_table[index2 * 27 + m];
-		}
+		ma2 = arg_ma2;
 		for (std::string name : restrict)
 		{
 			auto it = std::find(move_names.begin(), move_names.end(), name);
 			move_restrict.emplace_back(std::distance(move_names.begin(), it));
 		}
-
-		create_prune_table_cross(20, multi_move_table, multi_move_table, prune_table, move_restrict, tmp_array, center_move_table);
+		for (int i : move_restrict)
+		{
+			if (i < 45)
+			{
+				move_restrict_move.emplace_back(i);
+			}
+			else
+			{
+				move_restrict_rot.emplace_back(i);
+			}
+		}
+		std::vector<int> scramble_alg = StringToAlg(scramble);
+		std::vector<int> rotation_alg = StringToAlg(rotation);
+		std::vector<int> alg = AlgRotation(scramble_alg, rotation_alg, center_move_table);
+		std::vector<int> post_alg = StringToAlg(arg_post_alg);
+		post_moves = AlgToString(post_alg);
+		std::vector<int> move_restrict_tmp = move_restrict;
+		int tc = 0;
+		for (int i : post_alg)
+		{
+			tc = center_move_table[tc][i];
+		}
+		for (int i = 0; i < move_restrict_tmp.size(); ++i)
+		{
+			move_restrict_tmp[i] = rotationMap[tc][move_restrict_tmp[i]];
+		}
+		max_rot_count = arg_max_rot_count;
+		center_offset = arg_center_offset;
+		index1 = 416;
+		index2 = 520;
+		create_prune_table_cross(20, multi_move_table, multi_move_table, prune_table, move_restrict_tmp, tmp_array, center_move_table);
+		count = 0;
+		int aprev_tmp = 54;
+		for (int m : alg)
+		{
+			index1 = multi_move_table[index1 * 27 + m];
+			index2 = multi_move_table[index2 * 27 + m];
+		}
+		initial_center = 0;
+		int prev = 28;
+		int prev_rot = 0;
+		for (int m_tmp : post_alg)
+		{
+			aprev_tmp = m;
+			if (m_tmp >= 45)
+			{
+				initial_center = center_move_table[initial_center][m_tmp];
+				continue;
+			}
+			int m = converter[rotationMapReverse[initial_center][m_tmp]];
+			prev = m;
+			initial_center = center_move_table[initial_center][m_tmp];
+			index1 = multi_move_table[index1 * 27 + m];
+			index2 = multi_move_table[index2 * 27 + m];
+		}
 		prune_tmp = prune_table[index1 * 528 + index2];
 		if (prune_tmp == 255)
 		{
@@ -934,7 +1209,7 @@ struct cross_search
 			index2 *= 27;
 			for (int d = 1; d <= max_length; d++)
 			{
-				if (depth_limited_search(index1, index2, d, 2025, 0))
+				if (depth_limited_search(index1, index2, d, prev * 27, initial_center, 0, aprev_tmp * 54))
 				{
 					break;
 				}
@@ -963,7 +1238,10 @@ struct xcross_search
 	std::vector<int> alg;
 	std::vector<std::string> restrict;
 	std::vector<int> move_restrict;
+	std::vector<int> move_restrict_move;
+	std::vector<int> move_restrict_rot;
 	std::vector<bool> ma;
+	std::vector<bool> ma2;
 	int edge_solved1;
 	int index1;
 	int index2;
@@ -975,6 +1253,10 @@ struct xcross_search
 	std::string tmp;
 	int m;
 	int m_tmp;
+	std::vector<int> center_offset;
+	int max_rot_count;
+	std::string post_moves;
+	int initial_center;
 
 	xcross_search()
 	{
@@ -987,15 +1269,19 @@ struct xcross_search
 		prune_table1 = std::vector<unsigned char>(190080 * 24, 255);
 	}
 
-	bool depth_limited_search(int arg_index1, int arg_index2, int arg_index3, int depth, int prev, int center)
+	bool depth_limited_search(int arg_index1, int arg_index2, int arg_index3, int depth, int prev, int center, int rot_count, int aprev)
 	{
-		for (int i : move_restrict)
+		for (int i : move_restrict_move)
 		{
-			if (ma[prev + i])
+			if (ma2[aprev + i])
 			{
 				continue;
 			}
 			m = converter[rotationMapReverse[center][i]];
+			if (ma[prev + m])
+			{
+				continue;
+			}
 			index1_tmp = multi_move_table[arg_index1 + m];
 			index2_tmp = corner_move_table[arg_index2 + m];
 			index3_tmp = edge_move_table[arg_index3 + m];
@@ -1010,14 +1296,42 @@ struct xcross_search
 				if (prune1_tmp == 0 && index3_tmp == edge_solved1)
 				{
 					bool valid = true;
+					bool p_valid = false;
+					bool center_valid = false;
 					int l = static_cast<int>(sol.size());
 					int c = 0;
-					int center_tmp = 0;
+					int rot_count_tmp = 0;
+					int center_tmp = initial_center;
 					int index1_tmp2 = index1;
 					int index2_tmp2 = index2;
 					int index3_tmp2 = index3;
 					for (int j : sol)
 					{
+						center_valid = false;
+						if (j >= 45)
+						{
+							center_tmp = center_move_table[center_tmp][j];
+							c++;
+							rot_count_tmp++;
+							if (rot_count_tmp > max_rot_count)
+							{
+								valid = false;
+								break;
+							}
+							for (int center_tmp2 : center_offset)
+							{
+								if (center_tmp == center_tmp2)
+								{
+									center_valid = true;
+								}
+							}
+							if (c < l && center_valid && p_valid)
+							{
+								valid = false;
+								break;
+							}
+							continue;
+						}
 						m_tmp = converter[rotationMapReverse[center_tmp][j]];
 						center_tmp = center_move_table[center_tmp][j];
 						if (index1_tmp2 == multi_move_table[index1_tmp2 + m_tmp] * 27 && index2_tmp2 == corner_move_table[index2_tmp2 + m_tmp] * 27 && index3_tmp2 == edge_move_table[index3_tmp2 + m_tmp] * 27)
@@ -1031,26 +1345,37 @@ struct xcross_search
 							index1_tmp2 = multi_move_table[index1_tmp2 + m_tmp];
 							index2_tmp2 = corner_move_table[index2_tmp2 + m_tmp];
 							index3_tmp2 = edge_move_table[index3_tmp2 + m_tmp];
+							for (int center_tmp2 : center_offset)
+							{
+								if (center_tmp == center_tmp2)
+								{
+									center_valid = true;
+								}
+							}
 							if (c < l && (prune_table1[index1_tmp2 * 24 + index2_tmp2] == 0 && index3_tmp2 == edge_solved1))
 							{
-								valid = false;
-								break;
+								p_valid = true;
+								if (center_valid)
+								{
+									valid = false;
+									break;
+								}
 							}
 							index1_tmp2 *= 27;
 							index2_tmp2 *= 27;
 							index3_tmp2 *= 27;
 						}
 					}
-					if (valid)
+					if (valid && center_valid)
 					{
 						count += 1;
 						if (rotation == "")
 						{
-							tmp = AlgToString(sol);
+							tmp = post_moves + AlgToString(sol);
 						}
 						else
 						{
-							tmp = rotation + " " + AlgToString(sol);
+							tmp = rotation + " " + post_moves + AlgToString(sol);
 						}
 						update(tmp.c_str());
 						if (count == sol_num)
@@ -1060,7 +1385,126 @@ struct xcross_search
 					}
 				}
 			}
-			else if (depth_limited_search(index1_tmp * 27, index2_tmp * 27, index3_tmp * 27, depth - 1, i * 45, center_move_table[center][i]))
+			else if (depth_limited_search(index1_tmp * 27, index2_tmp * 27, index3_tmp * 27, depth - 1, m * 27, center_move_table[center][i], rot_count, i * 54))
+			{
+				return true;
+			}
+			sol.pop_back();
+		}
+		for (int i : move_restrict_rot)
+		{
+			if (ma2[aprev + i])
+			{
+				continue;
+			}
+			if (rot_count >= max_rot_count)
+			{
+				continue;
+			}
+			index1_tmp = arg_index1 / 27;
+			index2_tmp = arg_index2 / 27;
+			index3_tmp = arg_index3 / 27;
+			prune1_tmp = prune_table1[index1_tmp * 24 + index2_tmp];
+			if (prune1_tmp >= depth)
+			{
+				continue;
+			}
+			sol.emplace_back(i);
+			if (depth == 1)
+			{
+				if (prune1_tmp == 0 && index3_tmp == edge_solved1)
+				{
+					bool valid = true;
+					bool p_valid = false;
+					bool center_valid = false;
+					int l = static_cast<int>(sol.size());
+					int c = 0;
+					int rot_count_tmp = 0;
+					int center_tmp = initial_center;
+					int index1_tmp2 = index1;
+					int index2_tmp2 = index2;
+					int index3_tmp2 = index3;
+					for (int j : sol)
+					{
+						center_valid = false;
+						if (j >= 45)
+						{
+							center_tmp = center_move_table[center_tmp][j];
+							c++;
+							rot_count_tmp++;
+							if (rot_count_tmp > max_rot_count)
+							{
+								valid = false;
+								break;
+							}
+							for (int center_tmp2 : center_offset)
+							{
+								if (center_tmp == center_tmp2)
+								{
+									center_valid = true;
+								}
+							}
+							if (c < l && center_valid && p_valid)
+							{
+								valid = false;
+								break;
+							}
+							continue;
+						}
+						m_tmp = converter[rotationMapReverse[center_tmp][j]];
+						center_tmp = center_move_table[center_tmp][j];
+						if (index1_tmp2 == multi_move_table[index1_tmp2 + m_tmp] * 27 && index2_tmp2 == corner_move_table[index2_tmp2 + m_tmp] * 27 && index3_tmp2 == edge_move_table[index3_tmp2 + m_tmp] * 27)
+						{
+							valid = false;
+							break;
+						}
+						else
+						{
+							c += 1;
+							index1_tmp2 = multi_move_table[index1_tmp2 + m_tmp];
+							index2_tmp2 = corner_move_table[index2_tmp2 + m_tmp];
+							index3_tmp2 = edge_move_table[index3_tmp2 + m_tmp];
+							for (int center_tmp2 : center_offset)
+							{
+								if (center_tmp == center_tmp2)
+								{
+									center_valid = true;
+								}
+							}
+							if (c < l && (prune_table1[index1_tmp2 * 24 + index2_tmp2] == 0 && index3_tmp2 == edge_solved1))
+							{
+								p_valid = true;
+								if (center_valid)
+								{
+									valid = false;
+									break;
+								}
+							}
+							index1_tmp2 *= 27;
+							index2_tmp2 *= 27;
+							index3_tmp2 *= 27;
+						}
+					}
+					if (valid && center_valid)
+					{
+						count += 1;
+						if (rotation == "")
+						{
+							tmp = post_moves + AlgToString(sol);
+						}
+						else
+						{
+							tmp = rotation + " " + post_moves + AlgToString(sol);
+						}
+						update(tmp.c_str());
+						if (count == sol_num)
+						{
+							return true;
+						}
+					}
+				}
+			}
+			else if (depth_limited_search(index1_tmp * 27, index2_tmp * 27, index3_tmp * 27, depth, prev, center_move_table[center][i], rot_count + 1, i * 54))
 			{
 				return true;
 			}
@@ -1069,7 +1513,7 @@ struct xcross_search
 		return false;
 	}
 
-	void start_search(std::string arg_scramble = "", std::string arg_rotation = "", int arg_slot1 = 0, int arg_pslot1 = 0, int arg_sol_num = 100, int arg_max_length = 10, std::vector<std::string> arg_restrict = move_names)
+	void start_search(std::string arg_scramble = "", std::string arg_rotation = "", int arg_slot1 = 0, int arg_pslot1 = 0, int arg_sol_num = 100, int arg_max_length = 10, const std::vector<std::string> &arg_restrict = move_names, std::string arg_post_alg = "", const std::vector<int> &arg_center_offset = {0}, int arg_max_rot_count = 0, const std::vector<bool> &arg_ma2 = std::vector<bool>(55 * 54, false))
 	{
 		scramble = arg_scramble;
 		rotation = arg_rotation;
@@ -1078,14 +1522,40 @@ struct xcross_search
 		max_length = arg_max_length;
 		sol_num = arg_sol_num;
 		restrict = arg_restrict;
-		std::vector<int> scramble_alg = StringToAlg(scramble);
-		std::vector<int> rotation_alg = StringToAlg(rotation);
-		std::vector<int> alg = AlgRotation(scramble_alg, rotation_alg, center_move_table);
+		ma2 = arg_ma2;
 		for (std::string name : restrict)
 		{
 			auto it = std::find(move_names.begin(), move_names.end(), name);
 			move_restrict.emplace_back(std::distance(move_names.begin(), it));
 		}
+		for (int i : move_restrict)
+		{
+			if (i < 45)
+			{
+				move_restrict_move.emplace_back(i);
+			}
+			else
+			{
+				move_restrict_rot.emplace_back(i);
+			}
+		}
+		std::vector<int> scramble_alg = StringToAlg(scramble);
+		std::vector<int> rotation_alg = StringToAlg(rotation);
+		std::vector<int> alg = AlgRotation(scramble_alg, rotation_alg, center_move_table);
+		std::vector<int> post_alg = StringToAlg(arg_post_alg);
+		post_moves = AlgToString(post_alg);
+		std::vector<int> move_restrict_tmp = move_restrict;
+		int tc = 0;
+		for (int i : post_alg)
+		{
+			tc = center_move_table[tc][i];
+		}
+		for (int i = 0; i < move_restrict_tmp.size(); ++i)
+		{
+			move_restrict_tmp[i] = rotationMap[tc][move_restrict_tmp[i]];
+		}
+		max_rot_count = arg_max_rot_count;
+		center_offset = arg_center_offset;
 		std::vector<int> edge_index = {187520, 187520, 187520, 187520};
 		std::vector<int> single_edge_index = {0, 2, 4, 6};
 		std::vector<int> corner_index = {12, 15, 18, 21};
@@ -1093,10 +1563,29 @@ struct xcross_search
 		index2 = corner_index[pslot1];
 		index3 = single_edge_index[slot1];
 		edge_solved1 = index3;
-		create_prune_table_xcross(index2, 20, multi_move_table, corner_move_table, prune_table1, move_restrict, tmp_array, center_move_table);
+		create_prune_table_xcross(index2, 20, multi_move_table, corner_move_table, prune_table1, move_restrict_tmp, tmp_array, center_move_table);
 		count = 0;
+		int aprev_tmp = 54;
 		for (int m : alg)
 		{
+			index1 = multi_move_table[index1 * 27 + m];
+			index2 = corner_move_table[index2 * 27 + m];
+			index3 = edge_move_table[index3 * 27 + m];
+		}
+		initial_center = 0;
+		int prev = 28;
+		int prev_rot = 0;
+		for (int m_tmp : post_alg)
+		{
+			aprev_tmp = m;
+			if (m_tmp >= 45)
+			{
+				initial_center = center_move_table[initial_center][m_tmp];
+				continue;
+			}
+			int m = converter[rotationMapReverse[initial_center][m_tmp]];
+			prev = m;
+			initial_center = center_move_table[initial_center][m_tmp];
 			index1 = multi_move_table[index1 * 27 + m];
 			index2 = corner_move_table[index2 * 27 + m];
 			index3 = edge_move_table[index3 * 27 + m];
@@ -1117,7 +1606,7 @@ struct xcross_search
 			index3 *= 27;
 			for (int d = prune1_tmp; d <= max_length; d++)
 			{
-				if (depth_limited_search(index1, index2, index3, d, 2025, 0))
+				if (depth_limited_search(index1, index2, index3, d, prev * 27, initial_center, 0, aprev_tmp * 54))
 				{
 					break;
 				}
@@ -1149,7 +1638,10 @@ struct xxcross_search
 	std::vector<int> alg;
 	std::vector<std::string> restrict;
 	std::vector<int> move_restrict;
+	std::vector<int> move_restrict_move;
+	std::vector<int> move_restrict_rot;
 	std::vector<bool> ma;
+	std::vector<bool> ma2;
 	int edge_solved1;
 	int edge_solved2;
 	int index1;
@@ -1169,6 +1661,10 @@ struct xxcross_search
 	std::string tmp;
 	int m;
 	int m_tmp;
+	std::vector<int> center_offset;
+	int max_rot_count;
+	std::string post_moves;
+	int initial_center;
 
 	xxcross_search()
 	{
@@ -1182,15 +1678,19 @@ struct xxcross_search
 		prune_table2 = std::vector<unsigned char>(190080 * 24, 255);
 	}
 
-	bool depth_limited_search(int arg_index1, int arg_index2, int arg_index4, int arg_index5, int arg_index6, int depth, int prev, int center)
+	bool depth_limited_search(int arg_index1, int arg_index2, int arg_index4, int arg_index5, int arg_index6, int depth, int prev, int center, int rot_count, int aprev)
 	{
-		for (int i : move_restrict)
+		for (int i : move_restrict_move)
 		{
-			if (ma[prev + i])
+			if (ma2[aprev + i])
 			{
 				continue;
 			}
 			m = converter[rotationMapReverse[center][i]];
+			if (ma[prev + m])
+			{
+				continue;
+			}
 			index1_tmp = multi_move_table[arg_index1 + m];
 			index2_tmp = corner_move_table[arg_index2 + m];
 			index5_tmp = edge_move_table[arg_index5 + m];
@@ -1212,9 +1712,12 @@ struct xxcross_search
 				if (prune1_tmp == 0 && prune2_tmp == 0 && index5_tmp == edge_solved1 && index6_tmp == edge_solved2)
 				{
 					bool valid = true;
+					bool p_valid = false;
+					bool center_valid = false;
 					int l = static_cast<int>(sol.size());
 					int c = 0;
-					int center_tmp = 0;
+					int rot_count_tmp = 0;
+					int center_tmp = initial_center;
 					int index1_tmp2 = index1;
 					int index2_tmp2 = index2;
 					int index4_tmp2 = index4;
@@ -1222,6 +1725,31 @@ struct xxcross_search
 					int index6_tmp2 = index6;
 					for (int j : sol)
 					{
+						center_valid = false;
+						if (j >= 45)
+						{
+							center_tmp = center_move_table[center_tmp][j];
+							c++;
+							rot_count_tmp++;
+							if (rot_count_tmp > max_rot_count)
+							{
+								valid = false;
+								break;
+							}
+							for (int center_tmp2 : center_offset)
+							{
+								if (center_tmp == center_tmp2)
+								{
+									center_valid = true;
+								}
+							}
+							if (c < l && center_valid && p_valid)
+							{
+								valid = false;
+								break;
+							}
+							continue;
+						}
 						m_tmp = converter[rotationMapReverse[center_tmp][j]];
 						center_tmp = center_move_table[center_tmp][j];
 						if (index1_tmp2 == multi_move_table[index1_tmp2 + m_tmp] * 27 && index2_tmp2 == corner_move_table[index2_tmp2 + m_tmp] * 27 && index4_tmp2 == corner_move_table[index4_tmp2 + m_tmp] * 27 && index5_tmp2 == edge_move_table[index5_tmp2 + m_tmp] * 27 && index6_tmp2 == edge_move_table[index6_tmp2 + m_tmp] * 27)
@@ -1237,10 +1765,21 @@ struct xxcross_search
 							index4_tmp2 = corner_move_table[index4_tmp2 + m_tmp];
 							index5_tmp2 = edge_move_table[index5_tmp2 + m_tmp];
 							index6_tmp2 = edge_move_table[index6_tmp2 + m_tmp];
+							for (int center_tmp2 : center_offset)
+							{
+								if (center_tmp == center_tmp2)
+								{
+									center_valid = true;
+								}
+							}
 							if (c < l && (prune_table1[index1_tmp2 * 24 + index2_tmp2] == 0 && prune_table2[index1_tmp2 * 24 + index4_tmp2] == 0 && index5_tmp2 == edge_solved1 && index6_tmp2 == edge_solved2))
 							{
-								valid = false;
-								break;
+								p_valid = true;
+								if (center_valid)
+								{
+									valid = false;
+									break;
+								}
 							}
 							index1_tmp2 *= 27;
 							index2_tmp2 *= 27;
@@ -1249,16 +1788,16 @@ struct xxcross_search
 							index6_tmp2 *= 27;
 						}
 					}
-					if (valid)
+					if (valid && center_valid)
 					{
 						count += 1;
 						if (rotation == "")
 						{
-							tmp = AlgToString(sol);
+							tmp = post_moves + AlgToString(sol);
 						}
 						else
 						{
-							tmp = rotation + " " + AlgToString(sol);
+							tmp = rotation + " " + post_moves + AlgToString(sol);
 						}
 						update(tmp.c_str());
 						if (count == sol_num)
@@ -1268,7 +1807,139 @@ struct xxcross_search
 					}
 				}
 			}
-			else if (depth_limited_search(index1_tmp * 27, index2_tmp * 27, index4_tmp * 27, index5_tmp * 27, index6_tmp * 27, depth - 1, i * 45, center_move_table[center][i]))
+			else if (depth_limited_search(index1_tmp * 27, index2_tmp * 27, index4_tmp * 27, index5_tmp * 27, index6_tmp * 27, depth - 1, m * 27, center_move_table[center][i], rot_count, i * 54))
+			{
+				return true;
+			}
+			sol.pop_back();
+		}
+		for (int i : move_restrict_rot)
+		{
+			if (ma2[aprev + i])
+			{
+				continue;
+			}
+			if (rot_count >= max_rot_count)
+			{
+				continue;
+			}
+			index1_tmp = arg_index1 / 27;
+			index2_tmp = arg_index2 / 27;
+			index5_tmp = arg_index5 / 27;
+			prune1_tmp = prune_table1[index1_tmp * 24 + index2_tmp];
+			if (prune1_tmp >= depth)
+			{
+				continue;
+			}
+			index4_tmp = arg_index4 / 27;
+			index6_tmp = arg_index6 / 27;
+			prune2_tmp = prune_table2[index1_tmp * 24 + index4_tmp];
+			if (prune2_tmp >= depth)
+			{
+				continue;
+			}
+			sol.emplace_back(i);
+			if (depth == 1)
+			{
+				if (prune1_tmp == 0 && prune2_tmp == 0 && index5_tmp == edge_solved1 && index6_tmp == edge_solved2)
+				{
+					bool valid = true;
+					bool p_valid = false;
+					bool center_valid = false;
+					int l = static_cast<int>(sol.size());
+					int c = 0;
+					int rot_count_tmp = 0;
+					int center_tmp = initial_center;
+					int index1_tmp2 = index1;
+					int index2_tmp2 = index2;
+					int index4_tmp2 = index4;
+					int index5_tmp2 = index5;
+					int index6_tmp2 = index6;
+					for (int j : sol)
+					{
+						center_valid = false;
+						if (j >= 45)
+						{
+							center_tmp = center_move_table[center_tmp][j];
+							c++;
+							rot_count_tmp++;
+							if (rot_count_tmp > max_rot_count)
+							{
+								valid = false;
+								break;
+							}
+							for (int center_tmp2 : center_offset)
+							{
+								if (center_tmp == center_tmp2)
+								{
+									center_valid = true;
+								}
+							}
+							if (c < l && center_valid && p_valid)
+							{
+								valid = false;
+								break;
+							}
+							continue;
+						}
+						m_tmp = converter[rotationMapReverse[center_tmp][j]];
+						center_tmp = center_move_table[center_tmp][j];
+						if (index1_tmp2 == multi_move_table[index1_tmp2 + m_tmp] * 27 && index2_tmp2 == corner_move_table[index2_tmp2 + m_tmp] * 27 && index4_tmp2 == corner_move_table[index4_tmp2 + m_tmp] * 27 && index5_tmp2 == edge_move_table[index5_tmp2 + m_tmp] * 27 && index6_tmp2 == edge_move_table[index6_tmp2 + m_tmp] * 27)
+						{
+							valid = false;
+							break;
+						}
+						else
+						{
+							c += 1;
+							index1_tmp2 = multi_move_table[index1_tmp2 + m_tmp];
+							index2_tmp2 = corner_move_table[index2_tmp2 + m_tmp];
+							index4_tmp2 = corner_move_table[index4_tmp2 + m_tmp];
+							index5_tmp2 = edge_move_table[index5_tmp2 + m_tmp];
+							index6_tmp2 = edge_move_table[index6_tmp2 + m_tmp];
+							for (int center_tmp2 : center_offset)
+							{
+								if (center_tmp == center_tmp2)
+								{
+									center_valid = true;
+								}
+							}
+							if (c < l && (prune_table1[index1_tmp2 * 24 + index2_tmp2] == 0 && prune_table2[index1_tmp2 * 24 + index4_tmp2] == 0 && index5_tmp2 == edge_solved1 && index6_tmp2 == edge_solved2))
+							{
+								p_valid = true;
+								if (center_valid)
+								{
+									valid = false;
+									break;
+								}
+							}
+							index1_tmp2 *= 27;
+							index2_tmp2 *= 27;
+							index4_tmp2 *= 27;
+							index5_tmp2 *= 27;
+							index6_tmp2 *= 27;
+						}
+					}
+					if (valid && center_valid)
+					{
+						count += 1;
+						if (rotation == "")
+						{
+							tmp = post_moves + AlgToString(sol);
+						}
+						else
+						{
+							tmp = rotation + " " + post_moves + AlgToString(sol);
+						}
+						update(tmp.c_str());
+						if (count == sol_num)
+						{
+							return true;
+						}
+					}
+				}
+			}
+			else if (depth_limited_search(index1_tmp * 27, index2_tmp * 27, index4_tmp * 27, index5_tmp * 27, index6_tmp * 27, depth, prev, center_move_table[center][i], rot_count + 1, i * 54))
 			{
 				return true;
 			}
@@ -1277,7 +1948,7 @@ struct xxcross_search
 		return false;
 	}
 
-	void start_search(std::string arg_scramble = "", std::string arg_rotation = "", int arg_slot1 = 0, int arg_slot2 = 3, int arg_pslot1 = 0, int arg_pslot2 = 3, int arg_sol_num = 100, int arg_max_length = 12, std::vector<std::string> arg_restrict = move_names)
+	void start_search(std::string arg_scramble = "", std::string arg_rotation = "", int arg_slot1 = 0, int arg_slot2 = 3, int arg_pslot1 = 0, int arg_pslot2 = 3, int arg_sol_num = 100, int arg_max_length = 12, const std::vector<std::string> &arg_restrict = move_names, std::string arg_post_alg = "", const std::vector<int> &arg_center_offset = {0}, int arg_max_rot_count = 0, const std::vector<bool> &arg_ma2 = std::vector<bool>(55 * 54, false))
 	{
 		scramble = arg_scramble;
 		rotation = arg_rotation;
@@ -1288,14 +1959,40 @@ struct xxcross_search
 		max_length = arg_max_length;
 		sol_num = arg_sol_num;
 		restrict = arg_restrict;
-		std::vector<int> scramble_alg = StringToAlg(scramble);
-		std::vector<int> rotation_alg = StringToAlg(rotation);
-		std::vector<int> alg = AlgRotation(scramble_alg, rotation_alg, center_move_table);
+		ma2 = arg_ma2;
 		for (std::string name : restrict)
 		{
 			auto it = std::find(move_names.begin(), move_names.end(), name);
 			move_restrict.emplace_back(std::distance(move_names.begin(), it));
 		}
+		for (int i : move_restrict)
+		{
+			if (i < 45)
+			{
+				move_restrict_move.emplace_back(i);
+			}
+			else
+			{
+				move_restrict_rot.emplace_back(i);
+			}
+		}
+		std::vector<int> scramble_alg = StringToAlg(scramble);
+		std::vector<int> rotation_alg = StringToAlg(rotation);
+		std::vector<int> alg = AlgRotation(scramble_alg, rotation_alg, center_move_table);
+		std::vector<int> post_alg = StringToAlg(arg_post_alg);
+		post_moves = AlgToString(post_alg);
+		std::vector<int> move_restrict_tmp = move_restrict;
+		int tc = 0;
+		for (int i : post_alg)
+		{
+			tc = center_move_table[tc][i];
+		}
+		for (int i = 0; i < move_restrict_tmp.size(); ++i)
+		{
+			move_restrict_tmp[i] = rotationMap[tc][move_restrict_tmp[i]];
+		}
+		max_rot_count = arg_max_rot_count;
+		center_offset = arg_center_offset;
 		std::vector<int> edge_index = {187520, 187520, 187520, 187520};
 		std::vector<int> single_edge_index = {0, 2, 4, 6};
 		std::vector<int> corner_index = {12, 15, 18, 21};
@@ -1303,14 +2000,35 @@ struct xxcross_search
 		index2 = corner_index[pslot1];
 		index5 = single_edge_index[slot1];
 		edge_solved1 = index5;
-		create_prune_table_xcross(index2, 20, multi_move_table, corner_move_table, prune_table1, move_restrict, tmp_array, center_move_table);
+		create_prune_table_xcross(index2, 20, multi_move_table, corner_move_table, prune_table1, move_restrict_tmp, tmp_array, center_move_table);
 		index4 = corner_index[pslot2];
 		index6 = single_edge_index[slot2];
 		edge_solved2 = index6;
-		create_prune_table_xcross(index4, 20, multi_move_table, corner_move_table, prune_table2, move_restrict, tmp_array, center_move_table);
+		create_prune_table_xcross(index4, 20, multi_move_table, corner_move_table, prune_table2, move_restrict_tmp, tmp_array, center_move_table);
 		count = 0;
+		int aprev_tmp = 54;
 		for (int m : alg)
 		{
+			index1 = multi_move_table[index1 * 27 + m];
+			index2 = corner_move_table[index2 * 27 + m];
+			index4 = corner_move_table[index4 * 27 + m];
+			index5 = edge_move_table[index5 * 27 + m];
+			index6 = edge_move_table[index6 * 27 + m];
+		}
+		initial_center = 0;
+		int prev = 28;
+		int prev_rot = 0;
+		for (int m_tmp : post_alg)
+		{
+			aprev_tmp = m;
+			if (m_tmp >= 45)
+			{
+				initial_center = center_move_table[initial_center][m_tmp];
+				continue;
+			}
+			int m = converter[rotationMapReverse[initial_center][m_tmp]];
+			prev = m;
+			initial_center = center_move_table[initial_center][m_tmp];
 			index1 = multi_move_table[index1 * 27 + m];
 			index2 = corner_move_table[index2 * 27 + m];
 			index4 = corner_move_table[index4 * 27 + m];
@@ -1336,7 +2054,7 @@ struct xxcross_search
 			index6 *= 27;
 			for (int d = std::max(prune1_tmp, prune2_tmp); d <= max_length; d++)
 			{
-				if (depth_limited_search(index1, index2, index4, index5, index6, d, 2025, 0))
+				if (depth_limited_search(index1, index2, index4, index5, index6, d, prev * 27, initial_center, 0, aprev_tmp * 54))
 				{
 					break;
 				}
@@ -1371,7 +2089,10 @@ struct xxxcross_search
 	std::vector<int> alg;
 	std::vector<std::string> restrict;
 	std::vector<int> move_restrict;
+	std::vector<int> move_restrict_move;
+	std::vector<int> move_restrict_rot;
 	std::vector<bool> ma;
+	std::vector<bool> ma2;
 	int edge_solved1;
 	int edge_solved2;
 	int edge_solved3;
@@ -1399,6 +2120,10 @@ struct xxxcross_search
 	std::string tmp;
 	int m;
 	int m_tmp;
+	std::vector<int> center_offset;
+	int max_rot_count;
+	std::string post_moves;
+	int initial_center;
 
 	xxxcross_search()
 	{
@@ -1413,15 +2138,19 @@ struct xxxcross_search
 		prune_table3 = std::vector<unsigned char>(190080 * 24, 255);
 	}
 
-	bool depth_limited_search(int arg_index1, int arg_index2, int arg_index4, int arg_index6, int arg_index7, int arg_index8, int arg_index9, int depth, int prev, int center)
+	bool depth_limited_search(int arg_index1, int arg_index2, int arg_index4, int arg_index6, int arg_index7, int arg_index8, int arg_index9, int depth, int prev, int center, int rot_count, int aprev)
 	{
-		for (int i : move_restrict)
+		for (int i : move_restrict_move)
 		{
-			if (ma[prev + i])
+			if (ma2[aprev + i])
 			{
 				continue;
 			}
 			m = converter[rotationMapReverse[center][i]];
+			if (ma[prev + m])
+			{
+				continue;
+			}
 			index1_tmp = multi_move_table[arg_index1 + m];
 			index2_tmp = corner_move_table[arg_index2 + m];
 			index7_tmp = edge_move_table[arg_index7 + m];
@@ -1450,9 +2179,12 @@ struct xxxcross_search
 				if (prune1_tmp == 0 && prune2_tmp == 0 && prune3_tmp == 0 && index7_tmp == edge_solved1 && index8_tmp == edge_solved2 && index9_tmp == edge_solved3)
 				{
 					bool valid = true;
+					bool p_valid = false;
+					bool center_valid = false;
 					int l = static_cast<int>(sol.size());
 					int c = 0;
-					int center_tmp = 0;
+					int rot_count_tmp = 0;
+					int center_tmp = initial_center;
 					int index1_tmp2 = index1;
 					int index2_tmp2 = index2;
 					int index4_tmp2 = index4;
@@ -1462,6 +2194,31 @@ struct xxxcross_search
 					int index9_tmp2 = index9;
 					for (int j : sol)
 					{
+						center_valid = false;
+						if (j >= 45)
+						{
+							center_tmp = center_move_table[center_tmp][j];
+							c++;
+							rot_count_tmp++;
+							if (rot_count_tmp > max_rot_count)
+							{
+								valid = false;
+								break;
+							}
+							for (int center_tmp2 : center_offset)
+							{
+								if (center_tmp == center_tmp2)
+								{
+									center_valid = true;
+								}
+							}
+							if (c < l && center_valid && p_valid)
+							{
+								valid = false;
+								break;
+							}
+							continue;
+						}
 						m_tmp = converter[rotationMapReverse[center_tmp][j]];
 						center_tmp = center_move_table[center_tmp][j];
 						if (index1_tmp2 == multi_move_table[index1_tmp2 + m_tmp] * 27 && index2_tmp2 == corner_move_table[index2_tmp2 + m_tmp] * 27 && index4_tmp2 == corner_move_table[index4_tmp2 + m_tmp] * 27 && index6_tmp2 == corner_move_table[index6_tmp2 + m_tmp] * 27 && index7_tmp2 == edge_move_table[index7_tmp2 + m_tmp] * 27 && index8_tmp2 == edge_move_table[index8_tmp2 + m_tmp] * 27 && index9_tmp2 == edge_move_table[index9_tmp2 + m_tmp] * 27)
@@ -1479,10 +2236,21 @@ struct xxxcross_search
 							index7_tmp2 = edge_move_table[index7_tmp2 + m_tmp];
 							index8_tmp2 = edge_move_table[index8_tmp2 + m_tmp];
 							index9_tmp2 = edge_move_table[index9_tmp2 + m_tmp];
+							for (int center_tmp2 : center_offset)
+							{
+								if (center_tmp == center_tmp2)
+								{
+									center_valid = true;
+								}
+							}
 							if (c < l && (prune_table1[index1_tmp2 * 24 + index2_tmp2] == 0 && prune_table2[index1_tmp2 * 24 + index4_tmp2] == 0 && prune_table3[index1_tmp2 * 24 + index6_tmp2] == 0 && index7_tmp2 == edge_solved1 && index8_tmp2 == edge_solved2 && index9_tmp2 == edge_solved3))
 							{
-								valid = false;
-								break;
+								p_valid = true;
+								if (center_valid)
+								{
+									valid = false;
+									break;
+								}
 							}
 							index1_tmp2 *= 27;
 							index2_tmp2 *= 27;
@@ -1493,16 +2261,16 @@ struct xxxcross_search
 							index9_tmp2 *= 27;
 						}
 					}
-					if (valid)
+					if (valid && center_valid)
 					{
 						count += 1;
 						if (rotation == "")
 						{
-							tmp = AlgToString(sol);
+							tmp = post_moves + AlgToString(sol);
 						}
 						else
 						{
-							tmp = rotation + " " + AlgToString(sol);
+							tmp = rotation + " " + post_moves + AlgToString(sol);
 						}
 						update(tmp.c_str());
 						if (count == sol_num)
@@ -1512,7 +2280,152 @@ struct xxxcross_search
 					}
 				}
 			}
-			else if (depth_limited_search(index1_tmp * 27, index2_tmp * 27, index4_tmp * 27, index6_tmp * 27, index7_tmp * 27, index8_tmp * 27, index9_tmp * 27, depth - 1, i * 45, center_move_table[center][i]))
+			else if (depth_limited_search(index1_tmp * 27, index2_tmp * 27, index4_tmp * 27, index6_tmp * 27, index7_tmp * 27, index8_tmp * 27, index9_tmp * 27, depth - 1, m * 27, center_move_table[center][i], rot_count, i * 54))
+			{
+				return true;
+			}
+			sol.pop_back();
+		}
+		for (int i : move_restrict_rot)
+		{
+			if (ma2[aprev + i])
+			{
+				continue;
+			}
+			if (rot_count >= max_rot_count)
+			{
+				continue;
+			}
+			index1_tmp = arg_index1 / 27;
+			index2_tmp = arg_index2 / 27;
+			index7_tmp = arg_index7 / 27;
+			prune1_tmp = prune_table1[index1_tmp * 24 + index2_tmp];
+			if (prune1_tmp >= depth)
+			{
+				continue;
+			}
+			index4_tmp = arg_index4 / 27;
+			index8_tmp = arg_index8 / 27;
+			prune2_tmp = prune_table2[index1_tmp * 24 + index4_tmp];
+			if (prune2_tmp >= depth)
+			{
+				continue;
+			}
+			index6_tmp = arg_index6 / 27;
+			index9_tmp = arg_index9 / 27;
+			prune3_tmp = prune_table3[index1_tmp * 24 + index6_tmp];
+			if (prune3_tmp >= depth)
+			{
+				continue;
+			}
+			sol.emplace_back(i);
+			if (depth == 1)
+			{
+				if (prune1_tmp == 0 && prune2_tmp == 0 && prune3_tmp == 0 && index7_tmp == edge_solved1 && index8_tmp == edge_solved2 && index9_tmp == edge_solved3)
+				{
+					bool valid = true;
+					bool p_valid = false;
+					bool center_valid = false;
+					int l = static_cast<int>(sol.size());
+					int c = 0;
+					int rot_count_tmp = 0;
+					int center_tmp = initial_center;
+					int index1_tmp2 = index1;
+					int index2_tmp2 = index2;
+					int index4_tmp2 = index4;
+					int index6_tmp2 = index6;
+					int index7_tmp2 = index7;
+					int index8_tmp2 = index8;
+					int index9_tmp2 = index9;
+					for (int j : sol)
+					{
+						center_valid = false;
+						if (j >= 45)
+						{
+							center_tmp = center_move_table[center_tmp][j];
+							c++;
+							rot_count_tmp++;
+							if (rot_count_tmp > max_rot_count)
+							{
+								valid = false;
+								break;
+							}
+							for (int center_tmp2 : center_offset)
+							{
+								if (center_tmp == center_tmp2)
+								{
+									center_valid = true;
+								}
+							}
+							if (c < l && center_valid && p_valid)
+							{
+								valid = false;
+								break;
+							}
+							continue;
+						}
+						m_tmp = converter[rotationMapReverse[center_tmp][j]];
+						center_tmp = center_move_table[center_tmp][j];
+						if (index1_tmp2 == multi_move_table[index1_tmp2 + m_tmp] * 27 && index2_tmp2 == corner_move_table[index2_tmp2 + m_tmp] * 27 && index4_tmp2 == corner_move_table[index4_tmp2 + m_tmp] * 27 && index6_tmp2 == corner_move_table[index6_tmp2 + m_tmp] * 27 && index7_tmp2 == edge_move_table[index7_tmp2 + m_tmp] * 27 && index8_tmp2 == edge_move_table[index8_tmp2 + m_tmp] * 27 && index9_tmp2 == edge_move_table[index9_tmp2 + m_tmp] * 27)
+						{
+							valid = false;
+							break;
+						}
+						else
+						{
+							c += 1;
+							index1_tmp2 = multi_move_table[index1_tmp2 + m_tmp];
+							index2_tmp2 = corner_move_table[index2_tmp2 + m_tmp];
+							index4_tmp2 = corner_move_table[index4_tmp2 + m_tmp];
+							index6_tmp2 = corner_move_table[index6_tmp2 + m_tmp];
+							index7_tmp2 = edge_move_table[index7_tmp2 + m_tmp];
+							index8_tmp2 = edge_move_table[index8_tmp2 + m_tmp];
+							index9_tmp2 = edge_move_table[index9_tmp2 + m_tmp];
+							for (int center_tmp2 : center_offset)
+							{
+								if (center_tmp == center_tmp2)
+								{
+									center_valid = true;
+								}
+							}
+							if (c < l && (prune_table1[index1_tmp2 * 24 + index2_tmp2] == 0 && prune_table2[index1_tmp2 * 24 + index4_tmp2] == 0 && prune_table3[index1_tmp2 * 24 + index6_tmp2] == 0 && index7_tmp2 == edge_solved1 && index8_tmp2 == edge_solved2 && index9_tmp2 == edge_solved3))
+							{
+								p_valid = true;
+								if (center_valid)
+								{
+									valid = false;
+									break;
+								}
+							}
+							index1_tmp2 *= 27;
+							index2_tmp2 *= 27;
+							index4_tmp2 *= 27;
+							index6_tmp2 *= 27;
+							index7_tmp2 *= 27;
+							index8_tmp2 *= 27;
+							index9_tmp2 *= 27;
+						}
+					}
+					if (valid && center_valid)
+					{
+						count += 1;
+						if (rotation == "")
+						{
+							tmp = post_moves + AlgToString(sol);
+						}
+						else
+						{
+							tmp = rotation + " " + post_moves + AlgToString(sol);
+						}
+						update(tmp.c_str());
+						if (count == sol_num)
+						{
+							return true;
+						}
+					}
+				}
+			}
+			else if (depth_limited_search(index1_tmp * 27, index2_tmp * 27, index4_tmp * 27, index6_tmp * 27, index7_tmp * 27, index8_tmp * 27, index9_tmp * 27, depth, prev, center_move_table[center][i], rot_count + 1, i * 54))
 			{
 				return true;
 			}
@@ -1521,7 +2434,7 @@ struct xxxcross_search
 		return false;
 	}
 
-	void start_search(std::string arg_scramble = "", std::string arg_rotation = "", int arg_slot1 = 0, int arg_slot2 = 3, int arg_slot3 = 1, int arg_pslot1 = 0, int arg_pslot2 = 3, int arg_pslot3 = 1, int arg_sol_num = 100, int arg_max_length = 14, std::vector<std::string> arg_restrict = move_names)
+	void start_search(std::string arg_scramble = "", std::string arg_rotation = "", int arg_slot1 = 0, int arg_slot2 = 3, int arg_slot3 = 1, int arg_pslot1 = 0, int arg_pslot2 = 3, int arg_pslot3 = 1, int arg_sol_num = 100, int arg_max_length = 14, const std::vector<std::string> &arg_restrict = move_names, std::string arg_post_alg = "", const std::vector<int> &arg_center_offset = {0}, int arg_max_rot_count = 0, const std::vector<bool> &arg_ma2 = std::vector<bool>(55 * 54, false))
 	{
 		scramble = arg_scramble;
 		rotation = arg_rotation;
@@ -1534,14 +2447,40 @@ struct xxxcross_search
 		max_length = arg_max_length;
 		sol_num = arg_sol_num;
 		restrict = arg_restrict;
-		std::vector<int> scramble_alg = StringToAlg(scramble);
-		std::vector<int> rotation_alg = StringToAlg(rotation);
-		std::vector<int> alg = AlgRotation(scramble_alg, rotation_alg, center_move_table);
+		ma2 = arg_ma2;
 		for (std::string name : restrict)
 		{
 			auto it = std::find(move_names.begin(), move_names.end(), name);
 			move_restrict.emplace_back(std::distance(move_names.begin(), it));
 		}
+		for (int i : move_restrict)
+		{
+			if (i < 45)
+			{
+				move_restrict_move.emplace_back(i);
+			}
+			else
+			{
+				move_restrict_rot.emplace_back(i);
+			}
+		}
+		std::vector<int> scramble_alg = StringToAlg(scramble);
+		std::vector<int> rotation_alg = StringToAlg(rotation);
+		std::vector<int> alg = AlgRotation(scramble_alg, rotation_alg, center_move_table);
+		std::vector<int> post_alg = StringToAlg(arg_post_alg);
+		post_moves = AlgToString(post_alg);
+		std::vector<int> move_restrict_tmp = move_restrict;
+		int tc = 0;
+		for (int i : post_alg)
+		{
+			tc = center_move_table[tc][i];
+		}
+		for (int i = 0; i < move_restrict_tmp.size(); ++i)
+		{
+			move_restrict_tmp[i] = rotationMap[tc][move_restrict_tmp[i]];
+		}
+		max_rot_count = arg_max_rot_count;
+		center_offset = arg_center_offset;
 		std::vector<int> edge_index = {187520, 187520, 187520, 187520};
 		std::vector<int> single_edge_index = {0, 2, 4, 6};
 		std::vector<int> corner_index = {12, 15, 18, 21};
@@ -1549,18 +2488,41 @@ struct xxxcross_search
 		index2 = corner_index[pslot1];
 		index7 = single_edge_index[slot1];
 		edge_solved1 = index7;
-		create_prune_table_xcross(index2, 10, multi_move_table, corner_move_table, prune_table1, move_restrict, tmp_array, center_move_table);
+		create_prune_table_xcross(index2, 10, multi_move_table, corner_move_table, prune_table1, move_restrict_tmp, tmp_array, center_move_table);
 		index4 = corner_index[pslot2];
 		index8 = single_edge_index[slot2];
 		edge_solved2 = index8;
-		create_prune_table_xcross(index4, 10, multi_move_table, corner_move_table, prune_table2, move_restrict, tmp_array, center_move_table);
+		create_prune_table_xcross(index4, 10, multi_move_table, corner_move_table, prune_table2, move_restrict_tmp, tmp_array, center_move_table);
 		index6 = corner_index[pslot3];
 		index9 = single_edge_index[slot3];
 		edge_solved3 = index9;
-		create_prune_table_xcross(index6, 10, multi_move_table, corner_move_table, prune_table3, move_restrict, tmp_array, center_move_table);
+		create_prune_table_xcross(index6, 10, multi_move_table, corner_move_table, prune_table3, move_restrict_tmp, tmp_array, center_move_table);
 		count = 0;
+		int aprev_tmp = 54;
 		for (int m : alg)
 		{
+			index1 = multi_move_table[index1 * 27 + m];
+			index2 = corner_move_table[index2 * 27 + m];
+			index4 = corner_move_table[index4 * 27 + m];
+			index6 = corner_move_table[index6 * 27 + m];
+			index7 = edge_move_table[index7 * 27 + m];
+			index8 = edge_move_table[index8 * 27 + m];
+			index9 = edge_move_table[index9 * 27 + m];
+		}
+		initial_center = 0;
+		int prev = 28;
+		int prev_rot = 0;
+		for (int m_tmp : post_alg)
+		{
+			aprev_tmp = m;
+			if (m_tmp >= 45)
+			{
+				initial_center = center_move_table[initial_center][m_tmp];
+				continue;
+			}
+			int m = converter[rotationMapReverse[initial_center][m_tmp]];
+			prev = m;
+			initial_center = center_move_table[initial_center][m_tmp];
 			index1 = multi_move_table[index1 * 27 + m];
 			index2 = corner_move_table[index2 * 27 + m];
 			index4 = corner_move_table[index4 * 27 + m];
@@ -1591,7 +2553,7 @@ struct xxxcross_search
 			index9 *= 27;
 			for (int d = std::max(prune1_tmp, std::max(prune2_tmp, prune3_tmp)); d <= max_length; d++)
 			{
-				if (depth_limited_search(index1, index2, index4, index6, index7, index8, index9, d, 2025, 0))
+				if (depth_limited_search(index1, index2, index4, index6, index7, index8, index9, d, prev * 27, initial_center, 0, aprev_tmp * 54))
 				{
 					break;
 				}
@@ -1629,22 +2591,192 @@ std::vector<bool> F2L_option_array(const std::string &input)
 	return result;
 }
 
-void controller(std::string scr, std::string rot, std::string slot, std::string pslot, std::string num, std::string len, std::string restrict)
+void buildCenterOffset(const std::string &crestString, std::vector<int> &vector)
 {
+	const static std::map<std::string, int> crest_mapping = {
+		{"", 0}, {"y", 1}, {"y2", 2}, {"y'", 3}, {"z2", 4}, {"z2 y", 5}, {"z2 y2", 6}, {"z2 y'", 7}, {"z'", 8}, {"z' y", 9}, {"z' y2", 10}, {"z' y'", 11}, {"z", 12}, {"z y", 13}, {"z y2", 14}, {"z y'", 15}, {"x'", 16}, {"x' y", 17}, {"x' y2", 18}, {"x' y'", 19}, {"x", 20}, {"x y", 21}, {"x y2", 22}, {"x y'", 23}};
+	std::stringstream ss(crestString);
+	std::string id_part;
+
+	while (std::getline(ss, id_part, '|'))
+	{
+		if (id_part.empty())
+			continue;
+
+		size_t delim_pos = id_part.find('_');
+		if (delim_pos == std::string::npos)
+			continue;
+
+		std::string row_part_raw = id_part.substr(0, delim_pos);
+		std::string col_part_raw = id_part.substr(delim_pos + 1);
+
+		auto sanitize = [](std::string s)
+		{
+			if (s == "EMPTY")
+				return std::string("");
+			size_t pos = s.find('-');
+			if (pos != std::string::npos)
+			{
+				s.replace(pos, 1, "'");
+			}
+			return s;
+		};
+
+		std::string row_part = sanitize(row_part_raw);
+		std::string col_part = sanitize(col_part_raw);
+
+		std::string key_string = row_part;
+		if (!row_part.empty() && !col_part.empty())
+		{
+			key_string += " ";
+		}
+		key_string += col_part;
+		auto it = crest_mapping.find(key_string);
+		vector.push_back(it->second);
+	}
+}
+
+void buidMoveRestrict(const std::string &restID, std::vector<std::string> &move_restrict)
+{
+	std::stringstream ss(restID);
+	std::string move;
+
+	while (std::getline(ss, move, '_'))
+	{
+		if (!move.empty())
+		{
+			size_t pos = move.find('-');
+			if (pos != std::string::npos)
+			{
+				move.replace(pos, 1, "'");
+			}
+			move_restrict.push_back(move);
+		}
+	}
+}
+
+static std::string get_move_base(const std::string &move)
+{
+	if (move.empty())
+		return "";
+	return move.substr(0, 1);
+}
+
+static bool should_be_checked_by_default(const std::string &prev_move, const std::string &next_move)
+{
+	if (prev_move.empty())
+		return false;
+	const static std::map<std::string, int> y_axis_order = {{"U", 0}, {"D", 1}, {"E", 2}, {"u", 3}, {"d", 4}, {"y", 5}};
+	const static std::map<std::string, int> x_axis_order = {{"L", 0}, {"R", 1}, {"M", 2}, {"l", 3}, {"r", 4}, {"x", 5}};
+	const static std::map<std::string, int> z_axis_order = {{"F", 0}, {"B", 1}, {"S", 2}, {"f", 3}, {"b", 4}, {"z", 5}};
+	const static std::map<std::string, const std::map<std::string, int> *> base_to_axis_map = {
+		{"U", &y_axis_order}, {"D", &y_axis_order}, {"E", &y_axis_order}, {"u", &y_axis_order}, {"d", &y_axis_order}, {"y", &y_axis_order}, {"L", &x_axis_order}, {"R", &x_axis_order}, {"M", &x_axis_order}, {"l", &x_axis_order}, {"r", &x_axis_order}, {"x", &x_axis_order}, {"F", &z_axis_order}, {"B", &z_axis_order}, {"S", &z_axis_order}, {"f", &z_axis_order}, {"b", &z_axis_order}, {"z", &z_axis_order}};
+	std::string prev_base = get_move_base(prev_move);
+	std::string next_base = get_move_base(next_move);
+	if (prev_base == next_base)
+		return true;
+	auto it_prev = base_to_axis_map.find(prev_base);
+	auto it_next = base_to_axis_map.find(next_base);
+	if (it_prev != base_to_axis_map.end() && it_next != base_to_axis_map.end() && it_prev->second == it_next->second)
+	{
+		const auto &axis_map = *it_prev->second;
+		if (axis_map.at(prev_base) > axis_map.at(next_base))
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+void buidMA2(const std::string &restID, const std::string &mavString, std::vector<bool> &vector)
+{
+	const static std::map<std::string, int> move_to_index_map = []
+	{
+		std::map<std::string, int> m;
+		for (int i = 0; i < move_names.size(); ++i)
+		{
+			m[move_names[i]] = i;
+		}
+		return m;
+	}();
+
+	std::vector<std::string> active_moves;
+	buidMoveRestrict(restID, active_moves);
+
+	const int NUM_COLS = 54;
+	const int NUM_ROWS = 55;
+	vector = std::vector<bool>(NUM_ROWS * NUM_COLS, false);
+
+	std::vector<std::string> row_headers = active_moves;
+	row_headers.push_back("");
+	for (const auto &row_move : row_headers)
+	{
+		for (const auto &col_move : active_moves)
+		{
+			if (should_be_checked_by_default(row_move, col_move))
+			{
+				auto it_row = row_move.empty() ? move_to_index_map.end() : move_to_index_map.find(row_move);
+				auto it_col = move_to_index_map.find(col_move);
+
+				if (it_col != move_to_index_map.end())
+				{
+					int row_index = row_move.empty() ? 54 : it_row->second;
+					vector[row_index * NUM_COLS + it_col->second] = true;
+				}
+			}
+		}
+	}
+
+	auto sanitize = [](std::string s) -> std::string
+	{
+		if (s == "EMPTY")
+			return "";
+		size_t pos = s.find('-');
+		if (pos != std::string::npos)
+		{
+			s.replace(pos, 1, "'");
+		}
+		return s;
+	};
+
+	std::stringstream ss_mav(mavString);
+	std::string override_part;
+	while (std::getline(ss_mav, override_part, '|'))
+	{
+		size_t delim_pos = override_part.find('~');
+		if (delim_pos == std::string::npos)
+			continue;
+
+		std::string row_str = sanitize(override_part.substr(0, delim_pos));
+		std::string col_str = sanitize(override_part.substr(delim_pos + 1));
+
+		auto it_row = row_str.empty() ? move_to_index_map.end() : move_to_index_map.find(row_str);
+		auto it_col = move_to_index_map.find(col_str);
+
+		if (it_col != move_to_index_map.end())
+		{
+			int row_index = row_str.empty() ? 54 : it_row->second;
+			int vector_index = row_index * NUM_COLS + it_col->second;
+			if (vector_index >= 0 && vector_index < vector.size())
+			{
+				vector[vector_index] = !vector[vector_index];
+			}
+		}
+	}
+}
+
+void controller(std::string scr, std::string rot, std::string slot, std::string pslot, int num, int len, std::string move_restrict_string, std::string post_alg, std::string center_offset_string, int max_rot_count, std::string ma2_string)
+{
+	std::vector<int> center_offset;
+	std::vector<bool> ma2;
+	std::vector<std::string> move_restrict;
+	buildCenterOffset(center_offset_string, center_offset);
+	buidMoveRestrict(move_restrict_string, move_restrict);
+	buidMA2(move_restrict_string, ma2_string, ma2);
 	std::vector<bool> slot_list = F2L_option_array(slot);
 	std::vector<bool> pslot_list = F2L_option_array(pslot);
 	int count = 0;
-	int sol_num = std::stoi(num);
-	int max_len = std::stoi(len);
 	std::vector<int> slot_list2, pslot_list2;
-	std::vector<std::string> move_restrict;
-	for (char c : restrict)
-	{
-		std::string face(1, c);
-		move_restrict.emplace_back(face);
-		move_restrict.emplace_back(face + "2");
-		move_restrict.emplace_back(face + "'");
-	}
 	if (slot_list[0])
 	{
 		count += 1;
@@ -1686,22 +2818,22 @@ void controller(std::string scr, std::string rot, std::string slot, std::string 
 	if (count == 0)
 	{
 		cross_search search;
-		search.start_search(scr, rot, sol_num, max_len, move_restrict);
+		search.start_search(scr, rot, num, len, move_restrict, post_alg, center_offset, max_rot_count, ma2);
 	}
 	else if (count == 1)
 	{
 		xcross_search search;
-		search.start_search(scr, rot, slot_list2[0], pslot_list2[0], sol_num, max_len, move_restrict);
+		search.start_search(scr, rot, slot_list2[0], pslot_list2[0], num, len, move_restrict, post_alg, center_offset, max_rot_count, ma2);
 	}
 	else if (count == 2)
 	{
 		xxcross_search search;
-		search.start_search(scr, rot, slot_list2[0], slot_list2[1], pslot_list2[0], pslot_list2[1], sol_num, max_len, move_restrict);
+		search.start_search(scr, rot, slot_list2[0], slot_list2[1], pslot_list2[0], pslot_list2[1], num, len, move_restrict, post_alg, center_offset, max_rot_count, ma2);
 	}
 	else if (count == 3)
 	{
 		xxxcross_search search;
-		search.start_search(scr, rot, slot_list2[0], slot_list2[1], slot_list2[2], pslot_list2[0], pslot_list2[1], pslot_list2[2], sol_num, max_len, move_restrict);
+		search.start_search(scr, rot, slot_list2[0], slot_list2[1], slot_list2[2], pslot_list2[0], pslot_list2[1], pslot_list2[2], num, len, move_restrict, post_alg, center_offset, max_rot_count, ma2);
 	}
 }
 
