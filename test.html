@@ -184,7 +184,6 @@
         .table-res_table_wrapper {
             max-height: 400px;
             overflow: auto;
-            border: 1px solid #fff;
         }
 
         #move_available_table_wrapper {
@@ -194,10 +193,8 @@
         }
 
         #move_available_table {
-            border-collapse: collapse;
             max-height: 400px;
             overflow: auto;
-            border: 1px solid #fff;
         }
 
         #move_available_table tbody th {
@@ -206,7 +203,6 @@
             left: 0;
             background: #1e1e1e;
             z-index: 1;
-            border-right: 1px solid #ccc;
         }
 
         #move_available_table thead th:first-child {
@@ -2252,7 +2248,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                 const num = document.getElementById('num').value;
                 const len = document.getElementById('len').value;
                 const restrict = getIds()[1];
-                const premove = document.getElementById('premove').value;
+                const premove = scr_fix(document.getElementById('premove').value);
                 const ma = getMavString();
                 const center_offset = getCrestString();
                 const max_rot_count = document.getElementById('rot_count').value;
