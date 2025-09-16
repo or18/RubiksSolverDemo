@@ -1163,7 +1163,7 @@ struct cross_search
 		}
 		for (int i = 0; i < move_restrict_tmp.size(); ++i)
 		{
-			move_restrict_tmp[i] = rotationMap[tc][move_restrict_tmp[i]];
+			move_restrict_tmp[i] = rotationMapReverse[tc][move_restrict_tmp[i]];
 		}
 		max_rot_count = arg_max_rot_count;
 		center_offset = arg_center_offset;
@@ -1182,7 +1182,7 @@ struct cross_search
 		int prev_rot = 0;
 		for (int m_tmp : post_alg)
 		{
-			aprev_tmp = m;
+			aprev_tmp = m_tmp;
 			if (m_tmp >= 45)
 			{
 				initial_center = center_move_table[initial_center][m_tmp];
@@ -1552,7 +1552,7 @@ struct xcross_search
 		}
 		for (int i = 0; i < move_restrict_tmp.size(); ++i)
 		{
-			move_restrict_tmp[i] = rotationMap[tc][move_restrict_tmp[i]];
+			move_restrict_tmp[i] = rotationMapReverse[tc][move_restrict_tmp[i]];
 		}
 		max_rot_count = arg_max_rot_count;
 		center_offset = arg_center_offset;
@@ -1577,7 +1577,7 @@ struct xcross_search
 		int prev_rot = 0;
 		for (int m_tmp : post_alg)
 		{
-			aprev_tmp = m;
+			aprev_tmp = m_tmp;
 			if (m_tmp >= 45)
 			{
 				initial_center = center_move_table[initial_center][m_tmp];
@@ -1989,7 +1989,7 @@ struct xxcross_search
 		}
 		for (int i = 0; i < move_restrict_tmp.size(); ++i)
 		{
-			move_restrict_tmp[i] = rotationMap[tc][move_restrict_tmp[i]];
+			move_restrict_tmp[i] = rotationMapReverse[tc][move_restrict_tmp[i]];
 		}
 		max_rot_count = arg_max_rot_count;
 		center_offset = arg_center_offset;
@@ -2020,7 +2020,7 @@ struct xxcross_search
 		int prev_rot = 0;
 		for (int m_tmp : post_alg)
 		{
-			aprev_tmp = m;
+			aprev_tmp = m_tmp;
 			if (m_tmp >= 45)
 			{
 				initial_center = center_move_table[initial_center][m_tmp];
@@ -2477,7 +2477,7 @@ struct xxxcross_search
 		}
 		for (int i = 0; i < move_restrict_tmp.size(); ++i)
 		{
-			move_restrict_tmp[i] = rotationMap[tc][move_restrict_tmp[i]];
+			move_restrict_tmp[i] = rotationMapReverse[tc][move_restrict_tmp[i]];
 		}
 		max_rot_count = arg_max_rot_count;
 		center_offset = arg_center_offset;
@@ -2514,7 +2514,7 @@ struct xxxcross_search
 		int prev_rot = 0;
 		for (int m_tmp : post_alg)
 		{
-			aprev_tmp = m;
+			aprev_tmp = m_tmp;
 			if (m_tmp >= 45)
 			{
 				initial_center = center_move_table[initial_center][m_tmp];

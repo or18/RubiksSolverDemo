@@ -1831,33 +1831,6 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             'center_restrict'
         ];
 
-        function getRestrict() {
-            const checkboxes = document.querySelectorAll('#res .restrict');
-            const values = [];
-            checkboxes.forEach(function (checkbox) {
-                if (checkbox.checked) {
-                    values.push(checkbox.value);
-                }
-            });
-            const rot_set = values.join('');
-            return rot_set
-        }
-
-        function setRestrict(rot_string) {
-            const allCheckboxes = document.querySelectorAll('#res input[type="checkbox"]');
-            allCheckboxes.forEach(checkbox => {
-                checkbox.checked = false;
-            });
-            for (let i = 0; i < rot_string.length; i++) {
-                const char = rot_string.charAt(i);
-                const checkboxId = `checkbox${char}_restrict`;
-                const checkbox = document.getElementById(checkboxId);
-                if (checkbox) {
-                    checkbox.checked = true;
-                }
-            }
-        }
-
         document.addEventListener('DOMContentLoaded', () => {
             const restrictFieldset = document.getElementById('res');
             const tableWrapper = document.getElementById('res_table_wrapper');
