@@ -288,6 +288,89 @@
             padding: 10px;
             background-color: #121212;
         }
+
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background-color: rgba(0, 0, 0, 0.75);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            z-index: 50;
+        }
+
+        .modal-overlay.hidden {
+            display: none;
+        }
+
+        .modal-panel {
+            background-color: #1e1e1e;
+            border: 1px solid #41417f;
+            border-radius: 4px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+            width: 100%;
+            max-width: 42rem;
+            max-height: 80vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            border-bottom: 1px solid #41417f;
+        }
+
+        .modal-header h2 {
+            font-size: 20px;
+            font-weight: bold;
+            margin: 0;
+        }
+
+        .modal-header .header-left-group {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .modal-header .button-group {
+            display: flex;
+            align-items: center;
+        }
+
+        .modal-header .copy-btn {
+            padding: 5px 15px;
+            font-size: 18px;
+        }
+
+        .modal-header .close-btn {
+            font-size: 2.5rem;
+            line-height: 1;
+            background: none;
+            border: none;
+            color: #aaa;
+            cursor: pointer;
+            padding: 0 10px;
+        }
+
+        .modal-content {
+            padding: 1.5rem;
+            overflow-y: auto;
+        }
+
+        .modal-content pre {
+            font-family: Consolas, 'Courier New', monospace;
+            white-space: pre-wrap;
+            font-size: 18px;
+            color: #e0e0e0;
+        }
+
+        body.modal-open {
+            overflow: hidden;
+        }
     </style>
 </head>
 
@@ -1046,7 +1129,21 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
     </div>
     <a class="hidden" id="tp_alert">Two Phase Solver output 1 solution.<br></a>
     <button id="solveButton" class="button medium" onclick="startWorker()">Start</button>&nbsp;
-    <button id="blobButton" class="button medium" onclick="getBlob()">Export</button><br>
+    <button onclick="showModalWithCustomText()" class="button medium">Export</button><br>
+    <div id="modal-overlay" class="modal-overlay hidden">
+        <div id="modal-panel" class="modal-panel">
+            <div class="modal-header">
+                <div class="header-left-group">
+                    <h2>Output</h2>
+                    <button id="modal-copy-btn" class="button copy-btn">Copy</button>
+                </div>
+                <button id="modal-close-btn" class="close-btn">&times;</button>
+            </div>
+            <div class="modal-content">
+                <pre id="modal-text-content"></pre>
+            </div>
+        </div>
+    </div>
     <label for="countLine">Number of solutions: </label>
     <input type="text" id="countLine" value="0" readonly>
     <div id="result"></div>
@@ -1195,7 +1292,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             },
         };
         let tmp_mask = mask;
-        let body;
+        let body = "";
 
         function getMaskInputs() {
             const maskInputCenter = document.getElementById("maskOptionCenter").value;
@@ -3591,17 +3688,60 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             }
         });
 
-        function displayOutput(textContent) {
-            const blob = new Blob([textContent], { type: 'text/plain;charset=utf-8' });
+        const modalOverlay = document.getElementById('modal-overlay');
+        const modalPanel = document.getElementById('modal-panel');
+        const modalTextContent = document.getElementById('modal-text-content');
+        const modalCloseBtn = document.getElementById('modal-close-btn');
+        const modalCopyBtn = document.getElementById('modal-copy-btn');
 
-            const blobUrl = URL.createObjectURL(blob);
-            window.open(blobUrl, '_blank');
-            URL.revokeObjectURL(blobUrl);
+        function showModalWithText(text) {
+            modalTextContent.textContent = text;
+            modalOverlay.classList.remove('hidden');
+            document.body.classList.add('modal-open');
         }
 
-        function getBlob() {
-            displayOutput(body);
+        function hideModal() {
+            modalOverlay.classList.add('hidden');
+            document.body.classList.remove('modal-open');
         }
+
+        function copyModalText() {
+            const textToCopy = modalTextContent.textContent;
+            const tempTextArea = document.createElement('textarea');
+            tempTextArea.value = textToCopy;
+            tempTextArea.style.position = 'absolute';
+            tempTextArea.style.left = '-9999px';
+            document.body.appendChild(tempTextArea);
+
+            tempTextArea.select();
+            try {
+                document.execCommand('copy');
+                modalCopyBtn.textContent = 'Success!';
+                setTimeout(() => { modalCopyBtn.textContent = 'Copy'; }, 2000);
+            } catch (err) {
+                modalCopyBtn.textContent = 'Failed';
+                setTimeout(() => { modalCopyBtn.textContent = 'Copy'; }, 2000);
+            } finally {
+                document.body.removeChild(tempTextArea);
+            }
+        }
+
+        function showModalWithCustomText() {
+            showModalWithText(body);
+        }
+
+        modalCopyBtn.addEventListener('click', copyModalText);
+        modalCloseBtn.addEventListener('click', hideModal);
+        modalOverlay.addEventListener('click', (event) => {
+            if (event.target === modalOverlay) {
+                hideModal();
+            }
+        });
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && !modalOverlay.classList.contains('hidden')) {
+                hideModal();
+            }
+        });
 
         window.onload = function () {
             const urlParams = new URLSearchParams(window.location.search);
