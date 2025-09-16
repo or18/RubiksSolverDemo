@@ -1178,7 +1178,7 @@ struct cross_search
 			index2 = multi_move_table[index2 * 27 + m];
 		}
 		initial_center = 0;
-		int prev = 28;
+		int prev = 27;
 		int prev_rot = 0;
 		for (int m_tmp : post_alg)
 		{
@@ -1573,7 +1573,7 @@ struct xcross_search
 			index3 = edge_move_table[index3 * 27 + m];
 		}
 		initial_center = 0;
-		int prev = 28;
+		int prev = 27;
 		int prev_rot = 0;
 		for (int m_tmp : post_alg)
 		{
@@ -2016,7 +2016,7 @@ struct xxcross_search
 			index6 = edge_move_table[index6 * 27 + m];
 		}
 		initial_center = 0;
-		int prev = 28;
+		int prev = 27;
 		int prev_rot = 0;
 		for (int m_tmp : post_alg)
 		{
@@ -2510,7 +2510,7 @@ struct xxxcross_search
 			index9 = edge_move_table[index9 * 27 + m];
 		}
 		initial_center = 0;
-		int prev = 28;
+		int prev = 27;
 		int prev_rot = 0;
 		for (int m_tmp : post_alg)
 		{

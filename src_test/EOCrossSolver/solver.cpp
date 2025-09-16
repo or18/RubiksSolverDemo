@@ -1088,7 +1088,7 @@ struct cross_search
             index_eo = eo_move_table[index_eo * 27 + m];
         }
         initial_center = 0;
-        int prev = 28;
+        int prev = 27;
         int prev_rot = 0;
         for (int m_tmp : post_alg)
         {
@@ -1497,7 +1497,7 @@ struct xcross_search
             index_eo = eo_move_table[index_eo * 27 + m];
         }
         initial_center = 0;
-        int prev = 28;
+        int prev = 27;
         int prev_rot = 0;
         for (int m_tmp : post_alg)
         {
@@ -1953,7 +1953,7 @@ struct xxcross_search
             index_eo = eo_move_table[index_eo * 27 + m];
         }
         initial_center = 0;
-        int prev = 28;
+        int prev = 27;
         int prev_rot = 0;
         for (int m_tmp : post_alg)
         {
@@ -2490,7 +2490,7 @@ struct xxxcross_search
             index_eo = eo_move_table[index_eo * 27 + m];
         }
         initial_center = 0;
-        int prev = 28;
+        int prev = 27;
         int prev_rot = 0;
         for (int m_tmp : post_alg)
         {
@@ -3063,7 +3063,7 @@ struct xxxxcross_search
             index_eo = eo_move_table[index_eo * 27 + m];
         }
         initial_center = 0;
-        int prev = 28;
+        int prev = 27;
         int prev_rot = 0;
         for (int m_tmp : post_alg)
         {

@@ -718,7 +718,7 @@ void create_prune_table(int index1, int index2, int size1, int size2, int depth,
 std::vector<bool> create_ma_table()
 {
     std::vector<bool> ma(28 * 27, false);
-    for (int prev = 0; prev < 28; ++prev)
+    for (int prev = 0; prev < 27; ++prev)
     {
         for (int i = 0; i < 27; ++i)
         {
@@ -1072,7 +1072,7 @@ struct cross_search
             index2 = multi_move_table[index2 * 27 + m];
         }
         initial_center = 0;
-        int prev = 28;
+        int prev = 27;
         int prev_rot = 0;
         for (int m_tmp : post_alg)
         {
@@ -1465,7 +1465,7 @@ struct xcross_search
             index3 = edge_move_table[index3 * 27 + m];
         }
         initial_center = 0;
-        int prev = 28;
+        int prev = 27;
         int prev_rot = 0;
         for (int m_tmp : post_alg)
         {
@@ -1496,7 +1496,7 @@ struct xcross_search
             index1 *= 27;
             index2 *= 27;
             index3 *= 27;
-            for (int d = prune1_tmp; d <= max_length; d++)
+            for (int d = prune1_tmp - 1; d <= max_length; d++)
             {
                 if (depth_limited_search(index1, index2, index3, d, prev * 27, initial_center, 0, aprev_tmp * 54))
                 {
@@ -1904,7 +1904,7 @@ struct xxcross_search
             index6 = edge_move_table[index6 * 27 + m];
         }
         initial_center = 0;
-        int prev = 28;
+        int prev = 27;
         int prev_rot = 0;
         for (int m_tmp : post_alg)
         {
@@ -2392,7 +2392,7 @@ struct xxxcross_search
             index9 = edge_move_table[index9 * 27 + m];
         }
         initial_center = 0;
-        int prev = 28;
+        int prev = 27;
         int prev_rot = 0;
         for (int m_tmp : post_alg)
         {
@@ -2913,7 +2913,7 @@ struct xxxxcross_search
             index12 = edge_move_table[index12 * 27 + m];
         }
         initial_center = 0;
-        int prev = 28;
+        int prev = 27;
         int prev_rot = 0;
         for (int m_tmp : post_alg)
         {
@@ -3509,7 +3509,7 @@ struct LL_substeps_search
             index_eo = eo_move_table[index_eo + m];
         }
         initial_center = 0;
-        int prev = 28;
+        int prev = 27;
         int prev_rot = 0;
         for (int m_tmp : post_alg)
         {
@@ -4101,7 +4101,7 @@ struct LL_search
             index_eo = eo_move_table[index_eo + m];
         }
         initial_center = 0;
-        int prev = 28;
+        int prev = 27;
         int prev_rot = 0;
         for (int m_tmp : post_alg)
         {
@@ -4693,7 +4693,7 @@ struct LL_AUF_search
             index_eo = eo_move_table[index_eo + m];
         }
         initial_center = 0;
-        int prev = 28;
+        int prev = 27;
         int prev_rot = 0;
         for (int m_tmp : post_alg)
         {
