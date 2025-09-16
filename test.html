@@ -2070,7 +2070,6 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             const [resId, restId] = getIds();
             const mavId = getMavString();
             const crestString = getCrestString();
-            console.log(crestString);
             idList.forEach(id => {
                 const key = idToKeyMap[id];
                 var newValue = document.getElementById(id)?.value;
@@ -2741,162 +2740,156 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             }
         }
 
+        let currentDropdownBOptions = [];
+        let currentDropdownPairSlotOptions = [];
+        let currentDropdownCorner2Options = [];
+        let currentDropdownPairEdgeOptions = [];
+        let currentDropdownPairCornerOptions = [];
+
+        function areOptionArraysEqual(arr1, arr2) {
+            if (arr1.length !== arr2.length) return false;
+            return arr1.every((option, index) =>
+                option.value === arr2[index].value && option.text === arr2[index].text
+            );
+        }
+
+        function getOptionsForCorner(selectedValue) {
+            if (selectedValue === "") return [{ value: "", text: "" }];
+            if (["BL", "BR", "FR", "FL"].includes(selectedValue)) {
+                return [{ value: "BL", text: "BL" }, { value: "BR", text: "BR" }, { value: "FR", text: "FR" }, { value: "FL", text: "FL" }];
+            }
+            if (["BL BR", "BL FR", "BL FL", "BR FR", "BR FL", "FR FL"].includes(selectedValue)) {
+                return [{ value: "BL BR", text: "BL BR" }, { value: "BL FR", text: "BL FR" }, { value: "BL FL", text: "BL FL" }, { value: "BR FR", text: "BR FR" }, { value: "BR FL", text: "BR FL" }, { value: "FR FL", text: "FR FL" }];
+            }
+            if (["BL BR FR", "BL BR FL", "BL FR FL", "BR FR FL"].includes(selectedValue)) {
+                return [{ value: "BL BR FR", text: "BL BR FR" }, { value: "BL BR FL", text: "BL BR FL" }, { value: "BL FR FL", text: "BL FR FL" }, { value: "BR FR FL", text: "BR FR FL" }];
+            }
+            return [];
+        }
+
+        function getFilteredOptions(selectedValue) {
+            const allOptions = [{ value: "BL", text: "BL" }, { value: "BR", text: "BR" }, { value: "FR", text: "FR" }, { value: "FL", text: "FL" }];
+            const selectedValueArray = selectedValue.split(" ");
+            return allOptions.filter(option => !selectedValueArray.includes(option.value));
+        }
 
         function updateDropdown() {
             const dropdownA = document.getElementById("pslot_edge");
             const dropdownB = document.getElementById("pslot_corner");
-            document.getElementById("option_for_PF2LC").classList.add("hidden");
+            const optionForPF2LC = document.getElementById("option_for_PF2LC");
             const selectedValue = dropdownA.value;
+            const newOptions = getOptionsForCorner(selectedValue);
+            if (areOptionArraysEqual(currentDropdownBOptions, newOptions)) return;
+            const currentlySelectedB = dropdownB.value;
             dropdownB.innerHTML = "";
-            let options = [];
-            if (selectedValue === "") {
-                options = [
-                    { value: "", text: "" },
-                ];
-            } else if (selectedValue === "BL" || selectedValue === "BR" || selectedValue === "FR" || selectedValue === "FL") {
-                options = [
-                    { value: "BL", text: "BL" },
-                    { value: "BR", text: "BR" },
-                    { value: "FR", text: "FR" },
-                    { value: "FL", text: "FL" }
-                ];
-            } else if (selectedValue === "BL BR" || selectedValue === "BL FR" || selectedValue === "BL FL" || selectedValue === "BR FR" || selectedValue === "BR FL" || selectedValue === "FR FL") {
-                options = [
-                    { value: "BL BR", text: "BL BR" },
-                    { value: "BL FR", text: "BL FR" },
-                    { value: "BL FL", text: "BL FL" },
-                    { value: "BR FR", text: "BR FR" },
-                    { value: "BR FL", text: "BR FL" },
-                    { value: "FR FL", text: "FR FL" }
-                ];
-            } else if (selectedValue === "BL BR FR" || selectedValue === "BL BR FL" || selectedValue === "BL FR FL" || selectedValue === "BR FR FL") {
-                options = [
-                    { value: "BL BR FR", text: "BL BR FR" },
-                    { value: "BL BR FL", text: "BL BR FL" },
-                    { value: "BL FR FL", text: "BL FR FL" },
-                    { value: "BR FR FL", text: "BR FR FL" }
-                ];
-            }
-
-            options.forEach(option => {
+            newOptions.forEach(option => {
                 const newOption = document.createElement("option");
                 newOption.value = option.value;
                 newOption.textContent = option.text;
                 dropdownB.appendChild(newOption);
             });
-
+            currentDropdownBOptions = newOptions;
+            if (newOptions.some(option => option.value === currentlySelectedB)) {
+                dropdownB.value = currentlySelectedB;
+            }
             if (selectedValue !== "") {
-                document.getElementById("option_for_PF2LC").classList.remove("hidden");
+                optionForPF2LC.classList.remove("hidden");
+            } else {
+                optionForPF2LC.classList.add("hidden");
             }
         }
 
         function updateDropdown2() {
             const dropdownA = document.getElementById("slot2");
             const dropdownB = document.getElementById("pair_slot");
-            const selectedValue = dropdownA.value;
-            let selectedValueArray = selectedValue.split(" ");
+            const selectedValueA = dropdownA.value;
+            const newOptions = getFilteredOptions(selectedValueA);
+            if (areOptionArraysEqual(currentDropdownPairSlotOptions, newOptions)) return;
+            const previousSelectionB = dropdownB.value;
             dropdownB.innerHTML = "";
-            let options = [
-                { value: "BL", text: "BL" },
-                { value: "BR", text: "BR" },
-                { value: "FR", text: "FR" },
-                { value: "FL", text: "FL" }
-            ];
-            options = options.filter(option => !selectedValueArray.includes(option.value));
-            options.forEach(option => {
+            newOptions.forEach(option => {
                 const newOption = document.createElement("option");
                 newOption.value = option.value;
                 newOption.textContent = option.text;
                 dropdownB.appendChild(newOption);
             });
+            currentDropdownPairSlotOptions = newOptions;
+            if (newOptions.some(option => option.value === previousSelectionB)) {
+                dropdownB.value = previousSelectionB;
+            }
         }
 
         function updateDropdown3() {
             const dropdownA = document.getElementById("pslot_edge2");
-            let dropdownB = document.getElementById("pslot_corner2");
-            document.getElementById("option_for_PF2LC2").classList.add("hidden");
-            let selectedValue = dropdownA.value;
-            dropdownB.innerHTML = "";
-            let options = [];
-            if (selectedValue === "") {
-                options = [
-                    { value: "", text: "" },
-                ];
-            } else if (selectedValue === "BL" || selectedValue === "BR" || selectedValue === "FR" || selectedValue === "FL") {
-                options = [
-                    { value: "BL", text: "BL" },
-                    { value: "BR", text: "BR" },
-                    { value: "FR", text: "FR" },
-                    { value: "FL", text: "FL" }
-                ];
-            } else if (selectedValue === "BL BR" || selectedValue === "BL FR" || selectedValue === "BL FL" || selectedValue === "BR FR" || selectedValue === "BR FL" || selectedValue === "FR FL") {
-                options = [
-                    { value: "BL BR", text: "BL BR" },
-                    { value: "BL FR", text: "BL FR" },
-                    { value: "BL FL", text: "BL FL" },
-                    { value: "BR FR", text: "BR FR" },
-                    { value: "BR FL", text: "BR FL" },
-                    { value: "FR FL", text: "FR FL" }
-                ];
-            } else if (selectedValue === "BL BR FR" || selectedValue === "BL BR FL" || selectedValue === "BL FR FL" || selectedValue === "BR FR FL") {
-                options = [
-                    { value: "BL BR FR", text: "BL BR FR" },
-                    { value: "BL BR FL", text: "BL BR FL" },
-                    { value: "BL FR FL", text: "BL FR FL" },
-                    { value: "BR FR FL", text: "BR FR FL" }
-                ];
+            const dropdownB = document.getElementById("pslot_corner2");
+            const dropdownC = document.getElementById("pair_pslot_edge");
+            const optionForPF2LC2 = document.getElementById("option_for_PF2LC2");
+            const selectedValueA = dropdownA.value;
+
+            const newOptionsB = getOptionsForCorner(selectedValueA);
+            if (!areOptionArraysEqual(currentDropdownCorner2Options, newOptionsB)) {
+                const previousSelectionB = dropdownB.value;
+                dropdownB.innerHTML = "";
+                newOptionsB.forEach(opt => {
+                    const newOpt = document.createElement("option");
+                    newOpt.value = opt.value; newOpt.textContent = opt.text;
+                    dropdownB.appendChild(newOpt);
+                });
+                currentDropdownCorner2Options = newOptionsB;
+                if (newOptionsB.some(opt => opt.value === previousSelectionB)) {
+                    dropdownB.value = previousSelectionB;
+                }
             }
 
-            options.forEach(option => {
-                const newOption = document.createElement("option");
-                newOption.value = option.value;
-                newOption.textContent = option.text;
-                dropdownB.appendChild(newOption);
-            });
-
-            if (selectedValue !== "") {
-                document.getElementById("option_for_PF2LC2").classList.remove("hidden");
+            const newOptionsC = getFilteredOptions(selectedValueA);
+            if (!areOptionArraysEqual(currentDropdownPairEdgeOptions, newOptionsC)) {
+                const previousSelectionC = dropdownC.value;
+                dropdownC.innerHTML = "";
+                newOptionsC.forEach(opt => {
+                    const newOpt = document.createElement("option");
+                    newOpt.value = opt.value; newOpt.textContent = opt.text;
+                    dropdownC.appendChild(newOpt);
+                });
+                currentDropdownPairEdgeOptions = newOptionsC;
+                if (newOptionsC.some(opt => opt.value === previousSelectionC)) {
+                    dropdownC.value = previousSelectionC;
+                }
             }
 
-            dropdownB = document.getElementById("pair_pslot_edge");
-            selectedValue = dropdownA.value;
-            let selectedValueArray = selectedValue.split(" ");
-            dropdownB.innerHTML = "";
-            options = [
-                { value: "BL", text: "BL" },
-                { value: "BR", text: "BR" },
-                { value: "FR", text: "FR" },
-                { value: "FL", text: "FL" }
-            ];
-            options = options.filter(option => !selectedValueArray.includes(option.value));
-            options.forEach(option => {
-                const newOption = document.createElement("option");
-                newOption.value = option.value;
-                newOption.textContent = option.text;
-                dropdownB.appendChild(newOption);
-            });
+            if (selectedValueA !== "") {
+                optionForPF2LC2.classList.remove("hidden");
+            } else {
+                optionForPF2LC2.classList.add("hidden");
+            }
+
             updateDropdown4();
         }
 
         function updateDropdown4() {
             const dropdownA = document.getElementById("pslot_corner2");
             const dropdownB = document.getElementById("pair_pslot_corner");
-            const selectedValue = dropdownA.value;
-            let selectedValueArray = selectedValue.split(" ");
+            const selectedValueA = dropdownA.value;
+
+            const newOptions = getFilteredOptions(selectedValueA);
+
+            if (areOptionArraysEqual(currentDropdownPairCornerOptions, newOptions)) {
+                return;
+            }
+
+            const previousSelectionB = dropdownB.value;
             dropdownB.innerHTML = "";
-            let options = [
-                { value: "BL", text: "BL" },
-                { value: "BR", text: "BR" },
-                { value: "FR", text: "FR" },
-                { value: "FL", text: "FL" }
-            ];
-            options = options.filter(option => !selectedValueArray.includes(option.value));
-            options.forEach(option => {
+            newOptions.forEach(option => {
                 const newOption = document.createElement("option");
                 newOption.value = option.value;
                 newOption.textContent = option.text;
                 dropdownB.appendChild(newOption);
             });
+
+            currentDropdownPairCornerOptions = newOptions;
+
+            if (newOptions.some(option => option.value === previousSelectionB)) {
+                dropdownB.value = previousSelectionB;
+            }
         }
 
         function panalyze() {
