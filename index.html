@@ -250,7 +250,7 @@
             cursor: pointer;
             font-size: 20px;
             color: #ffffff;
-            margin-right: 10x;
+            user-select: none;
         }
 
         .custom-checkbox+label:before {
@@ -362,7 +362,7 @@
         }
 
         .modal-content pre {
-            font-family: Consolas, 'Courier New', monospace;
+            font-family: Arial, sans-serif;
             white-space: pre-wrap;
             font-size: 18px;
             color: #e0e0e0;
@@ -370,6 +370,21 @@
 
         body.modal-open {
             overflow: hidden;
+        }
+
+        .checkbox-table {
+            width: 100%;
+            max-width: 410px;
+            margin-top: 10px;
+            border-collapse: collapse;
+            border: 1px solid #41417f;
+        }
+
+        .checkbox-table td {
+            border: 1px solid #41417f;
+            padding: 10px;
+            background-color: #1e1e1e;
+            text-align: center;
         }
     </style>
 </head>
@@ -802,44 +817,97 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
         <label for="num">Max Count: </label>
         <input type="number" id="num" value="20" min=1 required onchange="updateUrlParams()"><br>
         <label for="res">Move Restrict: </label>
-        <fieldset translate="no" id="res" onchange="updateUrlParams()">
-            <input type="checkbox" id="checkboxU_restrict" class="custom-checkbox restrict" value="U" checked>
-            <label translate="no" for="checkboxU_restrict">U</label>
-            <input type="checkbox" id="checkboxD_restrict" class="custom-checkbox restrict" value="D" checked>
-            <label translate="no" for="checkboxD_restrict">D</label>
-            <input type="checkbox" id="checkboxL_restrict" class="custom-checkbox restrict" value="L" checked>
-            <label translate="no" for="checkboxL_restrict">L</label>
-            <input type="checkbox" id="checkboxR_restrict" class="custom-checkbox restrict" value="R" checked>
-            <label translate="no" for="checkboxR_restrict">R</label>
-            <input type="checkbox" id="checkboxF_restrict" class="custom-checkbox restrict" value="F" checked>
-            <label translate="no" for="checkboxF_restrict">F</label>
-            <input type="checkbox" id="checkboxB_restrict" class="custom-checkbox restrict" value="B" checked>
-            <label translate="no" for="checkboxB_restrict">B</label><br><br>
-            <input type="checkbox" id="checkboxu_restrict" class="custom-checkbox restrict" value="u">
-            <label translate="no" for="checkboxu_restrict">u</label>
-            <input type="checkbox" id="checkboxd_restrict" class="custom-checkbox restrict" value="d">
-            <label translate="no" for="checkboxd_restrict">d</label>
-            <input type="checkbox" id="checkboxl_restrict" class="custom-checkbox restrict" value="l">
-            <label translate="no" for="checkboxl_restrict">l</label>
-            <input type="checkbox" id="checkboxr_restrict" class="custom-checkbox restrict" value="r">
-            <label translate="no" for="checkboxr_restrict">r</label>
-            <input type="checkbox" id="checkboxf_restrict" class="custom-checkbox restrict" value="f">
-            <label translate="no" for="checkboxf_restrict">f</label>
-            <input type="checkbox" id="checkboxb_restrict" class="custom-checkbox restrict" value="b">
-            <label translate="no" for="checkboxb_restrict">b</label><br><br>
-            <input type="checkbox" id="checkboxM_restrict" class="custom-checkbox restrict" value="M">
-            <label translate="no" for="checkboxM_restrict">M</label>
-            <input type="checkbox" id="checkboxE_restrict" class="custom-checkbox restrict" value="E">
-            <label translate="no" for="checkboxE_restrict">E</label>
-            <input type="checkbox" id="checkboxS_restrict" class="custom-checkbox restrict" value="S">
-            <label translate="no" for="checkboxS_restrict">S</label>
-            <input type="checkbox" id="checkboxx_restrict" class="custom-checkbox restrict" value="x">
-            <label translate="no" for="checkboxx_restrict">x</label>
-            <input type="checkbox" id="checkboxy_restrict" class="custom-checkbox restrict" value="y">
-            <label translate="no" for="checkboxy_restrict">y</label>
-            <input type="checkbox" id="checkboxz_restrict" class="custom-checkbox restrict" value="z">
-            <label translate="no" for="checkboxz_restrict">z</label>
-        </fieldset><br>
+        <div translate="no" id="res" onchange="updateUrlParams()">
+
+            <table class="checkbox-table">
+                <tbody>
+                    <tr>
+                        <td>
+                            <input type="checkbox" id="checkboxU_restrict" class="custom-checkbox restrict" value="U"
+                                checked>
+                            <label translate="no" for="checkboxU_restrict">U</label>
+                        </td>
+                        <td>
+                            <input type="checkbox" id="checkboxD_restrict" class="custom-checkbox restrict" value="D"
+                                checked>
+                            <label translate="no" for="checkboxD_restrict">D</label>
+                        </td>
+                        <td>
+                            <input type="checkbox" id="checkboxL_restrict" class="custom-checkbox restrict" value="L"
+                                checked>
+                            <label translate="no" for="checkboxL_restrict">L</label>
+                        </td>
+                        <td>
+                            <input type="checkbox" id="checkboxR_restrict" class="custom-checkbox restrict" value="R"
+                                checked>
+                            <label translate="no" for="checkboxR_restrict">R</label>
+                        </td>
+                        <td>
+                            <input type="checkbox" id="checkboxF_restrict" class="custom-checkbox restrict" value="F"
+                                checked>
+                            <label translate="no" for="checkboxF_restrict">F</label>
+                        </td>
+                        <td>
+                            <input type="checkbox" id="checkboxB_restrict" class="custom-checkbox restrict" value="B"
+                                checked>
+                            <label translate="no" for="checkboxB_restrict">B</label>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <input type="checkbox" id="checkboxu_restrict" class="custom-checkbox restrict" value="u">
+                            <label translate="no" for="checkboxu_restrict">u</label>
+                        </td>
+                        <td>
+                            <input type="checkbox" id="checkboxd_restrict" class="custom-checkbox restrict" value="d">
+                            <label translate="no" for="checkboxd_restrict">d</label>
+                        </td>
+                        <td>
+                            <input type="checkbox" id="checkboxl_restrict" class="custom-checkbox restrict" value="l">
+                            <label translate="no" for="checkboxl_restrict">l</label>
+                        </td>
+                        <td>
+                            <input type="checkbox" id="checkboxr_restrict" class="custom-checkbox restrict" value="r">
+                            <label translate="no" for="checkboxr_restrict">r</label>
+                        </td>
+                        <td>
+                            <input type="checkbox" id="checkboxf_restrict" class="custom-checkbox restrict" value="f">
+                            <label translate="no" for="checkboxf_restrict">f</label>
+                        </td>
+                        <td>
+                            <input type="checkbox" id="checkboxb_restrict" class="custom-checkbox restrict" value="b">
+                            <label translate="no" for="checkboxb_restrict">b</label>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <input type="checkbox" id="checkboxM_restrict" class="custom-checkbox restrict" value="M">
+                            <label translate="no" for="checkboxM_restrict">M</label>
+                        </td>
+                        <td>
+                            <input type="checkbox" id="checkboxE_restrict" class="custom-checkbox restrict" value="E">
+                            <label translate="no" for="checkboxE_restrict">E</label>
+                        </td>
+                        <td>
+                            <input type="checkbox" id="checkboxS_restrict" class="custom-checkbox restrict" value="S">
+                            <label translate="no" for="checkboxS_restrict">S</label>
+                        </td>
+                        <td>
+                            <input type="checkbox" id="checkboxx_restrict" class="custom-checkbox restrict" value="x">
+                            <label translate="no" for="checkboxx_restrict">x</label>
+                        </td>
+                        <td>
+                            <input type="checkbox" id="checkboxy_restrict" class="custom-checkbox restrict" value="y">
+                            <label translate="no" for="checkboxy_restrict">y</label>
+                        </td>
+                        <td>
+                            <input type="checkbox" id="checkboxz_restrict" class="custom-checkbox restrict" value="z">
+                            <label translate="no" for="checkboxz_restrict">z</label>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div><br>
 
         <details id="advancedSettings">
             <summary id="summaryAdvancedSettings">Show Advanced Settings</summary><br>
