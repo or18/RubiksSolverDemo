@@ -4012,7 +4012,7 @@ struct LL_search
                     }
                 }
             }
-            else if (depth_limited_search(index1_tmp * 27, index2_tmp * 27, index4_tmp * 27, index6_tmp * 27, index8_tmp * 27, index9_tmp * 27, index10_tmp * 27, index11_tmp * 27, index12_tmp * 27, index_cp_tmp, index_co_tmp, index_ep_tmp, index_eo_tmp, depth, prev, center_move_table[center][i], rot_count = 1, i * 54))
+            else if (depth_limited_search(index1_tmp * 27, index2_tmp * 27, index4_tmp * 27, index6_tmp * 27, index8_tmp * 27, index9_tmp * 27, index10_tmp * 27, index11_tmp * 27, index12_tmp * 27, index_cp_tmp, index_co_tmp, index_ep_tmp, index_eo_tmp, depth, prev, center_move_table[center][i], rot_count + 1, i * 54))
             {
                 return true;
             }
