@@ -842,7 +842,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
         </fieldset><br>
 
         <details id="advancedSettings">
-            <summary id="summaryAdvancedSettings">Show Advanced Settings</summary>
+            <summary id="summaryAdvancedSettings">Show Advanced Settings</summary><br>
             <label for="premove">Pre Move: </label>
             <input type="text" id="premove" onchange="updateUrlParams()"><br>
             <label for="res_table">Move Restrict:</label>
@@ -1021,7 +1021,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                     </tbody>
                 </table>
             </div><br>
-            <label for="rotation_count">Max Rotation Count: </label>
+            <label for="rot_count">Max Rotation Count: </label>
             <input type="number" id="rot_count" value=0 min=0 required onchange="updateUrlParams()"><br>
         </details>
         <br>
@@ -1031,7 +1031,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
 
         <details id="maskOptions">
             <summary id="summaryMaskOptions">Show Stickering Settings</summary>
-            <div id="preview"></div>
+            <div id="preview"></div><br>
             <button id="autoSetMask" class="button medium" onclick="setStickeringOptionAuto()">Auto</button>
             <button id="resetMask" class="button medium" onclick="resetStickeringOptions('-')">Reset</button><br><br>
             <div id="maskOptionsCenterDiv">
