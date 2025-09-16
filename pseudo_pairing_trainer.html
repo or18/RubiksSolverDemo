@@ -554,7 +554,7 @@
 				const convertedMask = convertMask(mask_input.maskInputCenter, mask_input.maskInputEdges, mask_input.maskInputCorners, result_rotation);
 				setMask(convertedMask);
 				const args = { scr: result_moves, rot: "", slot: "", pslot: "", a_slot: pslot_e, a_pslot: pslot_c, num: num, len: len, restrict: "UDLRFB" };
-				worker = new Worker('src/pseudoPairingSolver/workerPseudoPairing.js');
+				worker = new Worker('src/pseudoPairingSolverForTrainer/workerPseudoPairing.js');
 				worker.postMessage(args);
 
 				if (worker) {

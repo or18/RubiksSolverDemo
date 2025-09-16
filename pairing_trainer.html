@@ -546,7 +546,7 @@
 				const convertedMask = convertMask(mask_input.maskInputCenter, mask_input.maskInputEdges, mask_input.maskInputCorners, result_rotation);
 				setMask(convertedMask);
 				const args = { scr: result_moves, rot: "", slot: "", pslot: slot, num: num, len: len, restrict: "UDLRFB" };
-				worker = new Worker('src/F2L_PairingSolver/worker_pairing.js');
+				worker = new Worker('src/F2L_PairingSolverForTrainer/worker_pairing.js');
 				worker.postMessage(args);
 				if (worker) {
 					worker.onmessage = function (event) {

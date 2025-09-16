@@ -160,7 +160,6 @@
         pair_ptable,
         eo_table {
             width: 100%;
-            max-width: 750px;
             max-height: 400px;
             overflow-x: auto;
             display: block;
@@ -179,6 +178,45 @@
 
         td {
             cursor: pointer;
+        }
+
+        .table-res_table_wrapper {
+            max-height: 400px;
+            overflow: auto;
+        }
+
+        #move_available_table_wrapper {
+            overflow-x: auto;
+            max-width: 100%;
+            position: relative;
+        }
+
+        #move_available_table {
+            max-height: 400px;
+            overflow: auto;
+        }
+
+        #move_available_table tbody th {
+            position: -webkit-sticky;
+            position: sticky;
+            left: 0;
+            background: #1e1e1e;
+            z-index: 1;
+        }
+
+        #move_available_table thead th:first-child {
+            position: -webkit-sticky;
+            position: sticky;
+            left: 0;
+            background: #1e1e1e;
+            z-index: 2;
+        }
+
+        thead th {
+            position: sticky;
+            top: 0;
+            background: #1e1e1e;
+            z-index: 2;
         }
 
         .hidden {
@@ -712,7 +750,198 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             <label translate="no" for="checkboxE_restrict">E</label>
             <input type="checkbox" id="checkboxS_restrict" class="custom-checkbox restrict" value="S">
             <label translate="no" for="checkboxS_restrict">S</label>
+            <input type="checkbox" id="checkboxx_restrict" class="custom-checkbox restrict" value="x">
+            <label translate="no" for="checkboxx_restrict">x</label>
+            <input type="checkbox" id="checkboxy_restrict" class="custom-checkbox restrict" value="y">
+            <label translate="no" for="checkboxy_restrict">y</label>
+            <input type="checkbox" id="checkboxz_restrict" class="custom-checkbox restrict" value="z">
+            <label translate="no" for="checkboxz_restrict">z</label>
         </fieldset><br>
+
+        <details id="advancedSettings">
+            <summary id="summaryAdvancedSettings">Show Advanced Settings</summary>
+            <label for="premove">Pre Move: </label>
+            <input type="text" id="premove" onchange="updateUrlParams()"><br>
+            <label for="res_table">Move Restrict:</label>
+            <div id="res_table_wrapper" onchange="updateUrlParams()">
+                <table id="res_table" border="2" translate="no">
+                    <thead>
+                        <tr>
+                            <th></th>
+                            <th>* </th>
+                            <th>* 2 </th>
+                            <th>* ' </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>
+            </div><br>
+            <label for="move_available_table">Move Available Table:</label>
+            <div id="move_available_table_wrapper" onchange="updateUrlParams()">
+                <table id="move_available_table" border="2" translate="no">
+                    <thead></thead>
+                    <tbody></tbody>
+                </table>
+            </div><br>
+            <label for="center_restrict">Center Restrict:</label>
+            <div id="center_restrict_wrapper" onchange="updateUrlParams()">
+                <table id="center_restrict" border="2" translate="no">
+                    <thead>
+                        <tr>
+                            <th></th>
+                            <th>* </th>
+                            <th>* y</th>
+                            <th>* y2</th>
+                            <th>* y'</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <th> </th>
+                            <td>
+                                <input type="checkbox" id="checkbox_center_restrict_EMPTY_EMPTY"
+                                    class="custom-checkbox restrict" checked>
+                                <label for="checkbox_center_restrict_EMPTY_EMPTY"></label>
+                            </td>
+                            <td>
+                                <input type="checkbox" id="checkbox_center_restrict_EMPTY_y"
+                                    class="custom-checkbox restrict">
+                                <label for="checkbox_center_restrict_EMPTY_y"></label>
+                            </td>
+                            <td>
+                                <input type="checkbox" id="checkbox_center_restrict_EMPTY_y2"
+                                    class="custom-checkbox restrict">
+                                <label for="checkbox_center_restrict_EMPTY_y2"></label>
+                            </td>
+                            <td>
+                                <input type="checkbox" id="checkbox_center_restrict_EMPTY_y-"
+                                    class="custom-checkbox restrict">
+                                <label for="checkbox_center_restrict_EMPTY_y-"></label>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>z2</th>
+                            <td>
+                                <input type="checkbox" id="checkbox_center_restrict_z2_EMPTY"
+                                    class="custom-checkbox restrict">
+                                <label for="checkbox_center_restrict_z2_EMPTY"></label>
+                            </td>
+                            <td>
+                                <input type="checkbox" id="checkbox_center_restrict_z2_y"
+                                    class="custom-checkbox restrict">
+                                <label for="checkbox_center_restrict_z2_y"></label>
+                            </td>
+                            <td>
+                                <input type="checkbox" id="checkbox_center_restrict_z2_y2"
+                                    class="custom-checkbox restrict">
+                                <label for="checkbox_center_restrict_z2_y2"></label>
+                            </td>
+                            <td>
+                                <input type="checkbox" id="checkbox_center_restrict_z2_y-"
+                                    class="custom-checkbox restrict">
+                                <label for="checkbox_center_restrict_z2_y-"></label>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>z'</th>
+                            <td>
+                                <input type="checkbox" id="checkbox_center_restrict_z-_EMPTY"
+                                    class="custom-checkbox restrict">
+                                <label for="checkbox_center_restrict_z-_EMPTY"></label>
+                            </td>
+                            <td>
+                                <input type="checkbox" id="checkbox_center_restrict_z-_y"
+                                    class="custom-checkbox restrict">
+                                <label for="checkbox_center_restrict_z-_y"></label>
+                            </td>
+                            <td>
+                                <input type="checkbox" id="checkbox_center_restrict_z-_y2"
+                                    class="custom-checkbox restrict">
+                                <label for="checkbox_center_restrict_z-_y2"></label>
+                            </td>
+                            <td>
+                                <input type="checkbox" id="checkbox_center_restrict_z-_y-"
+                                    class="custom-checkbox restrict">
+                                <label for="checkbox_center_restrict_z-_y-"></label>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>z</th>
+                            <td>
+                                <input type="checkbox" id="checkbox_center_restrict_z_EMPTY"
+                                    class="custom-checkbox restrict">
+                                <label for="checkbox_center_restrict_z_EMPTY"></label>
+                            </td>
+                            <td>
+                                <input type="checkbox" id="checkbox_center_restrict_z_y"
+                                    class="custom-checkbox restrict">
+                                <label for="checkbox_center_restrict_z_y"></label>
+                            </td>
+                            <td>
+                                <input type="checkbox" id="checkbox_center_restrict_z_y2"
+                                    class="custom-checkbox restrict">
+                                <label for="checkbox_center_restrict_z_y2"></label>
+                            </td>
+                            <td>
+                                <input type="checkbox" id="checkbox_center_restrict_z_y-"
+                                    class="custom-checkbox restrict">
+                                <label for="checkbox_center_restrict_z_y-"></label>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>x'</th>
+                            <td>
+                                <input type="checkbox" id="checkbox_center_restrict_x-_EMPTY"
+                                    class="custom-checkbox restrict">
+                                <label for="checkbox_center_restrict_x-_EMPTY"></label>
+                            </td>
+                            <td>
+                                <input type="checkbox" id="checkbox_center_restrict_x-_y"
+                                    class="custom-checkbox restrict">
+                                <label for="checkbox_center_restrict_x-_y"></label>
+                            </td>
+                            <td>
+                                <input type="checkbox" id="checkbox_center_restrict_x-_y2"
+                                    class="custom-checkbox restrict">
+                                <label for="checkbox_center_restrict_x-_y2"></label>
+                            </td>
+                            <td>
+                                <input type="checkbox" id="checkbox_center_restrict_x-_y-"
+                                    class="custom-checkbox restrict">
+                                <label for="checkbox_center_restrict_x-_y-"></label>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>x</th>
+                            <td>
+                                <input type="checkbox" id="checkbox_center_restrict_x_EMPTY"
+                                    class="custom-checkbox restrict">
+                                <label for="checkbox_center_restrict_x_EMPTY"></label>
+                            </td>
+                            <td>
+                                <input type="checkbox" id="checkbox_center_restrict_x_y"
+                                    class="custom-checkbox restrict">
+                                <label for="checkbox_center_restrict_x_y"></label>
+                            </td>
+                            <td>
+                                <input type="checkbox" id="checkbox_center_restrict_x_y2"
+                                    class="custom-checkbox restrict">
+                                <label for="checkbox_center_restrict_x_y2"></label>
+                            </td>
+                            <td>
+                                <input type="checkbox" id="checkbox_center_restrict_x_y-"
+                                    class="custom-checkbox restrict">
+                                <label for="checkbox_center_restrict_x_y-"></label>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div><br>
+            <label for="rotation_count">Max Rotation Count: </label>
+            <input type="number" id="rot_count" value=0 min=0 required onchange="updateUrlParams()"><br>
+        </details>
+        <br>
 
         <input type="checkbox" id="CheckboxAutoMaskSetting" class="custom-checkbox" checked>
         <label for="CheckboxAutoMaskSetting">Auto Stickering Setting </label>
@@ -816,7 +1045,8 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
         </details>
     </div>
     <a class="hidden" id="tp_alert">Two Phase Solver output 1 solution.<br></a>
-    <button id="solveButton" class="button medium" onclick="startWorker()">Start</button><br>
+    <button id="solveButton" class="button medium" onclick="startWorker()">Start</button>&nbsp;
+    <button id="blobButton" class="button medium" onclick="getBlob()">Export</button><br>
     <label for="countLine">Number of solutions: </label>
     <input type="text" id="countLine" value="0" readonly>
     <div id="result"></div>
@@ -965,6 +1195,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             },
         };
         let tmp_mask = mask;
+        let body;
 
         function getMaskInputs() {
             const maskInputCenter = document.getElementById("maskOptionCenter").value;
@@ -1292,7 +1523,12 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             'll': 'll',
             'len': 'len',
             'num': 'num',
-            'res': 'res'
+            'res': 'res',
+            'rest': 'rest',
+            'mav': 'mav',
+            'premove': 'premove',
+            'rot_count': 'rc',
+            'center_restrict': 'crest'
         };
 
         const defaultValues = {
@@ -1303,7 +1539,12 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                 'slot': '',
                 'len': '20',
                 'num': '20',
-                'res': 'UDLRFB'
+                'res': 'UDLRFB',
+                'rest': 'U_U2_U-_D_D2_D-_L_L2_L-_R_R2_R-_F_F2_F-_B_B2_B-',
+                'mav': '',
+                'premove': '',
+                'rot_count': '0',
+                'center_restrict': 'EMPTY_EMPTY'
             },
             'LS': {
                 'solver': 'LS',
@@ -1312,7 +1553,12 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                 'll': '',
                 'len': '20',
                 'num': '20',
-                'res': 'UDLRFB'
+                'res': 'UDLRFB',
+                'rest': 'U_U2_U-_D_D2_D-_L_L2_L-_R_R2_R-_F_F2_F-_B_B2_B-',
+                'mav': '',
+                'premove': '',
+                'rot_count': '0',
+                'center_restrict': 'EMPTY_EMPTY'
             },
             'LL': {
                 'solver': 'LL',
@@ -1320,7 +1566,12 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                 'rot': '',
                 'len': '20',
                 'num': '20',
-                'res': 'UDLRFB'
+                'res': 'UDLRFB',
+                'rest': 'U_U2_U-_D_D2_D-_L_L2_L-_R_R2_R-_F_F2_F-_B_B2_B-',
+                'mav': '',
+                'premove': '',
+                'rot_count': '0',
+                'center_restrict': 'EMPTY_EMPTY'
             },
             'LU': {
                 'solver': 'LU',
@@ -1328,7 +1579,12 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                 'rot': '',
                 'len': '20',
                 'num': '20',
-                'res': 'UDLRFB'
+                'res': 'UDLRFB',
+                'rest': 'U_U2_U-_D_D2_D-_L_L2_L-_R_R2_R-_F_F2_F-_B_B2_B-',
+                'mav': '',
+                'premove': '',
+                'rot_count': '0',
+                'center_restrict': 'EMPTY_EMPTY'
             },
             'F2L2': {
                 'solver': 'F2L2',
@@ -1337,7 +1593,12 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                 'slot': '',
                 'len': '20',
                 'num': '20',
-                'res': 'UDLRFB'
+                'res': 'UDLRFB',
+                'rest': 'U_U2_U-_D_D2_D-_L_L2_L-_R_R2_R-_F_F2_F-_B_B2_B-',
+                'mav': '',
+                'premove': '',
+                'rot_count': '0',
+                'center_restrict': 'EMPTY_EMPTY'
             },
             'LS2': {
                 'solver': 'LS2',
@@ -1346,7 +1607,12 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                 'll': '',
                 'len': '20',
                 'num': '20',
-                'res': 'UDLRFB'
+                'res': 'UDLRFB',
+                'rest': 'U_U2_U-_D_D2_D-_L_L2_L-_R_R2_R-_F_F2_F-_B_B2_B-',
+                'mav': '',
+                'premove': '',
+                'rot_count': '0',
+                'center_restrict': 'EMPTY_EMPTY'
             },
             'LL2': {
                 'solver': 'LL2',
@@ -1355,7 +1621,12 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                 'len': '20',
                 'num': '20',
                 'res': 'UDLRFB',
-                'res': 'UDLRFB'
+                'res': 'UDLRFB',
+                'rest': 'U_U2_U-_D_D2_D-_L_L2_L-_R_R2_R-_F_F2_F-_B_B2_B-',
+                'mav': '',
+                'premove': '',
+                'rot_count': '0',
+                'center_restrict': 'EMPTY_EMPTY'
             },
             'LU2': {
                 'solver': 'LU2',
@@ -1363,7 +1634,12 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                 'rot': '',
                 'len': '20',
                 'num': '20',
-                'res': 'UDLRFB'
+                'res': 'UDLRFB',
+                'rest': 'U_U2_U-_D_D2_D-_L_L2_L-_R_R2_R-_F_F2_F-_B_B2_B-',
+                'mav': '',
+                'premove': '',
+                'rot_count': '0',
+                'center_restrict': 'EMPTY_EMPTY'
             },
             'F2L_pair': {
                 'solver': 'F2L_pair',
@@ -1373,7 +1649,12 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                 'pair_slot': 'BL',
                 'len': '20',
                 'num': '20',
-                'res': 'UDLRFB'
+                'res': 'UDLRFB',
+                'rest': 'U_U2_U-_D_D2_D-_L_L2_L-_R_R2_R-_F_F2_F-_B_B2_B-',
+                'mav': '',
+                'premove': '',
+                'rot_count': '0',
+                'center_restrict': 'EMPTY_EMPTY'
             },
             'PF2L': {
                 'solver': 'PF2L',
@@ -1383,7 +1664,12 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                 'pslot_corner': '',
                 'len': '20',
                 'num': '20',
-                'res': 'UDLRFB'
+                'res': 'UDLRFB',
+                'rest': 'U_U2_U-_D_D2_D-_L_L2_L-_R_R2_R-_F_F2_F-_B_B2_B-',
+                'mav': '',
+                'premove': '',
+                'rot_count': '0',
+                'center_restrict': 'EMPTY_EMPTY'
             },
             'PF2L_pair': {
                 'solver': 'PF2L_pair',
@@ -1395,7 +1681,12 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                 'pair_pslot_corner': 'BL',
                 'len': '20',
                 'num': '20',
-                'res': 'UDLRFB'
+                'res': 'UDLRFB',
+                'rest': 'U_U2_U-_D_D2_D-_L_L2_L-_R_R2_R-_F_F2_F-_B_B2_B-',
+                'mav': '',
+                'premove': '',
+                'rot_count': '0',
+                'center_restrict': 'EMPTY_EMPTY'
             },
             'twophase': {
                 'solver': 'twophase',
@@ -1409,7 +1700,12 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                 'slot_eo': '',
                 'len': '20',
                 'num': '20',
-                'res': 'UDLRFB'
+                'res': 'UDLRFB',
+                'rest': 'U_U2_U-_D_D2_D-_L_L2_L-_R_R2_R-_F_F2_F-_B_B2_B-',
+                'mav': '',
+                'premove': '',
+                'rot_count': '0',
+                'center_restrict': 'EMPTY_EMPTY'
             }
         };
 
@@ -1430,7 +1726,12 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             'll',
             'len',
             'num',
-            'res'
+            'res',
+            'rest',
+            'mav',
+            'premove',
+            'rot_count',
+            'center_restrict'
         ];
 
         function getRestrict() {
@@ -1460,15 +1761,321 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             }
         }
 
+        document.addEventListener('DOMContentLoaded', () => {
+            const restrictFieldset = document.getElementById('res');
+            const tableWrapper = document.getElementById('res_table_wrapper');
+            const tableBody = document.querySelector('#res_table tbody');
+            const moveAvailableTable = document.getElementById('move_available_table');
+
+            const moveDisplayNames = {
+                u: "u", d: "d", l: "l", r: "r", f: "f", b: "b", x: "x", y: "y", z: "z"
+            };
+
+            function createMoveRow(move) {
+                const displayName = moveDisplayNames[move] || move.toUpperCase();
+                const newRow = document.createElement('tr');
+                newRow.dataset.move = move;
+                let rowHTML = `<th>${displayName}</th>`;
+                for (let i = 1; i <= 3; i++) {
+                    rowHTML += `<td>
+                <input type="checkbox" id="checkbox_restrict${move}${i}" class="custom-checkbox restrict" value="${move}" checked>
+                <label for="checkbox_restrict${move}${i}"></label>
+            </td>`;
+                }
+                newRow.innerHTML = rowHTML;
+                return newRow;
+            }
+
+            function updateRestrictTable() {
+                const restrictCheckboxes = restrictFieldset.querySelectorAll('input[type="checkbox"]');
+                restrictCheckboxes.forEach(checkbox => {
+                    const move = checkbox.value;
+                    const existingRow = tableBody.querySelector(`tr[data-move="${move}"]`);
+                    if (checkbox.checked) {
+                        if (!existingRow) {
+                            tableBody.appendChild(createMoveRow(move));
+                        }
+                    } else {
+                        if (existingRow) {
+                            existingRow.remove();
+                        }
+                    }
+                });
+            }
+
+            function getIdsFromCheckboxes() {
+                const resChecked = restrictFieldset.querySelectorAll('input[type="checkbox"]:checked');
+                const resId = Array.from(resChecked).map(cb => cb.value).join('');
+
+                const restChecked = tableBody.querySelectorAll('input[type="checkbox"]:checked');
+                const restId = Array.from(restChecked).map(cb => {
+                    const move = cb.value;
+                    const suffix = cb.id.slice(-1);
+                    if (suffix === '1') return move;
+                    if (suffix === '2') return move + '2';
+                    if (suffix === '3') return move + '-';
+                }).join('_');
+
+                return [resId, restId];
+            }
+
+            function setCheckboxesFromIds([resId, restId]) {
+                restrictFieldset.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+
+                const resMoves = resId.split('');
+                resMoves.forEach(move => {
+                    const cb = restrictFieldset.querySelector(`input[value="${move}"]`);
+                    if (cb) cb.checked = true;
+                });
+
+                updateRestrictTable();
+
+                tableBody.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+
+                const restMoves = restId.split('_');
+                restMoves.forEach(restMove => {
+                    if (!restMove) return;
+
+                    const move = restMove.charAt(0);
+                    const suffix = restMove.slice(1);
+                    let idSuffix;
+
+                    if (suffix === '') idSuffix = '1';
+                    else if (suffix === '2') idSuffix = '2';
+                    else if (suffix === '-') idSuffix = '3';
+                    else return;
+
+                    const cb = tableBody.querySelector(`#checkbox_restrict${move}${idSuffix}`);
+                    if (cb) cb.checked = true;
+                });
+                updateMoveAvailableTable();
+            }
+
+            function sanitizeMoveForId(moveStr) {
+                if (moveStr === '') return 'EMPTY';
+                return moveStr.replace(/'/g, '-');
+            }
+
+            function updateMoveAvailableTable() {
+                const thead = moveAvailableTable.querySelector('thead');
+                const tbody = moveAvailableTable.querySelector('tbody');
+
+                const previousStates = new Map();
+                moveAvailableTable.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                    previousStates.set(cb.id, cb.checked);
+                });
+
+                const restChecked = tableWrapper.querySelectorAll('input[type="checkbox"]:checked');
+                const headers = Array.from(restChecked).map(cb => {
+                    const move = cb.value;
+                    const suffix = cb.id.slice(-1);
+                    if (suffix === '1') return move;
+                    if (suffix === '2') return move + '2';
+                    if (suffix === '3') return move + "'";
+                    return '';
+                }).filter(Boolean);
+
+                const colHeaders = headers;
+                const rowHeaders = [...headers, ""];
+
+                thead.innerHTML = '';
+                tbody.innerHTML = '';
+
+                const headerRow = document.createElement('tr');
+                headerRow.appendChild(document.createElement('th'));
+                colHeaders.forEach(headerText => {
+                    const th = document.createElement('th');
+                    th.textContent = headerText;
+                    headerRow.appendChild(th);
+                });
+                thead.appendChild(headerRow);
+
+                rowHeaders.forEach(rowHeaderText => {
+                    const bodyRow = document.createElement('tr');
+                    const rowTh = document.createElement('th');
+                    rowTh.textContent = rowHeaderText;
+                    bodyRow.appendChild(rowTh);
+
+                    const sanitizedRow = sanitizeMoveForId(rowHeaderText);
+
+                    colHeaders.forEach(colHeaderText => {
+                        const td = document.createElement('td');
+                        const checkbox = document.createElement('input');
+                        checkbox.type = 'checkbox';
+                        checkbox.className = 'custom-checkbox restrict';
+
+                        const sanitizedCol = sanitizeMoveForId(colHeaderText);
+                        checkbox.id = `checkbox_move_available_${sanitizedRow}_${sanitizedCol}`;
+
+                        const label = document.createElement('label');
+                        label.htmlFor = checkbox.id;
+
+                        if (previousStates.has(checkbox.id)) {
+                            checkbox.checked = previousStates.get(checkbox.id);
+                        } else {
+                            checkbox.checked = shouldBeCheckedByDefault(rowHeaderText, colHeaderText);
+                        }
+
+                        td.appendChild(checkbox);
+                        td.appendChild(label);
+                        bodyRow.appendChild(td);
+                    });
+                    tbody.appendChild(bodyRow);
+                });
+            }
+
+            function handleCheckboxChange() {
+                updateRestrictTable();
+                updateMoveAvailableTable();
+                updateUrlParams();
+            }
+
+            function initializePage() {
+                restrictFieldset.addEventListener('change', handleCheckboxChange);
+                tableWrapper.addEventListener('change', handleCheckboxChange);
+
+                moveAvailableTable.addEventListener('change', updateUrlParams);
+                const centerRestrictWrapper = document.getElementById('center_restrict_wrapper');
+                if (centerRestrictWrapper) {
+                    centerRestrictWrapper.addEventListener('change', updateUrlParams);
+                }
+                updateRestrictTable();
+                updateMoveAvailableTable();
+            }
+
+            function getMavString() {
+                const overrides = [];
+                const table = document.getElementById('move_available_table');
+                const rows = table.querySelectorAll('tbody tr');
+
+                rows.forEach(row => {
+                    const rowHeaderText = row.querySelector('th').textContent;
+                    const checkboxes = row.querySelectorAll('input[type="checkbox"]');
+
+                    checkboxes.forEach((checkbox, colIndex) => {
+                        const colHeaderText = table.querySelector(`thead th:nth-child(${colIndex + 2})`).textContent;
+
+                        const isActuallyChecked = checkbox.checked;
+                        const isDefaultChecked = shouldBeCheckedByDefault(rowHeaderText, colHeaderText);
+
+                        if (isActuallyChecked !== isDefaultChecked) {
+                            const sanitizedRow = sanitizeMoveForId(rowHeaderText);
+                            const sanitizedCol = sanitizeMoveForId(colHeaderText);
+                            overrides.push(`${sanitizedRow}~${sanitizedCol}`);
+                        }
+                    });
+                });
+
+                return overrides.join('|');
+            }
+
+            function setMavFromString(mavString) {
+                if (!mavString) return;
+
+                const overrides = mavString.split('|');
+                overrides.forEach(override => {
+                    const parts = override.split('~');
+                    if (parts.length !== 2) return;
+
+                    const [sanitizedRow, sanitizedCol] = parts;
+                    const checkboxId = `checkbox_move_available_${sanitizedRow}_${sanitizedCol}`;
+                    const checkbox = document.getElementById(checkboxId);
+
+                    if (checkbox) {
+                        checkbox.checked = !checkbox.checked;
+                    }
+                });
+            }
+
+            function getCrestString() {
+                const checkedItems = [];
+                const prefix = "checkbox_center_restrict_";
+
+                const checkboxes = document.querySelectorAll('#center_restrict input[type="checkbox"]:checked');
+
+                checkboxes.forEach(cb => {
+                    if (cb.id && cb.id.startsWith(prefix)) {
+                        checkedItems.push(cb.id.substring(prefix.length));
+                    }
+                });
+
+                return checkedItems.join('|');
+            }
+
+            function setCrestFromString(crestString) {
+                document.querySelectorAll('#center_restrict input[type="checkbox"]').forEach(cb => {
+                    cb.checked = false;
+                });
+
+                const itemsToCheck = crestString.split('|');
+                itemsToCheck.forEach(item => {
+                    if (item) {
+                        const checkboxId = `checkbox_center_restrict_${item}`;
+                        const checkbox = document.getElementById(checkboxId);
+                        if (checkbox) {
+                            checkbox.checked = true;
+                        }
+                    }
+                });
+            }
+
+            initializePage();
+
+            window.getIds = getIdsFromCheckboxes;
+            window.setIds = setCheckboxesFromIds;
+            window.getMavString = getMavString;
+            window.setMavFromString = setMavFromString;
+            window.getCrestString = getCrestString;
+            window.setCrestFromString = setCrestFromString;
+
+        });
+
+        const AXIS_Y = ['U', 'D', 'E', 'u', 'd', 'y'];
+        const AXIS_X = ['L', 'R', 'M', 'l', 'r', 'x'];
+        const AXIS_Z = ['F', 'B', 'S', 'f', 'b', 'z'];
+        const ALL_AXES = [AXIS_Y, AXIS_X, AXIS_Z];
+
+        function getMoveBase(move) {
+            if (!move) return '';
+            return move.charAt(0);
+        }
+
+        function shouldBeCheckedByDefault(prevMove, nextMove) {
+            if (!prevMove || !nextMove) {
+                return true;
+            }
+
+            const prevBase = getMoveBase(prevMove);
+            const nextBase = getMoveBase(nextMove);
+
+            if (prevBase === nextBase) {
+                return false;
+            }
+
+            const axis = ALL_AXES.find(ax => ax.includes(prevBase));
+            if (axis && axis.includes(nextBase)) {
+                const prevIndex = axis.indexOf(prevBase);
+                const nextIndex = axis.indexOf(nextBase);
+                if (prevIndex > nextIndex) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
         function updateUrlParams() {
             const solver = document.getElementById('solver').value;
             const url = new URL(window.location.href);
             const defaultValueTmp = defaultValues[solver];
+            const [resId, restId] = getIds();
+            const mavId = getMavString();
+            const crestString = getCrestString();
             idList.forEach(id => {
                 const key = idToKeyMap[id];
                 var newValue = document.getElementById(id)?.value;
                 if (typeof key !== "undefined" && typeof defaultValueTmp[id] !== "undefined") {
-                    if (id === 'scr') {
+                    if (id === 'scr' || id === 'premove') {
                         if (newValue !== '') {
                             newValue = encodeURIComponent(scr_fix2(newValue).replace(/ /g, '_').replace(/'/g, '-'));
                             url.searchParams.set(key, newValue);
@@ -1476,9 +2083,28 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                             url.searchParams.delete(key);
                         }
                     } else if (id === 'res') {
-                        const rot_string = getRestrict();
-                        if (newValue !== defaultValueTmp[id]) {
+                        const rot_string = resId;
+                        if (resId !== defaultValueTmp[id]) {
                             url.searchParams.set(key, rot_string);
+                        } else {
+                            url.searchParams.delete(key);
+                        }
+                    } else if (id === 'rest') {
+                        const rot_string = restId;
+                        if (restId !== defaultValueTmp[id]) {
+                            url.searchParams.set(key, rot_string);
+                        } else {
+                            url.searchParams.delete(key);
+                        }
+                    } else if (id === 'mav') {
+                        if (mavId) {
+                            url.searchParams.set(key, mavId);
+                        } else {
+                            url.searchParams.delete(key);
+                        }
+                    } else if (id === "center_restrict") {
+                        if (crestString !== defaultValueTmp[id]) {
+                            url.searchParams.set(key, crestString);
                         } else {
                             url.searchParams.delete(key);
                         }
@@ -1507,9 +2133,40 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             change();
             document.getElementById('rot').value = urlParams.get(idToKeyMap['rot']) ? urlParams.get(idToKeyMap['rot']).replace(/_/g, ' ').replace(/-/g, '\'') : defaultValues[solver]['rot'];
             if (solver !== "twophase") {
+                const premoveParam = urlParams.get(idToKeyMap['premove']);
+                if (premoveParam) {
+                    document.getElementById('premove').value = decodeURIComponent(premoveParam.replace(/_/g, ' ').replace(/-/g, "'"));
+                } else {
+                    document.getElementById('premove').value = '';
+                }
                 document.getElementById('len').value = urlParams.get(idToKeyMap['len']) ? urlParams.get(idToKeyMap['len']) : defaultValues[solver]['len'];
                 document.getElementById('num').value = urlParams.get(idToKeyMap['num']) ? urlParams.get(idToKeyMap['num']) : defaultValues[solver]['num'];
-                setRestrict(urlParams.get(idToKeyMap['res']) ? urlParams.get(idToKeyMap['res']) : defaultValues[solver]['res'])
+
+                const resParam = urlParams.get(idToKeyMap['res']);
+                const restParam = urlParams.get(idToKeyMap['rest']);
+                const defaultRes = defaultValues[solver]['res'];
+                const defaultRest = defaultValues[solver]['rest'];
+                const finalResId = resParam || defaultRes;
+                let finalRestId;
+
+                if (restParam) {
+                    finalRestId = restParam;
+                } else if (resParam) {
+                    finalRestId = finalResId.split('').flatMap(move => [move, move + '2', move + '-']).join('_');
+                } else {
+                    finalRestId = defaultRest;
+                }
+                setIds([finalResId, finalRestId]);
+                const mavString = urlParams.get(idToKeyMap['mav']);
+                if (mavString) {
+                    setMavFromString(mavString);
+                }
+                const crestKey = idToKeyMap['center_restrict'];
+                const defaultCrest = 'EMPTY_EMPTY';
+                const crestParam = urlParams.get(crestKey);
+
+                setCrestFromString(crestParam ?? defaultCrest);
+                document.getElementById('rot_count').value = urlParams.get(idToKeyMap['rot_count']) ? urlParams.get(idToKeyMap['rot_count']) : defaultValues[solver]['rot_count'];
             }
             if (solver === "F2L" || solver === "F2L2") {
                 document.getElementById('slot').value = urlParams.get(idToKeyMap['slot']) ? urlParams.get(idToKeyMap['slot']).replace(/_/g, ' ') : defaultValues[solver]['slot'];
@@ -1591,6 +2248,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                     element.appendChild(content);
                     return;
                 }
+                body = "";
                 const rot = document.getElementById('rot').value;
                 const slot = document.getElementById('slot').value;
                 const slot2 = document.getElementById('slot2').value;
@@ -1605,7 +2263,11 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                 const ll = document.getElementById('ll').value
                 const num = document.getElementById('num').value;
                 const len = document.getElementById('len').value;
-                const restrict = getRestrict();
+                const restrict = getIds()[1];
+                const premove = scr_fix(document.getElementById('premove').value);
+                const ma = getMavString();
+                const center_offset = getCrestString();
+                const max_rot_count = document.getElementById('rot_count').value;
                 document.getElementById("solveButton").textContent = "End";
                 const convertResult = convert(scr);
                 const result_moves = convertResult[0];
@@ -1620,23 +2282,23 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                 setMask(convertedMask);
 
                 if (solver === "F2L" || solver === "LS" || solver === "LL" || solver == "LU") {
-                    const args = { solver: solver, scr: result_moves, rot: rot, slot: slot, ll: ll, num: num, len: len, restrict: restrict };
+                    const args = { solver: solver, scr: result_moves, rot: rot, slot: slot, ll: ll, num: parseInt(num, 10), len: parseInt(len, 10), move_restrict: restrict, post_alg: premove, center_offset: center_offset, max_rot_count: parseInt(max_rot_count, 10), ma2: ma };
                     worker = new Worker('src/crossSolver/worker.js');
                     worker.postMessage(args);
                 } else if (solver === "F2L2" || solver === "LS2" || solver === "LL2" || solver == "LU2") {
-                    const args = { solver: solver, scr: result_moves, rot: rot, slot: slot, ll: ll, num: num, len: len, restrict: restrict };
+                    const args = { solver: solver, scr: result_moves, rot: rot, slot: slot, ll: ll, num: parseInt(num, 10), len: parseInt(len, 10), move_restrict: restrict, post_alg: premove, center_offset: center_offset, max_rot_count: parseInt(max_rot_count, 10), ma2: ma };
                     worker = new Worker('src/highMemorySolver/worker2.js');
                     worker.postMessage(args);
                 } else if (solver === "PF2L") {
-                    const args = { scr: result_moves, rot: rot, slot: pslot_e, pslot: pslot_c, num: num, len: len, restrict: restrict };
+                    const args = { scr: result_moves, rot: rot, slot: pslot_e, pslot: pslot_c, num: parseInt(num, 10), len: parseInt(len, 10), move_restrict: restrict, post_alg: premove, center_offset: center_offset, max_rot_count: parseInt(max_rot_count, 10), ma2: ma };
                     worker = new Worker('src/pseudoCrossSolver/worker3.js');
                     worker.postMessage(args);
                 } else if (solver === "F2L_pair") {
-                    const args = { scr: result_moves, rot: rot, slot: slot2, pslot: pair_slot, num: num, len: len, restrict: restrict };
+                    const args = { scr: result_moves, rot: rot, slot: slot2, pslot: pair_slot, num: parseInt(num, 10), len: parseInt(len, 10), move_restrict: restrict, post_alg: premove, center_offset: center_offset, max_rot_count: parseInt(max_rot_count, 10), ma2: ma };
                     worker = new Worker('src/F2L_PairingSolver/worker_pairing.js');
                     worker.postMessage(args);
                 } else if (solver === "PF2L_pair") {
-                    const args = { scr: result_moves, rot: rot, slot: pslot_e2, pslot: pslot_c2, a_slot: pair_pslot_e, a_pslot: pair_pslot_c, num: num, len: len, restrict: restrict };
+                    const args = { scr: result_moves, rot: rot, slot: pslot_e2, pslot: pslot_c2, a_slot: pair_pslot_e, a_pslot: pair_pslot_c, num: parseInt(num, 10), len: parseInt(len, 10), move_restrict: restrict, post_alg: premove, center_offset: center_offset, max_rot_count: parseInt(max_rot_count, 10), ma2: ma };
                     worker = new Worker('src/pseudoPairingSolver/workerPseudoPairing.js');
                     worker.postMessage(args);
                 } else if (solver === "twophase") {
@@ -1648,7 +2310,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                     element.appendChild(content);
                     document.getElementById("solveButton").textContent = "Start";
                 } else if (solver === "EOCross") {
-                    const args = { scr: result_moves, rot: rot, slot: slot3, num: num, len: len, restrict: restrict };
+                    const args = { scr: result_moves, rot: rot, slot: slot3, num: parseInt(num, 10), len: parseInt(len, 10), move_restrict: restrict, post_alg: premove, center_offset: center_offset, max_rot_count: parseInt(max_rot_count, 10), ma2: ma };
                     worker = new Worker("src/EOCrossSolver/worker.js");
                     worker.postMessage(args);
                 }
@@ -1699,6 +2361,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                 if (messageCount === 1 || sol_input) {
                     details.setAttribute('open', '');
                 }
+                body += messageCount + ": " + sol + "\n";
                 const summary = document.createElement('summary');
                 summary.textContent = messageCount + ": " + sol;
                 summary.setAttribute('translate', 'no');
@@ -1979,13 +2642,21 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             }
         }
 
+        function initializeForAnalyzer(defaults) {
+            setIds([defaults.res, defaults.rest]);
+            setMavFromString(defaults.mav);
+            setCrestFromString(defaults.center_restrict);
+        }
+
         function solve(slot_option, rotation_option) {
             document.getElementById("solver").value = "F2L";
             document.getElementById('rot').value = rotation_option;
             document.getElementById('slot').value = slot_option;
             document.getElementById('num').value = 20;
             document.getElementById('len').value = 20;
-            setRestrict('UDLRFB');
+            document.getElementById('premove').value = '';
+            document.getElementById('rot_count').value = '0';
+            initializeForAnalyzer(defaultValues['F2L']);
             updateUrlParams();
             if (worker) {
                 startWorker();
@@ -2087,162 +2758,156 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             }
         }
 
+        let currentDropdownBOptions = [];
+        let currentDropdownPairSlotOptions = [];
+        let currentDropdownCorner2Options = [];
+        let currentDropdownPairEdgeOptions = [];
+        let currentDropdownPairCornerOptions = [];
+
+        function areOptionArraysEqual(arr1, arr2) {
+            if (arr1.length !== arr2.length) return false;
+            return arr1.every((option, index) =>
+                option.value === arr2[index].value && option.text === arr2[index].text
+            );
+        }
+
+        function getOptionsForCorner(selectedValue) {
+            if (selectedValue === "") return [{ value: "", text: "" }];
+            if (["BL", "BR", "FR", "FL"].includes(selectedValue)) {
+                return [{ value: "BL", text: "BL" }, { value: "BR", text: "BR" }, { value: "FR", text: "FR" }, { value: "FL", text: "FL" }];
+            }
+            if (["BL BR", "BL FR", "BL FL", "BR FR", "BR FL", "FR FL"].includes(selectedValue)) {
+                return [{ value: "BL BR", text: "BL BR" }, { value: "BL FR", text: "BL FR" }, { value: "BL FL", text: "BL FL" }, { value: "BR FR", text: "BR FR" }, { value: "BR FL", text: "BR FL" }, { value: "FR FL", text: "FR FL" }];
+            }
+            if (["BL BR FR", "BL BR FL", "BL FR FL", "BR FR FL"].includes(selectedValue)) {
+                return [{ value: "BL BR FR", text: "BL BR FR" }, { value: "BL BR FL", text: "BL BR FL" }, { value: "BL FR FL", text: "BL FR FL" }, { value: "BR FR FL", text: "BR FR FL" }];
+            }
+            return [];
+        }
+
+        function getFilteredOptions(selectedValue) {
+            const allOptions = [{ value: "BL", text: "BL" }, { value: "BR", text: "BR" }, { value: "FR", text: "FR" }, { value: "FL", text: "FL" }];
+            const selectedValueArray = selectedValue.split(" ");
+            return allOptions.filter(option => !selectedValueArray.includes(option.value));
+        }
 
         function updateDropdown() {
             const dropdownA = document.getElementById("pslot_edge");
             const dropdownB = document.getElementById("pslot_corner");
-            document.getElementById("option_for_PF2LC").classList.add("hidden");
+            const optionForPF2LC = document.getElementById("option_for_PF2LC");
             const selectedValue = dropdownA.value;
+            const newOptions = getOptionsForCorner(selectedValue);
+            if (areOptionArraysEqual(currentDropdownBOptions, newOptions)) return;
+            const currentlySelectedB = dropdownB.value;
             dropdownB.innerHTML = "";
-            let options = [];
-            if (selectedValue === "") {
-                options = [
-                    { value: "", text: "" },
-                ];
-            } else if (selectedValue === "BL" || selectedValue === "BR" || selectedValue === "FR" || selectedValue === "FL") {
-                options = [
-                    { value: "BL", text: "BL" },
-                    { value: "BR", text: "BR" },
-                    { value: "FR", text: "FR" },
-                    { value: "FL", text: "FL" }
-                ];
-            } else if (selectedValue === "BL BR" || selectedValue === "BL FR" || selectedValue === "BL FL" || selectedValue === "BR FR" || selectedValue === "BR FL" || selectedValue === "FR FL") {
-                options = [
-                    { value: "BL BR", text: "BL BR" },
-                    { value: "BL FR", text: "BL FR" },
-                    { value: "BL FL", text: "BL FL" },
-                    { value: "BR FR", text: "BR FR" },
-                    { value: "BR FL", text: "BR FL" },
-                    { value: "FR FL", text: "FR FL" }
-                ];
-            } else if (selectedValue === "BL BR FR" || selectedValue === "BL BR FL" || selectedValue === "BL FR FL" || selectedValue === "BR FR FL") {
-                options = [
-                    { value: "BL BR FR", text: "BL BR FR" },
-                    { value: "BL BR FL", text: "BL BR FL" },
-                    { value: "BL FR FL", text: "BL FR FL" },
-                    { value: "BR FR FL", text: "BR FR FL" }
-                ];
-            }
-
-            options.forEach(option => {
+            newOptions.forEach(option => {
                 const newOption = document.createElement("option");
                 newOption.value = option.value;
                 newOption.textContent = option.text;
                 dropdownB.appendChild(newOption);
             });
-
+            currentDropdownBOptions = newOptions;
+            if (newOptions.some(option => option.value === currentlySelectedB)) {
+                dropdownB.value = currentlySelectedB;
+            }
             if (selectedValue !== "") {
-                document.getElementById("option_for_PF2LC").classList.remove("hidden");
+                optionForPF2LC.classList.remove("hidden");
+            } else {
+                optionForPF2LC.classList.add("hidden");
             }
         }
 
         function updateDropdown2() {
             const dropdownA = document.getElementById("slot2");
             const dropdownB = document.getElementById("pair_slot");
-            const selectedValue = dropdownA.value;
-            let selectedValueArray = selectedValue.split(" ");
+            const selectedValueA = dropdownA.value;
+            const newOptions = getFilteredOptions(selectedValueA);
+            if (areOptionArraysEqual(currentDropdownPairSlotOptions, newOptions)) return;
+            const previousSelectionB = dropdownB.value;
             dropdownB.innerHTML = "";
-            let options = [
-                { value: "BL", text: "BL" },
-                { value: "BR", text: "BR" },
-                { value: "FR", text: "FR" },
-                { value: "FL", text: "FL" }
-            ];
-            options = options.filter(option => !selectedValueArray.includes(option.value));
-            options.forEach(option => {
+            newOptions.forEach(option => {
                 const newOption = document.createElement("option");
                 newOption.value = option.value;
                 newOption.textContent = option.text;
                 dropdownB.appendChild(newOption);
             });
+            currentDropdownPairSlotOptions = newOptions;
+            if (newOptions.some(option => option.value === previousSelectionB)) {
+                dropdownB.value = previousSelectionB;
+            }
         }
 
         function updateDropdown3() {
             const dropdownA = document.getElementById("pslot_edge2");
-            let dropdownB = document.getElementById("pslot_corner2");
-            document.getElementById("option_for_PF2LC2").classList.add("hidden");
-            let selectedValue = dropdownA.value;
-            dropdownB.innerHTML = "";
-            let options = [];
-            if (selectedValue === "") {
-                options = [
-                    { value: "", text: "" },
-                ];
-            } else if (selectedValue === "BL" || selectedValue === "BR" || selectedValue === "FR" || selectedValue === "FL") {
-                options = [
-                    { value: "BL", text: "BL" },
-                    { value: "BR", text: "BR" },
-                    { value: "FR", text: "FR" },
-                    { value: "FL", text: "FL" }
-                ];
-            } else if (selectedValue === "BL BR" || selectedValue === "BL FR" || selectedValue === "BL FL" || selectedValue === "BR FR" || selectedValue === "BR FL" || selectedValue === "FR FL") {
-                options = [
-                    { value: "BL BR", text: "BL BR" },
-                    { value: "BL FR", text: "BL FR" },
-                    { value: "BL FL", text: "BL FL" },
-                    { value: "BR FR", text: "BR FR" },
-                    { value: "BR FL", text: "BR FL" },
-                    { value: "FR FL", text: "FR FL" }
-                ];
-            } else if (selectedValue === "BL BR FR" || selectedValue === "BL BR FL" || selectedValue === "BL FR FL" || selectedValue === "BR FR FL") {
-                options = [
-                    { value: "BL BR FR", text: "BL BR FR" },
-                    { value: "BL BR FL", text: "BL BR FL" },
-                    { value: "BL FR FL", text: "BL FR FL" },
-                    { value: "BR FR FL", text: "BR FR FL" }
-                ];
+            const dropdownB = document.getElementById("pslot_corner2");
+            const dropdownC = document.getElementById("pair_pslot_edge");
+            const optionForPF2LC2 = document.getElementById("option_for_PF2LC2");
+            const selectedValueA = dropdownA.value;
+
+            const newOptionsB = getOptionsForCorner(selectedValueA);
+            if (!areOptionArraysEqual(currentDropdownCorner2Options, newOptionsB)) {
+                const previousSelectionB = dropdownB.value;
+                dropdownB.innerHTML = "";
+                newOptionsB.forEach(opt => {
+                    const newOpt = document.createElement("option");
+                    newOpt.value = opt.value; newOpt.textContent = opt.text;
+                    dropdownB.appendChild(newOpt);
+                });
+                currentDropdownCorner2Options = newOptionsB;
+                if (newOptionsB.some(opt => opt.value === previousSelectionB)) {
+                    dropdownB.value = previousSelectionB;
+                }
             }
 
-            options.forEach(option => {
-                const newOption = document.createElement("option");
-                newOption.value = option.value;
-                newOption.textContent = option.text;
-                dropdownB.appendChild(newOption);
-            });
-
-            if (selectedValue !== "") {
-                document.getElementById("option_for_PF2LC2").classList.remove("hidden");
+            const newOptionsC = getFilteredOptions(selectedValueA);
+            if (!areOptionArraysEqual(currentDropdownPairEdgeOptions, newOptionsC)) {
+                const previousSelectionC = dropdownC.value;
+                dropdownC.innerHTML = "";
+                newOptionsC.forEach(opt => {
+                    const newOpt = document.createElement("option");
+                    newOpt.value = opt.value; newOpt.textContent = opt.text;
+                    dropdownC.appendChild(newOpt);
+                });
+                currentDropdownPairEdgeOptions = newOptionsC;
+                if (newOptionsC.some(opt => opt.value === previousSelectionC)) {
+                    dropdownC.value = previousSelectionC;
+                }
             }
 
-            dropdownB = document.getElementById("pair_pslot_edge");
-            selectedValue = dropdownA.value;
-            let selectedValueArray = selectedValue.split(" ");
-            dropdownB.innerHTML = "";
-            options = [
-                { value: "BL", text: "BL" },
-                { value: "BR", text: "BR" },
-                { value: "FR", text: "FR" },
-                { value: "FL", text: "FL" }
-            ];
-            options = options.filter(option => !selectedValueArray.includes(option.value));
-            options.forEach(option => {
-                const newOption = document.createElement("option");
-                newOption.value = option.value;
-                newOption.textContent = option.text;
-                dropdownB.appendChild(newOption);
-            });
+            if (selectedValueA !== "") {
+                optionForPF2LC2.classList.remove("hidden");
+            } else {
+                optionForPF2LC2.classList.add("hidden");
+            }
+
             updateDropdown4();
         }
 
         function updateDropdown4() {
             const dropdownA = document.getElementById("pslot_corner2");
             const dropdownB = document.getElementById("pair_pslot_corner");
-            const selectedValue = dropdownA.value;
-            let selectedValueArray = selectedValue.split(" ");
+            const selectedValueA = dropdownA.value;
+
+            const newOptions = getFilteredOptions(selectedValueA);
+
+            if (areOptionArraysEqual(currentDropdownPairCornerOptions, newOptions)) {
+                return;
+            }
+
+            const previousSelectionB = dropdownB.value;
             dropdownB.innerHTML = "";
-            let options = [
-                { value: "BL", text: "BL" },
-                { value: "BR", text: "BR" },
-                { value: "FR", text: "FR" },
-                { value: "FL", text: "FL" }
-            ];
-            options = options.filter(option => !selectedValueArray.includes(option.value));
-            options.forEach(option => {
+            newOptions.forEach(option => {
                 const newOption = document.createElement("option");
                 newOption.value = option.value;
                 newOption.textContent = option.text;
                 dropdownB.appendChild(newOption);
             });
+
+            currentDropdownPairCornerOptions = newOptions;
+
+            if (newOptions.some(option => option.value === previousSelectionB)) {
+                dropdownB.value = previousSelectionB;
+            }
         }
 
         function panalyze() {
@@ -2379,7 +3044,9 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             document.getElementById('pslot_corner').value = pslot_option;
             document.getElementById('num').value = 20;
             document.getElementById('len').value = 20;
-            setRestrict('UDLRFB');
+            document.getElementById('premove').value = '';
+            document.getElementById('rot_count').value = '0';
+            initializeForAnalyzer(defaultValues['PF2L']);
             updateUrlParams();
             if (worker) {
                 startWorker();
@@ -2517,7 +3184,9 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             document.getElementById('pair_slot').value = pslot_option;
             document.getElementById('num').value = 20;
             document.getElementById('len').value = 20;
-            setRestrict('UDLRFB');
+            document.getElementById('premove').value = '';
+            document.getElementById('rot_count').value = '0';
+            initializeForAnalyzer(defaultValues['F2L_pair']);
             updateUrlParams();
             if (worker) {
                 startWorker();
@@ -2662,7 +3331,9 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             document.getElementById('pair_pslot_corner').value = a_pslot_option;
             document.getElementById('num').value = 20;
             document.getElementById('len').value = 20;
-            setRestrict('UDLRFB');
+            document.getElementById('premove').value = '';
+            document.getElementById('rot_count').value = '0';
+            initializeForAnalyzer(defaultValues['PF2L_pair']);
             updateUrlParams();
             if (worker) {
                 startWorker();
@@ -2803,7 +3474,9 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             document.getElementById('slot_eo').value = slot_option;
             document.getElementById('num').value = 20;
             document.getElementById('len').value = 20;
-            setRestrict('UDLRFB');
+            document.getElementById('premove').value = '';
+            document.getElementById('rot_count').value = '0';
+            initializeForAnalyzer(defaultValues['EOCross']);
             updateUrlParams();
             if (worker) {
                 startWorker();
@@ -2829,6 +3502,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
         const details_pair_panalyzer = document.getElementById("pair_panalyze");
         const details_mask_options = document.getElementById("maskOptions");
         const details_preview = document.getElementById("details_preview");
+        const details_advanced_settings = document.getElementById("advancedSettings");
         const summary_analyzer = document.getElementById("summary_analyzer");
         const summary_eo_analyzer = document.getElementById("summary_eo_analyzer");
         const summary_panalyzer = document.getElementById("summary_panalyzer");
@@ -2836,6 +3510,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
         const summary_pair_panalyzer = document.getElementById("summary_pair_panalyzer");
         const summary_mask_options = document.getElementById("summaryMaskOptions");
         const summary_preview = document.getElementById("summary_preview");
+        const summary_advanced_settings = document.getElementById("summaryAdvancedSettings");
 
         details_analyzer.addEventListener('toggle', () => {
             if (details_analyzer.open) {
@@ -2893,6 +3568,14 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             }
         });
 
+        details_advanced_settings.addEventListener('toggle', () => {
+            if (details_advanced_settings.open) {
+                summary_advanced_settings.textContent = "Hide Advanced Settings";
+            } else {
+                summary_advanced_settings.textContent = "Show Advanced Settings";
+            }
+        });
+
         const selectsMaskOptions = details_mask_options.querySelectorAll('select');
 
         selectsMaskOptions.forEach(select => {
@@ -2907,6 +3590,18 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                 resetStickeringOptions('-');
             }
         });
+
+        function displayOutput(textContent) {
+            const blob = new Blob([textContent], { type: 'text/plain;charset=utf-8' });
+
+            const blobUrl = URL.createObjectURL(blob);
+            window.open(blobUrl, '_blank');
+            URL.revokeObjectURL(blobUrl);
+        }
+
+        function getBlob() {
+            displayOutput(body);
+        }
 
         window.onload = function () {
             const urlParams = new URLSearchParams(window.location.search);

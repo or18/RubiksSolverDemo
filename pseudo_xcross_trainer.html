@@ -556,7 +556,7 @@
 				const convertedMask = convertMask(mask_input.maskInputCenter, mask_input.maskInputEdges, mask_input.maskInputCorners, result_rotation);
 				setMask(convertedMask);
 				const args = { scr: result_moves, rot: "", slot: pslot_e, pslot: pslot_c, num: num, len: len, restrict: "UDLRFB" };
-				worker = new Worker('src/pseudoCrossSolver/worker3.js');
+				worker = new Worker('src/pseudoCrossSolverForTrainer/worker3.js');
 				worker.postMessage(args);
 				if (worker) {
 					worker.onmessage = function (event) {

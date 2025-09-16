@@ -523,7 +523,7 @@
 				const convertedMask = convertMask(mask_input.maskInputCenter, mask_input.maskInputEdges, mask_input.maskInputCorners, result_rotation);
 				setMask(convertedMask);
 				const args = { scr: result_moves, rot: "", slot: "", num: num, len: len, restrict: "UDLRFB" };
-				worker = new Worker('src/EOCrossSolver/worker.js');
+				worker = new Worker('src/EOCrossSolverForTrainer/worker.js');
 				worker.postMessage(args);
 				if (worker) {
 					worker.onmessage = function (event) {

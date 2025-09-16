@@ -519,7 +519,7 @@
 				const convertedMask = convertMask(mask_input.maskInputCenter, mask_input.maskInputEdges, mask_input.maskInputCorners, result_rotation);
 				setMask(convertedMask);
 				const args = { solver: "F2L", scr: result_moves, rot: "", slot: "", ll: "", num: num, len: len, restrict: "UDLRFB" };
-				worker = new Worker('src/crossSolver/worker.js');
+				worker = new Worker('src/crossSolverForTrainer/worker.js');
 				worker.postMessage(args);
 				if (worker) {
 					worker.onmessage = function (event) {
