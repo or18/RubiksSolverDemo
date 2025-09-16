@@ -2140,7 +2140,22 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                 }
                 document.getElementById('len').value = urlParams.get(idToKeyMap['len']) ? urlParams.get(idToKeyMap['len']) : defaultValues[solver]['len'];
                 document.getElementById('num').value = urlParams.get(idToKeyMap['num']) ? urlParams.get(idToKeyMap['num']) : defaultValues[solver]['num'];
-                setIds([urlParams.get(idToKeyMap['res']) ? urlParams.get(idToKeyMap['res']) : defaultValues[solver]['res'], urlParams.get(idToKeyMap['rest']) ? urlParams.get(idToKeyMap['rest']) : defaultValues[solver]['rest']]);
+
+                const resParam = urlParams.get(idToKeyMap['res']);
+                const restParam = urlParams.get(idToKeyMap['rest']);
+                const defaultRes = defaultValues[solver]['res'];
+                const defaultRest = defaultValues[solver]['rest'];
+                const finalResId = resParam || defaultRes;
+                let finalRestId;
+
+                if (restParam) {
+                    finalRestId = restParam;
+                } else if (resParam) {
+                    finalRestId = finalResId.split('').flatMap(move => [move, move + '2', move + '-']).join('_');
+                } else {
+                    finalRestId = defaultRest;
+                }
+                setIds([finalResId, finalRestId]);
                 const mavString = urlParams.get(idToKeyMap['mav']);
                 if (mavString) {
                     setMavFromString(mavString);
