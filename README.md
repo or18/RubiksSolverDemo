@@ -139,7 +139,19 @@ This is an online solver for speedcubers that uses specific methods such as CFOP
 
 - **Max Count**: The maximum number of solutions to be searched.
 
-- **Move restrict**: Restrictions on the moves used in the search. For example, if **URF** is selected, the allowed moves are restricted to **U U2 U' R R2 R' F F2 F'**.
+- **Move restrict**: Restrictions on the moves used in the search. For example, if **U, R, F** is selected, the allowed moves are restricted to **U U2 U' R R2 R' F F2 F'**.  **Advanced settings** allow more detailed configuration. When you select Rotations (**x, y, z**), set **Center Restrict** and **Max Rotation Count** in the **Advanced Settings**.
+
+<br>
+
+# **Advanced Settings**
+
+- **Pre Move**: A preliminary algorithm executed before search. This enables the search to solutions beginning with the algorithm set here. If you set algorithms here that rotate the center, such as wide, slice, or rotation, you must also configure **Center Restrict** accordingly as described below.
+
+- **Move Available Table**: A table of checkboxes that lets you decide whether a particular ordering of moves—e.g., allowing the order A→B —is permitted in the solution. The rows represent preceding rotations, and the columns represent subsequent rotations. Therefore, enabling the checkbox in row A and column B activates the order A→B. The bottom row (A=empty) corresponds to the first move setting. This table is normally generated automatically based on the configured **Move Restrict**. If you would like to set custom rules (such as requiring the first move to be a rotation), you must configure this table appropriately.
+
+- **Center Restrict**: Center rotation settings. By default only **Empty‑Empty** is checked, which means the center must return to the initial state—the state of the center after the user‑defined **Scramble** and **Rotation**.
+
+- **Max Rotation Count**: The maximum number of times rotations (**x, y, z**) are used, excluding user‑defined **Rotation** and **Pre move**. **The default value is 0**. If rotations (**x, y, z**) are permitted in **Move Restrict**, this must be set to 1 or higher.
 
 <br>
 
@@ -217,6 +229,10 @@ A solver for last layer. Note that AUF can remain. It is used to search solution
 - Search solutions for PLL, setting **Move Restrict** to **URF**. [[See on the website](https://or18.github.io/RubiksSolverDemo/?scramble=F2_D_B2_D-_L2_U_B2_D_B2_U-_F2_U_L_R-_U2_L-_R-_%252F%252F_setup%250A&index=1&sol=U_R2_U-_R2_U-_R2_U_F_U_F-_R2_F_U-_F-_&solver=LL&res=URF)]
 
 - Search solutions for 2GLL, setting **Move Restrict** to **UR**. [[See on the website](https://or18.github.io/RubiksSolverDemo/?scramble=L2_D-_F2_L2_D_F2_R2_B2_U2_F2_U-_L-_B2_R_U2_L-_D2_R_%252F%252F_setup%250A&index=1&sol=U-_R_U2_R-_U-_R_U-_R2_U2_R_U_R-_U_R_&solver=LL&res=UR)]
+
+- Search solutions for PLL-Aa, setting **Move Restrict** to **UDR** and **Pre Move** to **x**.  [[See on the website](https://or18.github.io/RubiksSolverDemo/?scramble=x_R2-_D2-_R_U_R-_D2-_R_U-_R_x-_%252F%252F_setup&rest=R_R2_R-_U_U2_U-_D_D2_D-&index=1&sol=x_R-_U_R-_D2_R_U-_R-_D2_R2_&solver=LL&res=UDR&premove=x&crest=x_EMPTY)]
+
+- Search solutions for PLL-Na, setting **Move Restrict** to **UDRz**, using the custom **Move Available table**. [[See on the website](https://or18.github.io/RubiksSolverDemo/?scramble=R_U_R-_U2-_R_U_R2-_F-_R_U_R_U-_R-_F_R_U-_R-_U-_R_U-_R-_%252F%252F_setup&rest=U_U2_U-_D_D2_D-_R_R2_R-_z&index=1&sol=z_U_R-_D_R2_U-_R_U_D-_R-_D_R2_U-_R_D-_&solver=LL&res=UDRz&crest=z_EMPTY&mav=U~D2%7CU2~D%7CU2~D2%7CU2~D-%7CU2~z%7CU-~D2%7CU-~z%7CD~z%7CD2~z%7CD-~z%7CR~z%7CR2~z%7CR-~z%7CEMPTY~U2%7CEMPTY~U-%7CEMPTY~D%7CEMPTY~D2%7CEMPTY~D-%7CEMPTY~R%7CEMPTY~R2%7CEMPTY~R-&rc=1)]
 
 ## **LL AUF Lite**
 A solver for last layer and AUF. The **LL AUF** solver can perform the same search. It is recommended to use **LL Lite** or **LL** solver.
