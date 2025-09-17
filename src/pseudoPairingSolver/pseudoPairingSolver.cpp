@@ -1413,7 +1413,7 @@ struct xcross_search
 		int prev_rot = 0;
 		for (int m_tmp : post_alg)
 		{
-			aprev_tmp = m_tmp;
+
 			if (m_tmp >= 45)
 			{
 				initial_center = center_move_table[initial_center][m_tmp];
@@ -1871,7 +1871,7 @@ struct xxcross_search
 		int prev_rot = 0;
 		for (int m_tmp : post_alg)
 		{
-			aprev_tmp = m_tmp;
+
 			if (m_tmp >= 45)
 			{
 				initial_center = center_move_table[initial_center][m_tmp];
@@ -2380,7 +2380,7 @@ struct xxxcross_search
 		int prev_rot = 0;
 		for (int m_tmp : post_alg)
 		{
-			aprev_tmp = m_tmp;
+
 			if (m_tmp >= 45)
 			{
 				initial_center = center_move_table[initial_center][m_tmp];
@@ -2940,7 +2940,7 @@ struct xxxxcross_search
 		int prev_rot = 0;
 		for (int m_tmp : post_alg)
 		{
-			aprev_tmp = m_tmp;
+
 			if (m_tmp >= 45)
 			{
 				initial_center = center_move_table[initial_center][m_tmp];
