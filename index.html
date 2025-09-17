@@ -2501,6 +2501,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             } else if (match && match[1]) {
                 const depthNumber = match[1];
                 document.getElementById('currentDepth').value = depthNumber;
+                return;
             } else {
                 messageCount++;
                 const details = document.createElement('details');
