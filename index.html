@@ -1213,7 +1213,9 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
         </div>
     </div>
     <label for="countLine">Number of solutions: </label>
-    <input type="text" id="countLine" value="0" readonly>
+    <input type="text" id="countLine" value="0" readonly><br>
+    <label for="currentDepth">Current Depth: </label>
+    <input type="text" id="currentDepth" value="-1" readonly>
     <div id="result"></div>
 
     <script type="module">
@@ -2373,6 +2375,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                     return;
                 }
                 document.getElementById("countLine").value = 0;
+                document.getElementById("currentDepth").value = -1;
                 document.getElementById("result").innerHTML = "";
                 messageCount = 0;
                 const solver = document.getElementById('solver').value;
@@ -2473,6 +2476,8 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
         }
 
         function appendSol(scr, sol) {
+            const regex = /^depth\s*=\s*(\d+)/;
+            const match = sol.trim().match(regex);
             const element = document.getElementById('result');
             if (sol == "Search finished." || sol == "Already solved." || sol == "Error" || sol == "Unsolvable.") {
                 if (worker) {
@@ -2493,6 +2498,9 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                 element.appendChild(content);
                 document.getElementById("solveButton").textContent = "Start";
                 return;
+            } else if (match && match[1]) {
+                const depthNumber = match[1];
+                document.getElementById('currentDepth').value = depthNumber;
             } else {
                 messageCount++;
                 const details = document.createElement('details');

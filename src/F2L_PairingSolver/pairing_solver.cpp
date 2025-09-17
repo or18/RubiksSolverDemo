@@ -912,12 +912,11 @@ struct xcross_search
         corner_move_table = create_corner_move_table();
         multi_move_table = std::vector<int>(24 * 22 * 20 * 18 * 27, -1);
         create_multi_move_table(4, 2, 12, 24 * 22 * 20 * 18, multi_move_table, edge_move_table);
-        ma = create_ma_table();
         prune_table1 = std::vector<unsigned char>(24 * 22 * 20 * 18 * 24, 255);
         edge_corner_prune_table1 = std::vector<unsigned char>(24 * 24, 255);
     }
 
-    bool depth_limited_search(int arg_index1, int arg_index2, int arg_index3, int depth, int prev, int center, int rot_count, int aprev)
+    bool depth_limited_search(int arg_index1, int arg_index2, int arg_index3, int depth, int center, int rot_count, int aprev)
     {
         for (int i : move_restrict_move)
         {
@@ -926,10 +925,6 @@ struct xcross_search
                 continue;
             }
             m = converter[rotationMapReverse[center][i]];
-            if (ma[prev + m])
-            {
-                continue;
-            }
             index1_tmp = multi_move_table[arg_index1 + m];
             index2_tmp = corner_move_table[arg_index2 + m];
             index3_tmp = edge_move_table[arg_index3 + m];
@@ -1038,7 +1033,7 @@ struct xcross_search
                     }
                 }
             }
-            else if (depth_limited_search(index1_tmp * 27, index2_tmp * 27, index3_tmp * 27, depth - 1, m * 27, center_move_table[center][i], rot_count, i * 54))
+            else if (depth_limited_search(index1_tmp * 27, index2_tmp * 27, index3_tmp * 27, depth - 1, center_move_table[center][i], rot_count, i * 54))
             {
                 return true;
             }
@@ -1162,7 +1157,7 @@ struct xcross_search
                     }
                 }
             }
-            else if (depth_limited_search(index1_tmp * 27, index2_tmp * 27, index3_tmp * 27, depth, prev, center_move_table[center][i], rot_count + 1, i * 54))
+            else if (depth_limited_search(index1_tmp * 27, index2_tmp * 27, index3_tmp * 27, depth, center_move_table[center][i], rot_count + 1, i * 54))
             {
                 return true;
             }
@@ -1231,22 +1226,24 @@ struct xcross_search
             index3 = edge_move_table[index3 * 27 + m];
         }
         initial_center = 0;
-        int prev = 27;
-        int prev_rot = 0;
         for (int m_tmp : post_alg)
         {
-
+            aprev_tmp = m_tmp;
             if (m_tmp >= 45)
             {
                 initial_center = center_move_table[initial_center][m_tmp];
                 continue;
             }
             int m = converter[rotationMapReverse[initial_center][m_tmp]];
-            prev = m;
             initial_center = center_move_table[initial_center][m_tmp];
             index1 = multi_move_table[index1 * 27 + m];
             index2 = corner_move_table[index2 * 27 + m];
             index3 = edge_move_table[index3 * 27 + m];
+        }
+        auto it = std::find(move_restrict.begin(), move_restrict.end(), aprev_tmp);
+        if (it == move_restrict.end())
+        {
+            aprev_tmp = 54;
         }
         prune1_tmp = prune_table1[index1 * 24 + index2];
         edge_prune1_tmp = edge_corner_prune_table1[index3 * 24 + index2];
@@ -1265,7 +1262,9 @@ struct xcross_search
             index3 *= 27;
             for (int d = prune1_tmp; d <= max_length; d++)
             {
-                if (depth_limited_search(index1, index2, index3, d, prev * 27, initial_center, 0, aprev_tmp * 54))
+                tmp = "depth=" + std::to_string(d);
+                update(tmp.c_str());
+                if (depth_limited_search(index1, index2, index3, d, initial_center, 0, aprev_tmp * 54))
                 {
                     break;
                 }
@@ -1332,13 +1331,12 @@ struct xxcross_search
         corner_move_table = create_corner_move_table();
         multi_move_table = std::vector<int>(24 * 22 * 20 * 18 * 27, -1);
         create_multi_move_table(4, 2, 12, 24 * 22 * 20 * 18, multi_move_table, edge_move_table);
-        ma = create_ma_table();
         prune_table1 = std::vector<unsigned char>(24 * 22 * 20 * 18 * 24, 255);
         prune_table2 = std::vector<unsigned char>(24 * 22 * 20 * 18 * 24, 255);
         edge_corner_prune_table1 = std::vector<unsigned char>(24 * 24, 255);
     }
 
-    bool depth_limited_search(int arg_index1, int arg_index2, int arg_index4, int arg_index5, int arg_index6, int depth, int prev, int center, int rot_count, int aprev)
+    bool depth_limited_search(int arg_index1, int arg_index2, int arg_index4, int arg_index5, int arg_index6, int depth, int center, int rot_count, int aprev)
     {
         for (int i : move_restrict_move)
         {
@@ -1347,10 +1345,6 @@ struct xxcross_search
                 continue;
             }
             m = converter[rotationMapReverse[center][i]];
-            if (ma[prev + m])
-            {
-                continue;
-            }
             index1_tmp = multi_move_table[arg_index1 + m];
             index2_tmp = corner_move_table[arg_index2 + m];
             index5_tmp = edge_move_table[arg_index5 + m];
@@ -1472,7 +1466,7 @@ struct xxcross_search
                     }
                 }
             }
-            else if (depth_limited_search(index1_tmp * 27, index2_tmp * 27, index4_tmp * 27, index5_tmp * 27, index6_tmp * 27, depth - 1, m * 27, center_move_table[center][i], rot_count, i * 54))
+            else if (depth_limited_search(index1_tmp * 27, index2_tmp * 27, index4_tmp * 27, index5_tmp * 27, index6_tmp * 27, depth - 1, center_move_table[center][i], rot_count, i * 54))
             {
                 return true;
             }
@@ -1609,7 +1603,7 @@ struct xxcross_search
                     }
                 }
             }
-            else if (depth_limited_search(index1_tmp * 27, index2_tmp * 27, index4_tmp * 27, index5_tmp * 27, index6_tmp * 27, depth, prev, center_move_table[center][i], rot_count + 1, i * 54))
+            else if (depth_limited_search(index1_tmp * 27, index2_tmp * 27, index4_tmp * 27, index5_tmp * 27, index6_tmp * 27, depth, center_move_table[center][i], rot_count + 1, i * 54))
             {
                 return true;
             }
@@ -1685,24 +1679,26 @@ struct xxcross_search
             index6 = edge_move_table[index6 * 27 + m];
         }
         initial_center = 0;
-        int prev = 27;
-        int prev_rot = 0;
         for (int m_tmp : post_alg)
         {
-
+            aprev_tmp = m_tmp;
             if (m_tmp >= 45)
             {
                 initial_center = center_move_table[initial_center][m_tmp];
                 continue;
             }
             int m = converter[rotationMapReverse[initial_center][m_tmp]];
-            prev = m;
             initial_center = center_move_table[initial_center][m_tmp];
             index1 = multi_move_table[index1 * 27 + m];
             index2 = corner_move_table[index2 * 27 + m];
             index4 = corner_move_table[index4 * 27 + m];
             index5 = edge_move_table[index5 * 27 + m];
             index6 = edge_move_table[index6 * 27 + m];
+        }
+        auto it = std::find(move_restrict.begin(), move_restrict.end(), aprev_tmp);
+        if (it == move_restrict.end())
+        {
+            aprev_tmp = 54;
         }
         prune1_tmp = prune_table1[index1 * 24 + index2];
         prune2_tmp = prune_table2[index1 * 24 + index4];
@@ -1724,7 +1720,9 @@ struct xxcross_search
             index6 *= 27;
             for (int d = std::max(prune1_tmp, prune2_tmp); d <= max_length; d++)
             {
-                if (depth_limited_search(index1, index2, index4, index5, index6, d, prev * 27, initial_center, 0, aprev_tmp * 54))
+                tmp = "depth=" + std::to_string(d);
+                update(tmp.c_str());
+                if (depth_limited_search(index1, index2, index4, index5, index6, d, initial_center, 0, aprev_tmp * 54))
                 {
                     break;
                 }
@@ -1801,14 +1799,13 @@ struct xxxcross_search
         corner_move_table = create_corner_move_table();
         multi_move_table = std::vector<int>(24 * 22 * 20 * 18 * 27, -1);
         create_multi_move_table(4, 2, 12, 24 * 22 * 20 * 18, multi_move_table, edge_move_table);
-        ma = create_ma_table();
         prune_table1 = std::vector<unsigned char>(24 * 22 * 20 * 18 * 24, 255);
         prune_table2 = std::vector<unsigned char>(24 * 22 * 20 * 18 * 24, 255);
         prune_table3 = std::vector<unsigned char>(24 * 22 * 20 * 18 * 24, 255);
         edge_corner_prune_table1 = std::vector<unsigned char>(24 * 24, 255);
     }
 
-    bool depth_limited_search(int arg_index1, int arg_index2, int arg_index4, int arg_index6, int arg_index7, int arg_index8, int arg_index9, int depth, int prev, int center, int rot_count, int aprev)
+    bool depth_limited_search(int arg_index1, int arg_index2, int arg_index4, int arg_index6, int arg_index7, int arg_index8, int arg_index9, int depth, int center, int rot_count, int aprev)
     {
         for (int i : move_restrict_move)
         {
@@ -1817,10 +1814,6 @@ struct xxxcross_search
                 continue;
             }
             m = converter[rotationMapReverse[center][i]];
-            if (ma[prev + m])
-            {
-                continue;
-            }
             index1_tmp = multi_move_table[arg_index1 + m];
             index2_tmp = corner_move_table[arg_index2 + m];
             index7_tmp = edge_move_table[arg_index7 + m];
@@ -1955,7 +1948,7 @@ struct xxxcross_search
                     }
                 }
             }
-            else if (depth_limited_search(index1_tmp * 27, index2_tmp * 27, index4_tmp * 27, index6_tmp * 27, index7_tmp * 27, index8_tmp * 27, index9_tmp * 27, depth - 1, m * 27, center_move_table[center][i], rot_count, i * 54))
+            else if (depth_limited_search(index1_tmp * 27, index2_tmp * 27, index4_tmp * 27, index6_tmp * 27, index7_tmp * 27, index8_tmp * 27, index9_tmp * 27, depth - 1, center_move_table[center][i], rot_count, i * 54))
             {
                 return true;
             }
@@ -2105,7 +2098,7 @@ struct xxxcross_search
                     }
                 }
             }
-            else if (depth_limited_search(index1_tmp * 27, index2_tmp * 27, index4_tmp * 27, index6_tmp * 27, index7_tmp * 27, index8_tmp * 27, index9_tmp * 27, depth, prev, center_move_table[center][i], rot_count + 1, i * 54))
+            else if (depth_limited_search(index1_tmp * 27, index2_tmp * 27, index4_tmp * 27, index6_tmp * 27, index7_tmp * 27, index8_tmp * 27, index9_tmp * 27, depth, center_move_table[center][i], rot_count + 1, i * 54))
             {
                 return true;
             }
@@ -2188,18 +2181,15 @@ struct xxxcross_search
             index9 = edge_move_table[index9 * 27 + m];
         }
         initial_center = 0;
-        int prev = 27;
-        int prev_rot = 0;
         for (int m_tmp : post_alg)
         {
-
+            aprev_tmp = m_tmp;
             if (m_tmp >= 45)
             {
                 initial_center = center_move_table[initial_center][m_tmp];
                 continue;
             }
             int m = converter[rotationMapReverse[initial_center][m_tmp]];
-            prev = m;
             initial_center = center_move_table[initial_center][m_tmp];
             index1 = multi_move_table[index1 * 27 + m];
             index2 = corner_move_table[index2 * 27 + m];
@@ -2208,6 +2198,11 @@ struct xxxcross_search
             index7 = edge_move_table[index7 * 27 + m];
             index8 = edge_move_table[index8 * 27 + m];
             index9 = edge_move_table[index9 * 27 + m];
+        }
+        auto it = std::find(move_restrict.begin(), move_restrict.end(), aprev_tmp);
+        if (it == move_restrict.end())
+        {
+            aprev_tmp = 54;
         }
         prune1_tmp = prune_table1[index1 * 24 + index2];
         prune2_tmp = prune_table2[index1 * 24 + index4];
@@ -2232,7 +2227,9 @@ struct xxxcross_search
             index9 *= 27;
             for (int d = std::max(prune1_tmp, std::max(prune2_tmp, prune3_tmp)); d <= max_length; d++)
             {
-                if (depth_limited_search(index1, index2, index4, index6, index7, index8, index9, d, prev * 27, initial_center, 0, aprev_tmp * 54))
+                tmp = "depth=" + std::to_string(d);
+                update(tmp.c_str());
+                if (depth_limited_search(index1, index2, index4, index6, index7, index8, index9, d, initial_center, 0, aprev_tmp * 54))
                 {
                     break;
                 }
@@ -2319,7 +2316,6 @@ struct xxxxcross_search
         corner_move_table = create_corner_move_table();
         multi_move_table = std::vector<int>(24 * 22 * 20 * 18 * 27, -1);
         create_multi_move_table(4, 2, 12, 24 * 22 * 20 * 18, multi_move_table, edge_move_table);
-        ma = create_ma_table();
         prune_table1 = std::vector<unsigned char>(24 * 22 * 20 * 18 * 24, 255);
         prune_table2 = std::vector<unsigned char>(24 * 22 * 20 * 18 * 24, 255);
         prune_table3 = std::vector<unsigned char>(24 * 22 * 20 * 18 * 24, 255);
@@ -2327,7 +2323,7 @@ struct xxxxcross_search
         edge_corner_prune_table1 = std::vector<unsigned char>(24 * 24, 255);
     }
 
-    bool depth_limited_search(int arg_index1, int arg_index2, int arg_index4, int arg_index6, int arg_index8, int arg_index9, int arg_index10, int arg_index11, int arg_index12, int depth, int prev, int center, int rot_count, int aprev)
+    bool depth_limited_search(int arg_index1, int arg_index2, int arg_index4, int arg_index6, int arg_index8, int arg_index9, int arg_index10, int arg_index11, int arg_index12, int depth, int center, int rot_count, int aprev)
     {
         for (int i : move_restrict_move)
         {
@@ -2336,10 +2332,6 @@ struct xxxxcross_search
                 continue;
             }
             m = converter[rotationMapReverse[center][i]];
-            if (ma[prev + m])
-            {
-                continue;
-            }
             index1_tmp = multi_move_table[arg_index1 + m];
             index2_tmp = corner_move_table[arg_index2 + m];
             index9_tmp = edge_move_table[arg_index9 + m];
@@ -2487,7 +2479,7 @@ struct xxxxcross_search
                     }
                 }
             }
-            else if (depth_limited_search(index1_tmp * 27, index2_tmp * 27, index4_tmp * 27, index6_tmp * 27, index8_tmp * 27, index9_tmp * 27, index10_tmp * 27, index11_tmp * 27, index12_tmp * 27, depth - 1, m * 27, center_move_table[center][i], rot_count, i * 54))
+            else if (depth_limited_search(index1_tmp * 27, index2_tmp * 27, index4_tmp * 27, index6_tmp * 27, index8_tmp * 27, index9_tmp * 27, index10_tmp * 27, index11_tmp * 27, index12_tmp * 27, depth - 1, center_move_table[center][i], rot_count, i * 54))
             {
                 return true;
             }
@@ -2650,7 +2642,7 @@ struct xxxxcross_search
                     }
                 }
             }
-            else if (depth_limited_search(index1_tmp * 27, index2_tmp * 27, index4_tmp * 27, index6_tmp * 27, index8_tmp * 27, index9_tmp * 27, index10_tmp * 27, index11_tmp * 27, index12_tmp * 27, depth, prev, center_move_table[center][i], rot_count + 1, i * 54))
+            else if (depth_limited_search(index1_tmp * 27, index2_tmp * 27, index4_tmp * 27, index6_tmp * 27, index8_tmp * 27, index9_tmp * 27, index10_tmp * 27, index11_tmp * 27, index12_tmp * 27, depth, center_move_table[center][i], rot_count + 1, i * 54))
             {
                 return true;
             }
@@ -2740,18 +2732,15 @@ struct xxxxcross_search
             index12 = edge_move_table[index12 * 27 + m];
         }
         initial_center = 0;
-        int prev = 27;
-        int prev_rot = 0;
         for (int m_tmp : post_alg)
         {
-
+            aprev_tmp = m_tmp;
             if (m_tmp >= 45)
             {
                 initial_center = center_move_table[initial_center][m_tmp];
                 continue;
             }
             int m = converter[rotationMapReverse[initial_center][m_tmp]];
-            prev = m;
             initial_center = center_move_table[initial_center][m_tmp];
             index1 = multi_move_table[index1 * 27 + m];
             index2 = corner_move_table[index2 * 27 + m];
@@ -2762,6 +2751,11 @@ struct xxxxcross_search
             index10 = edge_move_table[index10 * 27 + m];
             index11 = edge_move_table[index11 * 27 + m];
             index12 = edge_move_table[index12 * 27 + m];
+        }
+        auto it = std::find(move_restrict.begin(), move_restrict.end(), aprev_tmp);
+        if (it == move_restrict.end())
+        {
+            aprev_tmp = 54;
         }
         prune1_tmp = prune_table1[index1 * 24 + index2];
         prune2_tmp = prune_table2[index1 * 24 + index4];
@@ -2789,7 +2783,9 @@ struct xxxxcross_search
             index12 *= 27;
             for (int d = std::max(prune1_tmp, std::max(prune2_tmp, std::max(prune3_tmp, prune4_tmp))); d <= max_length; d++)
             {
-                if (depth_limited_search(index1, index2, index4, index6, index8, index9, index10, index11, index12, d, prev * 27, initial_center, 0, aprev_tmp * 54))
+                tmp = "depth=" + std::to_string(d);
+                update(tmp.c_str());
+                if (depth_limited_search(index1, index2, index4, index6, index8, index9, index10, index11, index12, d, initial_center, 0, aprev_tmp * 54))
                 {
                     break;
                 }
