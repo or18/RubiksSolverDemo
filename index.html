@@ -560,22 +560,8 @@
         style="white-space: nowrap;">Pseudo Free Pair</a><a>&nbsp;</a>
     <a href="https://or18.github.io/RubiksSolverDemo/eocross_trainer" rel="noopener noreferrer"
         style="white-space: nowrap;">EOCross</a><br><br>
-    <label for="solver">Solver: </label><br>
-    <select translate="no" id="solver" onchange="change(); updateUrlParams();">
-        <option translate="no" value="F2L" selected>F2L Lite</option>
-        <option translate="no" value="F2L_pair">Pairing</option>
-        <option translate="no" value="PF2L">Pseudo F2L Lite</option>
-        <option translate="no" value="PF2L_pair">Pseudo Pairing</option>
-        <option translate="no" value="EOCross">EOCross</option>
-        <option translate="no" value="LS">LL Substeps Lite</option>
-        <option translate="no" value="LL">LL Lite</option>
-        <option translate="no" value="LU">LL AUF Lite</option>
-        <option translate="no" value="twophase">Two Phase</option>
-        <option translate="no" value="F2L2">F2L</option>
-        <option translate="no" value="LS2">LL Substeps</option>
-        <option translate="no" value="LL2">LL</option>
-        <option translate="no" value="LU2">LL AUF</option>
-    </select><br>
+    <a>Note: Verify that the Random button (and other controls) works before use; if an alert appears, reload the page
+        manually.</a><br><br>
     <details id="details_cubeUI">
         <summary id="summary_cubeUI">Show Cube Editor</summary>
         <div class="main-container">
@@ -680,6 +666,22 @@
             </div>
         </div>
     </details>
+    <label for="solver">Solver: </label><br>
+    <select translate="no" id="solver" onchange="change(); updateUrlParams();">
+        <option translate="no" value="F2L" selected>F2L Lite</option>
+        <option translate="no" value="F2L_pair">Pairing</option>
+        <option translate="no" value="PF2L">Pseudo F2L Lite</option>
+        <option translate="no" value="PF2L_pair">Pseudo Pairing</option>
+        <option translate="no" value="EOCross">EOCross</option>
+        <option translate="no" value="LS">LL Substeps Lite</option>
+        <option translate="no" value="LL">LL Lite</option>
+        <option translate="no" value="LU">LL AUF Lite</option>
+        <option translate="no" value="twophase">Two Phase</option>
+        <option translate="no" value="F2L2">F2L</option>
+        <option translate="no" value="LS2">LL Substeps</option>
+        <option translate="no" value="LL2">LL</option>
+        <option translate="no" value="LU2">LL AUF</option>
+    </select><br>
     <button id="undo" class="button small hidden_small" onclick="undo()">←</button>
     <button id="redo" class="button small hidden_small" onclick="redo()">→</button><br>
     <label for="scr">Scramble: </label><br>
