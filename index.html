@@ -2562,6 +2562,10 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
 
 
             function getscr() {
+            if (typeof reverse !== "function") {
+                alert("Error: The required function is not initialized. Please reload the page manually.");
+                return "";
+            }
                 var cube = getSolverString();
                 var solution = min2phase.solve(cube);
                 if (solution === "") {
