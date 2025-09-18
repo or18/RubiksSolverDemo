@@ -122,15 +122,15 @@
             padding: 10px;
             font-size: 20px;
             color: #ffffff;
-            width: 100%;
-            max-width: 750px;
             cursor: pointer;
         }
 
         details {
             border: 1px solid #41417f;
+            border-radius: 8px;
             padding: 5px;
             margin: 10px 0;
+            width: 100%;
         }
 
         .analyzer_result {
@@ -386,6 +386,151 @@
             background-color: #1e1e1e;
             text-align: center;
         }
+
+        .main-container {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 20px;
+            width: 100%;
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: flex-start;
+            align-items: flex-start;
+            gap: 20px;
+            padding: 15px;
+            background-color: #1e1e1e;
+            border-radius: 8px;
+            border: 1px solid #41417f;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .mode-button,
+        .action-button {
+            font-size: 16px;
+            padding: 8px 16px;
+            background-color: #56567c;
+            color: #ffffff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .mode-button.active {
+            background-color: #8a8ac8;
+            box-shadow: 0 0 10px #8a8ac8;
+        }
+
+        .action-button:hover,
+        .mode-button:hover {
+            background-color: #7171a8;
+        }
+
+        .color-setting-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .color-setting-row label {
+            width: 25px;
+            text-align: right;
+            font-weight: bold;
+        }
+
+        .color-selector {
+            font-size: 18px;
+            padding: 5px;
+            background-color: #1e1e1e;
+            color: #ffffff;
+            border: 1px solid #41417f;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .custom-color-picker {
+            width: 30px;
+            height: 30px;
+            padding: 0;
+            border: none;
+            background: none;
+            cursor: pointer;
+            vertical-align: middle;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .cube-scroll-container {
+            width: 100%;
+            overflow-x: auto;
+            padding-bottom: 10px;
+        }
+
+        .unfolded-cube {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            grid-template-rows: repeat(9, 1fr);
+            width: 540px;
+            height: 405px;
+            margin: 0;
+        }
+
+        .face {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            gap: 4px;
+            padding: 4px;
+            background-color: #111;
+            border-radius: 5px;
+        }
+
+        #face-U {
+            grid-area: 1 / 4 / 4 / 7;
+        }
+
+        #face-L {
+            grid-area: 4 / 1 / 7 / 4;
+        }
+
+        #face-F {
+            grid-area: 4 / 4 / 7 / 7;
+        }
+
+        #face-R {
+            grid-area: 4 / 7 / 7 / 10;
+        }
+
+        #face-B {
+            grid-area: 4 / 10 / 7 / 13;
+        }
+
+        #face-D {
+            grid-area: 7 / 4 / 10 / 7;
+        }
+
+        .sticker {
+            border-radius: 3px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .sticker.selected {
+            transform: scale(0.9);
+            box-shadow: 0 0 15px 3px yellow;
+            border: 2px solid yellow;
+        }
     </style>
 </head>
 
@@ -430,7 +575,111 @@
         <option translate="no" value="LS2">LL Substeps</option>
         <option translate="no" value="LL2">LL</option>
         <option translate="no" value="LU2">LL AUF</option>
-    </select>
+    </select><br>
+    <details id="details_cubeUI">
+        <summary id="summary_cubeUI">Show Cube Editor</summary>
+        <div class="main-container">
+            <div class="controls">
+                <div class="control-group">
+                    <div class="color-setting-row">
+                        <label for="color-selector-U">U:</label>
+                        <select id="color-selector-U" class="color-selector" data-face="U">
+                            <option value="white">White</option>
+                            <option value="red">Red</option>
+                            <option value="green">Green</option>
+                            <option value="yellow">Yellow</option>
+                            <option value="orange">Orange</option>
+                            <option value="blue">Blue</option>
+                            <option value="custom">Custom</option>
+                        </select>
+                        <input type="color" id="custom-color-picker-U" class="custom-color-picker hidden" data-face="U"
+                            value="#ffffff">
+                    </div>
+                    <div class="color-setting-row">
+                        <label for="color-selector-R">R:</label>
+                        <select id="color-selector-R" class="color-selector" data-face="R">
+                            <option value="red">Red</option>
+                            <option value="white">White</option>
+                            <option value="green">Green</option>
+                            <option value="yellow">Yellow</option>
+                            <option value="orange">Orange</option>
+                            <option value="blue">Blue</option>
+                            <option value="custom">Custom</option>
+                        </select>
+                        <input type="color" id="custom-color-picker-R" class="custom-color-picker hidden" data-face="R"
+                            value="#ff0000">
+                    </div>
+                    <div class="color-setting-row">
+                        <label for="color-selector-F">F:</label>
+                        <select id="color-selector-F" class="color-selector" data-face="F">
+                            <option value="green">Green</option>
+                            <option value="white">White</option>
+                            <option value="red">Red</option>
+                            <option value="yellow">Yellow</option>
+                            <option value="orange">Orange</option>
+                            <option value="blue">Blue</option>
+                            <option value="custom">Custom</option>
+                        </select>
+                        <input type="color" id="custom-color-picker-F" class="custom-color-picker hidden" data-face="F"
+                            value="#00ff00">
+                    </div>
+                    <div class="color-setting-row">
+                        <label for="color-selector-D">D:</label>
+                        <select id="color-selector-D" class="color-selector" data-face="D">
+                            <option value="yellow">Yellow</option>
+                            <option value="white">White</option>
+                            <option value="red">Red</option>
+                            <option value="green">Green</option>
+                            <option value="orange">Orange</option>
+                            <option value="blue">Blue</option>
+                            <option value="custom">Custom</option>
+                        </select>
+                        <input type="color" id="custom-color-picker-D" class="custom-color-picker hidden" data-face="D"
+                            value="#ffff00">
+                    </div>
+                    <div class="color-setting-row">
+                        <label for="color-selector-L">L:</label>
+                        <select id="color-selector-L" class="color-selector" data-face="L">
+                            <option value="orange">Orange</option>
+                            <option value="white">White</option>
+                            <option value="red">Red</option>
+                            <option value="green">Green</option>
+                            <option value="yellow">Yellow</option>
+                            <option value="blue">Blue</option>
+                            <option value="custom">Custom</option>
+                        </select>
+                        <input type="color" id="custom-color-picker-L" class="custom-color-picker hidden" data-face="L"
+                            value="#ffa500">
+                    </div>
+                    <div class="color-setting-row">
+                        <label for="color-selector-B">B:</label>
+                        <select id="color-selector-B" class="color-selector" data-face="B">
+                            <option value="blue">Blue</option>
+                            <option value="white">White</option>
+                            <option value="red">Red</option>
+                            <option value="green">Green</option>
+                            <option value="yellow">Yellow</option>
+                            <option value="orange">Orange</option>
+                            <option value="custom">Custom</option>
+                        </select>
+                        <input type="color" id="custom-color-picker-B" class="custom-color-picker hidden" data-face="B"
+                            value="#0000ff">
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <button id="swap-mode-btn" class="mode-button active">Swap</button>
+                    <button id="flip-mode-btn" class="mode-button">Flip</button>
+                    <button id="ui_solve_btn" class="mode-button">Get<br>Scramble</button>
+                    <button id="reset-cube-btn" class="action-button">Reset</button>
+                </div>
+            </div>
+            <div class="cube-scroll-container">
+                <div id="cube-container" class="unfolded-cube">
+                </div>
+            </div>
+        </div>
+    </details>
     <button id="undo" class="button small hidden_small" onclick="undo()">←</button>
     <button id="redo" class="button small hidden_small" onclick="redo()">→</button><br>
     <label for="scr">Scramble: </label><br>
@@ -2161,6 +2410,259 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
 
             initializePage();
 
+
+            const faces = ['U', 'L', 'F', 'R', 'B', 'D'];
+            const cubeContainer = document.getElementById('cube-container');
+
+            faces.forEach(faceLetter => {
+                const faceDiv = document.createElement('div');
+                faceDiv.id = `face-${faceLetter}`;
+                faceDiv.className = 'face';
+                for (let i = 1; i <= 9; i++) {
+                    const stickerDiv = document.createElement('div');
+                    stickerDiv.id = `sticker-${faceLetter}${i}`;
+                    stickerDiv.className = 'sticker';
+                    faceDiv.appendChild(stickerDiv);
+                }
+                cubeContainer.appendChild(faceDiv);
+            });
+
+            let state = {
+                colors: { U: 'white', R: 'red', F: 'green', D: 'yellow', L: 'orange', B: 'blue' },
+                pieces: {},
+                mode: 'swap',
+                firstSelection: null
+            };
+
+            function initializePieces() {
+                state.pieces = {
+                    ULB: { pos: 'ULB', type: 'corner', faces: ['U1', 'L1', 'B3'], orientation: ['U', 'L', 'B'] },
+                    UBR: { pos: 'UBR', type: 'corner', faces: ['U3', 'B1', 'R3'], orientation: ['U', 'B', 'R'] },
+                    URF: { pos: 'URF', type: 'corner', faces: ['U9', 'R1', 'F3'], orientation: ['U', 'R', 'F'] },
+                    UFL: { pos: 'UFL', type: 'corner', faces: ['U7', 'F1', 'L3'], orientation: ['U', 'F', 'L'] },
+                    DLF: { pos: 'DLF', type: 'corner', faces: ['D1', 'L9', 'F7'], orientation: ['D', 'L', 'F'] },
+                    DFR: { pos: 'DFR', type: 'corner', faces: ['D3', 'F9', 'R7'], orientation: ['D', 'F', 'R'] },
+                    DRB: { pos: 'DRB', type: 'corner', faces: ['D9', 'R9', 'B7'], orientation: ['D', 'R', 'B'] },
+                    DBL: { pos: 'DBL', type: 'corner', faces: ['D7', 'B9', 'L7'], orientation: ['D', 'B', 'L'] },
+                    UB: { pos: 'UB', type: 'edge', faces: ['U2', 'B2'], orientation: ['U', 'B'] },
+                    UR: { pos: 'UR', type: 'edge', faces: ['U6', 'R2'], orientation: ['U', 'R'] },
+                    UF: { pos: 'UF', type: 'edge', faces: ['U8', 'F2'], orientation: ['U', 'F'] },
+                    UL: { pos: 'UL', type: 'edge', faces: ['U4', 'L2'], orientation: ['U', 'L'] },
+                    LF: { pos: 'LF', type: 'edge', faces: ['L6', 'F4'], orientation: ['L', 'F'] },
+                    FR: { pos: 'FR', type: 'edge', faces: ['F6', 'R4'], orientation: ['F', 'R'] },
+                    RB: { pos: 'RB', type: 'edge', faces: ['R6', 'B4'], orientation: ['R', 'B'] },
+                    BL: { pos: 'BL', type: 'edge', faces: ['B6', 'L4'], orientation: ['B', 'L'] },
+                    DF: { pos: 'DF', type: 'edge', faces: ['D2', 'F8'], orientation: ['D', 'F'] },
+                    DR: { pos: 'DR', type: 'edge', faces: ['D6', 'R8'], orientation: ['D', 'R'] },
+                    DB: { pos: 'DB', type: 'edge', faces: ['D8', 'B8'], orientation: ['D', 'B'] },
+                    DL: { pos: 'DL', type: 'edge', faces: ['D4', 'L8'], orientation: ['D', 'L'] },
+                    U: { pos: 'U', type: 'center', faces: ['U5'], orientation: ['U'] }, L: { pos: 'L', type: 'center', faces: ['L5'], orientation: ['L'] }, F: { pos: 'F', type: 'center', faces: ['F5'], orientation: ['F'] }, R: { pos: 'R', type: 'center', faces: ['R5'], orientation: ['R'] }, B: { pos: 'B', type: 'center', faces: ['B5'], orientation: ['B'] }, D: { pos: 'D', type: 'center', faces: ['D5'], orientation: ['D'] },
+                };
+            }
+
+            function render() {
+                for (const pieceId in state.pieces) {
+                    const piece = state.pieces[pieceId];
+                    const originalPieceDef = getInitialPieces()[piece.pos];
+                    originalPieceDef.faces.forEach((stickerId, index) => {
+                        const stickerEl = document.getElementById(`sticker-${stickerId}`);
+                        const faceInitial = piece.orientation[index];
+                        stickerEl.style.backgroundColor = state.colors[faceInitial];
+                    });
+                }
+            }
+
+            function getPieceByStickerId(stickerId) {
+                const initialPieces = getInitialPieces();
+                for (const pieceId in initialPieces) {
+                    const pieceDef = initialPieces[pieceId];
+                    if (pieceDef.faces.includes(stickerId)) {
+                        for (const currentPieceId in state.pieces) {
+                            if (state.pieces[currentPieceId].pos === pieceDef.pos) {
+                                return state.pieces[currentPieceId];
+                            }
+                        }
+                    }
+                }
+                return null;
+            }
+
+            function getOriginalPieceByPos(pos) {
+                return getInitialPieces()[pos];
+            }
+
+            function getInitialPieces() {
+                return {
+                    ULB: { pos: 'ULB', type: 'corner', faces: ['U1', 'L1', 'B3'] }, UBR: { pos: 'UBR', type: 'corner', faces: ['U3', 'B1', 'R3'] }, URF: { pos: 'URF', type: 'corner', faces: ['U9', 'R1', 'F3'] }, UFL: { pos: 'UFL', type: 'corner', faces: ['U7', 'F1', 'L3'] }, DLF: { pos: 'DLF', type: 'corner', faces: ['D1', 'L9', 'F7'] }, DFR: { pos: 'DFR', type: 'corner', faces: ['D3', 'F9', 'R7'] }, DRB: { pos: 'DRB', type: 'corner', faces: ['D9', 'R9', 'B7'] }, DBL: { pos: 'DBL', type: 'corner', faces: ['D7', 'B9', 'L7'] },
+                    UB: { pos: 'UB', type: 'edge', faces: ['U2', 'B2'] }, UR: { pos: 'UR', type: 'edge', faces: ['U6', 'R2'] }, UF: { pos: 'UF', type: 'edge', faces: ['U8', 'F2'] }, UL: { pos: 'UL', type: 'edge', faces: ['U4', 'L2'] }, LF: { pos: 'LF', type: 'edge', faces: ['L6', 'F4'] }, FR: { pos: 'FR', type: 'edge', faces: ['F6', 'R4'] }, RB: { pos: 'RB', type: 'edge', faces: ['R6', 'B4'] }, BL: { pos: 'BL', type: 'edge', faces: ['B6', 'L4'] }, DF: { pos: 'DF', type: 'edge', faces: ['D2', 'F8'] }, DR: { pos: 'DR', type: 'edge', faces: ['D6', 'R8'] }, DB: { pos: 'DB', type: 'edge', faces: ['D8', 'B8'] }, DL: { pos: 'DL', type: 'edge', faces: ['D4', 'L8'] },
+                    U: { pos: 'U', type: 'center', faces: ['U5'] }, L: { pos: 'L', type: 'center', faces: ['L5'] }, F: { pos: 'F', type: 'center', faces: ['F5'] }, R: { pos: 'R', type: 'center', faces: ['R5'] }, B: { pos: 'B', type: 'center', faces: ['B5'] }, D: { pos: 'D', type: 'center', faces: ['D5'] },
+                };
+            }
+
+            function clearSelection() {
+                const selected = document.querySelector('.sticker.selected');
+                if (selected) selected.classList.remove('selected');
+                state.firstSelection = null;
+            }
+
+            function orientPiece(piece, targetFaceInitial, targetIndex) {
+                if (piece.type === 'edge') {
+                    if (piece.orientation[targetIndex] !== targetFaceInitial) {
+                        [piece.orientation[0], piece.orientation[1]] = [piece.orientation[1], piece.orientation[0]];
+                    }
+                } else if (piece.type === 'corner') {
+                    let attempts = 0;
+                    while (piece.orientation[targetIndex] !== targetFaceInitial && attempts < 3) {
+                        piece.orientation.unshift(piece.orientation.pop());
+                        attempts++;
+                    }
+                }
+            }
+
+            function handleIntelligentSwap(selection1, selection2) {
+                const { piece: piece1, stickerId: stickerId1 } = selection1;
+                const { piece: piece2, stickerId: stickerId2 } = selection2;
+
+                const originalPos1 = piece1.pos;
+                const originalPos2 = piece2.pos;
+                const originalPieceDefForPos1 = getOriginalPieceByPos(originalPos1);
+                const originalPieceDefForPos2 = getOriginalPieceByPos(originalPos2);
+
+                const sourceIndex1 = originalPieceDefForPos1.faces.indexOf(stickerId1);
+                const clickedFaceInitial1 = piece1.orientation[sourceIndex1];
+
+                const sourceIndex2 = originalPieceDefForPos2.faces.indexOf(stickerId2);
+                const clickedFaceInitial2 = piece2.orientation[sourceIndex2];
+
+                [piece1.pos, piece2.pos] = [originalPos2, originalPos1];
+
+                const targetIndexForPiece1 = originalPieceDefForPos2.faces.indexOf(stickerId2);
+                orientPiece(piece1, clickedFaceInitial1, targetIndexForPiece1);
+
+                const targetIndexForPiece2 = originalPieceDefForPos1.faces.indexOf(stickerId1);
+                orientPiece(piece2, clickedFaceInitial2, targetIndexForPiece2);
+
+                render();
+            }
+
+            function getSolverString() {
+                const stickerOrder = ['U1', 'U2', 'U3', 'U4', 'U5', 'U6', 'U7', 'U8', 'U9', 'R1', 'R2', 'R3', 'R4', 'R5', 'R6', 'R7', 'R8', 'R9', 'F1', 'F2', 'F3', 'F4', 'F5', 'F6', 'F7', 'F8', 'F9', 'D1', 'D2', 'D3', 'D4', 'D5', 'D6', 'D7', 'D8', 'D9', 'L1', 'L2', 'L3', 'L4', 'L5', 'L6', 'L7', 'L8', 'L9', 'B1', 'B2', 'B3', 'B4', 'B5', 'B6', 'B7', 'B8', 'B9'];
+                const currentStickerFaces = {};
+                for (const pieceId in state.pieces) {
+                    const piece = state.pieces[pieceId];
+                    const originalPieceDef = getOriginalPieceByPos(piece.pos);
+                    originalPieceDef.faces.forEach((stickerId, index) => {
+                        currentStickerFaces[stickerId] = piece.orientation[index];
+                    });
+                }
+                return stickerOrder.map(stickerId => currentStickerFaces[stickerId] || '?').join('');
+            }
+
+
+            function getscr() {
+                var cube = getSolverString();
+                var solution = min2phase.solve(cube);
+                if (solution === "") {
+                    alert("Already solved.");
+                    return "";
+                } else if (solution.includes('Error')) {
+                    alert("Unsolvable pattern.");
+                    return "";
+                }
+                return scr_fix2(reverse(solution));
+            }
+
+            function resetCubeState() {
+                initializePieces();
+                render();
+                clearSelection();
+            }
+
+            document.querySelectorAll('.color-selector').forEach(selector => {
+                selector.addEventListener('change', (e) => {
+                    const changedFace = e.target.dataset.face;
+                    const newColor = e.target.value;
+                    const customPicker = document.getElementById(`custom-color-picker-${changedFace}`);
+
+                    state.colors[changedFace] = newColor === 'custom' ? customPicker.value : newColor;
+
+                    document.querySelectorAll('.custom-color-picker').forEach(picker => {
+                        const face = picker.dataset.face;
+                        const correspondingSelect = document.getElementById(`color-selector-${face}`);
+                        if (correspondingSelect.value === 'custom') {
+                            picker.classList.remove('hidden');
+                        } else {
+                            picker.classList.add('hidden');
+                        }
+                    });
+
+                    render();
+                });
+            });
+
+            document.querySelectorAll('.custom-color-picker').forEach(picker => {
+                picker.addEventListener('input', (e) => {
+                    const face = e.target.dataset.face;
+                    state.colors[face] = e.target.value;
+                    render();
+                });
+            });
+
+            document.getElementById('swap-mode-btn').addEventListener('click', () => {
+                state.mode = 'swap';
+                document.getElementById('swap-mode-btn').classList.add('active');
+                document.getElementById('flip-mode-btn').classList.remove('active');
+                clearSelection();
+            });
+            document.getElementById('flip-mode-btn').addEventListener('click', () => {
+                state.mode = 'flip';
+                document.getElementById('flip-mode-btn').classList.add('active');
+                document.getElementById('swap-mode-btn').classList.remove('active');
+                clearSelection();
+            });
+
+            document.getElementById('reset-cube-btn').addEventListener('click', resetCubeState);
+
+            cubeContainer.addEventListener('click', (e) => {
+                if (!e.target.classList.contains('sticker')) return;
+                const stickerId = e.target.id.replace('sticker-', '');
+                const piece = getPieceByStickerId(stickerId);
+                if (piece.type === 'center') return;
+
+                if (state.mode === 'swap') {
+                    if (!state.firstSelection) {
+                        state.firstSelection = { piece, element: e.target, stickerId };
+                        e.target.classList.add('selected');
+                    } else {
+                        const piece1 = state.firstSelection.piece;
+                        const piece2 = piece;
+                        if (piece1 === piece2 || piece1.type !== piece2.type) {
+                            clearSelection();
+                            return;
+                        }
+                        handleIntelligentSwap(state.firstSelection, { piece, stickerId });
+                        clearSelection();
+                    }
+                } else if (state.mode === 'flip') {
+                    const orientation = piece.orientation;
+                    if (piece.type === 'corner') {
+                        orientation.unshift(orientation.pop());
+                    } else if (piece.type === 'edge') {
+                        [orientation[0], orientation[1]] = [orientation[1], orientation[0]];
+                    }
+                    render();
+                }
+            });
+
+            document.getElementById('ui_solve_btn').addEventListener('click', () => {
+                const ret = getscr();
+                document.getElementById('scr').value = " // Pre Rotations\n" + ret + " // setup\n";
+                save();
+            });
+
+            initializePieces();
+            render();
+
             window.getIds = getIdsFromCheckboxes;
             window.setIds = setCheckboxesFromIds;
             window.getMavString = getMavString;
@@ -3650,6 +4152,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
         const details_mask_options = document.getElementById("maskOptions");
         const details_preview = document.getElementById("details_preview");
         const details_advanced_settings = document.getElementById("advancedSettings");
+        const details_cubeUI = document.getElementById("details_cubeUI");
         const summary_analyzer = document.getElementById("summary_analyzer");
         const summary_eo_analyzer = document.getElementById("summary_eo_analyzer");
         const summary_panalyzer = document.getElementById("summary_panalyzer");
@@ -3658,6 +4161,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
         const summary_mask_options = document.getElementById("summaryMaskOptions");
         const summary_preview = document.getElementById("summary_preview");
         const summary_advanced_settings = document.getElementById("summaryAdvancedSettings");
+        const summary_cubeUI = document.getElementById("summary_cubeUI");
 
         details_analyzer.addEventListener('toggle', () => {
             if (details_analyzer.open) {
@@ -3720,6 +4224,14 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                 summary_advanced_settings.textContent = "Hide Advanced Settings";
             } else {
                 summary_advanced_settings.textContent = "Show Advanced Settings";
+            }
+        });
+
+        details_cubeUI.addEventListener('toggle', () => {
+            if (details_cubeUI.open) {
+                summary_cubeUI.textContent = "Hide Cube Editor";
+            } else {
+                summary_cubeUI.textContent = "Show Cube Editor";
             }
         });
 
