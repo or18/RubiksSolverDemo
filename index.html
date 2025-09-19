@@ -2419,10 +2419,10 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                     const restCheckbox = tableBody.querySelector(`#${restCheckboxId}`);
 
                     if (restCheckbox && restCheckbox.checked) {
-                        countInput.disabled = false;
-                        if (countInput.value === '0' || countInput.value === '') {
+                        if ((countInput.disabled && countInput.value === '0') || countInput.value === '') {
                             countInput.value = '20';
                         }
+                        countInput.disabled = false;
                     } else {
                         countInput.disabled = true;
                         countInput.value = '0';
