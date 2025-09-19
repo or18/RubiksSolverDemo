@@ -1,5 +1,6 @@
 # RubiksSolverDemo
-Online solver for Rubik's cube cross, xcross, free pair, last layer. Pseudo F2L solver and EOCross solver also available. <br><br>
+Online solver for Rubik's cube cross, xcross, free pair, last layer. Pseudo F2L solver and EOCross solver also available. Visual cube‑state editor is also available. <br>
+
 [**Solver URL**](https://or18.github.io/RubiksSolverDemo/) 
 <br>
 [**Old version**](https://or18.github.io/Rubiks-cube-xcross-solver/)
@@ -88,8 +89,13 @@ This is an online solver for speedcubers that uses specific methods such as CFOP
 <br>
 
 # **Input Description**
+- **Cube Editor**: Visual scramble‑drawing system
+  - In **Swap** mode, swaps two selected stickers, rotating the pieces so the stickers exchange positions.
+  - In **Flip** mode, the selected piece’s orientation is rotated.
+  - **[Get‑Scramble]** generates a scramble for the shown state (rotations aren’t included; edit if needed).
+  - Shows “Unsolvable pattern.” alert when the state can’t be solved.
 
-- **Scramble**: This describes the state of a Rubik's Cube using standard notations, and comments can also be added.
+- **Scramble**: This describes the state of a Rubik's Cube using standard notations, and comments can also be added. 
   - The following Rubik's Cube notations are available:
     - **Face Turns:**
       - **U U2 U2' U'** 
@@ -152,6 +158,8 @@ This is an online solver for speedcubers that uses specific methods such as CFOP
 - **Center Restrict**: Center rotation settings. By default only **Empty‑Empty** is checked, which means the center must return to the initial state—the state of the center after the user‑defined **Scramble** and **Rotation**.
 
 - **Max Rotation Count**: The maximum number of times rotations (**x, y, z**) are used, excluding user‑defined **Rotation** and **Pre move**. **The default value is 0**. If rotations (**x, y, z**) are permitted in **Move Restrict**, this must be set to 1 or higher.
+
+- **Max Move Count**: A table of maximum move counts allowed by the **Move Restrict**. Note that the algorithm specified in **Pre Move** is not counted.
 
 <br>
 

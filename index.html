@@ -531,6 +531,27 @@
             box-shadow: 0 0 15px 3px yellow;
             border: 2px solid yellow;
         }
+
+        .move-count-input {
+            font-family: Arial, sans-serif;
+            width: 60px;
+            max-width: 100px;
+            height: 40px;
+            font-size: 20px;
+            border: 1px solid #41417f;
+            box-sizing: border-box;
+            background-color: #1e1e1e;
+            color: #ffffff;
+            text-align: center;
+            margin: 0;
+        }
+
+        .move-count-input:disabled {
+            background-color: #333;
+            color: #777;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
     </style>
 </head>
 
@@ -1342,9 +1363,23 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             </div><br>
             <label for="rot_count">Max Rotation Count: </label>
             <input type="number" id="rot_count" value=0 min=0 required onchange="updateUrlParams()"><br>
+            <label for="count_table">Max Move Count:</label>
+            <div id="count_table_wrapper">
+                <table id="count_table" border="2" translate="no">
+                    <thead>
+                        <tr>
+                            <th></th>
+                            <th>* </th>
+                            <th>* 2 </th>
+                            <th>* ' </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>
+            </div><br>
         </details>
         <br>
-
         <input type="checkbox" id="CheckboxAutoMaskSetting" class="custom-checkbox" checked>
         <label for="CheckboxAutoMaskSetting">Auto Stickering Setting </label>
 
@@ -1946,7 +1981,8 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             'mav': 'mav',
             'premove': 'premove',
             'rot_count': 'rc',
-            'center_restrict': 'crest'
+            'center_restrict': 'crest',
+            'mcv': 'mcv'
         };
 
         const defaultValues = {
@@ -1962,7 +1998,8 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                 'mav': '',
                 'premove': '',
                 'rot_count': '0',
-                'center_restrict': 'EMPTY_EMPTY'
+                'center_restrict': 'EMPTY_EMPTY',
+                'mcv': ''
             },
             'LS': {
                 'solver': 'LS',
@@ -1976,7 +2013,8 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                 'mav': '',
                 'premove': '',
                 'rot_count': '0',
-                'center_restrict': 'EMPTY_EMPTY'
+                'center_restrict': 'EMPTY_EMPTY',
+                'mcv': ''
             },
             'LL': {
                 'solver': 'LL',
@@ -1989,7 +2027,8 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                 'mav': '',
                 'premove': '',
                 'rot_count': '0',
-                'center_restrict': 'EMPTY_EMPTY'
+                'center_restrict': 'EMPTY_EMPTY',
+                'mcv': ''
             },
             'LU': {
                 'solver': 'LU',
@@ -2002,7 +2041,8 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                 'mav': '',
                 'premove': '',
                 'rot_count': '0',
-                'center_restrict': 'EMPTY_EMPTY'
+                'center_restrict': 'EMPTY_EMPTY',
+                'mcv': ''
             },
             'F2L2': {
                 'solver': 'F2L2',
@@ -2016,7 +2056,8 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                 'mav': '',
                 'premove': '',
                 'rot_count': '0',
-                'center_restrict': 'EMPTY_EMPTY'
+                'center_restrict': 'EMPTY_EMPTY',
+                'mcv': ''
             },
             'LS2': {
                 'solver': 'LS2',
@@ -2030,7 +2071,8 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                 'mav': '',
                 'premove': '',
                 'rot_count': '0',
-                'center_restrict': 'EMPTY_EMPTY'
+                'center_restrict': 'EMPTY_EMPTY',
+                'mcv': ''
             },
             'LL2': {
                 'solver': 'LL2',
@@ -2044,7 +2086,8 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                 'mav': '',
                 'premove': '',
                 'rot_count': '0',
-                'center_restrict': 'EMPTY_EMPTY'
+                'center_restrict': 'EMPTY_EMPTY',
+                'mcv': ''
             },
             'LU2': {
                 'solver': 'LU2',
@@ -2057,7 +2100,8 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                 'mav': '',
                 'premove': '',
                 'rot_count': '0',
-                'center_restrict': 'EMPTY_EMPTY'
+                'center_restrict': 'EMPTY_EMPTY',
+                'mcv': ''
             },
             'F2L_pair': {
                 'solver': 'F2L_pair',
@@ -2072,7 +2116,8 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                 'mav': '',
                 'premove': '',
                 'rot_count': '0',
-                'center_restrict': 'EMPTY_EMPTY'
+                'center_restrict': 'EMPTY_EMPTY',
+                'mcv': ''
             },
             'PF2L': {
                 'solver': 'PF2L',
@@ -2087,7 +2132,8 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                 'mav': '',
                 'premove': '',
                 'rot_count': '0',
-                'center_restrict': 'EMPTY_EMPTY'
+                'center_restrict': 'EMPTY_EMPTY',
+                'mcv': ''
             },
             'PF2L_pair': {
                 'solver': 'PF2L_pair',
@@ -2104,7 +2150,8 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                 'mav': '',
                 'premove': '',
                 'rot_count': '0',
-                'center_restrict': 'EMPTY_EMPTY'
+                'center_restrict': 'EMPTY_EMPTY',
+                'mcv': ''
             },
             'twophase': {
                 'solver': 'twophase',
@@ -2123,7 +2170,8 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                 'mav': '',
                 'premove': '',
                 'rot_count': '0',
-                'center_restrict': 'EMPTY_EMPTY'
+                'center_restrict': 'EMPTY_EMPTY',
+                'mcv': ''
             }
         };
 
@@ -2149,7 +2197,8 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             'mav',
             'premove',
             'rot_count',
-            'center_restrict'
+            'center_restrict',
+            'mcv'
         ];
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -2157,6 +2206,8 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             const tableWrapper = document.getElementById('res_table_wrapper');
             const tableBody = document.querySelector('#res_table tbody');
             const moveAvailableTable = document.getElementById('move_available_table');
+            const moveCountTableWrapper = document.getElementById('count_table_wrapper');
+            const moveCountTableBody = document.querySelector('#count_table tbody');
 
             const moveDisplayNames = {
                 u: "u", d: "d", l: "l", r: "r", f: "f", b: "b", x: "x", y: "y", z: "z"
@@ -2315,23 +2366,67 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                 });
             }
 
-            function handleCheckboxChange() {
-                updateRestrictTable();
-                updateMoveAvailableTable();
-                updateUrlParams();
+
+            function updateMoveCountTable() {
+                const checkedMoves = Array.from(restrictFieldset.querySelectorAll('input:checked'), cb => cb.value);
+                const existingRows = new Set(Array.from(moveCountTableBody.querySelectorAll('tr'), tr => tr.dataset.move));
+
+                existingRows.forEach(move => {
+                    if (!checkedMoves.includes(move)) {
+                        moveCountTableBody.querySelector(`tr[data-move="${move}"]`)?.remove();
+                    }
+                });
+
+                checkedMoves.forEach(move => {
+                    if (!existingRows.has(move)) {
+                        const newRow = moveCountTableBody.insertRow();
+                        newRow.dataset.move = move;
+                        newRow.innerHTML = `
+                            <th>${move}</th>
+                            <td><input type="number" min="0" class="move-count-input" data-move="${move}" value="20"></td>
+                            <td><input type="number" min="0" class="move-count-input" data-move="${move}2" value="20"></td>
+                            <td><input type="number" min="0" class="move-count-input" data-move="${move}-" value="20"></td>
+                        `;
+                    }
+                });
             }
 
-            function initializePage() {
-                restrictFieldset.addEventListener('change', handleCheckboxChange);
-                tableWrapper.addEventListener('change', handleCheckboxChange);
+            function syncAllTables() {
+                const checkedResMoves = new Set(Array.from(restrictFieldset.querySelectorAll('input:checked'), cb => cb.value));
+                const allCountTableRows = moveCountTableBody.querySelectorAll('tr');
 
-                moveAvailableTable.addEventListener('change', updateUrlParams);
-                const centerRestrictWrapper = document.getElementById('center_restrict_wrapper');
-                if (centerRestrictWrapper) {
-                    centerRestrictWrapper.addEventListener('change', updateUrlParams);
-                }
-                updateRestrictTable();
-                updateMoveAvailableTable();
+                allCountTableRows.forEach(row => {
+                    const move = row.dataset.move;
+                    row.style.display = checkedResMoves.has(move) ? '' : 'none';
+                });
+
+                moveCountTableBody.querySelectorAll('.move-count-input').forEach(countInput => {
+                    const moveStr = countInput.dataset.move;
+                    const moveBase = moveStr.charAt(0);
+
+                    const resCheckbox = restrictFieldset.querySelector(`input[value="${moveBase}"]`);
+                    if (!resCheckbox || !resCheckbox.checked) {
+                        return;
+                    }
+
+                    let restCheckboxId;
+                    const suffix = moveStr.slice(1);
+                    if (suffix === '') restCheckboxId = `checkbox_restrict${moveBase}1`;
+                    else if (suffix === '2') restCheckboxId = `checkbox_restrict${moveBase}2`;
+                    else if (suffix === '-') restCheckboxId = `checkbox_restrict${moveBase}3`;
+
+                    const restCheckbox = tableBody.querySelector(`#${restCheckboxId}`);
+
+                    if (restCheckbox && restCheckbox.checked) {
+                        countInput.disabled = false;
+                        if (countInput.value === '0' || countInput.value === '') {
+                            countInput.value = '20';
+                        }
+                    } else {
+                        countInput.disabled = true;
+                        countInput.value = '0';
+                    }
+                });
             }
 
             function getMavString() {
@@ -2408,6 +2503,73 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                         }
                     }
                 });
+            }
+
+            function getMoveCountString() {
+                const params = [];
+                document.querySelectorAll('#count_table .move-count-input').forEach(input => {
+                    const row = input.closest('tr');
+                    if (row.style.display !== 'none' && !input.disabled && input.value && input.value !== "20") {
+                        params.push(`${input.dataset.move}:${input.value}`);
+                    }
+                });
+                return params.join('_');
+            }
+
+            function setMoveCountFromString(paramString, restId) {
+                const activeRestMoves = new Set(restId ? restId.split('_') : []);
+
+                document.querySelectorAll('#count_table .move-count-input').forEach(input => {
+                    const move = input.dataset.move;
+                    if (activeRestMoves.has(move)) {
+                        input.value = '20';
+                    } else {
+                        input.value = '0';
+                    }
+                });
+
+                if (paramString) {
+                    paramString.split('_').forEach(part => {
+                        const [moveStr, value] = part.split(':');
+                        if (moveStr && value) {
+                            const input = moveCountTableBody.querySelector(`.move-count-input[data-move="${moveStr}"]`);
+                            if (input) input.value = value;
+                        }
+                    });
+                }
+            }
+
+            function initializePage() {
+
+                const allPossibleMoves = Array.from(restrictFieldset.querySelectorAll('input.restrict'), cb => cb.value);
+                allPossibleMoves.forEach(move => {
+                    const newRow = moveCountTableBody.insertRow();
+                    newRow.dataset.move = move;
+                    newRow.innerHTML = `
+                <th>${move}</th>
+                <td><input type="number" min="0" class="move-count-input" data-move="${move}"></td>
+                <td><input type="number" min="0" class="move-count-input" data-move="${move}2"></td>
+                <td><input type="number" min="0" class="move-count-input" data-move="${move}-"></td>
+            `;
+                });
+
+                function handleCheckboxChange() {
+                    updateRestrictTable();
+                    syncAllTables();
+                    updateMoveAvailableTable();
+                    updateUrlParams();
+                }
+
+                restrictFieldset.addEventListener('change', handleCheckboxChange);
+                tableWrapper.addEventListener('change', () => {
+                    syncAllTables();
+                    updateMoveAvailableTable();
+                    updateUrlParams();
+                });
+
+                if (moveCountTableWrapper) {
+                    moveCountTableWrapper.addEventListener('input', () => { updateUrlParams(); });
+                }
             }
 
             initializePage();
@@ -2562,10 +2724,10 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
 
 
             function getscr() {
-            if (typeof reverse !== "function") {
-                alert("Error: The required function is not initialized. Please reload the page manually.");
-                return "";
-            }
+                if (typeof reverse !== "function") {
+                    alert("Error: The required function is not initialized. Please reload the page manually.");
+                    return "";
+                }
                 var cube = getSolverString();
                 var solution = min2phase.solve(cube);
                 if (solution === "") {
@@ -2675,6 +2837,13 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             window.setMavFromString = setMavFromString;
             window.getCrestString = getCrestString;
             window.setCrestFromString = setCrestFromString;
+            window.getMoveCountString = getMoveCountString;
+            window.setMoveCountFromString = setMoveCountFromString;
+            window.initializeDynamicTables = () => {
+                updateRestrictTable();
+                syncAllTables();
+                updateMoveAvailableTable();
+            };
 
         });
 
@@ -2719,6 +2888,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             const [resId, restId] = getIds();
             const mavId = getMavString();
             const crestString = getCrestString();
+            const mcString = getMoveCountString();
             idList.forEach(id => {
                 const key = idToKeyMap[id];
                 var newValue = document.getElementById(id)?.value;
@@ -2753,6 +2923,12 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                     } else if (id === "center_restrict") {
                         if (crestString !== defaultValueTmp[id]) {
                             url.searchParams.set(key, crestString);
+                        } else {
+                            url.searchParams.delete(key);
+                        }
+                    } else if (id === 'mcv') {
+                        if (mcString !== defaultValueTmp[id]) {
+                            url.searchParams.set(key, mcString)
                         } else {
                             url.searchParams.delete(key);
                         }
@@ -2815,6 +2991,11 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
 
                 setCrestFromString(crestParam ?? defaultCrest);
                 document.getElementById('rot_count').value = urlParams.get(idToKeyMap['rot_count']) ? urlParams.get(idToKeyMap['rot_count']) : defaultValues[solver]['rot_count'];
+
+                const mcvKey = idToKeyMap['mcv'];
+                const defaultMcv = '';
+                const mcvParam = urlParams.get(mcvKey);
+                setMoveCountFromString(mcvParam ?? defaultMcv, finalRestId);
             }
             if (solver === "F2L" || solver === "F2L2") {
                 document.getElementById('slot').value = urlParams.get(idToKeyMap['slot']) ? urlParams.get(idToKeyMap['slot']).replace(/_/g, ' ') : defaultValues[solver]['slot'];
@@ -2857,6 +3038,9 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                 }
             } else if (solver === "EOCross") {
                 document.getElementById('slot_eo').value = urlParams.get(idToKeyMap['slot_eo']) ? urlParams.get(idToKeyMap['slot_eo']).replace(/_/g, ' ') : defaultValues[solver]['slot_eo'];
+            }
+            if (typeof window.initializeDynamicTables === 'function') {
+                window.initializeDynamicTables();
             }
         }
 
@@ -2917,6 +3101,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                 const ma = getMavString();
                 const center_offset = getCrestString();
                 const max_rot_count = document.getElementById('rot_count').value;
+                const mc = getMoveCountString();
                 document.getElementById("solveButton").textContent = "End";
                 const convertResult = convert(scr);
                 const result_moves = convertResult[0];
@@ -2931,23 +3116,23 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                 setMask(convertedMask);
 
                 if (solver === "F2L" || solver === "LS" || solver === "LL" || solver == "LU") {
-                    const args = { solver: solver, scr: result_moves, rot: rot, slot: slot, ll: ll, num: parseInt(num, 10), len: parseInt(len, 10), move_restrict: restrict, post_alg: premove, center_offset: center_offset, max_rot_count: parseInt(max_rot_count, 10), ma2: ma };
+                    const args = { solver: solver, scr: result_moves, rot: rot, slot: slot, ll: ll, num: parseInt(num, 10), len: parseInt(len, 10), move_restrict: restrict, post_alg: premove, center_offset: center_offset, max_rot_count: parseInt(max_rot_count, 10), ma2: ma, mcString: mc };
                     worker = new Worker('src/crossSolver/worker.js');
                     worker.postMessage(args);
                 } else if (solver === "F2L2" || solver === "LS2" || solver === "LL2" || solver == "LU2") {
-                    const args = { solver: solver, scr: result_moves, rot: rot, slot: slot, ll: ll, num: parseInt(num, 10), len: parseInt(len, 10), move_restrict: restrict, post_alg: premove, center_offset: center_offset, max_rot_count: parseInt(max_rot_count, 10), ma2: ma };
+                    const args = { solver: solver, scr: result_moves, rot: rot, slot: slot, ll: ll, num: parseInt(num, 10), len: parseInt(len, 10), move_restrict: restrict, post_alg: premove, center_offset: center_offset, max_rot_count: parseInt(max_rot_count, 10), ma2: ma, mcString: mc };
                     worker = new Worker('src/highMemorySolver/worker2.js');
                     worker.postMessage(args);
                 } else if (solver === "PF2L") {
-                    const args = { scr: result_moves, rot: rot, slot: pslot_e, pslot: pslot_c, num: parseInt(num, 10), len: parseInt(len, 10), move_restrict: restrict, post_alg: premove, center_offset: center_offset, max_rot_count: parseInt(max_rot_count, 10), ma2: ma };
+                    const args = { scr: result_moves, rot: rot, slot: pslot_e, pslot: pslot_c, num: parseInt(num, 10), len: parseInt(len, 10), move_restrict: restrict, post_alg: premove, center_offset: center_offset, max_rot_count: parseInt(max_rot_count, 10), ma2: ma, mcString: mc };
                     worker = new Worker('src/pseudoCrossSolver/worker3.js');
                     worker.postMessage(args);
                 } else if (solver === "F2L_pair") {
-                    const args = { scr: result_moves, rot: rot, slot: slot2, pslot: pair_slot, num: parseInt(num, 10), len: parseInt(len, 10), move_restrict: restrict, post_alg: premove, center_offset: center_offset, max_rot_count: parseInt(max_rot_count, 10), ma2: ma };
+                    const args = { scr: result_moves, rot: rot, slot: slot2, pslot: pair_slot, num: parseInt(num, 10), len: parseInt(len, 10), move_restrict: restrict, post_alg: premove, center_offset: center_offset, max_rot_count: parseInt(max_rot_count, 10), ma2: ma, mcString: mc };
                     worker = new Worker('src/F2L_PairingSolver/worker_pairing.js');
                     worker.postMessage(args);
                 } else if (solver === "PF2L_pair") {
-                    const args = { scr: result_moves, rot: rot, slot: pslot_e2, pslot: pslot_c2, a_slot: pair_pslot_e, a_pslot: pair_pslot_c, num: parseInt(num, 10), len: parseInt(len, 10), move_restrict: restrict, post_alg: premove, center_offset: center_offset, max_rot_count: parseInt(max_rot_count, 10), ma2: ma };
+                    const args = { scr: result_moves, rot: rot, slot: pslot_e2, pslot: pslot_c2, a_slot: pair_pslot_e, a_pslot: pair_pslot_c, num: parseInt(num, 10), len: parseInt(len, 10), move_restrict: restrict, post_alg: premove, center_offset: center_offset, max_rot_count: parseInt(max_rot_count, 10), ma2: ma, mcString: mc };
                     worker = new Worker('src/pseudoPairingSolver/workerPseudoPairing.js');
                     worker.postMessage(args);
                 } else if (solver === "twophase") {
@@ -2959,7 +3144,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                     element.appendChild(content);
                     document.getElementById("solveButton").textContent = "Start";
                 } else if (solver === "EOCross") {
-                    const args = { scr: result_moves, rot: rot, slot: slot3, num: parseInt(num, 10), len: parseInt(len, 10), move_restrict: restrict, post_alg: premove, center_offset: center_offset, max_rot_count: parseInt(max_rot_count, 10), ma2: ma };
+                    const args = { scr: result_moves, rot: rot, slot: slot3, num: parseInt(num, 10), len: parseInt(len, 10), move_restrict: restrict, post_alg: premove, center_offset: center_offset, max_rot_count: parseInt(max_rot_count, 10), ma2: ma, mcString: mc };
                     worker = new Worker("src/EOCrossSolver/worker.js");
                     worker.postMessage(args);
                 }
@@ -3301,6 +3486,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             setIds([defaults.res, defaults.rest]);
             setMavFromString(defaults.mav);
             setCrestFromString(defaults.center_restrict);
+            setMoveCountFromString(defaults.mcv, defaults.rest);
         }
 
         function solve(slot_option, rotation_option) {

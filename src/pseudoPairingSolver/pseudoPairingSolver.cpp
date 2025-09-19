@@ -1064,7 +1064,9 @@ struct xcross_search
 	std::vector<int> move_restrict_move;
 	std::vector<int> move_restrict_rot;
 	std::vector<bool> ma;
-	std::vector<bool> ma2;
+    std::vector<bool> ma2;
+    std::vector<int> mc;
+    std::vector<int> mc_tmp;
 	int edge_solved1;
 	int index1;
 	int index2;
@@ -1097,7 +1099,7 @@ struct xcross_search
 	{
 		for (int i : move_restrict_move)
 		{
-			if (ma2[aprev + i])
+			if (ma2[aprev + i] || mc_tmp[i] >= mc[i])
 			{
 				continue;
 			}
@@ -1116,6 +1118,7 @@ struct xcross_search
 				continue;
 			}
 			sol.emplace_back(i);
+            mc_tmp[i] += 1;
 			if (depth == 1)
 			{
 				if (prune1_tmp == 0 && edge_prune1_tmp == 0)
@@ -1215,10 +1218,11 @@ struct xcross_search
 				return true;
 			}
 			sol.pop_back();
+            mc_tmp[i] -= 1;
 		}
 		for (int i : move_restrict_rot)
 		{
-			if (ma2[aprev + i])
+			if (ma2[aprev + i] || mc_tmp[i] >= mc[i])
 			{
 				continue;
 			}
@@ -1240,6 +1244,7 @@ struct xcross_search
 				continue;
 			}
 			sol.emplace_back(i);
+            mc_tmp[i] += 1;
 			if (depth == 1)
 			{
 				if (prune1_tmp == 0 && edge_prune1_tmp == 0)
@@ -1339,11 +1344,12 @@ struct xcross_search
 				return true;
 			}
 			sol.pop_back();
+            mc_tmp[i] -= 1;
 		}
 		return false;
 	}
 
-	void start_search(std::string arg_scramble = "", std::string arg_rotation = "", int arg_slot1 = 0, int arg_pslot1 = 0, int arg_sol_num = 100, int arg_max_length = 10, const std::vector<std::string> &arg_restrict = move_names, std::string arg_post_alg = "", const std::vector<int> &arg_center_offset = {0}, int arg_max_rot_count = 0, const std::vector<bool> &arg_ma2 = std::vector<bool>(55 * 54, false))
+	void start_search(std::string arg_scramble = "", std::string arg_rotation = "", int arg_slot1 = 0, int arg_pslot1 = 0, int arg_sol_num = 100, int arg_max_length = 10, const std::vector<std::string> &arg_restrict = move_names, std::string arg_post_alg = "", const std::vector<int> &arg_center_offset = {0}, int arg_max_rot_count = 0, const std::vector<bool> &arg_ma2 = std::vector<bool>(55 * 54, false), const std::vector<int> &arg_mc = std::vector<int>(54, 20))
 	{
 		scramble = arg_scramble;
 		rotation = arg_rotation;
@@ -1352,7 +1358,9 @@ struct xcross_search
 		max_length = arg_max_length;
 		sol_num = arg_sol_num;
 		restrict = arg_restrict;
-		ma2 = arg_ma2;
+        ma2 = arg_ma2;
+        mc = arg_mc;
+        mc_tmp = std::vector<int>(54, 0);
 		for (std::string name : restrict)
 		{
 			auto it = std::find(move_names.begin(), move_names.end(), name);
@@ -1478,7 +1486,9 @@ struct xxcross_search
 	std::vector<int> move_restrict_move;
 	std::vector<int> move_restrict_rot;
 	std::vector<bool> ma;
-	std::vector<bool> ma2;
+    std::vector<bool> ma2;
+    std::vector<int> mc;
+    std::vector<int> mc_tmp;
 	int edge_solved1;
 	int edge_solved2;
 	int index1;
@@ -1520,7 +1530,7 @@ struct xxcross_search
 	{
 		for (int i : move_restrict_move)
 		{
-			if (ma2[aprev + i])
+			if (ma2[aprev + i] || mc_tmp[i] >= mc[i])
 			{
 				continue;
 			}
@@ -1546,6 +1556,7 @@ struct xxcross_search
 				continue;
 			}
 			sol.emplace_back(i);
+            mc_tmp[i] += 1;
 			if (depth == 1)
 			{
 				if (prune1_tmp == 0 && prune2_tmp == 0 && edge_prune1_tmp == 0 && index6_tmp == edge_solved2)
@@ -1651,10 +1662,11 @@ struct xxcross_search
 				return true;
 			}
 			sol.pop_back();
+            mc_tmp[i] -= 1;
 		}
 		for (int i : move_restrict_rot)
 		{
-			if (ma2[aprev + i])
+			if (ma2[aprev + i] || mc_tmp[i] >= mc[i])
 			{
 				continue;
 			}
@@ -1683,6 +1695,7 @@ struct xxcross_search
 				continue;
 			}
 			sol.emplace_back(i);
+            mc_tmp[i] += 1;
 			if (depth == 1)
 			{
 				if (prune1_tmp == 0 && prune2_tmp == 0 && edge_prune1_tmp == 0 && index6_tmp == edge_solved2)
@@ -1788,11 +1801,12 @@ struct xxcross_search
 				return true;
 			}
 			sol.pop_back();
+            mc_tmp[i] -= 1;
 		}
 		return false;
 	}
 
-	void start_search(std::string arg_scramble = "", std::string arg_rotation = "", int arg_slot1 = 0, int arg_slot2 = 3, int arg_pslot1 = 0, int arg_pslot2 = 3, int arg_sol_num = 100, int arg_max_length = 12, const std::vector<std::string> &arg_restrict = move_names, std::string arg_post_alg = "", const std::vector<int> &arg_center_offset = {0}, int arg_max_rot_count = 0, const std::vector<bool> &arg_ma2 = std::vector<bool>(55 * 54, false))
+	void start_search(std::string arg_scramble = "", std::string arg_rotation = "", int arg_slot1 = 0, int arg_slot2 = 3, int arg_pslot1 = 0, int arg_pslot2 = 3, int arg_sol_num = 100, int arg_max_length = 12, const std::vector<std::string> &arg_restrict = move_names, std::string arg_post_alg = "", const std::vector<int> &arg_center_offset = {0}, int arg_max_rot_count = 0, const std::vector<bool> &arg_ma2 = std::vector<bool>(55 * 54, false), const std::vector<int> &arg_mc = std::vector<int>(54, 20))
 	{
 		scramble = arg_scramble;
 		rotation = arg_rotation;
@@ -1803,7 +1817,9 @@ struct xxcross_search
 		max_length = arg_max_length;
 		sol_num = arg_sol_num;
 		restrict = arg_restrict;
-		ma2 = arg_ma2;
+        ma2 = arg_ma2;
+        mc = arg_mc;
+        mc_tmp = std::vector<int>(54, 0);
 		for (std::string name : restrict)
 		{
 			auto it = std::find(move_names.begin(), move_names.end(), name);
@@ -1943,7 +1959,9 @@ struct xxxcross_search
 	std::vector<int> move_restrict_move;
 	std::vector<int> move_restrict_rot;
 	std::vector<bool> ma;
-	std::vector<bool> ma2;
+    std::vector<bool> ma2;
+    std::vector<int> mc;
+    std::vector<int> mc_tmp;
 	int edge_solved1;
 	int edge_solved2;
 	int edge_solved3;
@@ -1994,7 +2012,7 @@ struct xxxcross_search
 	{
 		for (int i : move_restrict_move)
 		{
-			if (ma2[aprev + i])
+			if (ma2[aprev + i] || mc_tmp[i] >= mc[i])
 			{
 				continue;
 			}
@@ -2027,6 +2045,7 @@ struct xxxcross_search
 				continue;
 			}
 			sol.emplace_back(i);
+            mc_tmp[i] += 1;
 			if (depth == 1)
 			{
 				if (prune1_tmp == 0 && prune2_tmp == 0 && prune3_tmp == 0 && edge_prune1_tmp == 0 && index8_tmp == edge_solved2 && index9_tmp == edge_solved3)
@@ -2138,10 +2157,11 @@ struct xxxcross_search
 				return true;
 			}
 			sol.pop_back();
+            mc_tmp[i] -= 1;
 		}
 		for (int i : move_restrict_rot)
 		{
-			if (ma2[aprev + i])
+			if (ma2[aprev + i] || mc_tmp[i] >= mc[i])
 			{
 				continue;
 			}
@@ -2177,6 +2197,7 @@ struct xxxcross_search
 				continue;
 			}
 			sol.emplace_back(i);
+            mc_tmp[i] += 1;
 			if (depth == 1)
 			{
 				if (prune1_tmp == 0 && prune2_tmp == 0 && prune3_tmp == 0 && edge_prune1_tmp == 0 && index8_tmp == edge_solved2 && index9_tmp == edge_solved3)
@@ -2288,11 +2309,12 @@ struct xxxcross_search
 				return true;
 			}
 			sol.pop_back();
+            mc_tmp[i] -= 1;
 		}
 		return false;
 	}
 
-	void start_search(std::string arg_scramble = "", std::string arg_rotation = "", int arg_slot1 = 0, int arg_slot2 = 3, int arg_slot3 = 1, int arg_pslot1 = 0, int arg_pslot2 = 3, int arg_pslot3 = 1, int arg_sol_num = 100, int arg_max_length = 14, const std::vector<std::string> &arg_restrict = move_names, std::string arg_post_alg = "", const std::vector<int> &arg_center_offset = {0}, int arg_max_rot_count = 0, const std::vector<bool> &arg_ma2 = std::vector<bool>(55 * 54, false))
+	void start_search(std::string arg_scramble = "", std::string arg_rotation = "", int arg_slot1 = 0, int arg_slot2 = 3, int arg_slot3 = 1, int arg_pslot1 = 0, int arg_pslot2 = 3, int arg_pslot3 = 1, int arg_sol_num = 100, int arg_max_length = 14, const std::vector<std::string> &arg_restrict = move_names, std::string arg_post_alg = "", const std::vector<int> &arg_center_offset = {0}, int arg_max_rot_count = 0, const std::vector<bool> &arg_ma2 = std::vector<bool>(55 * 54, false), const std::vector<int> &arg_mc = std::vector<int>(54, 20))
 	{
 		scramble = arg_scramble;
 		rotation = arg_rotation;
@@ -2305,7 +2327,9 @@ struct xxxcross_search
 		max_length = arg_max_length;
 		sol_num = arg_sol_num;
 		restrict = arg_restrict;
-		ma2 = arg_ma2;
+        ma2 = arg_ma2;
+        mc = arg_mc;
+        mc_tmp = std::vector<int>(54, 0);
 		for (std::string name : restrict)
 		{
 			auto it = std::find(move_names.begin(), move_names.end(), name);
@@ -2459,7 +2483,9 @@ struct xxxxcross_search
 	std::vector<int> move_restrict_move;
 	std::vector<int> move_restrict_rot;
 	std::vector<bool> ma;
-	std::vector<bool> ma2;
+    std::vector<bool> ma2;
+    std::vector<int> mc;
+    std::vector<int> mc_tmp;
 	int edge_solved1;
 	int edge_solved2;
 	int edge_solved3;
@@ -2519,7 +2545,7 @@ struct xxxxcross_search
 	{
 		for (int i : move_restrict_move)
 		{
-			if (ma2[aprev + i])
+			if (ma2[aprev + i] || mc_tmp[i] >= mc[i])
 			{
 				continue;
 			}
@@ -2559,6 +2585,7 @@ struct xxxxcross_search
 				continue;
 			}
 			sol.emplace_back(i);
+            mc_tmp[i] += 1;
 			if (depth == 1)
 			{
 				if (prune1_tmp == 0 && prune2_tmp == 0 && prune3_tmp == 0 && prune4_tmp == 0 && edge_prune1_tmp == 0 && index10_tmp == edge_solved2 && index11_tmp == edge_solved3 && index12_tmp == edge_solved4)
@@ -2676,10 +2703,11 @@ struct xxxxcross_search
 				return true;
 			}
 			sol.pop_back();
+            mc_tmp[i] -= 1;
 		}
 		for (int i : move_restrict_rot)
 		{
-			if (ma2[aprev + i])
+			if (ma2[aprev + i] || mc_tmp[i] >= mc[i])
 			{
 				continue;
 			}
@@ -2722,6 +2750,7 @@ struct xxxxcross_search
 				continue;
 			}
 			sol.emplace_back(i);
+            mc_tmp[i] += 1;
 			if (depth == 1)
 			{
 				if (prune1_tmp == 0 && prune2_tmp == 0 && prune3_tmp == 0 && prune4_tmp == 0 && edge_prune1_tmp == 0 && index10_tmp == edge_solved2 && index11_tmp == edge_solved3 && index12_tmp == edge_solved4)
@@ -2839,11 +2868,12 @@ struct xxxxcross_search
 				return true;
 			}
 			sol.pop_back();
+            mc_tmp[i] -= 1;
 		}
 		return false;
 	}
 
-	void start_search(std::string arg_scramble = "", std::string arg_rotation = "", int arg_slot1 = 0, int arg_slot2 = 3, int arg_slot3 = 1, int arg_slot4 = 2, int arg_pslot1 = 0, int arg_pslot2 = 3, int arg_pslot3 = 1, int arg_pslot4 = 2, int arg_sol_num = 100, int arg_max_length = 14, const std::vector<std::string> &arg_restrict = move_names, std::string arg_post_alg = "", const std::vector<int> &arg_center_offset = {0}, int arg_max_rot_count = 0, const std::vector<bool> &arg_ma2 = std::vector<bool>(55 * 54, false))
+	void start_search(std::string arg_scramble = "", std::string arg_rotation = "", int arg_slot1 = 0, int arg_slot2 = 3, int arg_slot3 = 1, int arg_slot4 = 2, int arg_pslot1 = 0, int arg_pslot2 = 3, int arg_pslot3 = 1, int arg_pslot4 = 2, int arg_sol_num = 100, int arg_max_length = 14, const std::vector<std::string> &arg_restrict = move_names, std::string arg_post_alg = "", const std::vector<int> &arg_center_offset = {0}, int arg_max_rot_count = 0, const std::vector<bool> &arg_ma2 = std::vector<bool>(55 * 54, false), const std::vector<int> &arg_mc = std::vector<int>(54, 20))
 	{
 		scramble = arg_scramble;
 		rotation = arg_rotation;
@@ -2858,7 +2888,9 @@ struct xxxxcross_search
 		max_length = arg_max_length;
 		sol_num = arg_sol_num;
 		restrict = arg_restrict;
-		ma2 = arg_ma2;
+        ma2 = arg_ma2;
+        mc = arg_mc;
+        mc_tmp = std::vector<int>(54, 0);
 		for (std::string name : restrict)
 		{
 			auto it = std::find(move_names.begin(), move_names.end(), name);
@@ -3193,14 +3225,81 @@ void buidMA2(const std::string &restID, const std::string &mavString, std::vecto
 	}
 }
 
-void controller(std::string scr, std::string rot, std::string slot, std::string pslot, std::string a_slot, std::string a_pslot, int num, int len, std::string move_restrict_string, std::string post_alg, std::string center_offset_string, int max_rot_count, std::string ma2_string)
+void buildMoveCountVector(const std::string &restID, const std::string &moveCountString, std::vector<int> &move_count_vector)
+{
+    static const std::map<std::string, int> move_to_index_map = []
+    {
+        std::map<std::string, int> m;
+        for (int i = 0; i < move_names.size(); ++i)
+        {
+            m[move_names[i]] = i;
+        }
+        return m;
+    }();
+
+    move_count_vector.assign(move_names.size(), 0);
+
+    std::stringstream rest_ss(restID);
+    std::string rest_move;
+    while (std::getline(rest_ss, rest_move, '_'))
+    {
+        if (rest_move.empty())
+            continue;
+
+        size_t pos = rest_move.find('-');
+        if (pos != std::string::npos)
+        {
+            rest_move.replace(pos, 1, "'");
+        }
+
+        auto it = move_to_index_map.find(rest_move);
+        if (it != move_to_index_map.end())
+        {
+            move_count_vector[it->second] = 20;
+        }
+    }
+
+    std::stringstream count_ss(moveCountString);
+    std::string count_part;
+    while (std::getline(count_ss, count_part, '_'))
+    {
+        size_t delim_pos = count_part.find(':');
+        if (delim_pos == std::string::npos)
+            continue;
+
+        std::string move_str = count_part.substr(0, delim_pos);
+        std::string value_str = count_part.substr(delim_pos + 1);
+
+        size_t pos = move_str.find('-');
+        if (pos != std::string::npos)
+        {
+            move_str.replace(pos, 1, "'");
+        }
+
+        auto it = move_to_index_map.find(move_str);
+        if (it != move_to_index_map.end())
+        {
+            try
+            {
+                move_count_vector[it->second] = std::stoi(value_str);
+            }
+            catch (const std::invalid_argument &e)
+            {
+            }
+        }
+    }
+}
+
+void controller(std::string scr, std::string rot, std::string slot, std::string pslot, std::string a_slot, std::string a_pslot, int num, int len, std::string move_restrict_string, std::string post_alg, std::string center_offset_string, int max_rot_count, std::string ma2_string, std::string mcString)
 {
 	std::vector<int> center_offset;
-	std::vector<bool> ma2;
+    std::vector<bool> ma2;
+    std::vector<int> mc;
 	std::vector<std::string> move_restrict;
 	buildCenterOffset(center_offset_string, center_offset);
 	buidMoveRestrict(move_restrict_string, move_restrict);
 	buidMA2(move_restrict_string, ma2_string, ma2);
+    buildMoveCountVector(move_restrict_string, mcString, mc);
 	std::vector<bool> slot_list = F2L_option_array(slot);
 	std::vector<bool> pslot_list = F2L_option_array(pslot);
 	std::vector<bool> a_slot_list = F2L_option_array(a_slot);
@@ -3282,22 +3381,22 @@ void controller(std::string scr, std::string rot, std::string slot, std::string 
 	if (count == 0)
 	{
 		xcross_search search;
-		search.start_search(scr, rot, a_slot_list2[0], a_pslot_list2[0], num, len, move_restrict, post_alg, center_offset, max_rot_count, ma2);
+		search.start_search(scr, rot, a_slot_list2[0], a_pslot_list2[0], num, len, move_restrict, post_alg, center_offset, max_rot_count, ma2, mc);
 	}
 	else if (count == 1)
 	{
 		xxcross_search search;
-		search.start_search(scr, rot, a_slot_list2[0], slot_list2[0], a_pslot_list2[0], pslot_list2[0], num, len, move_restrict, post_alg, center_offset, max_rot_count, ma2);
+		search.start_search(scr, rot, a_slot_list2[0], slot_list2[0], a_pslot_list2[0], pslot_list2[0], num, len, move_restrict, post_alg, center_offset, max_rot_count, ma2, mc);
 	}
 	else if (count == 2)
 	{
 		xxxcross_search search;
-		search.start_search(scr, rot, a_slot_list2[0], slot_list2[0], slot_list2[1], a_pslot_list2[0], pslot_list2[0], pslot_list2[1], num, len, move_restrict, post_alg, center_offset, max_rot_count, ma2);
+		search.start_search(scr, rot, a_slot_list2[0], slot_list2[0], slot_list2[1], a_pslot_list2[0], pslot_list2[0], pslot_list2[1], num, len, move_restrict, post_alg, center_offset, max_rot_count, ma2, mc);
 	}
 	else if (count == 3)
 	{
 		xxxxcross_search search;
-		search.start_search(scr, rot, a_slot_list2[0], slot_list2[0], slot_list2[1], slot_list2[2], a_pslot_list2[0], pslot_list2[0], pslot_list2[1], pslot_list2[2], num, len, move_restrict, post_alg, center_offset, max_rot_count, ma2);
+		search.start_search(scr, rot, a_slot_list2[0], slot_list2[0], slot_list2[1], slot_list2[2], a_pslot_list2[0], pslot_list2[0], pslot_list2[1], pslot_list2[2], num, len, move_restrict, post_alg, center_offset, max_rot_count, ma2, mc);
 	}
 }
 
