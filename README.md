@@ -90,8 +90,8 @@ This is an online solver for speedcubers that uses specific methods such as CFOP
 
 # **Input Description**
 - **Cube Editor**: Visual scramble‑drawing system
-  - In **Swap** mode, swaps two selected stickers, rotating the pieces so the stickers exchange positions.
-  - In **Flip** mode, the selected piece’s orientation is rotated.
+  - In **Swap** mode, replaces two pieces by rotating their orientations so the selected stickers exchange positions.
+  - In **Flip** mode, rotates the selected piece’s orientation.
   - **[Get‑Scramble]** generates a scramble for the shown state (rotations aren’t included; edit if needed).
   - Shows “Unsolvable pattern.” alert when the state can’t be solved.
 

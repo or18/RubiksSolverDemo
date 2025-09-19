@@ -2271,6 +2271,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                 });
 
                 updateRestrictTable();
+                updateMoveCountTable();
 
                 tableBody.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
 
@@ -2522,6 +2523,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                 document.querySelectorAll('#count_table .move-count-input').forEach(input => {
                     const move = input.dataset.move;
                     if (activeRestMoves.has(move)) {
+                        input.disabled = false;
                         input.value = '20';
                     } else {
                         input.value = '0';
