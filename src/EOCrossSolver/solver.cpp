@@ -2491,11 +2491,11 @@ struct xxxcross_search
         index4 = corner_index[slot2];
         index8 = single_edge_index[slot2];
         edge_solved2 = index8;
-        create_prune_table(index1, index4, 24 * 22 * 20 * 18, 24, 10, multi_move_table, corner_move_table, prune_table2, move_restrict_tmp, tmp_array, center_move_table);
+        create_prune_table(index1, index4, 24 * 22 * 20 * 18, 24, 20, multi_move_table, corner_move_table, prune_table2, move_restrict_tmp, tmp_array, center_move_table);
         index6 = corner_index[slot3];
         index9 = single_edge_index[slot3];
         edge_solved3 = index9;
-        create_prune_table(index1, index6, 24 * 22 * 20 * 18, 24, 10, multi_move_table, corner_move_table, prune_table3, move_restrict_tmp, tmp_array, center_move_table);
+        create_prune_table(index1, index6, 24 * 22 * 20 * 18, 24, 20, multi_move_table, corner_move_table, prune_table3, move_restrict_tmp, tmp_array, center_move_table);
         index_dep = 11720;
         index_eo = 0;
         count = 0;
@@ -2543,7 +2543,7 @@ struct xxxcross_search
         prune2_tmp = prune_table2[index1 * 24 + index4];
         prune3_tmp = prune_table3[index1 * 24 + index6];
         prune_dep_eo_tmp = prune_table_dep_eo[index_dep * 2048 + index_eo];
-        if (prune1_tmp == 255 || prune2_tmp == 255 || prune3_tmp == 255)
+        if (prune1_tmp == 255 || prune2_tmp == 255 || prune3_tmp == 255 || prune_dep_eo_tmp == 255)
         {
             update("Unsolvable.");
         }
@@ -3067,13 +3067,13 @@ struct xxxxcross_search
         create_prune_table(index1, index2, 24 * 22 * 20 * 18, 24, 20, multi_move_table, corner_move_table, prune_table1, move_restrict_tmp, tmp_array, center_move_table);
         index4 = corner_index[1];
         index10 = single_edge_index[1];
-        create_prune_table(index1, index4, 24 * 22 * 20 * 18, 24, 10, multi_move_table, corner_move_table, prune_table2, move_restrict_tmp, tmp_array, center_move_table);
+        create_prune_table(index1, index4, 24 * 22 * 20 * 18, 24, 20, multi_move_table, corner_move_table, prune_table2, move_restrict_tmp, tmp_array, center_move_table);
         index6 = corner_index[2];
         index11 = single_edge_index[2];
-        create_prune_table(index1, index6, 24 * 22 * 20 * 18, 24, 10, multi_move_table, corner_move_table, prune_table3, move_restrict_tmp, tmp_array, center_move_table);
+        create_prune_table(index1, index6, 24 * 22 * 20 * 18, 24, 20, multi_move_table, corner_move_table, prune_table3, move_restrict_tmp, tmp_array, center_move_table);
         index8 = corner_index[3];
         index12 = single_edge_index[3];
-        create_prune_table(index1, index8, 24 * 22 * 20 * 18, 24, 10, multi_move_table, corner_move_table, prune_table4, move_restrict_tmp, tmp_array, center_move_table);
+        create_prune_table(index1, index8, 24 * 22 * 20 * 18, 24, 20, multi_move_table, corner_move_table, prune_table4, move_restrict_tmp, tmp_array, center_move_table);
         index_dep = 11720;
         index_eo = 0;
         count = 0;
@@ -3126,7 +3126,7 @@ struct xxxxcross_search
         prune3_tmp = prune_table3[index1 * 24 + index6];
         prune4_tmp = prune_table4[index1 * 27 + index8];
         prune_dep_eo_tmp = prune_table_dep_eo[index_dep * 2048 + index_eo];
-        if (prune1_tmp == 255 || prune2_tmp == 255 || prune3_tmp == 255 || prune4_tmp == 255)
+        if (prune1_tmp == 255 || prune2_tmp == 255 || prune3_tmp == 255 || prune4_tmp == 255 || prune_dep_eo_tmp == 255)
         {
             update("Unsolvable.");
         }
