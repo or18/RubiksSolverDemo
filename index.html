@@ -2737,7 +2737,13 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                     alert("Already solved.");
                     return "";
                 } else if (solution.includes('Error')) {
-                    alert("Unsolvable pattern.");
+                    if (solution.includes('6')) {
+                        alert("Parity Error.");
+                    } else if (solution.includes('3')) {
+                        alert("Edge Orientation Error.");
+                    } else if (solution.includes('5')) {
+                        alert("Corner Orientation Error.");
+                    }
                     return "";
                 }
                 return scr_fix2(reverse(solution));
