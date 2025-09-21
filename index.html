@@ -562,11 +562,12 @@
     <h2>This is solver for Rubik's cube cross, XCross, XXCross, XXXCross, XXXXCross, free pair, last layer(OLL,
         ZBLS, ZBLL). Pseudo XCross and free pair solver also available. EOCross and XEOCross
         solver also available.</h2>
-    <a href="https://github.com/or18/RubiksSolverDemo" rel="noopener noreferrer"
-        style="white-space: nowrap;" translate="no">Source</a><a>&nbsp;</a>
-    <a href="https://or18.github.io/Rubiks-cube-xcross-solver/" rel="noopener noreferrer"
-        style="white-space: nowrap;" translate="no">Old Demo</a>
-    <a href="https://or18.github.io/RubiksSolverDemo/2x2x2" rel="noopener noreferrer" style="white-space: nowrap;" translate="no">2x2x2
+    <a href="https://github.com/or18/RubiksSolverDemo" rel="noopener noreferrer" style="white-space: nowrap;"
+        translate="no">Source</a><a>&nbsp;</a>
+    <a href="https://or18.github.io/Rubiks-cube-xcross-solver/" rel="noopener noreferrer" style="white-space: nowrap;"
+        translate="no">Old Demo</a>
+    <a href="https://or18.github.io/RubiksSolverDemo/2x2x2" rel="noopener noreferrer" style="white-space: nowrap;"
+        translate="no">2x2x2
         Solver</a><br><br>
     <a>Trainers:</a><br>
     <a href="https://or18.github.io/RubiksSolverDemo/cross_trainer" rel="noopener noreferrer"
@@ -679,6 +680,37 @@
                     <button id="flip-mode-btn" class="mode-button">Flip</button>
                     <button id="ui_solve_btn" class="mode-button">Get<br>Scramble</button>
                     <button id="reset-cube-btn" class="action-button">Reset</button>
+                    <label for="rot">Rotation: </label>
+                    <select translate="no" id="pre_rot">
+                        <option translate="no" value="">None</option>
+                        <option translate="no" value="y">y</option>
+                        <option translate="no" value="y2">y2</option>
+                        <option translate="no" value="y'">y'</option>
+                        <option translate="no" value="z2">z2</option>
+                        <option translate="no" value="z2 y">z2 y</option>
+                        <option translate="no" value="z2 y2">z2 y2</option>
+                        <option translate="no" value="z2 y'">z2 y'</option>
+                        <option translate="no" value="z'">z'</option>
+                        <option translate="no" value="z' y">z' y</option>
+                        <option translate="no" value="z' y2">z' y2</option>
+                        <option translate="no" value="z' y'">z' y'</option>
+                        <option translate="no" value="z">z</option>
+                        <option translate="no" value="z y">z y</option>
+                        <option translate="no" value="z y2">z y2</option>
+                        <option translate="no" value="z y'">z y'</option>
+                        <option translate="no" value="x'">x'</option>
+                        <option translate="no" value="x' y">x' y</option>
+                        <option translate="no" value="x' y2">x' y2</option>
+                        <option translate="no" value="x' y'">x' y'</option>
+                        <option translate="no" value="x2">x2</option>
+                        <option translate="no" value="x2 y">x2 y</option>
+                        <option translate="no" value="x2 y2">x2 y2</option>
+                        <option translate="no" value="x2 y'">x2 y'</option>
+                        <option translate="no" value="x">x</option>
+                        <option translate="no" value="x y">x y</option>
+                        <option translate="no" value="x y2">x y2</option>
+                        <option translate="no" value="x y'">x y'</option>
+                    </select>
                 </div>
             </div>
             <div class="cube-scroll-container">
@@ -2833,7 +2865,8 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
 
             document.getElementById('ui_solve_btn').addEventListener('click', () => {
                 const ret = getscr();
-                document.getElementById('scr').value = " // Pre Rotations\n" + ret + " // setup\n";
+                const prerot = document.getElementById('pre_rot').value;
+                document.getElementById('scr').value = prerot + " // Pre Rotations\n" + ret + " // setup\n";
                 save();
             });
 
