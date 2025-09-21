@@ -3124,7 +3124,7 @@ struct xxxxcross_search
         prune1_tmp = prune_table1[index1 * 24 + index2];
         prune2_tmp = prune_table2[index1 * 24 + index4];
         prune3_tmp = prune_table3[index1 * 24 + index6];
-        prune4_tmp = prune_table4[index1 * 27 + index8];
+        prune4_tmp = prune_table4[index1 * 24 + index8];
         prune_dep_eo_tmp = prune_table_dep_eo[index_dep * 2048 + index_eo];
         if (prune1_tmp == 255 || prune2_tmp == 255 || prune3_tmp == 255 || prune4_tmp == 255 || prune_dep_eo_tmp == 255)
         {
