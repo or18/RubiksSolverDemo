@@ -1,11 +1,10 @@
-importScripts('solver.js');
 
 let xcrossSearchInstance;
-let initPromise = new Promise((resolve, reject) => {
-	Module.onRuntimeInitialized = function () {
-		if (!xcrossSearchInstance) {
+const initPromise = new Promise((resolve, reject) => {
+	self.Module = {
+		onRuntimeInitialized: () => {
 			try {
-				xcrossSearchInstance = new Module.xcross_search();
+				xcrossSearchInstance = new self.Module.xcross_search();
 				resolve();
 			} catch (e) {
 				reject("Error");
@@ -13,6 +12,8 @@ let initPromise = new Promise((resolve, reject) => {
 		}
 	};
 });
+
+importScripts('solver.js');
 
 self.onmessage = async function (event) {
 	const { scr, len } = event.data;

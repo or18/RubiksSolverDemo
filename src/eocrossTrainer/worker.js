@@ -1,23 +1,24 @@
-importScripts('solver.js');
 
 let crossSearchInstance;
-let initPromise = new Promise((resolve, reject) => {
-    Module.onRuntimeInitialized = function () {
-        if (!crossSearchInstance) {
+const initPromise = new Promise((resolve, reject) => {
+    self.Module = {
+        onRuntimeInitialized: () => {
             try {
-                crossSearchInstance = new Module.cross_search();
+                crossSearchInstance = new self.Module.cross_search();
                 resolve();
             } catch (e) {
-                reject("Error"); 
+                reject("Error");
             }
         }
     };
 });
 
+importScripts('solver.js');
+
 self.onmessage = async function (event) {
     const { scr, len } = event.data;
     try {
-        await initPromise; 
+        await initPromise;
         if (crossSearchInstance) {
             const ret = crossSearchInstance.func(scr, len);
             self.postMessage(ret);

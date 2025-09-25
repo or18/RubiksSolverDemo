@@ -7,9 +7,6 @@
     <title>2x2x2 Rubik's Cube Solver</title>
     <meta name="description" content="Solver for 2x2x2 Rubik's Cube">
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-MXJH30352W"></script>
-    <script async src="src/min2phase.js/min2phase.js"></script>
-    <script async src="src/functions/list.js"></script>
-    <script src="src/functions/functions.js"></script>
     <script>
         window.dataLayer = window.dataLayer || [];
         function gtag() { dataLayer.push(arguments); }
@@ -284,8 +281,23 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
         </script>
 
         <script>
-            Module.onRuntimeInitialized = function () {
-                window.reverse = function (scr) {
+            const functionsPromise = new Promise(resolve => {
+                window.Module = {
+                    onRuntimeInitialized: () => resolve(window.Module)
+                };
+            });
+        </script>
+        <script src="src/functions/functions.js"></script>
+
+        <script>
+            let reverse;
+            let mirror;
+            let convert;
+            let isFunctionsReady = false;
+
+            async function InitializeFunctions() {
+                const Module = await functionsPromise;
+                reverse = function (scr) {
                     const scr_fixed = scr_fix2(scr);
                     if (scr_fixed === "") {
                         return;
@@ -305,11 +317,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                     const result = processedLines.join('\n');
                     return result.trim() + "\n";
                 };
-                window.mirror = function (scr) {
-                    if (typeof Module.scr_mirror !== "function") {
-                        alert("Error: The required function is not initialized. Please reload the page manually.");
-                        return;
-                    }
+                mirror = function (scr) {
                     const scr_fixed = scr_fix2(scr);
                     if (scr_fixed === "") {
                         return;
@@ -329,15 +337,16 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                     const result = processedLines.join('\n');
                     return result.trim() + "\n";
                 };
-                window.convert = function (scramble) {
+                convert = function (scramble) {
                     const result = Module.scr_converter(scramble);
                     const resultArray = result.split(',');
                     return resultArray.map(part => part.trim());
                 };
-            };
-        </script>
+                isFunctionsReady = true;
+            }
 
-        <script>
+            InitializeFunctions();
+
             let worker;
             let messageCount = 0;
             let sol_input = false;
@@ -486,6 +495,11 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                         return;
                     }
 
+                    if (!isFunctionsReady) {
+                        alert("The module is still initializing. Please try again in a moment.");
+                        document.getElementById("solveButton").textContent = "Start";
+                        return;
+                    }
                     if (typeof convert !== "function") {
                         alert("Error: The required function is not initialized. Please reload the page manually.");
                         const element = document.getElementById('result');
@@ -661,6 +675,10 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             }
 
             function reverseScramble() {
+                if (!isFunctionsReady) {
+                    alert("The module is still initializing. Please try again in a moment.");
+                    return;
+                }
                 if (typeof reverse !== "function") {
                     alert("Error: The required function is not initialized. Please reload the page manually.");
                     return;
@@ -675,6 +693,10 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             }
 
             function mirrorScramble() {
+                if (!isFunctionsReady) {
+                    alert("The module is still initializing. Please try again in a moment.");
+                    return;
+                }
                 if (typeof mirror !== "function") {
                     alert("Error: The required function is not initialized. Please reload the page manually.");
                     return;

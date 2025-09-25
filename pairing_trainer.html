@@ -8,7 +8,6 @@
 	<meta name="description" content="Simple Rubik's Cube Free Pair Trainer.">
 	<script async src="https://www.googletagmanager.com/gtag/js?id=G-MXJH30352W"></script>
 	<script async src="src/min2phase.js/min2phase.js"></script>
-	<script src="src/functions/functions.js"></script>
 	<script>
 		window.dataLayer = window.dataLayer || [];
 		function gtag() { dataLayer.push(arguments); }
@@ -187,19 +186,19 @@
 	<header id="header">
 		<h1>Rubik's Cube Free Pair Trainer</h1>
 	</header>
-	<a href="https://or18.github.io/RubiksSolverDemo/" rel="noopener noreferrer"
-        style="white-space: nowrap;">Main Solver</a><br><br>
-    <a>Other Trainers:</a><br>
-    <a href="https://or18.github.io/RubiksSolverDemo/cross_trainer" rel="noopener noreferrer"
-        style="white-space: nowrap;">Cross</a><a>&nbsp;</a>
-    <a href="https://or18.github.io/RubiksSolverDemo/xcross_trainer" rel="noopener noreferrer"
-        style="white-space: nowrap;">XCross</a><a>&nbsp;</a>
-    <a href="https://or18.github.io/RubiksSolverDemo/pseudo_xcross_trainer" rel="noopener noreferrer"
-        style="white-space: nowrap;">Pseudo XCross</a><a>&nbsp;</a>
-    <a href="https://or18.github.io/RubiksSolverDemo/pseudo_pairing_trainer" rel="noopener noreferrer"
-        style="white-space: nowrap;">Pseudo Free Pair</a><a>&nbsp;</a>
-    <a href="https://or18.github.io/RubiksSolverDemo/eocross_trainer" rel="noopener noreferrer"
-        style="white-space: nowrap;">EOCross</a><br><br>
+	<a href="https://or18.github.io/RubiksSolverDemo/" rel="noopener noreferrer" style="white-space: nowrap;">Main
+		Solver</a><br><br>
+	<a>Other Trainers:</a><br>
+	<a href="https://or18.github.io/RubiksSolverDemo/cross_trainer" rel="noopener noreferrer"
+		style="white-space: nowrap;">Cross</a><a>&nbsp;</a>
+	<a href="https://or18.github.io/RubiksSolverDemo/xcross_trainer" rel="noopener noreferrer"
+		style="white-space: nowrap;">XCross</a><a>&nbsp;</a>
+	<a href="https://or18.github.io/RubiksSolverDemo/pseudo_xcross_trainer" rel="noopener noreferrer"
+		style="white-space: nowrap;">Pseudo XCross</a><a>&nbsp;</a>
+	<a href="https://or18.github.io/RubiksSolverDemo/pseudo_pairing_trainer" rel="noopener noreferrer"
+		style="white-space: nowrap;">Pseudo Free Pair</a><a>&nbsp;</a>
+	<a href="https://or18.github.io/RubiksSolverDemo/eocross_trainer" rel="noopener noreferrer"
+		style="white-space: nowrap;">EOCross</a><br><br>
 	<a>Warning: This scrambler generates about 700 MB locally on first run; initial scramble generation may take several
 		seconds to tens of seconds. </a><br><br>
 
@@ -276,11 +275,27 @@
 	</script>
 
 	<script>
-		Module.onRuntimeInitialized = function () {
-			window.reverse = function (scr) {
+		const functionsPromise = new Promise(resolve => {
+			window.Module = {
+				onRuntimeInitialized: () => resolve(window.Module)
+			};
+		});
+	</script>
+	<script src="src/functions/functions.js"></script>
+
+	<script>
+		let reverse;
+		let convert;
+		let generateTwoPhaseInput;
+		let convertMask;
+		let isFunctionsReady = false;
+
+		async function InitializeFunctions() {
+			const Module = await functionsPromise;
+			reverse = function (scr) {
 				const scr_fixed = scr_fix2(scr);
 				if (scr_fixed === "") {
-					return "";
+					return;
 				}
 				const lines = scr_fixed.split('\n');
 				const processedLines = [];
@@ -297,47 +312,24 @@
 				const result = processedLines.join('\n');
 				return result.trim() + "\n";
 			};
-			window.mirror = function (scr) {
-				if (typeof Module.scr_mirror !== "function") {
-					alert("Error: The required function is not initialized. Please reload the page manually.");
-					return;
-				}
-				const scr_fixed = scr_fix2(scr);
-				if (scr_fixed === "") {
-					return;
-				}
-				const lines = scr_fixed.split('\n');
-				const processedLines = [];
-				for (let i = 0; i < lines.length; i++) {
-					const line = lines[i];
-					const [alg, comment] = line.split('//');
-					const alg_mirrored = Module.scr_mirror(alg.trim());
-					if (comment) {
-						processedLines.push(`${alg_mirrored} // ${comment.trim()}`);
-					} else {
-						processedLines.push(alg_mirrored);
-					}
-				}
-				const result = processedLines.join('\n');
-				return result.trim() + "\n";
-			};
-			window.convert = function (scramble) {
+			convert = function (scramble) {
 				const result = Module.scr_converter(scramble);
 				const resultArray = result.split(',');
 				return resultArray.map(part => part.trim());
 			};
-			window.generateTwoPhaseInput = function (scramble) {
+			generateTwoPhaseInput = function (scramble) {
 				const result = Module.ScrambleToState(scramble);
 				return result;
 			};
-			window.convertMask = function (center_input, edge_input, corner_input, rotation_alg) {
+			convertMask = function (center_input, edge_input, corner_input, rotation_alg) {
 				const result = Module.convertMask(center_input, edge_input, corner_input, rotation_alg);
 				return result;
 			};
-		};
-	</script>
+			isFunctionsReady = true;
+		}
 
-	<script>
+		InitializeFunctions();
+
 		let worker;
 		let worker2;
 		let messageCount = 0;
@@ -524,6 +516,10 @@
 					return;
 				}
 
+				if (!isFunctionsReady) {
+					alert("The module is still initializing. Please try again in a moment.");
+					return;
+				}
 				if (typeof convert !== "function" || typeof generateTwoPhaseInput !== "function" || typeof convertMask !== "function") {
 					alert("Error: The required function is not initialized. Please reload the page manually.");
 					const element = document.getElementById('result');
@@ -649,6 +645,10 @@
 		}
 
 		function generateTwoPhaseInputWrapper(scr) {
+			if (!isFunctionsReady) {
+				alert("The module is still initializing. Please try again in a moment.");
+				return;
+			}
 			if (typeof generateTwoPhaseInput !== "function") {
 				alert("Error: The required function is not initialized. Please reload the page manually.");
 				return;
@@ -665,6 +665,10 @@
 		};
 
 		function genscr() {
+			if (!isFunctionsReady) {
+				alert("The module is still initializing. Please try again in a moment.");
+				return;
+			}
 			if (typeof convert !== "function" || typeof generateTwoPhaseInput !== "function" || typeof convertMask !== "function" || typeof reverse !== "function") {
 				alert("Error: The required function is not initialized. Please reload the page manually.");
 				return;
