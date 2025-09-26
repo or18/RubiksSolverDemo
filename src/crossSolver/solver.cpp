@@ -1508,7 +1508,7 @@ struct xcross_search
             index1 *= 27;
             index2 *= 27;
             index3 *= 27;
-            for (int d = prune1_tmp - 1; d <= max_length; d++)
+            for (int d = prune1_tmp; d <= max_length; d++)
             {
                 tmp = "depth=" + std::to_string(d);
                 update(tmp.c_str());
