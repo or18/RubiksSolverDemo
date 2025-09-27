@@ -896,7 +896,7 @@ struct cross_search
 	{
 		for (int i : move_restrict_move)
 		{
-			if (ma2[aprev + i])
+			if (ma2[aprev + i] || mc_tmp[i] >= mc[i])
 			{
 				continue;
 			}
@@ -1010,7 +1010,7 @@ struct cross_search
 		}
 		for (int i : move_restrict_rot)
 		{
-			if (ma2[aprev + i])
+			if (ma2[aprev + i] || mc_tmp[i] >= mc[i])
 			{
 				continue;
 			}
@@ -1283,7 +1283,7 @@ struct xcross_search
 	{
 		for (int i : move_restrict_move)
 		{
-			if (ma2[aprev + i])
+			if (ma2[aprev + i] || mc_tmp[i] >= mc[i])
 			{
 				continue;
 			}
@@ -1401,7 +1401,7 @@ struct xcross_search
 		}
 		for (int i : move_restrict_rot)
 		{
-			if (ma2[aprev + i])
+			if (ma2[aprev + i] || mc_tmp[i] >= mc[i])
 			{
 				continue;
 			}
@@ -1700,7 +1700,7 @@ struct xxcross_search
 	{
 		for (int i : move_restrict_move)
 		{
-			if (ma2[aprev + i])
+			if (ma2[aprev + i] || mc_tmp[i] >= mc[i])
 			{
 				continue;
 			}
@@ -1831,7 +1831,7 @@ struct xxcross_search
 		}
 		for (int i : move_restrict_rot)
 		{
-			if (ma2[aprev + i])
+			if (ma2[aprev + i] || mc_tmp[i] >= mc[i])
 			{
 				continue;
 			}
@@ -2168,7 +2168,7 @@ struct xxxcross_search
 	{
 		for (int i : move_restrict_move)
 		{
-			if (ma2[aprev + i])
+			if (ma2[aprev + i] || mc_tmp[i] >= mc[i])
 			{
 				continue;
 			}
@@ -2312,7 +2312,7 @@ struct xxxcross_search
 		}
 		for (int i : move_restrict_rot)
 		{
-			if (ma2[aprev + i])
+			if (ma2[aprev + i] || mc_tmp[i] >= mc[i])
 			{
 				continue;
 			}
