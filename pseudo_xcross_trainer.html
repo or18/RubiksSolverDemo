@@ -183,22 +183,45 @@
 </head>
 
 <body>
-	<header id="header">
+	<header id="header" style="margin-left:48px;margin-top:10px;position:relative;z-index:10;">
 		<h1>Rubik's Cube Pseudo XCross Trainer</h1>
 	</header>
-	<a href="https://or18.github.io/RubiksSolverDemo/" rel="noopener noreferrer" style="white-space: nowrap;">Main
-		Solver</a><br><br>
-	<a>Other Trainers:</a><br>
-	<a href="https://or18.github.io/RubiksSolverDemo/cross_trainer" rel="noopener noreferrer"
-		style="white-space: nowrap;">Cross</a><a>&nbsp;</a>
-	<a href="https://or18.github.io/RubiksSolverDemo/xcross_trainer" rel="noopener noreferrer"
-		style="white-space: nowrap;">XCross</a><a>&nbsp;</a>
-	<a href="https://or18.github.io/RubiksSolverDemo/pairing_trainer" rel="noopener noreferrer"
-		style="white-space: nowrap;">Free Pair</a><a>&nbsp;</a>
-	<a href="https://or18.github.io/RubiksSolverDemo/pseudo_pairing_trainer" rel="noopener noreferrer"
-		style="white-space: nowrap;">Pseudo Free Pair</a><a>&nbsp;</a>
-	<a href="https://or18.github.io/RubiksSolverDemo/eocross_trainer" rel="noopener noreferrer"
-		style="white-space: nowrap;">EOCross</a><br><br>
+	<div id="hamburger-menu-container">
+		<button id="hamburger-menu-btn" aria-label="Open menu"
+			style="background:none;border:none;cursor:pointer;font-size:2.2rem;position:absolute;top:10px;left:10px;z-index:1000;color:#fff;">
+			&#9776;
+		</button>
+		<nav id="hamburger-menu" class="hidden"
+			style="position:absolute;top:50px;left:10px;background:#1e1e1e;border:1px solid #41417f;border-radius:8px;box-shadow:0 4px 16px #000a;padding:16px;min-width:220px;z-index:1001;">
+			<a href="index.html" style="display:block;margin-bottom:8px;white-space:nowrap;color:#fff;">Main Solver</a>
+			<a href="documentation.html"
+				style="display:block;margin-bottom:8px;white-space:nowrap;color:#fff;">Documentation</a>
+			<span style="font-weight:bold;margin-top:12px;display:block;color:#fff;">Trainers:</span>
+			<a href="cross_trainer.html"
+				style="display:block;margin-bottom:8px;white-space:nowrap;color:#fff;">Cross</a>
+			<a href="xcross_trainer.html"
+				style="display:block;margin-bottom:8px;white-space:nowrap;color:#fff;">XCross</a>
+			<a href="pairing_trainer.html" style="display:block;margin-bottom:8px;white-space:nowrap;color:#fff;">Free
+				Pair</a>
+			<a href="pseudo_xcross_trainer.html"
+				style="display:block;margin-bottom:8px;white-space:nowrap;color:#fff;">Pseudo XCross</a>
+			<a href="pseudo_pairing_trainer.html"
+				style="display:block;margin-bottom:8px;white-space:nowrap;color:#fff;">Pseudo Free Pair</a>
+			<a href="eocross_trainer.html"
+				style="display:block;margin-bottom:8px;white-space:nowrap;color:#fff;">EOCross</a>
+		</nav>
+	</div>
+	<script>
+		const hamburgerBtn = document.getElementById('hamburger-menu-btn');
+		const hamburgerMenu = document.getElementById('hamburger-menu');
+		document.addEventListener('click', function (e) {
+			if (hamburgerBtn.contains(e.target)) {
+				hamburgerMenu.classList.toggle('hidden');
+			} else if (!hamburgerMenu.contains(e.target)) {
+				hamburgerMenu.classList.add('hidden');
+			}
+		});
+	</script>
 	<a>Warning: This scrambler generates about 700 MB locally on first run; initial scramble generation may take several
 		seconds to tens of seconds. </a><br><br>
 

@@ -558,31 +558,51 @@
     <header id="header">
         <h1>Rubik's Cube Solver</h1>
     </header>
-    <h2>This is solver for Rubik's cube cross, XCross, XXCross, XXXCross, XXXXCross, free pair, last layer(OLL,
-        ZBLS, ZBLL). Pseudo XCross and free pair solver also available. EOCross and XEOCross
+    <h2>This is solver for Rubik's cube cross, XCross, XXCross, XXXCross, XXXXCross, free pair, last layer. Pseudo
+        XCross and free pair solver also available. EOCross and XEOCross
         solver also available.</h2>
-    <a href="https://github.com/or18/RubiksSolverDemo" rel="noopener noreferrer" style="white-space: nowrap;"
-        translate="no">Source</a><a>&nbsp;</a>
-    <a href="https://or18.github.io/Rubiks-cube-xcross-solver/" rel="noopener noreferrer" style="white-space: nowrap;"
-        translate="no">Old Demo</a>
-    <a href="https://or18.github.io/RubiksSolverDemo/2x2x2" rel="noopener noreferrer" style="white-space: nowrap;"
-        translate="no">2x2x2
-        Solver</a><br><br>
-    <a>Trainers:</a><br>
-    <a href="https://or18.github.io/RubiksSolverDemo/cross_trainer" rel="noopener noreferrer"
-        style="white-space: nowrap;" translate="no">Cross</a><a>&nbsp;</a>
-    <a href="https://or18.github.io/RubiksSolverDemo/xcross_trainer" rel="noopener noreferrer"
-        style="white-space: nowrap;" translate="no">XCross</a><a>&nbsp;</a>
-    <a href="https://or18.github.io/RubiksSolverDemo/pairing_trainer" rel="noopener noreferrer"
-        style="white-space: nowrap;" translate="no">Free Pair</a><a>&nbsp;</a>
-    <a href="https://or18.github.io/RubiksSolverDemo/pseudo_xcross_trainer" rel="noopener noreferrer"
-        style="white-space: nowrap;" translate="no">Pseudo XCross</a><a>&nbsp;</a>
-    <a href="https://or18.github.io/RubiksSolverDemo/pseudo_pairing_trainer" rel="noopener noreferrer"
-        style="white-space: nowrap;" translate="no">Pseudo Free Pair</a><a>&nbsp;</a>
-    <a href="https://or18.github.io/RubiksSolverDemo/eocross_trainer" rel="noopener noreferrer"
-        style="white-space: nowrap;" translate="no">EOCross</a><br><br>
-    <a>Note: Verify that the Random button (and other controls) works before use; if an alert appears, reload the page
-        manually.</a><br><br>
+    <div id="hamburger-menu-container">
+        <button id="hamburger-menu-btn" aria-label="Open menu"
+            style="background:none;border:none;cursor:pointer;font-size:2.2rem;position:absolute;top:10px;left:10px;z-index:1000;color:#fff;">
+            &#9776;
+        </button>
+        <nav id="hamburger-menu" class="hidden"
+            style="position:absolute;top:50px;left:10px;background:#1e1e1e;border:1px solid #41417f;border-radius:8px;box-shadow:0 4px 16px #000a;padding:16px;min-width:220px;z-index:1001;">
+            <a href="https://github.com/or18/RubiksSolverDemo" rel="noopener noreferrer"
+                style="display:block;margin-bottom:8px;white-space:nowrap;color:#fff;" translate="no">Source</a>
+            <a href="https://or18.github.io/Rubiks-cube-xcross-solver/" rel="noopener noreferrer"
+                style="display:block;margin-bottom:8px;white-space:nowrap;color:#fff;" translate="no">Old Demo</a>
+            <a href="2x2x2.html" rel="noopener noreferrer"
+                style="display:block;margin-bottom:8px;white-space:nowrap;color:#fff;" translate="no">2x2x2 Solver</a>
+            <a href="documentation.html" style="display:block;margin-bottom:8px;white-space:nowrap;color:#fff;"
+                translate="no">Documentation</a>
+            <span style="font-weight:bold;margin-top:12px;display:block;color:#fff;">Trainers:</span>
+            <a href="cross_trainer.html" rel="noopener noreferrer"
+                style="display:block;margin-bottom:8px;white-space:nowrap;color:#fff;" translate="no">Cross</a>
+            <a href="xcross_trainer.html" rel="noopener noreferrer"
+                style="display:block;margin-bottom:8px;white-space:nowrap;color:#fff;" translate="no">XCross</a>
+            <a href="pairing_trainer.html" rel="noopener noreferrer"
+                style="display:block;margin-bottom:8px;white-space:nowrap;color:#fff;" translate="no">Free Pair</a>
+            <a href="pseudo_xcross_trainer.html" rel="noopener noreferrer"
+                style="display:block;margin-bottom:8px;white-space:nowrap;color:#fff;" translate="no">Pseudo XCross</a>
+            <a href="pseudo_pairing_trainer.html" rel="noopener noreferrer"
+                style="display:block;margin-bottom:8px;white-space:nowrap;color:#fff;" translate="no">Pseudo Free
+                Pair</a>
+            <a href="eocross_trainer.html" rel="noopener noreferrer"
+                style="display:block;margin-bottom:8px;white-space:nowrap;color:#fff;" translate="no">EOCross</a>
+        </nav>
+    </div>
+    <script>
+        const hamburgerBtn = document.getElementById('hamburger-menu-btn');
+        const hamburgerMenu = document.getElementById('hamburger-menu');
+        document.addEventListener('click', function (e) {
+            if (hamburgerBtn.contains(e.target)) {
+                hamburgerMenu.classList.toggle('hidden');
+            } else if (!hamburgerMenu.contains(e.target)) {
+                hamburgerMenu.classList.add('hidden');
+            }
+        });
+    </script>
     <details id="details_cubeUI">
         <summary id="summary_cubeUI">Show Cube Editor</summary>
         <div class="main-container">
