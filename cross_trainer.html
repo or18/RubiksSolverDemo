@@ -637,7 +637,7 @@
 				var spaceElement2 = document.createElement('a');
 				spaceElement2.innerHTML = "&nbsp;";
 				details.appendChild(spaceElement2);
-				const currentUrl = new URL(window.localtion.href);
+				const currentUrl = new URL(window.location.href);
 				currentUrl.searchParams.set('scramble', (scr + " // setup\n").replace(/ /g, '_').replace(/'/g, '-'));
 				if (premove !== "") {
 					currentUrl.searchParams.set('premove', pm.replace(/ /g, '_').replace(/'/g, '-'));
