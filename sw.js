@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pwa-cash_v4';
+const CACHE_NAME = 'pwa-cash_v5';
 
 const urlsToCache = [
 	'index.html',
