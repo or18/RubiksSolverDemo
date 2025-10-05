@@ -4,6 +4,7 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="manifest" href="/manifest.json">
 	<title>Rubik's Cube XCross Trainer</title>
 	<meta name="description" content="Simple Rubik's Cube XCross Trainer.">
 	<script async src="https://www.googletagmanager.com/gtag/js?id=G-MXJH30352W"></script>
@@ -753,6 +754,19 @@
 
 	</script>
 
+	<script>
+		if ('serviceWorker' in navigator) {
+			window.addEventListener('load', () => {
+				navigator.serviceWorker.register('sw.js')
+					.then(registration => {
+						console.log('Service Worker registered successfully:', registration);
+					})
+					.catch(err => {
+						console.log('Service Worker registration failed:', err);
+					});
+			});
+		}
+	</script>
 
 </body>
 
