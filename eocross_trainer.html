@@ -644,7 +644,7 @@
 				var spaceElement2 = document.createElement('a');
 				spaceElement2.innerHTML = "&nbsp;";
 				details.appendChild(spaceElement2);
-				const currentUrl = new URL(window.location.href);
+				const currentUrl = new URL("index.html", window.location.href);
 				currentUrl.searchParams.set('solver', `EOCross`);
 				currentUrl.searchParams.set('scramble', (scr + " // setup\n").replace(/ /g, '_').replace(/'/g, '-'));
 				if (premove !== "") {
