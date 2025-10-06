@@ -101,10 +101,11 @@
             border: none;
             border-radius: 4px;
             cursor: pointer;
+            margin-bottom: 4px;
         }
 
         .medium {
-            max-width: 100px;
+            max-width: 90px;
         }
 
         .small {
@@ -224,7 +225,7 @@
         }
 
         .hidden_small {
-            visibility: hidden;
+            display: none;
         }
 
         a,
@@ -571,8 +572,7 @@
             style="position:absolute;top:50px;left:10px;background:#1e1e1e;border:1px solid #41417f;border-radius:8px;box-shadow:0 4px 16px #000a;padding:16px;min-width:220px;z-index:1001;">
             <a href="https://github.com/or18/RubiksSolverDemo" rel="noopener noreferrer"
                 style="display:block;margin-bottom:8px;white-space:nowrap;color:#fff;" translate="no">Source</a>
-            <a href="https://or18.github.io/Rubiks-cube-xcross-solver/" rel="noopener noreferrer"
-                style="display:block;margin-bottom:8px;white-space:nowrap;color:#fff;" translate="no">Old Demo</a>
+            <a href="index.html" style="display:block;margin-bottom:8px;white-space:nowrap;color:#fff;">Main Solver</a>
             <a href="2x2x2.html" rel="noopener noreferrer"
                 style="display:block;margin-bottom:8px;white-space:nowrap;color:#fff;" translate="no">2x2x2 Solver</a>
             <a href="documentation.html" style="display:block;margin-bottom:8px;white-space:nowrap;color:#fff;"
@@ -595,19 +595,20 @@
             <a href="https://trangium.github.io/MovecountCoefficient/" rel="noopener noreferrer"
                 style="display:block;margin-bottom:8px;white-space:nowrap;color:#fff;" translate="no">MCC by
                 trangium</a>
-            <a href="http://speedcubedb.com/a/3x3/" rel="noopener noreferrer"
-                style="display:block;margin-bottom:8px;white-space:nowrap;color:#fff;" translate="no">Speedcubedb (online)</a>
+            <a href="https://speedcubedb.com/a/3x3/" rel="noopener noreferrer"
+                style="display:block;margin-bottom:8px;white-space:nowrap;color:#fff;"
+                translate="no">speedcubedb.com</a>
             <a href="https://cstimer.net/" rel="noopener noreferrer"
-                style="display:block;margin-bottom:8px;white-space:nowrap;color:#fff;" translate="no">csTimer (online)</a>
+                style="display:block;margin-bottom:8px;white-space:nowrap;color:#fff;" translate="no">cstimer.net</a>
         </nav>
     </div>
     <script>
         const hamburgerBtn = document.getElementById('hamburger-menu-btn');
         const hamburgerMenu = document.getElementById('hamburger-menu');
         document.addEventListener('click', function (e) {
-            if (hamburgerBtn.contains(e.target)) {
+            if (hamburgerBtn && hamburgerBtn.contains(e.target)) {
                 hamburgerMenu.classList.toggle('hidden');
-            } else if (!hamburgerMenu.contains(e.target)) {
+            } else if (hamburgerMenu && !hamburgerMenu.contains(e.target)) {
                 hamburgerMenu.classList.add('hidden');
             }
         });
@@ -763,15 +764,16 @@
         <option translate="no" value="LL2">LL</option>
         <option translate="no" value="LU2">LL AUF</option>
     </select><br>
-    <button id="undo" class="button small hidden_small" onclick="undo()">←</button>
-    <button id="redo" class="button small hidden_small" onclick="redo()">→</button><br>
     <label for="scr">Scramble: </label><br>
     <textarea id="scr" rows="10" cols="10" placeholder="Use // to write comments, as in algs // comment. 
 Write the //setup comment in the appropriate position when viewing on alg.cubing.net or cubedb.net."
         onchange="save()"></textarea><br>
     <button id="gen" class="button medium" onclick="genscr()">Random</button>
     <button id="reverse" class="button medium" onclick="reverseScramble()">Reverse</button>
-    <button id="mirror" class="button medium" onclick="mirrorScramble()">Mirror</button><br><br>
+    <button id="mirror" class="button medium" onclick="mirrorScramble()">Mirror</button>
+    <button id="clear" class="button medium">Clear</button>
+    <button id="undo" class="button small hidden_small" onclick="undo()">←</button>
+    <button id="redo" class="button small hidden_small" onclick="redo()">→</button><br>
     <details id="details_preview">
         <summary id="summary_preview">Show Preview</summary>
         <div id="show"></div>
@@ -2828,7 +2830,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                     }
                     return "";
                 }
-                return scr_fix2(reverse(solution));
+                return reverse(solution);
             }
 
             function resetCubeState() {
@@ -2916,7 +2918,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             document.getElementById('ui_solve_btn').addEventListener('click', () => {
                 const ret = getscr();
                 const prerot = document.getElementById('pre_rot').value;
-                document.getElementById('scr').value = prerot + " // Pre Rotations\n" + ret + " // setup\n";
+                document.getElementById('scr').value = prerot + " // Pre Rotations\n" + ret.replace(/2'/g, '2').replace(/[\r\n]+$/, '') + " // setup\n";
                 save();
             });
 
@@ -3310,6 +3312,16 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                     add(sol);
                 };
                 details.appendChild(button);
+                var spaceElement3 = document.createElement('a');
+                spaceElement3.innerHTML = "&nbsp;";
+                details.appendChild(spaceElement3);
+                const button2 = document.createElement('button');
+                button2.classList.add('button', 'medium');
+                button2.textContent = 'Copy';
+                button2.onclick = function () {
+                    navigator.clipboard.writeText(sol);
+                };
+                details.appendChild(button2);
                 details.appendChild(summary);
                 try {
                     const sim = createPlayer(scr, sol);
@@ -3324,6 +3336,9 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                         details.appendChild(content);
                     }
                 }
+                const gap = document.createElement('div');
+                gap.style.height = '12px';
+                details.appendChild(gap);
                 const { URL1: link1, URL2: link2 } = getLink(scr + "\n" + sol);
                 var link_element1 = document.createElement('a');
                 link_element1.href = link1;
@@ -4464,12 +4479,6 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             save();
         }
 
-        document.getElementById('header').addEventListener('click', function () {
-            const url = new URL(window.location.href);
-            url.search = '';
-            window.location.href = url;
-        });
-
         const details_analyzer = document.getElementById("analyze");
         const details_eo_analyzer = document.getElementById("eo_analyze");
         const details_panalyzer = document.getElementById("panalyze");
@@ -4571,9 +4580,6 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
 
         document.getElementById('CheckboxAutoMaskSetting').addEventListener('click', function () {
             AutoMaskSetting = document.getElementById('CheckboxAutoMaskSetting').checked;
-            if (!AutoMaskSetting) {
-                resetStickeringOptions('-');
-            }
         });
 
         const modalOverlay = document.getElementById('modal-overlay');
@@ -4602,16 +4608,15 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             document.body.appendChild(tempTextArea);
 
             tempTextArea.select();
-            try {
-                document.execCommand('copy');
+            navigator.clipboard.writeText(textToCopy).then(() => {
                 modalCopyBtn.textContent = 'Success!';
                 setTimeout(() => { modalCopyBtn.textContent = 'Copy'; }, 2000);
-            } catch (err) {
+            }).catch(() => {
                 modalCopyBtn.textContent = 'Failed';
                 setTimeout(() => { modalCopyBtn.textContent = 'Copy'; }, 2000);
-            } finally {
+            }).finally(() => {
                 document.body.removeChild(tempTextArea);
-            }
+            });
         }
 
         function showModalWithCustomText() {
@@ -4629,6 +4634,11 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             if (event.key === 'Escape' && !modalOverlay.classList.contains('hidden')) {
                 hideModal();
             }
+        });
+
+        document.getElementById('clear').addEventListener('click', function () {
+            document.getElementById('scr').value = '';
+            save();
         });
 
         window.onload = function () {

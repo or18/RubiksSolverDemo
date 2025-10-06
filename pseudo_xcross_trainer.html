@@ -136,6 +136,7 @@
 			margin: 0;
 			width: 100%;
 			max-width: 600px;
+			margin-bottom: 10px;
 		}
 
 		.custom-checkbox {
@@ -653,6 +654,9 @@
 						details.appendChild(content);
 					}
 				}
+                const gap = document.createElement('div');
+                gap.style.height = '12px';
+                details.appendChild(gap);
 				const { URL1: link1, URL2: link2 } = getLink(scr + "// setup\n" + sol);
 				var link_element1 = document.createElement('a');
 				link_element1.href = link1;
@@ -674,7 +678,7 @@
 				var spaceElement2 = document.createElement('a');
 				spaceElement2.innerHTML = "&nbsp;";
 				details.appendChild(spaceElement2);
-				const currentUrl = new URL(window.location.href);
+				const currentUrl = new URL("index.html");
 				currentUrl.searchParams.set('solver', `PF2L`);
 				currentUrl.searchParams.set('scramble', (scr + " // setup\n").replace(/ /g, '_').replace(/'/g, '-'));
 				if (premove !== "") {

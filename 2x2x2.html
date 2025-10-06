@@ -101,7 +101,7 @@
         }
 
         .medium {
-            max-width: 100px;
+            max-width: 90px;
         }
 
         .small {
@@ -135,7 +135,7 @@
         }
 
         .hidden_small {
-            visibility: hidden;
+            display: none;
         }
 
         a,
@@ -162,6 +162,8 @@
         <nav id="hamburger-menu" class="hidden"
             style="position:absolute;top:50px;left:10px;background:#1e1e1e;border:1px solid #41417f;border-radius:8px;box-shadow:0 4px 16px #000a;padding:16px;min-width:220px;z-index:1001;">
             <a href="index.html" style="display:block;margin-bottom:8px;white-space:nowrap;color:#fff;">Main Solver</a>
+            <a href="2x2x2.html" rel="noopener noreferrer"
+                style="display:block;margin-bottom:8px;white-space:nowrap;color:#fff;" translate="no">2x2x2 Solver</a>
             <a href="documentation.html"
                 style="display:block;margin-bottom:8px;white-space:nowrap;color:#fff;">Documentation</a>
             <span style="font-weight:bold;margin-top:12px;display:block;color:#fff;">Trainers:</span>
@@ -193,14 +195,15 @@
             }
         });
     </script>
-    <button id="undo" class="button small hidden_small" onclick="undo()">←</button>
-    <button id="redo" class="button small hidden_small" onclick="redo()">→</button><br>
     <label for="scr">Scramble: </label><br>
     <textarea id="scr" rows="10" cols="10" placeholder="Use // to write comments, as in algs // comment. 
 Write the //setup comment in the appropriate position when viewing on alg.cubing.net or cubedb.net."
         onchange="save()"></textarea><br>
     <button id="reverse" class="button medium" onclick="reverseScramble()">Reverse</button>
-    <button id="mirror" class="button medium" onclick="mirrorScramble()">Mirror</button><br><br>
+    <button id="mirror" class="button medium" onclick="mirrorScramble()">Mirror</button>
+    <button id="clear" class="button medium">Clear</button>
+    <button id="undo" class="button small hidden_small" onclick="undo()">←</button>
+    <button id="redo" class="button small hidden_small" onclick="redo()">→</button><br>
     <details id="details_preview">
         <summary id="summary_preview">Show Preview</summary>
         <div id="show"></div>
@@ -611,6 +614,16 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                         add(sol);
                     };
                     details.appendChild(button);
+                    var spaceElement3 = document.createElement('a');
+                    spaceElement3.innerHTML = "&nbsp;";
+                    details.appendChild(spaceElement3);
+                    const button2 = document.createElement('button');
+                    button2.classList.add('button', 'medium');
+                    button2.textContent = 'Copy';
+                    button2.onclick = function () {
+                        navigator.clipboard.writeText(sol);
+                    };
+                    details.appendChild(button2);
                     details.appendChild(summary);
                     try {
                         const sim = createPlayer(scr, sol);
@@ -624,6 +637,9 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                             details.appendChild(content);
                         }
                     }
+                    const gap = document.createElement('div');
+                    gap.style.height = '12px';
+                    details.appendChild(gap);
                     const { URL1: link1, URL2: link2 } = getLink(scr + "\n" + sol);
                     var link_element1 = document.createElement('a');
                     link_element1.href = link1;
@@ -799,12 +815,6 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                 save();
             }
 
-            document.getElementById('header').addEventListener('click', function () {
-                const url = new URL(window.location.href);
-                url.search = '';
-                window.location.href = url;
-            });
-
             const details_preview = document.getElementById("details_preview");
             const summary_preview = document.getElementById("summary_preview");
 
@@ -814,6 +824,11 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                 } else {
                     summary_preview.textContent = "Show Preview";
                 }
+            });
+
+            document.getElementById('clear').addEventListener('click', function () {
+                document.getElementById('scr').value = '';
+                save();
             });
 
             window.onload = function () {
