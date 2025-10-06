@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pwa-cash_v11';
+const CACHE_NAME = 'pwa-cash_v12';
 
 const urlsToCache = [
 	'index.html',
@@ -110,10 +110,20 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
+	const { request } = event;
+	if (request.mode === 'navigate') {
+		event.respondWith(
+			caches.match(request, { ignoreSearch: true })
+				.then((response) => {
+					return response || fetch(request);
+				})
+		);
+		return;
+	}
 	event.respondWith(
-		caches.match(event.request)
+		caches.match(request)
 			.then((response) => {
-				return response || fetch(event.request);
+				return response || fetch(request);
 			})
 	);
 });
