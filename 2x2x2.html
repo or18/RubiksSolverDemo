@@ -150,6 +150,89 @@
             width: 100%;
             max-width: 600px;
         }
+
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background-color: rgba(0, 0, 0, 0.75);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            z-index: 50;
+        }
+
+        .modal-overlay.hidden {
+            display: none;
+        }
+
+        .modal-panel {
+            background-color: #1e1e1e;
+            border: 1px solid #41417f;
+            border-radius: 4px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+            width: 100%;
+            max-width: 42rem;
+            max-height: 80vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            border-bottom: 1px solid #41417f;
+        }
+
+        .modal-header h2 {
+            font-size: 20px;
+            font-weight: bold;
+            margin: 0;
+        }
+
+        .modal-header .header-left-group {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .modal-header .button-group {
+            display: flex;
+            align-items: center;
+        }
+
+        .modal-header .copy-btn {
+            padding: 5px 15px;
+            font-size: 18px;
+        }
+
+        .modal-header .close-btn {
+            font-size: 2.5rem;
+            line-height: 1;
+            background: none;
+            border: none;
+            color: #aaa;
+            cursor: pointer;
+            padding: 0 10px;
+        }
+
+        .modal-content {
+            padding: 1.5rem;
+            overflow-y: auto;
+        }
+
+        .modal-content pre {
+            font-family: Arial, sans-serif;
+            white-space: pre-wrap;
+            font-size: 18px;
+            color: #e0e0e0;
+        }
+
+        body.modal-open {
+            overflow: hidden;
+        }
     </style>
 </head>
 
@@ -180,13 +263,13 @@
             <a href="eocross_trainer.html"
                 style="display:block;margin-bottom:8px;white-space:nowrap;color:#fff;">EOCross</a>
             <span style="font-weight:bold;margin-top:12px;display:block;color:#fff;">External tools:</span>
-            <a href="https://trangium.github.io/MovecountCoefficient/" rel="noopener noreferrer"
+            <a href="https://trangium.github.io/MovecountCoefficient/" target="_blank" rel="noopener noreferrer"
                 style="display:block;margin-bottom:8px;white-space:nowrap;color:#fff;" translate="no">MCC by
                 trangium</a>
-            <a href="https://speedcubedb.com/a/2x2/" rel="noopener noreferrer"
+            <a href="https://speedcubedb.com/a/2x2/" target="_blank" rel="noopener noreferrer"
                 style="display:block;margin-bottom:8px;white-space:nowrap;color:#fff;"
                 translate="no">speedcubedb.com</a>
-            <a href="https://cstimer.net/" rel="noopener noreferrer"
+            <a href="https://cstimer.net/" target="_blank" rel="noopener noreferrer"
                 style="display:block;margin-bottom:8px;white-space:nowrap;color:#fff;" translate="no">cstimer.net</a>
         </nav>
     </div>
@@ -291,7 +374,22 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             <option translate="no" value="10">10</option>
             <option translate="no" value="11">11</option>
         </select><br>
-        <button id="solveButton" class="button medium" onclick="startWorker()">Start</button><br>
+        <button id="solveButton" class="button medium" onclick="startWorker()">Start</button>&nbsp;&nbsp;
+        <button onclick="showModalWithCustomText()" class="button medium">Export</button><br>
+        <div id="modal-overlay" class="modal-overlay hidden">
+            <div id="modal-panel" class="modal-panel">
+                <div class="modal-header">
+                    <div class="header-left-group">
+                        <h2>Output</h2>
+                        <button id="modal-copy-btn" class="button copy-btn">Copy</button>
+                    </div>
+                    <button id="modal-close-btn" class="close-btn">&times;</button>
+                </div>
+                <div class="modal-content">
+                    <pre id="modal-text-content" translate="no"></pre>
+                </div>
+            </div>
+        </div>
         <label for="countLine">Number of solutions: </label>
         <input type="text" id="countLine" value="0" readonly>
         <div id="result"></div>
@@ -380,6 +478,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             let worker;
             let messageCount = 0;
             let sol_input = false;
+            let body = "";
 
             function scr_fix(scr) {
                 const fixed_scr = scr_fix2(scr);
@@ -552,6 +651,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                         element.appendChild(content);
                         return;
                     }
+                    body = "";
                     const rot = document.getElementById('rot').value;
                     const num = document.getElementById('num').value;
                     const len = document.getElementById('len').value;
@@ -612,6 +712,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                     if (messageCount === 1 || sol_input) {
                         details.setAttribute('open', '');
                     }
+                    body += messageCount + ": " + sol + "\n";
                     const summary = document.createElement('summary');
                     summary.textContent = messageCount + ": " + sol;
                     summary.setAttribute('translate', 'no');
@@ -832,6 +933,60 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                     summary_preview.textContent = "Hide Preview";
                 } else {
                     summary_preview.textContent = "Show Preview";
+                }
+            });
+
+            const modalOverlay = document.getElementById('modal-overlay');
+            const modalPanel = document.getElementById('modal-panel');
+            const modalTextContent = document.getElementById('modal-text-content');
+            const modalCloseBtn = document.getElementById('modal-close-btn');
+            const modalCopyBtn = document.getElementById('modal-copy-btn');
+
+            function showModalWithText(text) {
+                modalTextContent.textContent = text;
+                modalOverlay.classList.remove('hidden');
+                document.body.classList.add('modal-open');
+            }
+
+            function hideModal() {
+                modalOverlay.classList.add('hidden');
+                document.body.classList.remove('modal-open');
+            }
+
+            function copyModalText() {
+                const textToCopy = modalTextContent.textContent;
+                const tempTextArea = document.createElement('textarea');
+                tempTextArea.value = textToCopy;
+                tempTextArea.style.position = 'absolute';
+                tempTextArea.style.left = '-9999px';
+                document.body.appendChild(tempTextArea);
+
+                tempTextArea.select();
+                navigator.clipboard.writeText(textToCopy).then(() => {
+                    modalCopyBtn.textContent = 'Success!';
+                    setTimeout(() => { modalCopyBtn.textContent = 'Copy'; }, 2000);
+                }).catch(() => {
+                    modalCopyBtn.textContent = 'Failed';
+                    setTimeout(() => { modalCopyBtn.textContent = 'Copy'; }, 2000);
+                }).finally(() => {
+                    document.body.removeChild(tempTextArea);
+                });
+            }
+
+            function showModalWithCustomText() {
+                showModalWithText(body);
+            }
+
+            modalCopyBtn.addEventListener('click', copyModalText);
+            modalCloseBtn.addEventListener('click', hideModal);
+            modalOverlay.addEventListener('click', (event) => {
+                if (event.target === modalOverlay) {
+                    hideModal();
+                }
+            });
+            document.addEventListener('keydown', (event) => {
+                if (event.key === 'Escape' && !modalOverlay.classList.contains('hidden')) {
+                    hideModal();
                 }
             });
 
