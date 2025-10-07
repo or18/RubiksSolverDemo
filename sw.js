@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pwa-cash_v12';
+const CACHE_NAME = 'pwa-cash_v13';
 
 const urlsToCache = [
 	'index.html',
@@ -83,8 +83,6 @@ const urlsToCache = [
 	"https://cdn.cubing.net/v0/js/chunks/chunk-XWO4ZZTV.js",
 	"https://cdn.cubing.net/v0/js/chunks/twisty-dynamic-3d-CCZCZBPC-M7CTSFGG.js",
 	"https://cdn.cubing.net/v0/js/cubing/twisty",
-	"https://trangium.github.io/MovecountCoefficient/index.html",
-	"https://trangium.github.io/algSpeed.js"
 ];
 
 self.addEventListener('install', (event) => {
