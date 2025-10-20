@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pwa-cash_v14';
+const CACHE_NAME = 'pwa-cash_v15';
 
 const urlsToCache = [
 	'index.html',
@@ -16,6 +16,9 @@ const urlsToCache = [
 	'src/2x2solver/solver.js',
 	'src/2x2solver/solver.wasm',
 	'src/2x2solver/worker.js',
+	'src/2x2solverLite/solver.js',
+	'src/2x2solverLite/solver.wasm',
+	'src/2x2solverLite/worker.js',
 	'src/crossAnalyzer/analyzer.js',
 	'src/crossAnalyzer/analyzer.wasm',
 	'src/crossAnalyzer/worker_analyzer.js',

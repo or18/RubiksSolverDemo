@@ -130,6 +130,56 @@
             margin: 10px 0;
         }
 
+        .table-res_table_wrapper {
+            max-height: 400px;
+            overflow: auto;
+        }
+
+        #move_available_table_wrapper {
+            overflow-x: auto;
+            max-width: 100%;
+            position: relative;
+        }
+
+        #move_available_table {
+            max-height: 400px;
+            overflow: auto;
+        }
+
+        #move_available_table tbody th {
+            position: -webkit-sticky;
+            position: sticky;
+            left: 0;
+            background: #1e1e1e;
+            z-index: 1;
+        }
+
+        #move_available_table thead th:first-child {
+            position: -webkit-sticky;
+            position: sticky;
+            left: 0;
+            background: #1e1e1e;
+            z-index: 2;
+        }
+
+        th,
+        td {
+            text-align: left;
+            white-space: nowrap;
+            color: #ffffff;
+            font-family: Arial, sans-serif;
+            font-size: 20px;
+            min-width: 40px;
+            min-height: 40px;
+        }
+
+        thead th {
+            position: sticky;
+            top: 0;
+            background: #1e1e1e;
+            z-index: 2;
+        }
+
         .hidden {
             display: none;
         }
@@ -149,6 +199,48 @@
             margin: 0;
             width: 100%;
             max-width: 600px;
+        }
+
+        .custom-checkbox {
+            display: none;
+        }
+
+        .custom-checkbox+label {
+            position: relative;
+            padding-left: 33px;
+            cursor: pointer;
+            font-size: 20px;
+            color: #ffffff;
+            user-select: none;
+        }
+
+        .custom-checkbox+label:before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 20px;
+            height: 20px;
+            border: 2px solid #41417f;
+            background-color: #1e1e1e;
+        }
+
+        .custom-checkbox:checked+label:before {
+            background-color: #41417f;
+            border-color: #41417f;
+        }
+
+        .custom-checkbox:checked+label:after {
+            content: '';
+            position: absolute;
+            left: 9px;
+            top: 5px;
+            width: 5px;
+            height: 10px;
+            border: solid white;
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg);
         }
 
         .modal-overlay {
@@ -233,6 +325,200 @@
         body.modal-open {
             overflow: hidden;
         }
+
+        th,
+        td {
+            text-align: left;
+            white-space: nowrap;
+            color: #ffffff;
+            font-family: Arial, sans-serif;
+            font-size: 20px;
+            min-width: 40px;
+            min-height: 40px;
+        }
+
+        .checkbox-table {
+            width: 100%;
+            max-width: 410px;
+            margin-top: 10px;
+            border-collapse: collapse;
+            border: 1px solid #41417f;
+        }
+
+        .checkbox-table td {
+            border: 1px solid #41417f;
+            padding: 10px;
+            background-color: #1e1e1e;
+            text-align: center;
+        }
+
+        .move-count-input {
+            font-family: Arial, sans-serif;
+            width: 60px;
+            max-width: 100px;
+            height: 40px;
+            font-size: 20px;
+            border: 1px solid #41417f;
+            box-sizing: border-box;
+            background-color: #1e1e1e;
+            color: #ffffff;
+            text-align: center;
+            margin: 0;
+        }
+
+        .move-count-input:disabled {
+            background-color: #333;
+            color: #777;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .main-container {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 20px;
+            width: 100%;
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: flex-start;
+            align-items: flex-start;
+            gap: 20px;
+            padding: 15px;
+            background-color: #1e1e1e;
+            border-radius: 8px;
+            border: 1px solid #41417f;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .mode-button,
+        .action-button {
+            font-size: 16px;
+            padding: 8px 16px;
+            background-color: #56567c;
+            color: #ffffff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            min-width: 100px;
+            text-align: center;
+        }
+
+        .mode-button.active {
+            background-color: #8a8ac8;
+            box-shadow: 0 0 10px #8a8ac8;
+        }
+
+        .action-button:hover,
+        .mode-button:hover {
+            background-color: #7171a8;
+        }
+
+        .color-setting-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .color-setting-row label {
+            width: 25px;
+            text-align: right;
+            font-weight: bold;
+        }
+
+        .color-selector {
+            font-size: 16px;
+            padding: 5px;
+            background-color: #1e1e1e;
+            color: #ffffff;
+            border: 1px solid #41417f;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .custom-color-picker {
+            width: 30px;
+            height: 30px;
+            padding: 0;
+            border: none;
+            background: none;
+            cursor: pointer;
+            vertical-align: middle;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .cube-scroll-container {
+            width: 100%;
+            overflow-x: auto;
+            padding-bottom: 10px;
+        }
+
+        .unfolded-cube {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            grid-template-rows: repeat(9, 1fr);
+            width: 300px;
+            height: 225px;
+            margin: 0;
+        }
+
+        .face {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            grid-template-rows: repeat(2, 1fr);
+            gap: 4px;
+            padding: 4px;
+            background-color: #111;
+            border-radius: 5px;
+        }
+
+        #face-U {
+            grid-area: 1 / 4 / 4 / 7;
+        }
+
+        #face-L {
+            grid-area: 4 / 1 / 7 / 4;
+        }
+
+        #face-F {
+            grid-area: 4 / 4 / 7 / 7;
+        }
+
+        #face-R {
+            grid-area: 4 / 7 / 7 / 10;
+        }
+
+        #face-B {
+            grid-area: 4 / 10 / 7 / 13;
+        }
+
+        #face-D {
+            grid-area: 7 / 4 / 10 / 7;
+        }
+
+        .sticker {
+            border-radius: 3px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .sticker.selected {
+            transform: scale(0.9);
+            box-shadow: 0 0 15px 3px yellow;
+            border: 2px solid yellow;
+        }
     </style>
 </head>
 
@@ -287,6 +573,141 @@
             }
         });
     </script>
+    <details id="details_cubeUI">
+        <summary id="summary_cubeUI">Show Cube Editor</summary>
+        <div class="main-container">
+            <div class="controls">
+                <div class="control-group">
+                    <div class="color-setting-row">
+                        <label for="color-selector-U">U:</label>
+                        <select id="color-selector-U" class="color-selector" data-face="U">
+                            <option value="white" selected>White</option>
+                            <option value="red">Red</option>
+                            <option value="green">Green</option>
+                            <option value="yellow">Yellow</option>
+                            <option value="orange">Orange</option>
+                            <option value="blue">Blue</option>
+                            <option value="custom">Custom</option>
+                        </select>
+                        <input type="color" id="custom-color-picker-U" class="custom-color-picker hidden" data-face="U"
+                            value="#ffffff">
+                    </div>
+                    <div class="color-setting-row">
+                        <label for="color-selector-R">R:</label>
+                        <select id="color-selector-R" class="color-selector" data-face="R">
+                            <option value="red" selected>Red</option>
+                            <option value="white">White</option>
+                            <option value="green">Green</option>
+                            <option value="yellow">Yellow</option>
+                            <option value="orange">Orange</option>
+                            <option value="blue">Blue</option>
+                            <option value="custom">Custom</option>
+                        </select>
+                        <input type="color" id="custom-color-picker-R" class="custom-color-picker hidden" data-face="R"
+                            value="#ff0000">
+                    </div>
+                    <div class="color-setting-row">
+                        <label for="color-selector-F">F:</label>
+                        <select id="color-selector-F" class="color-selector" data-face="F">
+                            <option value="green" selected>Green</option>
+                            <option value="white">White</option>
+                            <option value="red">Red</option>
+                            <option value="yellow">Yellow</option>
+                            <option value="orange">Orange</option>
+                            <option value="blue">Blue</option>
+                            <option value="custom">Custom</option>
+                        </select>
+                        <input type="color" id="custom-color-picker-F" class="custom-color-picker hidden" data-face="F"
+                            value="#00ff00">
+                    </div>
+                    <div class="color-setting-row">
+                        <label for="color-selector-D">D:</label>
+                        <select id="color-selector-D" class="color-selector" data-face="D">
+                            <option value="yellow" selected>Yellow</option>
+                            <option value="white">White</option>
+                            <option value="red">Red</option>
+                            <option value="green">Green</option>
+                            <option value="orange">Orange</option>
+                            <option value="blue">Blue</option>
+                            <option value="custom">Custom</option>
+                        </select>
+                        <input type="color" id="custom-color-picker-D" class="custom-color-picker hidden" data-face="D"
+                            value="#ffff00">
+                    </div>
+                    <div class="color-setting-row">
+                        <label for="color-selector-L">L:</label>
+                        <select id="color-selector-L" class="color-selector" data-face="L">
+                            <option value="orange" selected>Orange</option>
+                            <option value="white">White</option>
+                            <option value="red">Red</option>
+                            <option value="green">Green</option>
+                            <option value="yellow">Yellow</option>
+                            <option value="blue">Blue</option>
+                            <option value="custom">Custom</option>
+                        </select>
+                        <input type="color" id="custom-color-picker-L" class="custom-color-picker hidden" data-face="L"
+                            value="#ffa500">
+                    </div>
+                    <div class="color-setting-row">
+                        <label for="color-selector-B">B:</label>
+                        <select id="color-selector-B" class="color-selector" data-face="B">
+                            <option value="blue" selected>Blue</option>
+                            <option value="white">White</option>
+                            <option value="red">Red</option>
+                            <option value="green">Green</option>
+                            <option value="yellow">Yellow</option>
+                            <option value="orange">Orange</option>
+                            <option value="custom">Custom</option>
+                        </select>
+                        <input type="color" id="custom-color-picker-B" class="custom-color-picker hidden" data-face="B"
+                            value="#0000ff">
+                    </div>
+                </div>
+                <div class="control-group">
+                    <button id="swap-mode-btn" class="mode-button active">Swap</button>
+                    <button id="flip-mode-btn" class="mode-button">Flip</button>
+                    <button id="get-string-btn" class="action-button">Get Scramble</button>
+                    <button id="reset-cube-btn" class="action-button">Reset</button>
+                    <label for="pre_rot">Rotation: </label>
+                    <select translate="no" id="pre_rot">
+                        <option translate="no" value="">None</option>
+                        <option translate="no" value="y">y</option>
+                        <option translate="no" value="y2">y2</option>
+                        <option translate="no" value="y'">y'</option>
+                        <option translate="no" value="z2">z2</option>
+                        <option translate="no" value="z2 y">z2 y</option>
+                        <option translate="no" value="z2 y2">z2 y2</option>
+                        <option translate="no" value="z2 y'">z2 y'</option>
+                        <option translate="no" value="z'">z'</option>
+                        <option translate="no" value="z' y">z' y</option>
+                        <option translate="no" value="z' y2">z' y2</option>
+                        <option translate="no" value="z' y'">z' y'</option>
+                        <option translate="no" value="z">z</option>
+                        <option translate="no" value="z y">z y</option>
+                        <option translate="no" value="z y2">z y2</option>
+                        <option translate="no" value="z y'">z y'</option>
+                        <option translate="no" value="x'">x'</option>
+                        <option translate="no" value="x' y">x' y</option>
+                        <option translate="no" value="x' y2">x' y2</option>
+                        <option translate="no" value="x' y'">x' y'</option>
+                        <option translate="no" value="x2">x2</option>
+                        <option translate="no" value="x2 y">x2 y</option>
+                        <option translate="no" value="x2 y2">x2 y2</option>
+                        <option translate="no" value="x2 y'">x2 y'</option>
+                        <option translate="no" value="x">x</option>
+                        <option translate="no" value="x y">x y</option>
+                        <option translate="no" value="x y2">x y2</option>
+                        <option translate="no" value="x y'">x y'</option>
+                    </select>
+                    <input type="checkbox" id="CheckboxAutoPrerotSetting" class="custom-checkbox" checked>
+                    <label for="CheckboxAutoPrerotSetting">Auto Set</label>
+                </div>
+            </div>
+            <div class="cube-scroll-container">
+                <div id="cube-container" class="unfolded-cube">
+                </div>
+            </div>
+    </details>
     <label for="scr">Scramble: </label><br>
     <textarea id="scr" rows="10" cols="10" placeholder="Use // to write comments, as in algs // comment. 
 Write the //setup comment in the appropriate position when viewing on alg.cubing.net or cubedb.net."
@@ -340,26 +761,61 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
         <label for="num">Max Count: </label>
         <input type="number" id="num" value="20" min=1 required onchange="updateUrlParams()"><br>
         <label for="res">Move Restrict: </label>
-        <select translate="no" id="res" onchange="updateUrlParams()">
-            <option translate="no" value="UDLRFB">UDLRFB</option>
-            <option translate="no" value="UDRF">UDRF</option>
-            <option translate="no" value="UDLF">UDLF</option>
-            <option translate="no" value="UDRB">UDRB</option>
-            <option translate="no" value="UDLB">UDLB</option>
-            <option translate="no" value="UDLR">UDLR</option>
-            <option translate="no" value="URFB">URFB</option>
-            <option translate="no" value="ULFB">ULFB</option>
-            <option translate="no" value="URF" selected>URF</option>
-            <option translate="no" value="ULF">ULF</option>
-            <option translate="no" value="URB">URB</option>
-            <option translate="no" value="ULB">ULB</option>
-            <option translate="no" value="UDR">UDR</option>
-            <option translate="no" value="UDL">UDL</option>
-            <option translate="no" value="ULR">ULR</option>
-            <option translate="no" value="ULR">UFB</option>
-            <option translate="no" value="UR">UR</option>
-            <option translate="no" value="UL">UL</option>
-        </select><br>
+        <div translate="no" id="res" onchange="updateUrlParams()">
+
+            <table class="checkbox-table">
+                <tbody>
+                    <tr>
+                        <td>
+                            <input type="checkbox" id="checkboxU_restrict" class="custom-checkbox restrict" value="U"
+                                checked>
+                            <label translate="no" for="checkboxU_restrict">U</label>
+                        </td>
+                        <td>
+                            <input type="checkbox" id="checkboxD_restrict" class="custom-checkbox restrict" value="D"
+                                checked>
+                            <label translate="no" for="checkboxD_restrict">D</label>
+                        </td>
+                        <td>
+                            <input type="checkbox" id="checkboxL_restrict" class="custom-checkbox restrict" value="L"
+                                checked>
+                            <label translate="no" for="checkboxL_restrict">L</label>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <input type="checkbox" id="checkboxR_restrict" class="custom-checkbox restrict" value="R"
+                                checked>
+                            <label translate="no" for="checkboxR_restrict">R</label>
+                        </td>
+                        <td>
+                            <input type="checkbox" id="checkboxF_restrict" class="custom-checkbox restrict" value="F"
+                                checked>
+                            <label translate="no" for="checkboxF_restrict">F</label>
+                        </td>
+                        <td>
+                            <input type="checkbox" id="checkboxB_restrict" class="custom-checkbox restrict" value="B"
+                                checked>
+                            <label translate="no" for="checkboxB_restrict">B</label>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <input type="checkbox" id="checkboxx_restrict" class="custom-checkbox restrict" value="x">
+                            <label translate="no" for="checkboxx_restrict">x</label>
+                        </td>
+                        <td>
+                            <input type="checkbox" id="checkboxy_restrict" class="custom-checkbox restrict" value="y">
+                            <label translate="no" for="checkboxy_restrict">y</label>
+                        </td>
+                        <td>
+                            <input type="checkbox" id="checkboxz_restrict" class="custom-checkbox restrict" value="z">
+                            <label translate="no" for="checkboxz_restrict">z</label>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div><br>
         <label for="prune">Prune depth: </label>
         <select translate="no" id="prune">
             <option translate="no" value="1">1</option>
@@ -374,6 +830,51 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             <option translate="no" value="10">10</option>
             <option translate="no" value="11">11</option>
         </select><br>
+        <details id="advancedSettings">
+            <summary id="summaryAdvancedSettings">Show Advanced Settings</summary><br>
+            <label for="premove">Pre Move: </label>
+            <input type="text" id="premove" onchange="updateUrlParams()"><br>
+            <label for="res_table">Move Restrict:</label>
+            <div id="res_table_wrapper" onchange="updateUrlParams()">
+                <table id="res_table" border="2" translate="no">
+                    <thead>
+                        <tr>
+                            <th></th>
+                            <th>* </th>
+                            <th>* 2 </th>
+                            <th>* ' </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>
+            </div><br>
+            <label for="move_available_table">Move Available Table:</label>
+            <div id="move_available_table_wrapper" onchange="updateUrlParams()">
+                <table id="move_available_table" border="2" translate="no">
+                    <thead></thead>
+                    <tbody></tbody>
+                </table>
+            </div><br>
+            <label for="rot_count">Max Rotation Count: </label>
+            <input type="number" id="rot_count" value=0 min=0 required onchange="updateUrlParams()"><br>
+            <label for="count_table">Max Move Count:</label>
+            <div id="count_table_wrapper">
+                <table id="count_table" border="2" translate="no">
+                    <thead>
+                        <tr>
+                            <th></th>
+                            <th>* </th>
+                            <th>* 2 </th>
+                            <th>* ' </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>
+            </div><br>
+        </details>
+        <br>
         <button id="solveButton" class="button medium" onclick="startWorker()">Start</button>&nbsp;&nbsp;
         <button onclick="showModalWithCustomText()" class="button medium">Export</button><br>
         <div id="modal-overlay" class="modal-overlay hidden">
@@ -391,7 +892,9 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             </div>
         </div>
         <label for="countLine">Number of solutions: </label>
-        <input type="text" id="countLine" value="0" readonly>
+        <input type="text" id="countLine" value="0" readonly><br>
+        <label for="currentDepth">Current Depth: </label>
+        <input type="text" id="currentDepth" value="-1" readonly>
         <div id="result"></div>
 
         <script type="module">
@@ -476,6 +979,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             InitializeFunctions();
 
             let worker;
+            let worker2;
             let messageCount = 0;
             let sol_input = false;
             let body = "";
@@ -547,7 +1051,12 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                 'rot': 'rot',
                 'len': 'len',
                 'num': 'num',
-                'res': 'res'
+                'res': 'res',
+                'rest': 'rest',
+                'mav': 'mav',
+                'premove': 'premove',
+                'rot_count': 'rc',
+                'mcv': 'mcv'
             };
 
             const defaultValues = {
@@ -557,7 +1066,12 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                     'slot': '',
                     'len': '20',
                     'num': '20',
-                    'res': 'URF'
+                    'res': 'URF',
+                    'rest': 'U_U2_U-_R_R2_R-_F_F2_F-',
+                    'mav': '',
+                    'premove': '',
+                    'rot_count': '0',
+                    'mcv': ''
                 }
             };
 
@@ -566,13 +1080,715 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                 'rot',
                 'len',
                 'num',
-                'res'
+                'res',
+                'rest',
+                'mav',
+                'premove',
+                'rot_count',
+                'mcv'
             ];
+
+            document.addEventListener('DOMContentLoaded', () => {
+                const restrictFieldset = document.getElementById('res');
+                const tableWrapper = document.getElementById('res_table_wrapper');
+                const tableBody = document.querySelector('#res_table tbody');
+                const moveAvailableTable = document.getElementById('move_available_table');
+                const moveCountTableWrapper = document.getElementById('count_table_wrapper');
+                const moveCountTableBody = document.querySelector('#count_table tbody');
+
+                const moveDisplayNames = {
+                    x: "x", y: "y", z: "z"
+                };
+
+                function createMoveRow(move) {
+                    const displayName = moveDisplayNames[move] || move.toUpperCase();
+                    const newRow = document.createElement('tr');
+                    newRow.dataset.move = move;
+                    let rowHTML = `<th>${displayName}</th>`;
+                    for (let i = 1; i <= 3; i++) {
+                        rowHTML += `<td>
+                <input type="checkbox" id="checkbox_restrict${move}${i}" class="custom-checkbox restrict" value="${move}" checked>
+                <label for="checkbox_restrict${move}${i}"></label>
+            </td>`;
+                    }
+                    newRow.innerHTML = rowHTML;
+                    return newRow;
+                }
+
+                function updateRestrictTable() {
+                    const restrictCheckboxes = restrictFieldset.querySelectorAll('input[type="checkbox"]');
+                    restrictCheckboxes.forEach(checkbox => {
+                        const move = checkbox.value;
+                        const existingRow = tableBody.querySelector(`tr[data-move="${move}"]`);
+                        if (checkbox.checked) {
+                            if (!existingRow) {
+                                tableBody.appendChild(createMoveRow(move));
+                            }
+                        } else {
+                            if (existingRow) {
+                                existingRow.remove();
+                            }
+                        }
+                    });
+                }
+
+                function getIdsFromCheckboxes() {
+                    const resChecked = restrictFieldset.querySelectorAll('input[type="checkbox"]:checked');
+                    const resId = Array.from(resChecked).map(cb => cb.value).join('');
+
+                    const restChecked = tableBody.querySelectorAll('input[type="checkbox"]:checked');
+                    const restId = Array.from(restChecked).map(cb => {
+                        const move = cb.value;
+                        const suffix = cb.id.slice(-1);
+                        if (suffix === '1') return move;
+                        if (suffix === '2') return move + '2';
+                        if (suffix === '3') return move + '-';
+                    }).join('_');
+
+                    return [resId, restId];
+                }
+
+                function setCheckboxesFromIds([resId, restId]) {
+                    restrictFieldset.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+
+                    const resMoves = resId.split('');
+                    resMoves.forEach(move => {
+                        const cb = restrictFieldset.querySelector(`input[value="${move}"]`);
+                        if (cb) cb.checked = true;
+                    });
+
+                    updateRestrictTable();
+                    updateMoveCountTable();
+
+                    tableBody.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+
+                    const restMoves = restId.split('_');
+                    restMoves.forEach(restMove => {
+                        if (!restMove) return;
+
+                        const move = restMove.charAt(0);
+                        const suffix = restMove.slice(1);
+                        let idSuffix;
+
+                        if (suffix === '') idSuffix = '1';
+                        else if (suffix === '2') idSuffix = '2';
+                        else if (suffix === '-') idSuffix = '3';
+                        else return;
+
+                        const cb = tableBody.querySelector(`#checkbox_restrict${move}${idSuffix}`);
+                        if (cb) cb.checked = true;
+                    });
+                    updateMoveAvailableTable();
+                }
+
+                function sanitizeMoveForId(moveStr) {
+                    if (moveStr === '') return 'EMPTY';
+                    return moveStr.replace(/'/g, '-');
+                }
+
+                function updateMoveAvailableTable() {
+                    const thead = moveAvailableTable.querySelector('thead');
+                    const tbody = moveAvailableTable.querySelector('tbody');
+
+                    const previousStates = new Map();
+                    moveAvailableTable.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                        previousStates.set(cb.id, cb.checked);
+                    });
+
+                    const restChecked = tableWrapper.querySelectorAll('input[type="checkbox"]:checked');
+                    const headers = Array.from(restChecked).map(cb => {
+                        const move = cb.value;
+                        const suffix = cb.id.slice(-1);
+                        if (suffix === '1') return move;
+                        if (suffix === '2') return move + '2';
+                        if (suffix === '3') return move + "'";
+                        return '';
+                    }).filter(Boolean);
+
+                    const colHeaders = headers;
+                    const rowHeaders = [...headers, ""];
+
+                    thead.innerHTML = '';
+                    tbody.innerHTML = '';
+
+                    const headerRow = document.createElement('tr');
+                    headerRow.appendChild(document.createElement('th'));
+                    colHeaders.forEach(headerText => {
+                        const th = document.createElement('th');
+                        th.textContent = headerText;
+                        headerRow.appendChild(th);
+                    });
+                    thead.appendChild(headerRow);
+
+                    rowHeaders.forEach(rowHeaderText => {
+                        const bodyRow = document.createElement('tr');
+                        const rowTh = document.createElement('th');
+                        rowTh.textContent = rowHeaderText;
+                        bodyRow.appendChild(rowTh);
+
+                        const sanitizedRow = sanitizeMoveForId(rowHeaderText);
+
+                        colHeaders.forEach(colHeaderText => {
+                            const td = document.createElement('td');
+                            const checkbox = document.createElement('input');
+                            checkbox.type = 'checkbox';
+                            checkbox.className = 'custom-checkbox restrict';
+
+                            const sanitizedCol = sanitizeMoveForId(colHeaderText);
+                            checkbox.id = `checkbox_move_available_${sanitizedRow}_${sanitizedCol}`;
+
+                            const label = document.createElement('label');
+                            label.htmlFor = checkbox.id;
+
+                            if (previousStates.has(checkbox.id)) {
+                                checkbox.checked = previousStates.get(checkbox.id);
+                            } else {
+                                checkbox.checked = shouldBeCheckedByDefault(rowHeaderText, colHeaderText);
+                            }
+
+                            td.appendChild(checkbox);
+                            td.appendChild(label);
+                            bodyRow.appendChild(td);
+                        });
+                        tbody.appendChild(bodyRow);
+                    });
+                }
+
+
+                function updateMoveCountTable() {
+                    const checkedMoves = Array.from(restrictFieldset.querySelectorAll('input:checked'), cb => cb.value);
+                    const existingRows = new Set(Array.from(moveCountTableBody.querySelectorAll('tr'), tr => tr.dataset.move));
+
+                    existingRows.forEach(move => {
+                        if (!checkedMoves.includes(move)) {
+                            moveCountTableBody.querySelector(`tr[data-move="${move}"]`)?.remove();
+                        }
+                    });
+
+                    checkedMoves.forEach(move => {
+                        if (!existingRows.has(move)) {
+                            const newRow = moveCountTableBody.insertRow();
+                            newRow.dataset.move = move;
+                            newRow.innerHTML = `
+                            <th>${move}</th>
+                            <td><input type="number" min="0" class="move-count-input" data-move="${move}" value="20"></td>
+                            <td><input type="number" min="0" class="move-count-input" data-move="${move}2" value="20"></td>
+                            <td><input type="number" min="0" class="move-count-input" data-move="${move}-" value="20"></td>
+                        `;
+                        }
+                    });
+                }
+
+                function syncAllTables() {
+                    const checkedResMoves = new Set(Array.from(restrictFieldset.querySelectorAll('input:checked'), cb => cb.value));
+                    const allCountTableRows = moveCountTableBody.querySelectorAll('tr');
+
+                    allCountTableRows.forEach(row => {
+                        const move = row.dataset.move;
+                        row.style.display = checkedResMoves.has(move) ? '' : 'none';
+                    });
+
+                    moveCountTableBody.querySelectorAll('.move-count-input').forEach(countInput => {
+                        const moveStr = countInput.dataset.move;
+                        const moveBase = moveStr.charAt(0);
+
+                        const resCheckbox = restrictFieldset.querySelector(`input[value="${moveBase}"]`);
+                        if (!resCheckbox || !resCheckbox.checked) {
+                            return;
+                        }
+
+                        let restCheckboxId;
+                        const suffix = moveStr.slice(1);
+                        if (suffix === '') restCheckboxId = `checkbox_restrict${moveBase}1`;
+                        else if (suffix === '2') restCheckboxId = `checkbox_restrict${moveBase}2`;
+                        else if (suffix === '-') restCheckboxId = `checkbox_restrict${moveBase}3`;
+
+                        const restCheckbox = tableBody.querySelector(`#${restCheckboxId}`);
+
+                        if (restCheckbox && restCheckbox.checked) {
+                            if ((countInput.disabled && countInput.value === '0') || countInput.value === '') {
+                                countInput.value = '20';
+                            }
+                            countInput.disabled = false;
+                        } else {
+                            countInput.disabled = true;
+                            countInput.value = '0';
+                        }
+                    });
+                }
+
+                function getMavString() {
+                    const overrides = [];
+                    const table = document.getElementById('move_available_table');
+                    const rows = table.querySelectorAll('tbody tr');
+
+                    rows.forEach(row => {
+                        const rowHeaderText = row.querySelector('th').textContent;
+                        const checkboxes = row.querySelectorAll('input[type="checkbox"]');
+
+                        checkboxes.forEach((checkbox, colIndex) => {
+                            const colHeaderText = table.querySelector(`thead th:nth-child(${colIndex + 2})`).textContent;
+
+                            const isActuallyChecked = checkbox.checked;
+                            const isDefaultChecked = shouldBeCheckedByDefault(rowHeaderText, colHeaderText);
+
+                            if (isActuallyChecked !== isDefaultChecked) {
+                                const sanitizedRow = sanitizeMoveForId(rowHeaderText);
+                                const sanitizedCol = sanitizeMoveForId(colHeaderText);
+                                overrides.push(`${sanitizedRow}~${sanitizedCol}`);
+                            }
+                        });
+                    });
+
+                    return overrides.join('|');
+                }
+
+                function setMavFromString(mavString) {
+                    if (!mavString) return;
+
+                    const overrides = mavString.split('|');
+                    overrides.forEach(override => {
+                        const parts = override.split('~');
+                        if (parts.length !== 2) return;
+
+                        const [sanitizedRow, sanitizedCol] = parts;
+                        const checkboxId = `checkbox_move_available_${sanitizedRow}_${sanitizedCol}`;
+                        const checkbox = document.getElementById(checkboxId);
+
+                        if (checkbox) {
+                            checkbox.checked = !checkbox.checked;
+                        }
+                    });
+                }
+
+                function getMoveCountString() {
+                    const params = [];
+                    document.querySelectorAll('#count_table .move-count-input').forEach(input => {
+                        const row = input.closest('tr');
+                        if (row.style.display !== 'none' && !input.disabled && input.value && input.value !== "20") {
+                            params.push(`${input.dataset.move}:${input.value}`);
+                        }
+                    });
+                    return params.join('_');
+                }
+
+                function setMoveCountFromString(paramString, restId) {
+                    const activeRestMoves = new Set(restId ? restId.split('_') : []);
+
+                    document.querySelectorAll('#count_table .move-count-input').forEach(input => {
+                        const move = input.dataset.move;
+                        if (activeRestMoves.has(move)) {
+                            input.disabled = false;
+                            input.value = '20';
+                        } else {
+                            input.value = '0';
+                        }
+                    });
+
+                    if (paramString) {
+                        paramString.split('_').forEach(part => {
+                            const [moveStr, value] = part.split(':');
+                            if (moveStr && value) {
+                                const input = moveCountTableBody.querySelector(`.move-count-input[data-move="${moveStr}"]`);
+                                if (input) input.value = value;
+                            }
+                        });
+                    }
+                }
+
+                function initializePage() {
+
+                    const allPossibleMoves = Array.from(restrictFieldset.querySelectorAll('input.restrict'), cb => cb.value);
+                    allPossibleMoves.forEach(move => {
+                        const newRow = moveCountTableBody.insertRow();
+                        newRow.dataset.move = move;
+                        newRow.innerHTML = `
+                <th>${move}</th>
+                <td><input type="number" min="0" class="move-count-input" data-move="${move}"></td>
+                <td><input type="number" min="0" class="move-count-input" data-move="${move}2"></td>
+                <td><input type="number" min="0" class="move-count-input" data-move="${move}-"></td>
+            `;
+                    });
+
+                    function handleCheckboxChange() {
+                        updateRestrictTable();
+                        updateMoveCountTable();
+                        syncAllTables();
+                        updateMoveAvailableTable();
+                        updateUrlParams();
+                    }
+
+                    restrictFieldset.addEventListener('change', handleCheckboxChange);
+                    tableWrapper.addEventListener('change', () => {
+                        syncAllTables();
+                        updateMoveAvailableTable();
+                        updateUrlParams();
+                    });
+
+                    if (moveCountTableWrapper) {
+                        moveCountTableWrapper.addEventListener('input', () => { updateUrlParams(); });
+                    }
+                }
+
+                initializePage();
+
+                const faces = ['U', 'L', 'F', 'R', 'B', 'D'];
+                const cubeContainer = document.getElementById('cube-container');
+
+                faces.forEach(faceLetter => {
+                    const faceDiv = document.createElement('div');
+                    faceDiv.id = `face-${faceLetter}`;
+                    faceDiv.className = 'face';
+                    for (let i = 1; i <= 4; i++) {
+                        const stickerDiv = document.createElement('div');
+                        stickerDiv.id = `sticker-${faceLetter}${i}`;
+                        stickerDiv.className = 'sticker';
+                        faceDiv.appendChild(stickerDiv);
+                    }
+                    cubeContainer.appendChild(faceDiv);
+                });
+
+                let state = {
+                    colors: { U: 'white', R: 'red', F: 'green', D: 'yellow', L: 'orange', B: 'blue' },
+                    pieces: {},
+                    mode: 'swap',
+                    firstSelection: null
+                };
+
+                function getInitialPieces() {
+                    return {
+                        ULB: { pos: 'ULB', type: 'corner', faces: ['U1', 'L1', 'B2'] },
+                        UBR: { pos: 'UBR', type: 'corner', faces: ['U2', 'B1', 'R2'] },
+                        URF: { pos: 'URF', type: 'corner', faces: ['U4', 'R1', 'F2'] },
+                        UFL: { pos: 'UFL', type: 'corner', faces: ['U3', 'F1', 'L2'] },
+                        DBL: { pos: 'DBL', type: 'corner', faces: ['D3', 'B4', 'L3'] },
+                        DRB: { pos: 'DRB', type: 'corner', faces: ['D4', 'R4', 'B3'] },
+                        DFR: { pos: 'DFR', type: 'corner', faces: ['D2', 'F4', 'R3'] },
+                        DLF: { pos: 'DLF', type: 'corner', faces: ['D1', 'L4', 'F3'] },
+                    };
+                }
+
+                function initializePieces() {
+                    state.pieces = {
+                        ULB: { pos: 'ULB', orientation: ['U', 'L', 'B'] },
+                        UBR: { pos: 'UBR', orientation: ['U', 'B', 'R'] },
+                        URF: { pos: 'URF', orientation: ['U', 'R', 'F'] },
+                        UFL: { pos: 'UFL', orientation: ['U', 'F', 'L'] },
+                        DBL: { pos: 'DBL', orientation: ['D', 'B', 'L'] },
+                        DRB: { pos: 'DRB', orientation: ['D', 'R', 'B'] },
+                        DFR: { pos: 'DFR', orientation: ['D', 'F', 'R'] },
+                        DLF: { pos: 'DLF', orientation: ['D', 'L', 'F'] },
+                    };
+                    for (const pieceId in state.pieces) {
+                        state.pieces[pieceId].type = 'corner';
+                    }
+                }
+
+                function render() {
+                    const initialPieces = getInitialPieces();
+                    for (const pieceId in state.pieces) {
+                        const piece = state.pieces[pieceId];
+                        const originalPieceDef = initialPieces[piece.pos];
+                        originalPieceDef.faces.forEach((stickerId, index) => {
+                            const stickerEl = document.getElementById(`sticker-${stickerId}`);
+                            const faceInitial = piece.orientation[index];
+                            const colorName = state.colors[faceInitial];
+                            stickerEl.style.backgroundColor = colorName;
+                        });
+                    }
+                }
+
+                function getPieceByStickerId(stickerId) {
+                    const initialPieces = getInitialPieces();
+                    for (const piecePos in initialPieces) {
+                        const pieceDef = initialPieces[piecePos];
+                        if (pieceDef.faces.includes(stickerId)) {
+                            for (const currentPieceId in state.pieces) {
+                                if (state.pieces[currentPieceId].pos === piecePos) {
+                                    return state.pieces[currentPieceId];
+                                }
+                            }
+                        }
+                    }
+                    return null;
+                }
+
+                function handleIntelligentSwap(selection1, selection2) {
+                    const piece1 = selection1.piece;
+                    const piece2 = selection2.piece;
+                    [piece1.pos, piece2.pos] = [piece2.pos, piece1.pos];
+                    render();
+                }
+
+                function clearSelection() {
+                    const selected = document.querySelector('.sticker.selected');
+                    if (selected) selected.classList.remove('selected');
+                    state.firstSelection = null;
+                }
+
+                function getDefinitionAndRotation() {
+                    let pieceInDblPosition = null;
+                    for (const pieceId in state.pieces) {
+                        if (state.pieces[pieceId].pos === 'DBL') {
+                            pieceInDblPosition = state.pieces[pieceId];
+                            break;
+                        }
+                    }
+
+                    const orientation = pieceInDblPosition.orientation;
+                    const faceOnDSticker = orientation[0];
+                    const faceOnBSticker = orientation[1];
+
+                    const R_axis_map = { D: "", U: "z2", F: "x'", B: "x", R: "z", L: "z'" };
+                    const R_axis = R_axis_map[faceOnDSticker];
+
+                    const axisRotMaps = {
+                        "z2": (f) => ({ U: 'D', D: 'U', F: 'F', B: 'B', R: 'L', L: 'R' }[f]),
+                        "z'": (f) => ({ U: 'L', L: 'D', D: 'R', R: 'U', F: 'F', B: 'B' }[f]),
+                        "z": (f) => ({ U: 'R', R: 'D', D: 'L', L: 'U', F: 'F', B: 'B' }[f]),
+                        "x'": (f) => ({ U: 'F', F: 'D', D: 'B', B: 'U', R: 'R', L: 'L' }[f]),
+                        "x": (f) => ({ U: 'B', B: 'D', D: 'F', F: 'U', R: 'R', L: 'L' }[f]),
+                    };
+
+                    let faceOnBStickerAfterAxisRot = faceOnBSticker;
+                    if (axisRotMaps[R_axis]) {
+                        faceOnBStickerAfterAxisRot = axisRotMaps[R_axis](faceOnBSticker);
+                    }
+
+                    const R_y_map = { B: "", R: "y'", F: "y2", L: "y" };
+                    const R_y = R_y_map[faceOnBStickerAfterAxisRot] || "";
+
+                    const preRotation = (R_axis + " " + R_y).trim();
+
+                    const rotationEffectMaps = {
+                        "y'": (f) => ({ U: 'U', D: 'D', F: 'R', R: 'B', B: 'L', L: 'F' }[f]),
+                        "y2": (f) => ({ U: 'U', D: 'D', F: 'B', B: 'F', L: 'R', R: 'L' }[f]),
+                        "y": (f) => ({ U: 'U', D: 'D', F: 'L', L: 'B', B: 'R', R: 'F' }[f]),
+                        "x'": (f) => ({ U: 'F', F: 'D', D: 'B', B: 'U', L: 'L', R: 'R' }[f]),
+                        "x2": (f) => ({ U: 'D', D: 'U', F: 'B', B: 'F', L: 'L', R: 'R' }[f]),
+                        "x": (f) => ({ U: 'B', B: 'D', D: 'F', F: 'U', L: 'L', R: 'R' }[f]),
+                        "z'": (f) => ({ U: 'L', L: 'D', D: 'R', R: 'U', F: 'F', B: 'B' }[f]),
+                        "z2": (f) => ({ U: 'D', D: 'U', L: 'R', R: 'L', F: 'F', B: 'B' }[f]),
+                        "z": (f) => ({ U: 'R', R: 'D', D: 'L', L: 'U', F: 'F', B: 'B' }[f]),
+                    };
+
+                    const getSolverViewFace = (face) => {
+
+                        const parts = preRotation.split(" ");
+                        let currentFace = face;
+                        for (const part of parts) {
+                            if (rotationEffectMaps[part]) {
+                                currentFace = rotationEffectMaps[part](currentFace);
+                            }
+                        }
+                        return currentFace;
+                    };
+
+                    const stickerToFaceMap = {};
+                    const initialPieces = getInitialPieces();
+                    for (const pieceName in state.pieces) {
+                        const piece = state.pieces[pieceName];
+                        const currentPositionInfo = initialPieces[piece.pos];
+                        currentPositionInfo.faces.forEach((stickerId, index) => {
+                            stickerToFaceMap[stickerId] = piece.orientation[index];
+                        });
+                    }
+
+                    const stickerOrder = [
+                        'U1', 'U2', 'U3', 'U4', 'R1', 'R2', 'R3', 'R4',
+                        'F1', 'F2', 'F3', 'F4', 'D1', 'D2', 'D3', 'D4',
+                        'L1', 'L2', 'L3', 'L4', 'B1', 'B2', 'B3', 'B4'
+                    ];
+
+                    const finalString = stickerOrder.map(stickerId => {
+                        const originalFace = stickerToFaceMap[stickerId];
+                        return getSolverViewFace(originalFace);
+                    }).join('');
+
+                    return { defString: finalString, preRotation: preRotation };
+                }
+
+                function handleColorChange(e) {
+                    const changedFace = e.target.dataset.face;
+                    const newColor = e.target.value;
+                    const customPicker = document.getElementById(`custom-color-picker-${changedFace}`);
+
+                    if (newColor === 'custom') {
+                        customPicker.classList.remove('hidden');
+                        state.colors[changedFace] = customPicker.value;
+                    } else {
+                        customPicker.classList.add('hidden');
+                        state.colors[changedFace] = newColor;
+                    }
+                    render();
+                }
+
+                let worker2 = new Worker('src/2x2solverLite/worker.js');
+                worker2.onmessage = function (event) {
+                    const solution = event.data;
+                    if (solution === undefined || solution === null) {
+                        return;
+                    } else if (solution === "Solved") {
+                        alert("Already solved");
+                        return;
+                    } else if (solution === "Error") {
+                        alert("Corner Orientation Error.");
+                        return;
+                    } else if (solution !== "") {
+                        const reversedSolution = reverse(solution);
+                        const prerot = document.getElementById('pre_rot').value;
+                        document.getElementById('scr').value = prerot + " // Pre Rotations\n" + reversedSolution.replace(/2'/g, '2').replace(/[\r\n]+$/, '') + " // setup\n";
+                        save();
+                    }
+                };
+
+                function getscr() {
+                    if (!isFunctionsReady) {
+                        alert("The module is still initializing. Please try again in a moment.");
+                        return "";
+                    }
+                    if (typeof reverse !== "function") {
+                        alert("Error: The required function is not initialized. Please reload the page manually.");
+                        return "";
+                    }
+                    const { defString, preRotation } = getDefinitionAndRotation();
+                    const userDefinedPrerot = document.getElementById('pre_rot').value;
+                    if (CheckboxAutoPrerotSetting.checked) {
+                        document.getElementById('pre_rot').value = preRotation;
+                    }
+                    var args = { defString: defString };
+                    worker2.postMessage(args);
+                }
+
+                function resetCubeState() {
+                    initializePieces();
+                    render();
+                    clearSelection();
+                }
+
+                document.querySelectorAll('.color-selector').forEach(selector => {
+                    selector.addEventListener('change', (e) => {
+                        const changedFace = e.target.dataset.face;
+                        const newColor = e.target.value;
+                        const customPicker = document.getElementById(`custom-color-picker-${changedFace}`);
+                        state.colors[changedFace] = newColor === 'custom' ? customPicker.value : newColor;
+                        customPicker.classList.toggle('hidden', newColor !== 'custom');
+                        render();
+                    });
+                });
+
+                document.querySelectorAll('.custom-color-picker').forEach(picker => {
+                    picker.addEventListener('input', (e) => {
+                        const face = e.target.dataset.face;
+                        state.colors[face] = e.target.value;
+                        render();
+                    });
+                });
+
+                document.getElementById('swap-mode-btn').addEventListener('click', () => {
+                    state.mode = 'swap';
+                    document.getElementById('swap-mode-btn').classList.add('active');
+                    document.getElementById('flip-mode-btn').classList.remove('active');
+                    clearSelection();
+                });
+
+                document.getElementById('flip-mode-btn').addEventListener('click', () => {
+                    state.mode = 'flip';
+                    document.getElementById('flip-mode-btn').classList.add('active');
+                    document.getElementById('swap-mode-btn').classList.remove('active');
+                    clearSelection();
+                });
+
+                document.getElementById('reset-cube-btn').addEventListener('click', resetCubeState);
+
+                document.getElementById('get-string-btn').addEventListener('click', () => {
+                    getscr();
+                });
+
+                cubeContainer.addEventListener('click', (e) => {
+                    if (!e.target.classList.contains('sticker')) return;
+
+                    const stickerId = e.target.id.replace('sticker-', '');
+                    const piece = getPieceByStickerId(stickerId);
+                    if (!piece) return;
+
+                    if (state.mode === 'swap') {
+                        if (!state.firstSelection) {
+                            state.firstSelection = { piece, element: e.target, stickerId };
+                            e.target.classList.add('selected');
+                        } else {
+                            if (state.firstSelection.piece === piece) {
+                                clearSelection();
+                                return;
+                            }
+                            handleIntelligentSwap(state.firstSelection, { piece, stickerId });
+                            clearSelection();
+                        }
+                    } else if (state.mode === 'flip') {
+                        const o = piece.orientation;
+                        o.unshift(o.pop());
+                        render();
+                    }
+                });
+
+                initializePieces();
+                render();
+
+                window.getIds = getIdsFromCheckboxes;
+                window.setIds = setCheckboxesFromIds;
+                window.getMavString = getMavString;
+                window.setMavFromString = setMavFromString;
+                window.getMoveCountString = getMoveCountString;
+                window.setMoveCountFromString = setMoveCountFromString;
+                window.initializeDynamicTables = () => {
+                    updateRestrictTable();
+                    syncAllTables();
+                    updateMoveAvailableTable();
+                };
+
+            });
+
+            const AXIS_Y = ['U', 'D', 'y'];
+            const AXIS_X = ['L', 'R', 'x'];
+            const AXIS_Z = ['F', 'B', 'z'];
+            const ALL_AXES = [AXIS_Y, AXIS_X, AXIS_Z];
+
+            function getMoveBase(move) {
+                if (!move) return '';
+                return move.charAt(0);
+            }
+
+            function shouldBeCheckedByDefault(prevMove, nextMove) {
+                if (!prevMove || !nextMove) {
+                    return true;
+                }
+
+                const prevBase = getMoveBase(prevMove);
+                const nextBase = getMoveBase(nextMove);
+
+                if (prevBase === nextBase) {
+                    return false;
+                }
+
+                const axis = ALL_AXES.find(ax => ax.includes(prevBase));
+                if (axis && axis.includes(nextBase)) {
+                    const prevIndex = axis.indexOf(prevBase);
+                    const nextIndex = axis.indexOf(nextBase);
+                    if (prevIndex > nextIndex) {
+                        return false;
+                    }
+                }
+
+                return true;
+            }
 
             function updateUrlParams() {
                 const solver = "2x2x2";
                 const url = new URL(window.location.href);
                 const defaultValueTmp = defaultValues[solver];
+                const [resId, restId] = getIds();
+                const mavId = getMavString();
+                const mcString = getMoveCountString();
                 idList.forEach(id => {
                     const key = idToKeyMap[id];
                     var newValue = document.getElementById(id)?.value;
@@ -581,6 +1797,32 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                             if (newValue !== '') {
                                 newValue = encodeURIComponent(scr_fix2(newValue).replace(/ /g, '_').replace(/'/g, '-'));
                                 url.searchParams.set(key, newValue);
+                            } else {
+                                url.searchParams.delete(key);
+                            }
+                        } else if (id === 'res') {
+                            const rot_string = resId;
+                            if (resId !== defaultValueTmp[id]) {
+                                url.searchParams.set(key, rot_string);
+                            } else {
+                                url.searchParams.delete(key);
+                            }
+                        } else if (id === 'rest') {
+                            const rot_string = restId;
+                            if (restId !== defaultValueTmp[id]) {
+                                url.searchParams.set(key, rot_string);
+                            } else {
+                                url.searchParams.delete(key);
+                            }
+                        } else if (id === 'mav') {
+                            if (mavId) {
+                                url.searchParams.set(key, mavId);
+                            } else {
+                                url.searchParams.delete(key);
+                            }
+                        } else if (id === 'mcv') {
+                            if (mcString !== defaultValueTmp[id]) {
+                                url.searchParams.set(key, mcString)
                             } else {
                                 url.searchParams.delete(key);
                             }
@@ -608,7 +1850,40 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                 document.getElementById('rot').value = urlParams.get(idToKeyMap['rot']) ? urlParams.get(idToKeyMap['rot']).replace(/_/g, ' ').replace(/-/g, '\'') : defaultValues[solver]['rot'];
                 document.getElementById('len').value = urlParams.get(idToKeyMap['len']) ? urlParams.get(idToKeyMap['len']) : defaultValues[solver]['len'];
                 document.getElementById('num').value = urlParams.get(idToKeyMap['num']) ? urlParams.get(idToKeyMap['num']) : defaultValues[solver]['num'];
-                document.getElementById('res').value = urlParams.get(idToKeyMap['res']) ? urlParams.get(idToKeyMap['res']) : defaultValues[solver]['res'];
+                const premoveParam = urlParams.get(idToKeyMap['premove']);
+                if (premoveParam) {
+                    document.getElementById('premove').value = decodeURIComponent(premoveParam.replace(/_/g, ' ').replace(/-/g, "'"));
+                } else {
+                    document.getElementById('premove').value = '';
+                }
+                const resParam = urlParams.get(idToKeyMap['res']);
+                const restParam = urlParams.get(idToKeyMap['rest']);
+                const defaultRes = defaultValues[solver]['res'];
+                const defaultRest = defaultValues[solver]['rest'];
+                const finalResId = resParam || defaultRes;
+                let finalRestId;
+
+                if (restParam) {
+                    finalRestId = restParam;
+                } else if (resParam) {
+                    finalRestId = finalResId.split('').flatMap(move => [move, move + '2', move + '-']).join('_');
+                } else {
+                    finalRestId = defaultRest;
+                }
+                setIds([finalResId, finalRestId]);
+                const mavString = urlParams.get(idToKeyMap['mav']);
+                if (mavString) {
+                    setMavFromString(mavString);
+                }
+                document.getElementById('rot_count').value = urlParams.get(idToKeyMap['rot_count']) ? urlParams.get(idToKeyMap['rot_count']) : defaultValues[solver]['rot_count'];
+
+                const mcvKey = idToKeyMap['mcv'];
+                const defaultMcv = '';
+                const mcvParam = urlParams.get(mcvKey);
+                setMoveCountFromString(mcvParam ?? defaultMcv, finalRestId);
+                if (typeof window.initializeDynamicTables === 'function') {
+                    window.initializeDynamicTables();
+                }
             }
 
             function startWorker() {
@@ -639,6 +1914,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                         return;
                     }
                     document.getElementById("countLine").value = 0;
+                    document.getElementById("currentDepth").value = -1;
                     document.getElementById("result").innerHTML = "";
                     messageCount = 0;
                     const scr_val = document.getElementById("scr").value;
@@ -655,14 +1931,18 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                     const rot = document.getElementById('rot').value;
                     const num = document.getElementById('num').value;
                     const len = document.getElementById('len').value;
-                    const restrict = document.getElementById('res').value;
+                    const restrict = getIds()[1];
+                    const premove = scr_fix(document.getElementById('premove').value);
+                    const ma = getMavString();
+                    const max_rot_count = document.getElementById('rot_count').value;
+                    const mc = getMoveCountString();
                     const prune = document.getElementById('prune').value;
                     document.getElementById("solveButton").textContent = "End";
                     const convertResult = convert(scr);
                     const result_moves = convertResult[0];
                     const result_rotation = convertResult[1] + " " + rot;
 
-                    const args = { scr: result_moves, rot: rot, num: num, len: len, restrict: restrict, prune: prune };
+                    const args = { scr: result_moves, rot: rot, num: parseInt(num, 10), len: parseInt(len, 10), prune: parseInt(prune, 10), move_restrict: restrict, post_alg: premove, max_rot_count: parseInt(max_rot_count, 10), ma2: ma, mcString: mc };
                     worker = new Worker('src/2x2solver/worker.js');
                     worker.postMessage(args);
                     if (worker) {
@@ -686,6 +1966,8 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             }
 
             function appendSol(scr, sol) {
+                const regex = /^depth\s*=\s*(\d+)/;
+                const match = sol.trim().match(regex);
                 const element = document.getElementById('result');
                 if (sol == "Search finished." || sol == "Already solved." || sol == "Error" || sol == "Unsolvable.") {
                     if (worker) {
@@ -705,6 +1987,10 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                     }
                     element.appendChild(content);
                     document.getElementById("solveButton").textContent = "Start";
+                    return;
+                } else if (match && match[1]) {
+                    const depthNumber = match[1];
+                    document.getElementById('currentDepth').value = depthNumber;
                     return;
                 } else {
                     messageCount++;
@@ -993,6 +2279,18 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             document.getElementById('clear').addEventListener('click', function () {
                 document.getElementById('scr').value = '';
                 save();
+            });
+
+
+            const details_advanced_settings = document.getElementById("advancedSettings");
+            const summary_advanced_settings = document.getElementById("summaryAdvancedSettings");
+
+            details_advanced_settings.addEventListener('toggle', () => {
+                if (details_advanced_settings.open) {
+                    summary_advanced_settings.textContent = "Hide Advanced Settings";
+                } else {
+                    summary_advanced_settings.textContent = "Show Advanced Settings";
+                }
             });
 
             window.onload = function () {

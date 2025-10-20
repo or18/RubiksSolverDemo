@@ -18,8 +18,9 @@ struct State
 	std::vector<int> co;
 	std::vector<int> ep;
 	std::vector<int> eo;
+	std::vector<int> center;
 
-	State(std::vector<int> arg_cp = {0, 1, 2, 3, 4, 5, 6, 7}, std::vector<int> arg_co = {0, 0, 0, 0, 0, 0, 0, 0}, std::vector<int> arg_ep = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11}, std::vector<int> arg_eo = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}) : cp(arg_cp), co(arg_co), ep(arg_ep), eo(arg_eo) {}
+	State(std::vector<int> arg_cp = {0, 1, 2, 3, 4, 5, 6, 7}, std::vector<int> arg_co = {0, 0, 0, 0, 0, 0, 0, 0}, std::vector<int> arg_ep = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11}, std::vector<int> arg_eo = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, std::vector<int> arg_center = {0, 1, 2, 3, 4, 5}) : cp(arg_cp), co(arg_co), ep(arg_ep), eo(arg_eo), center(arg_center) {}
 
 	State apply_move(State move)
 	{
@@ -27,6 +28,7 @@ struct State
 		std::vector<int> new_co;
 		std::vector<int> new_ep;
 		std::vector<int> new_eo;
+		std::vector<int> new_center;
 		for (int i = 0; i < 8; ++i)
 		{
 			int p = move.cp[i];
@@ -39,7 +41,12 @@ struct State
 			new_ep.emplace_back(ep[p]);
 			new_eo.emplace_back((eo[p] + move.eo[i]) % 2);
 		}
-		return State(new_cp, new_co, new_ep, new_eo);
+		for (int i = 0; i < 6; ++i)
+		{
+			int p = move.center[i];
+			new_center.emplace_back(center[p]);
+		}
+		return State(new_cp, new_co, new_ep, new_eo, new_center);
 	}
 
 	State apply_move_edge(State move, int e)
@@ -52,7 +59,7 @@ struct State
 		int index_next = std::distance(move.ep.begin(), it);
 		new_ep[index_next] = e;
 		new_eo[index_next] = (eo[index] + move.eo[index_next]) % 2;
-		return State(cp, co, new_ep, new_eo);
+		return State(cp, co, new_ep, new_eo, center);
 	}
 
 	State apply_move_corner(State move, int c)
@@ -65,31 +72,115 @@ struct State
 		int index_next = std::distance(move.cp.begin(), it);
 		new_cp[index_next] = c;
 		new_co[index_next] = (co[index] + move.co[index_next]) % 3;
-		return State(new_cp, new_co, ep, eo);
+		return State(new_cp, new_co, ep, eo, center);
 	}
 };
 
 std::unordered_map<std::string, State> moves = {
-	{"U", State({3, 0, 1, 2, 4, 5, 6, 7}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 7, 4, 5, 6, 8, 9, 10, 11}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0})},
-	{"U2", State({2, 3, 0, 1, 4, 5, 6, 7}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 6, 7, 4, 5, 8, 9, 10, 11}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0})},
-	{"U'", State({1, 2, 3, 0, 4, 5, 6, 7}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 5, 6, 7, 4, 8, 9, 10, 11}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0})},
-	{"D", State({0, 1, 2, 3, 5, 6, 7, 4}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 8}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0})},
-	{"D2", State({0, 1, 2, 3, 6, 7, 4, 5}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 5, 6, 7, 10, 11, 8, 9}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0})},
-	{"D'", State({0, 1, 2, 3, 7, 4, 5, 6}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 5, 6, 7, 11, 8, 9, 10}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0})},
-	{"L", State({4, 1, 2, 0, 7, 5, 6, 3}, {2, 0, 0, 1, 1, 0, 0, 2}, {11, 1, 2, 7, 4, 5, 6, 0, 8, 9, 10, 3}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0})},
-	{"L2", State({7, 1, 2, 4, 3, 5, 6, 0}, {0, 0, 0, 0, 0, 0, 0, 0}, {3, 1, 2, 0, 4, 5, 6, 11, 8, 9, 10, 7}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0})},
-	{"L'", State({3, 1, 2, 7, 0, 5, 6, 4}, {2, 0, 0, 1, 1, 0, 0, 2}, {7, 1, 2, 11, 4, 5, 6, 3, 8, 9, 10, 0}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0})},
-	{"R", State({0, 2, 6, 3, 4, 1, 5, 7}, {0, 1, 2, 0, 0, 2, 1, 0}, {0, 5, 9, 3, 4, 2, 6, 7, 8, 1, 10, 11}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0})},
-	{"R2", State({0, 6, 5, 3, 4, 2, 1, 7}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 2, 1, 3, 4, 9, 6, 7, 8, 5, 10, 11}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0})},
-	{"R'", State({0, 5, 1, 3, 4, 6, 2, 7}, {0, 1, 2, 0, 0, 2, 1, 0}, {0, 9, 5, 3, 4, 1, 6, 7, 8, 2, 10, 11}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0})},
-	{"F", State({0, 1, 3, 7, 4, 5, 2, 6}, {0, 0, 1, 2, 0, 0, 2, 1}, {0, 1, 6, 10, 4, 5, 3, 7, 8, 9, 2, 11}, {0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 1, 0})},
-	{"F2", State({0, 1, 7, 6, 4, 5, 3, 2}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 3, 2, 4, 5, 10, 7, 8, 9, 6, 11}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0})},
-	{"F'", State({0, 1, 6, 2, 4, 5, 7, 3}, {0, 0, 1, 2, 0, 0, 2, 1}, {0, 1, 10, 6, 4, 5, 2, 7, 8, 9, 3, 11}, {0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 1, 0})},
-	{"B", State({1, 5, 2, 3, 0, 4, 6, 7}, {1, 2, 0, 0, 2, 1, 0, 0}, {4, 8, 2, 3, 1, 5, 6, 7, 0, 9, 10, 11}, {1, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0})},
-	{"B2", State({5, 4, 2, 3, 1, 0, 6, 7}, {0, 0, 0, 0, 0, 0, 0, 0}, {1, 0, 2, 3, 8, 5, 6, 7, 4, 9, 10, 11}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0})},
-	{"B'", State({4, 0, 2, 3, 5, 1, 6, 7}, {1, 2, 0, 0, 2, 1, 0, 0}, {8, 4, 2, 3, 0, 5, 6, 7, 1, 9, 10, 11}, {1, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0})}};
+	{"U", State({3, 0, 1, 2, 4, 5, 6, 7}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 7, 4, 5, 6, 8, 9, 10, 11}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 5})},
+	{"U2", State({2, 3, 0, 1, 4, 5, 6, 7}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 6, 7, 4, 5, 8, 9, 10, 11}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 5})},
+	{"U'", State({1, 2, 3, 0, 4, 5, 6, 7}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 5, 6, 7, 4, 8, 9, 10, 11}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 5})},
+	{"D", State({0, 1, 2, 3, 5, 6, 7, 4}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 8}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 5})},
+	{"D2", State({0, 1, 2, 3, 6, 7, 4, 5}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 5, 6, 7, 10, 11, 8, 9}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 5})},
+	{"D'", State({0, 1, 2, 3, 7, 4, 5, 6}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 5, 6, 7, 11, 8, 9, 10}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 5})},
+	{"L", State({4, 1, 2, 0, 7, 5, 6, 3}, {2, 0, 0, 1, 1, 0, 0, 2}, {11, 1, 2, 7, 4, 5, 6, 0, 8, 9, 10, 3}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 5})},
+	{"L2", State({7, 1, 2, 4, 3, 5, 6, 0}, {0, 0, 0, 0, 0, 0, 0, 0}, {3, 1, 2, 0, 4, 5, 6, 11, 8, 9, 10, 7}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 5})},
+	{"L'", State({3, 1, 2, 7, 0, 5, 6, 4}, {2, 0, 0, 1, 1, 0, 0, 2}, {7, 1, 2, 11, 4, 5, 6, 3, 8, 9, 10, 0}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 5})},
+	{"R", State({0, 2, 6, 3, 4, 1, 5, 7}, {0, 1, 2, 0, 0, 2, 1, 0}, {0, 5, 9, 3, 4, 2, 6, 7, 8, 1, 10, 11}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 5})},
+	{"R2", State({0, 6, 5, 3, 4, 2, 1, 7}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 2, 1, 3, 4, 9, 6, 7, 8, 5, 10, 11}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 5})},
+	{"R'", State({0, 5, 1, 3, 4, 6, 2, 7}, {0, 1, 2, 0, 0, 2, 1, 0}, {0, 9, 5, 3, 4, 1, 6, 7, 8, 2, 10, 11}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 5})},
+	{"F", State({0, 1, 3, 7, 4, 5, 2, 6}, {0, 0, 1, 2, 0, 0, 2, 1}, {0, 1, 6, 10, 4, 5, 3, 7, 8, 9, 2, 11}, {0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 1, 0}, {0, 1, 2, 3, 4, 5})},
+	{"F2", State({0, 1, 7, 6, 4, 5, 3, 2}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 3, 2, 4, 5, 10, 7, 8, 9, 6, 11}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 5})},
+	{"F'", State({0, 1, 6, 2, 4, 5, 7, 3}, {0, 0, 1, 2, 0, 0, 2, 1}, {0, 1, 10, 6, 4, 5, 2, 7, 8, 9, 3, 11}, {0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 1, 0}, {0, 1, 2, 3, 4, 5})},
+	{"B", State({1, 5, 2, 3, 0, 4, 6, 7}, {1, 2, 0, 0, 2, 1, 0, 0}, {4, 8, 2, 3, 1, 5, 6, 7, 0, 9, 10, 11}, {1, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0}, {0, 1, 2, 3, 4, 5})},
+	{"B2", State({5, 4, 2, 3, 1, 0, 6, 7}, {0, 0, 0, 0, 0, 0, 0, 0}, {1, 0, 2, 3, 8, 5, 6, 7, 4, 9, 10, 11}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 5})},
+	{"B'", State({4, 0, 2, 3, 5, 1, 6, 7}, {1, 2, 0, 0, 2, 1, 0, 0}, {8, 4, 2, 3, 0, 5, 6, 7, 1, 9, 10, 11}, {1, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0}, {0, 1, 2, 3, 4, 5})},
+	{"x", State({0, 1, 2, 3, 4, 5, 6, 7}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {4, 5, 2, 3, 1, 0})},
+	{"x2", State({0, 1, 2, 3, 4, 5, 6, 7}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {1, 0, 2, 3, 5, 4})},
+	{"x'", State({0, 1, 2, 3, 4, 5, 6, 7}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {5, 4, 2, 3, 0, 1})},
+	{"y", State({0, 1, 2, 3, 4, 5, 6, 7}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 4, 5, 3, 2})},
+	{"y2", State({0, 1, 2, 3, 4, 5, 6, 7}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 3, 2, 5, 4})},
+	{"y'", State({0, 1, 2, 3, 4, 5, 6, 7}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 5, 4, 2, 3})},
+	{"z", State({0, 1, 2, 3, 4, 5, 6, 7}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {2, 3, 1, 0, 4, 5})},
+	{"z2", State({0, 1, 2, 3, 4, 5, 6, 7}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {1, 0, 3, 2, 4, 5})},
+	{"z'", State({0, 1, 2, 3, 4, 5, 6, 7}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {3, 2, 0, 1, 4, 5})}};
 
-std::vector<std::string> move_names = {"U", "U2", "U'", "D", "D2", "D'", "L", "L2", "L'", "R", "R2", "R'", "F", "F2", "F'", "B", "B2", "B'"};
+struct VectorHash
+{
+	std::size_t operator()(const std::vector<int> &vec) const
+	{
+		std::size_t hash = 0;
+		for (int num : vec)
+		{
+			hash ^= std::hash<int>()(num) + 0x9e3779b9 + (hash << 6) + (hash >> 2);
+		}
+		return hash;
+	}
+};
+
+struct VectorEqual
+{
+	bool operator()(const std::vector<int> &lhs, const std::vector<int> &rhs) const
+	{
+		return lhs == rhs;
+	}
+};
+
+std::unordered_map<std::vector<int>, int, VectorHash, VectorEqual> center_to_index =
+	{
+		{{0, 1, 2, 3, 4, 5}, 0},
+		{{0, 1, 4, 5, 3, 2}, 1},
+		{{0, 1, 3, 2, 5, 4}, 2},
+		{{0, 1, 5, 4, 2, 3}, 3},
+		{{1, 0, 3, 2, 4, 5}, 4},
+		{{1, 0, 4, 5, 2, 3}, 5},
+		{{1, 0, 2, 3, 5, 4}, 6},
+		{{1, 0, 5, 4, 3, 2}, 7},
+		{{3, 2, 0, 1, 4, 5}, 8},
+		{{3, 2, 4, 5, 1, 0}, 9},
+		{{3, 2, 1, 0, 5, 4}, 10},
+		{{3, 2, 5, 4, 0, 1}, 11},
+		{{2, 3, 1, 0, 4, 5}, 12},
+		{{2, 3, 4, 5, 0, 1}, 13},
+		{{2, 3, 0, 1, 5, 4}, 14},
+		{{2, 3, 5, 4, 1, 0}, 15},
+		{{5, 4, 2, 3, 0, 1}, 16},
+		{{5, 4, 0, 1, 3, 2}, 17},
+		{{5, 4, 3, 2, 1, 0}, 18},
+		{{5, 4, 1, 0, 2, 3}, 19},
+		{{4, 5, 2, 3, 1, 0}, 20},
+		{{4, 5, 1, 0, 3, 2}, 21},
+		{{4, 5, 3, 2, 0, 1}, 22},
+		{{4, 5, 0, 1, 2, 3}, 23}};
+
+std::vector<std::vector<int>> index_to_center =
+	{
+		{0, 1, 2, 3, 4, 5},
+		{0, 1, 4, 5, 3, 2},
+		{0, 1, 3, 2, 5, 4},
+		{0, 1, 5, 4, 2, 3},
+		{1, 0, 3, 2, 4, 5},
+		{1, 0, 4, 5, 2, 3},
+		{1, 0, 2, 3, 5, 4},
+		{1, 0, 5, 4, 3, 2},
+		{3, 2, 0, 1, 4, 5},
+		{3, 2, 4, 5, 1, 0},
+		{3, 2, 1, 0, 5, 4},
+		{3, 2, 5, 4, 0, 1},
+		{2, 3, 1, 0, 4, 5},
+		{2, 3, 4, 5, 0, 1},
+		{2, 3, 0, 1, 5, 4},
+		{2, 3, 5, 4, 1, 0},
+		{5, 4, 2, 3, 0, 1},
+		{5, 4, 0, 1, 3, 2},
+		{5, 4, 3, 2, 1, 0},
+		{5, 4, 1, 0, 2, 3},
+		{4, 5, 2, 3, 1, 0},
+		{4, 5, 1, 0, 3, 2},
+		{4, 5, 3, 2, 0, 1},
+		{4, 5, 0, 1, 2, 3}};
+
+std::vector<std::string> move_names = {"U", "U2", "U'", "D", "D2", "D'", "L", "L2", "L'", "R", "R2", "R'", "F", "F2", "F'", "B", "B2", "B'", "x", "x2", "x'", "y", "y2", "y'", "z", "z2", "z'"};
 
 std::string AlgToString(std::vector<int> &alg)
 {
@@ -120,66 +211,78 @@ std::vector<int> StringToAlg(std::string str)
 	return alg;
 }
 
-std::vector<int> AlgConvertRotation(std::vector<int> alg, std::string rotation)
+std::vector<std::vector<int>> rotationMap =
+	{
+		{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26},
+		{0, 1, 2, 3, 4, 5, 15, 16, 17, 12, 13, 14, 6, 7, 8, 9, 10, 11, 24, 25, 26, 21, 22, 23, 20, 19, 18},
+		{0, 1, 2, 3, 4, 5, 9, 10, 11, 6, 7, 8, 15, 16, 17, 12, 13, 14, 20, 19, 18, 21, 22, 23, 26, 25, 24},
+		{0, 1, 2, 3, 4, 5, 12, 13, 14, 15, 16, 17, 9, 10, 11, 6, 7, 8, 26, 25, 24, 21, 22, 23, 18, 19, 20},
+		{3, 4, 5, 0, 1, 2, 9, 10, 11, 6, 7, 8, 12, 13, 14, 15, 16, 17, 20, 19, 18, 23, 22, 21, 24, 25, 26},
+		{3, 4, 5, 0, 1, 2, 12, 13, 14, 15, 16, 17, 6, 7, 8, 9, 10, 11, 26, 25, 24, 23, 22, 21, 20, 19, 18},
+		{3, 4, 5, 0, 1, 2, 6, 7, 8, 9, 10, 11, 15, 16, 17, 12, 13, 14, 18, 19, 20, 23, 22, 21, 26, 25, 24},
+		{3, 4, 5, 0, 1, 2, 15, 16, 17, 12, 13, 14, 9, 10, 11, 6, 7, 8, 24, 25, 26, 23, 22, 21, 18, 19, 20},
+		{6, 7, 8, 9, 10, 11, 3, 4, 5, 0, 1, 2, 12, 13, 14, 15, 16, 17, 21, 22, 23, 20, 19, 18, 24, 25, 26},
+		{15, 16, 17, 12, 13, 14, 3, 4, 5, 0, 1, 2, 6, 7, 8, 9, 10, 11, 21, 22, 23, 26, 25, 24, 20, 19, 18},
+		{9, 10, 11, 6, 7, 8, 3, 4, 5, 0, 1, 2, 15, 16, 17, 12, 13, 14, 21, 22, 23, 18, 19, 20, 26, 25, 24},
+		{12, 13, 14, 15, 16, 17, 3, 4, 5, 0, 1, 2, 9, 10, 11, 6, 7, 8, 21, 22, 23, 24, 25, 26, 18, 19, 20},
+		{9, 10, 11, 6, 7, 8, 0, 1, 2, 3, 4, 5, 12, 13, 14, 15, 16, 17, 23, 22, 21, 18, 19, 20, 24, 25, 26},
+		{12, 13, 14, 15, 16, 17, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 23, 22, 21, 24, 25, 26, 20, 19, 18},
+		{6, 7, 8, 9, 10, 11, 0, 1, 2, 3, 4, 5, 15, 16, 17, 12, 13, 14, 23, 22, 21, 20, 19, 18, 26, 25, 24},
+		{15, 16, 17, 12, 13, 14, 0, 1, 2, 3, 4, 5, 9, 10, 11, 6, 7, 8, 23, 22, 21, 26, 25, 24, 18, 19, 20},
+		{12, 13, 14, 15, 16, 17, 6, 7, 8, 9, 10, 11, 3, 4, 5, 0, 1, 2, 18, 19, 20, 24, 25, 26, 23, 22, 21},
+		{6, 7, 8, 9, 10, 11, 15, 16, 17, 12, 13, 14, 3, 4, 5, 0, 1, 2, 24, 25, 26, 20, 19, 18, 23, 22, 21},
+		{15, 16, 17, 12, 13, 14, 9, 10, 11, 6, 7, 8, 3, 4, 5, 0, 1, 2, 20, 19, 18, 26, 25, 24, 23, 22, 21},
+		{9, 10, 11, 6, 7, 8, 12, 13, 14, 15, 16, 17, 3, 4, 5, 0, 1, 2, 26, 25, 24, 18, 19, 20, 23, 22, 21},
+		{15, 16, 17, 12, 13, 14, 6, 7, 8, 9, 10, 11, 0, 1, 2, 3, 4, 5, 18, 19, 20, 26, 25, 24, 21, 22, 23},
+		{9, 10, 11, 6, 7, 8, 15, 16, 17, 12, 13, 14, 0, 1, 2, 3, 4, 5, 24, 25, 26, 18, 19, 20, 21, 22, 23},
+		{12, 13, 14, 15, 16, 17, 9, 10, 11, 6, 7, 8, 0, 1, 2, 3, 4, 5, 20, 19, 18, 24, 25, 26, 21, 22, 23},
+		{6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 0, 1, 2, 3, 4, 5, 26, 25, 24, 20, 19, 18, 21, 22, 23}};
+
+std::vector<std::vector<int>> rotationMapReverse =
+	{
+		{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26},
+		{0, 1, 2, 3, 4, 5, 12, 13, 14, 15, 16, 17, 9, 10, 11, 6, 7, 8, 26, 25, 24, 21, 22, 23, 18, 19, 20},
+		{0, 1, 2, 3, 4, 5, 9, 10, 11, 6, 7, 8, 15, 16, 17, 12, 13, 14, 20, 19, 18, 21, 22, 23, 26, 25, 24},
+		{0, 1, 2, 3, 4, 5, 15, 16, 17, 12, 13, 14, 6, 7, 8, 9, 10, 11, 24, 25, 26, 21, 22, 23, 20, 19, 18},
+		{3, 4, 5, 0, 1, 2, 9, 10, 11, 6, 7, 8, 12, 13, 14, 15, 16, 17, 20, 19, 18, 23, 22, 21, 24, 25, 26},
+		{3, 4, 5, 0, 1, 2, 12, 13, 14, 15, 16, 17, 6, 7, 8, 9, 10, 11, 26, 25, 24, 23, 22, 21, 20, 19, 18},
+		{3, 4, 5, 0, 1, 2, 6, 7, 8, 9, 10, 11, 15, 16, 17, 12, 13, 14, 18, 19, 20, 23, 22, 21, 26, 25, 24},
+		{3, 4, 5, 0, 1, 2, 15, 16, 17, 12, 13, 14, 9, 10, 11, 6, 7, 8, 24, 25, 26, 23, 22, 21, 18, 19, 20},
+		{9, 10, 11, 6, 7, 8, 0, 1, 2, 3, 4, 5, 12, 13, 14, 15, 16, 17, 23, 22, 21, 18, 19, 20, 24, 25, 26},
+		{9, 10, 11, 6, 7, 8, 12, 13, 14, 15, 16, 17, 3, 4, 5, 0, 1, 2, 26, 25, 24, 18, 19, 20, 23, 22, 21},
+		{9, 10, 11, 6, 7, 8, 3, 4, 5, 0, 1, 2, 15, 16, 17, 12, 13, 14, 21, 22, 23, 18, 19, 20, 26, 25, 24},
+		{9, 10, 11, 6, 7, 8, 15, 16, 17, 12, 13, 14, 0, 1, 2, 3, 4, 5, 24, 25, 26, 18, 19, 20, 21, 22, 23},
+		{6, 7, 8, 9, 10, 11, 3, 4, 5, 0, 1, 2, 12, 13, 14, 15, 16, 17, 21, 22, 23, 20, 19, 18, 24, 25, 26},
+		{6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 0, 1, 2, 3, 4, 5, 26, 25, 24, 20, 19, 18, 21, 22, 23},
+		{6, 7, 8, 9, 10, 11, 0, 1, 2, 3, 4, 5, 15, 16, 17, 12, 13, 14, 23, 22, 21, 20, 19, 18, 26, 25, 24},
+		{6, 7, 8, 9, 10, 11, 15, 16, 17, 12, 13, 14, 3, 4, 5, 0, 1, 2, 24, 25, 26, 20, 19, 18, 23, 22, 21},
+		{15, 16, 17, 12, 13, 14, 6, 7, 8, 9, 10, 11, 0, 1, 2, 3, 4, 5, 18, 19, 20, 26, 25, 24, 21, 22, 23},
+		{15, 16, 17, 12, 13, 14, 0, 1, 2, 3, 4, 5, 9, 10, 11, 6, 7, 8, 23, 22, 21, 26, 25, 24, 18, 19, 20},
+		{15, 16, 17, 12, 13, 14, 9, 10, 11, 6, 7, 8, 3, 4, 5, 0, 1, 2, 20, 19, 18, 26, 25, 24, 23, 22, 21},
+		{15, 16, 17, 12, 13, 14, 3, 4, 5, 0, 1, 2, 6, 7, 8, 9, 10, 11, 21, 22, 23, 26, 25, 24, 20, 19, 18},
+		{12, 13, 14, 15, 16, 17, 6, 7, 8, 9, 10, 11, 3, 4, 5, 0, 1, 2, 18, 19, 20, 24, 25, 26, 23, 22, 21},
+		{12, 13, 14, 15, 16, 17, 3, 4, 5, 0, 1, 2, 9, 10, 11, 6, 7, 8, 21, 22, 23, 24, 25, 26, 18, 19, 20},
+		{12, 13, 14, 15, 16, 17, 9, 10, 11, 6, 7, 8, 0, 1, 2, 3, 4, 5, 20, 19, 18, 24, 25, 26, 21, 22, 23},
+		{12, 13, 14, 15, 16, 17, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 23, 22, 21, 24, 25, 26, 20, 19, 18}};
+
+std::vector<int> AlgRotation(std::vector<int> &alg, std::vector<int> &rotation_alg, std::vector<std::vector<int>> &table)
 {
-	if (rotation.empty())
+	if (rotation_alg.empty())
 	{
 		return alg;
 	}
-	std::vector<int> face_list_0 = {0, 1, 2, 3, 4, 5};
-	std::vector<int> face_list;
-	if (rotation == "x")
+	int l = alg.size();
+	std::vector<int> ret(l, 0);
+	int c = 0;
+	for (int r : rotation_alg)
 	{
-		face_list = {5, 4, 2, 3, 0, 1};
+		c = table[c][r];
 	}
-	else if (rotation == "x2")
+	for (int i = 0; i < l; ++i)
 	{
-		face_list = {1, 0, 2, 3, 5, 4};
+		ret[i] = rotationMap[c][alg[i]];
 	}
-	else if (rotation == "x'")
-	{
-		face_list = {4, 5, 2, 3, 1, 0};
-	}
-	else if (rotation == "y")
-	{
-		face_list = {0, 1, 5, 4, 2, 3};
-	}
-	else if (rotation == "y2")
-	{
-		face_list = {0, 1, 3, 2, 5, 4};
-	}
-	else if (rotation == "y'")
-	{
-		face_list = {0, 1, 4, 5, 3, 2};
-	}
-	else if (rotation == "z")
-	{
-		face_list = {3, 2, 0, 1, 4, 5};
-	}
-	else if (rotation == "z2")
-	{
-		face_list = {1, 0, 3, 2, 4, 5};
-	}
-	else if (rotation == "z'")
-	{
-		face_list = {2, 3, 1, 0, 4, 5};
-	}
-	for (size_t i = 0; i < alg.size(); ++i)
-	{
-		alg[i] = 3 * face_list[alg[i] / 3] + alg[i] % 3;
-	}
-	return alg;
-}
-
-std::vector<int> AlgRotation(std::vector<int> alg, std::string rotation_algString)
-{
-	std::istringstream iss(rotation_algString);
-	std::string rot;
-	while (iss >> rot)
-	{
-		alg = AlgConvertRotation(alg, rot);
-	}
-	return alg;
+	return ret;
 }
 
 std::vector<std::vector<int>> c_array = {{0}, {1, 1, 1, 1, 1, 1, 1, 1, 1}, {1, 2, 4, 8, 16, 32}, {1, 3, 9, 27, 81, 243}};
@@ -275,9 +378,10 @@ std::vector<int> create_cp_move_table()
 		std::vector<int> eo(12, 0);
 		std::vector<int> cp(8, -1);
 		std::vector<int> co(8, -1);
+		std::vector<int> center = {0, 1, 2, 3, 4, 5};
 		cp[i] = i;
 		co[i] = 0;
-		State state(cp, co, ep, eo);
+		State state(cp, co, ep, eo, center);
 		for (int j = 0; j < 18; ++j)
 		{
 			State new_state = state.apply_move_corner(moves[move_names[j]], i);
@@ -297,8 +401,9 @@ std::vector<int> create_co_move_table()
 		std::vector<int> eo(12, 0);
 		std::vector<int> cp(8, 0);
 		std::vector<int> co(8, 0);
+		std::vector<int> center = {0, 1, 2, 3, 4, 5};
 		index_to_o(co, i, 3, 8);
-		State state(cp, co, ep, eo);
+		State state(cp, co, ep, eo, center);
 		for (int j = 0; j < 18; ++j)
 		{
 			State new_state = state.apply_move(moves[move_names[j]]);
@@ -308,9 +413,29 @@ std::vector<int> create_co_move_table()
 	return move_table;
 }
 
+std::vector<std::vector<int>> create_center_move_table()
+{
+	std::vector<std::vector<int>> move_table(24, std::vector<int>(27, 0));
+	for (int i = 0; i < 24; ++i)
+	{
+		std::vector<int> ep(12, 0);
+		std::vector<int> eo(12, 0);
+		std::vector<int> cp(8, 0);
+		std::vector<int> co(8, 0);
+		std::vector<int> center = index_to_center[i];
+		State state(cp, co, ep, eo, center);
+		for (int j = 0; j < 27; ++j)
+		{
+			State new_state = state.apply_move(moves[move_names[j]]);
+			move_table[i][j] = center_to_index[new_state.center];
+		}
+	}
+	return move_table;
+}
+
 std::vector<int> create_multi_move_table(int n, int c, int pn, int size, const std::vector<int> &table)
 {
-	std::vector<int> move_table(size * 18 + 1, -1);
+	std::vector<int> move_table(size * 18, -1);
 	int tmp;
 	int tmp_i;
 	std::vector<int> a(n);
@@ -337,15 +462,16 @@ std::vector<int> create_multi_move_table(int n, int c, int pn, int size, const s
 	return move_table;
 }
 
-void create_prune_table(const std::vector<int> &table1, const std::vector<int> &table2, std::vector<unsigned char> &prune_table, std::vector<int> &move_restrict, int prune_depth)
+void create_prune_table(const std::vector<int> &table1, const std::vector<int> &table2, std::vector<unsigned char> &prune_table, std::vector<int> &move_restrict, int prune_depth, std::vector<unsigned char> &tmp_array, std::vector<std::vector<int>> &center_move_table)
 {
 	int size = 88179840;
+	tmp_array = std::vector<unsigned char>(size, 0);
 	int size2 = 2187;
 	int next_i;
 	int index1_tmp;
 	int index2_tmp;
 	int next_d;
-	std::vector<std::string> af = {"", "L R' ", "L' R", "F B' ", "F2 B2 ", "F' B "};
+	std::vector<std::string> af = {"", "F2 B2 ", "F' B ", "F B' ", "L R' ", "L' R"};
 	std::vector<std::string> ad = {"U D'", "U2 D2", "U' D"};
 	for (int i = 0; i < 6; ++i)
 	{
@@ -359,6 +485,7 @@ void create_prune_table(const std::vector<int> &table1, const std::vector<int> &
 			index2_tmp = table2[index2_tmp * 18 + k];
 		}
 		prune_table[index1_tmp * size2 + index2_tmp] = 0;
+		tmp_array[index1_tmp * size2 + index2_tmp] = 4 * i;
 		for (int j = 0; j < 3; ++j)
 		{
 			tmp_scr = ad[j];
@@ -371,10 +498,28 @@ void create_prune_table(const std::vector<int> &table1, const std::vector<int> &
 				index2_tmp2 = table2[index2_tmp2 * 18 + k];
 			}
 			prune_table[index1_tmp2 * size2 + index2_tmp2] = 0;
+			tmp_array[index1_tmp2 * size2 + index2_tmp2] = 4 * i + j + 1;
 		}
 	}
 	int num = 24;
 	int num_old = 24;
+	int m;
+	int center = 0;
+	int center_tmp;
+	std::bitset<27> computed;
+	std::vector<int> move_restrict_move;
+	std::vector<int> move_restrict_rot;
+	for (int i : move_restrict)
+	{
+		if (i < 18)
+		{
+			move_restrict_move.emplace_back(i);
+		}
+		else
+		{
+			move_restrict_rot.emplace_back(i);
+		}
+	}
 	for (int d = 0; d < prune_depth; ++d)
 	{
 		next_d = d + 1;
@@ -384,13 +529,49 @@ void create_prune_table(const std::vector<int> &table1, const std::vector<int> &
 			{
 				index1_tmp = (i / size2) * 18;
 				index2_tmp = (i % size2) * 18;
-				for (int j : move_restrict)
+				center = tmp_array[i];
+				for (int j : move_restrict_move)
 				{
-					next_i = table1[index1_tmp + j] * size2 + table2[index2_tmp + j];
-					if (prune_table[next_i] == 255)
+					computed.reset();
+					if (j >= 18)
 					{
-						prune_table[next_i] = next_d;
-						num += 1;
+						continue;
+					}
+					m = rotationMapReverse[center][j];
+					if (!computed[m])
+					{
+						next_i = table1[index1_tmp + m] * size2 + table2[index2_tmp + m];
+						if (prune_table[next_i] == 255)
+						{
+							tmp_array[next_i] = center_move_table[center][j];
+							prune_table[next_i] = next_d;
+							num += 1;
+						}
+						computed.set(m);
+					}
+					else
+					{
+						continue;
+					}
+					for (int r : move_restrict_rot)
+					{
+						center_tmp = center_move_table[center][r];
+						m = rotationMapReverse[center_tmp][j];
+						if (!computed[m])
+						{
+							next_i = table1[index1_tmp + m] * size2 + table2[index2_tmp + m];
+							if (prune_table[next_i] == 255)
+							{
+								tmp_array[next_i] = center_move_table[center][j];
+								prune_table[next_i] = next_d;
+								num += 1;
+							}
+							computed.set(m);
+						}
+						else
+						{
+							continue;
+						}
 					}
 				}
 			}
@@ -428,6 +609,8 @@ struct search
 	int max_length;
 	int sol_num;
 	int count;
+	std::vector<std::vector<int>> center_move_table;
+	std::vector<unsigned char> tmp_array;
 	std::vector<int> single_cp_move_table;
 	std::vector<int> cp_move_table;
 	std::vector<int> co_move_table;
@@ -435,40 +618,51 @@ struct search
 	std::vector<int> alg;
 	std::vector<std::string> restrict;
 	std::vector<int> move_restrict;
+	std::vector<int> move_restrict_move;
+	std::vector<int> move_restrict_rot;
 	std::vector<bool> ma;
+	std::vector<bool> ma2;
+	std::vector<int> mc;
+	std::vector<int> mc_tmp;
 	int index1;
 	int index2;
 	int index1_tmp;
 	int index2_tmp;
 	int prune_tmp;
 	std::string tmp;
-	int current_max_depth;
+	int m;
+	int m_tmp;
+	int max_rot_count;
+	std::string post_moves;
+	int initial_center;
 
 	search()
 	{
+		center_move_table = create_center_move_table();
 		prune_table = std::vector<unsigned char>(88179840, 255);
 		single_cp_move_table = create_cp_move_table();
 		cp_move_table = create_multi_move_table(8, 1, 8, 40320, single_cp_move_table);
-		ma = create_ma_table();
 		co_move_table = create_co_move_table();
 	}
 
-	bool depth_limited_search(int arg_index1, int arg_index2, int depth, int prev)
+	bool depth_limited_search(int arg_index1, int arg_index2, int depth, int center, int rot_count, int aprev)
 	{
-		for (int i : move_restrict)
+		for (int i : move_restrict_move)
 		{
-			if (ma[prev + i])
+			if (ma2[aprev + i] || mc_tmp[i] >= mc[i])
 			{
 				continue;
 			}
-			index1_tmp = cp_move_table[arg_index1 + i];
-			index2_tmp = co_move_table[arg_index2 + i];
+			m = rotationMapReverse[center][i];
+			index1_tmp = cp_move_table[arg_index1 + m];
+			index2_tmp = co_move_table[arg_index2 + m];
 			prune_tmp = prune_table[index1_tmp * 2187 + index2_tmp];
 			if (prune_tmp != 255 && prune_tmp >= depth)
 			{
 				continue;
 			}
-			sol[current_max_depth - depth] = i;
+			sol.emplace_back(i);
+			mc_tmp[i] += 1;
 			if (depth == 1)
 			{
 				if (prune_tmp == 0)
@@ -476,11 +670,27 @@ struct search
 					bool valid = true;
 					int l = static_cast<int>(sol.size());
 					int c = 0;
+					int rot_count_tmp = 0;
+					int center_tmp = initial_center;
 					int index1_tmp2 = index1;
 					int index2_tmp2 = index2;
 					for (int j : sol)
 					{
-						if (index1_tmp2 == cp_move_table[index1_tmp2 + j] * 18 && index2_tmp2 == co_move_table[index2_tmp2 + j] * 18)
+						if (j >= 18)
+						{
+							center_tmp = center_move_table[center_tmp][j];
+							c++;
+							rot_count_tmp++;
+							if (rot_count_tmp > max_rot_count)
+							{
+								valid = false;
+								break;
+							}
+							continue;
+						}
+						m_tmp = rotationMapReverse[center_tmp][j];
+						center_tmp = center_move_table[center_tmp][j];
+						if (index1_tmp2 == cp_move_table[index1_tmp2 + m_tmp] * 18 && index2_tmp2 == co_move_table[index2_tmp2 + m_tmp] * 18)
 						{
 							valid = false;
 							break;
@@ -488,8 +698,8 @@ struct search
 						else
 						{
 							c += 1;
-							index1_tmp2 = cp_move_table[index1_tmp2 + j];
-							index2_tmp2 = co_move_table[index2_tmp2 + j];
+							index1_tmp2 = cp_move_table[index1_tmp2 + m_tmp];
+							index2_tmp2 = co_move_table[index2_tmp2 + m_tmp];
 							if (c < l && prune_table[index1_tmp2 * 2187 + index2_tmp2] == 0)
 							{
 								valid = false;
@@ -504,11 +714,11 @@ struct search
 						count += 1;
 						if (rotation == "")
 						{
-							tmp = AlgToString(sol);
+							tmp = post_moves + AlgToString(sol);
 						}
 						else
 						{
-							tmp = rotation + " " + AlgToString(sol);
+							tmp = rotation + " " + post_moves + AlgToString(sol);
 						}
 						update(tmp.c_str());
 						if (count == sol_num)
@@ -518,35 +728,177 @@ struct search
 					}
 				}
 			}
-			else if (depth_limited_search(index1_tmp * 18, index2_tmp * 18, depth - 1, i * 18))
+			else if (depth_limited_search(index1_tmp * 18, index2_tmp * 18, depth - 1, center_move_table[center][i], rot_count, i * 27))
 			{
 				return true;
 			}
+			sol.pop_back();
+			mc_tmp[i] -= 1;
+		}
+		for (int i : move_restrict_rot)
+		{
+			if (ma2[aprev + i] || mc_tmp[i] >= mc[i])
+			{
+				continue;
+			}
+			if (rot_count >= max_rot_count)
+			{
+				continue;
+			}
+			index1_tmp = arg_index1 / 18;
+			index2_tmp = arg_index2 / 18;
+			prune_tmp = prune_table[index1_tmp * 2187 + index2_tmp];
+			if (prune_tmp != 255 && prune_tmp >= depth)
+			{
+				continue;
+			}
+			sol.emplace_back(i);
+			mc_tmp[i] += 1;
+			if (depth == 1)
+			{
+				if (prune_tmp == 0)
+				{
+					bool valid = true;
+					int l = static_cast<int>(sol.size());
+					int c = 0;
+					int rot_count_tmp = 0;
+					int center_tmp = initial_center;
+					int index1_tmp2 = index1;
+					int index2_tmp2 = index2;
+					for (int j : sol)
+					{
+						if (j >= 18)
+						{
+							center_tmp = center_move_table[center_tmp][j];
+							c++;
+							rot_count_tmp++;
+							if (rot_count_tmp > max_rot_count)
+							{
+								valid = false;
+								break;
+							}
+							continue;
+						}
+						m_tmp = rotationMapReverse[center_tmp][j];
+						center_tmp = center_move_table[center_tmp][j];
+						if (index1_tmp2 == cp_move_table[index1_tmp2 + m_tmp] * 18 && index2_tmp2 == co_move_table[index2_tmp2 + m_tmp] * 18)
+						{
+							valid = false;
+							break;
+						}
+						else
+						{
+							c += 1;
+							index1_tmp2 = cp_move_table[index1_tmp2 + m_tmp];
+							index2_tmp2 = co_move_table[index2_tmp2 + m_tmp];
+							if (c < l && prune_table[index1_tmp2 * 2187 + index2_tmp2] == 0)
+							{
+								valid = false;
+								break;
+							}
+							index1_tmp2 *= 18;
+							index2_tmp2 *= 18;
+						}
+					}
+					if (valid)
+					{
+						count += 1;
+						if (rotation == "")
+						{
+							tmp = post_moves + AlgToString(sol);
+						}
+						else
+						{
+							tmp = rotation + " " + post_moves + AlgToString(sol);
+						}
+						update(tmp.c_str());
+						if (count == sol_num)
+						{
+							return true;
+						}
+					}
+				}
+			}
+			else if (depth_limited_search(index1_tmp * 18, index2_tmp * 18, depth, center_move_table[center][i], rot_count + 1, i * 27))
+			{
+				return true;
+			}
+			sol.pop_back();
+			mc_tmp[i] -= 1;
 		}
 		return false;
 	}
 
-	void start_search(std::string arg_scramble = "", std::string arg_rotation = "", int arg_sol_num = 100, int arg_max_length = 12, std::vector<std::string> arg_restrict = move_names, int prune_depth = 8)
+	void start_search(std::string arg_scramble = "", std::string arg_rotation = "", int arg_sol_num = 100, int arg_max_length = 12, std::vector<std::string> arg_restrict = move_names, int prune_depth = 8, std::string arg_post_alg = "", int arg_max_rot_count = 0, const std::vector<bool> &arg_ma2 = std::vector<bool>(27 * 27, false), const std::vector<int> &arg_mc = std::vector<int>(27, 20))
 	{
 		scramble = arg_scramble;
 		rotation = arg_rotation;
 		max_length = arg_max_length;
 		sol_num = arg_sol_num;
 		restrict = arg_restrict;
+		ma2 = arg_ma2;
+		mc = arg_mc;
+		mc_tmp = std::vector<int>(54, 0);
 		for (std::string name : restrict)
 		{
 			auto it = std::find(move_names.begin(), move_names.end(), name);
 			move_restrict.emplace_back(std::distance(move_names.begin(), it));
-		};
-		create_prune_table(cp_move_table, co_move_table, prune_table, move_restrict, prune_depth);
-		std::vector<int> alg = AlgRotation(StringToAlg(scramble), rotation);
+		}
+		for (int i : move_restrict)
+		{
+			if (i < 18)
+			{
+				move_restrict_move.emplace_back(i);
+			}
+			else
+			{
+				move_restrict_rot.emplace_back(i);
+			}
+		}
+		std::vector<int> scramble_alg = StringToAlg(scramble);
+		std::vector<int> rotation_alg = StringToAlg(rotation);
+		std::vector<int> alg = AlgRotation(scramble_alg, rotation_alg, center_move_table);
+		std::vector<int> post_alg = StringToAlg(arg_post_alg);
+		post_moves = AlgToString(post_alg);
+		std::vector<int> move_restrict_tmp = move_restrict;
+		int tc = 0;
+		for (int i : post_alg)
+		{
+			tc = center_move_table[tc][i];
+		}
+		for (int i = 0; i < move_restrict_tmp.size(); ++i)
+		{
+			move_restrict_tmp[i] = rotationMapReverse[tc][move_restrict_tmp[i]];
+		}
+		max_rot_count = arg_max_rot_count;
+		create_prune_table(cp_move_table, co_move_table, prune_table, move_restrict, prune_depth, tmp_array, center_move_table);
 		index1 = 0;
 		index2 = 0;
 		count = 0;
+		int aprev_tmp = 54;
 		for (int m : alg)
 		{
 			index1 = cp_move_table[index1 * 18 + m];
 			index2 = co_move_table[index2 * 18 + m];
+		}
+		initial_center = 0;
+		for (int m_tmp : post_alg)
+		{
+			aprev_tmp = m_tmp;
+			if (m_tmp >= 18)
+			{
+				initial_center = center_move_table[initial_center][m_tmp];
+				continue;
+			}
+			int m = rotationMapReverse[initial_center][m_tmp];
+			initial_center = center_move_table[initial_center][m_tmp];
+			index1 = cp_move_table[index1 * 18 + m];
+			index2 = co_move_table[index2 * 18 + m];
+		}
+		auto it = std::find(move_restrict.begin(), move_restrict.end(), aprev_tmp);
+		if (it == move_restrict.end())
+		{
+			aprev_tmp = 27;
 		}
 		prune_tmp = prune_table[index1 * 2187 + index2];
 		if (prune_tmp == 0)
@@ -559,9 +911,9 @@ struct search
 			index2 *= 18;
 			for (int d = 1; d <= max_length; d++)
 			{
-				current_max_depth = d;
-				sol.resize(d);
-				if (depth_limited_search(index1, index2, d, 324))
+				tmp = "depth=" + std::to_string(d);
+				update(tmp.c_str());
+				if (depth_limited_search(index1, index2, d, initial_center, 0, aprev_tmp * 27))
 				{
 					break;
 				}
@@ -571,23 +923,211 @@ struct search
 	}
 };
 
-void solve(std::string scramble, std::string rotation, std::string sol_num, std::string max_length, std::string restrict, std::string prune_depth)
+void buidMoveRestrict(const std::string &restID, std::vector<std::string> &move_restrict)
+{
+	std::stringstream ss(restID);
+	std::string move;
+
+	while (std::getline(ss, move, '_'))
+	{
+		if (!move.empty())
+		{
+			size_t pos = move.find('-');
+			if (pos != std::string::npos)
+			{
+				move.replace(pos, 1, "'");
+			}
+			move_restrict.push_back(move);
+		}
+	}
+}
+
+static std::string get_move_base(const std::string &move)
+{
+	if (move.empty())
+		return "";
+	return move.substr(0, 1);
+}
+
+static bool should_be_checked_by_default(const std::string &prev_move, const std::string &next_move)
+{
+	if (prev_move.empty())
+		return false;
+	const static std::map<std::string, int> y_axis_order = {{"U", 0}, {"D", 1}, {"y", 2}};
+	const static std::map<std::string, int> x_axis_order = {{"L", 0}, {"R", 1}, {"x", 2}};
+	const static std::map<std::string, int> z_axis_order = {{"F", 0}, {"B", 1}, {"z", 2}};
+	const static std::map<std::string, const std::map<std::string, int> *> base_to_axis_map = {
+		{"U", &y_axis_order}, {"D", &y_axis_order}, {"y", &y_axis_order}, {"L", &x_axis_order}, {"R", &x_axis_order}, {"x", &x_axis_order}, {"F", &z_axis_order}, {"B", &z_axis_order}, {"z", &z_axis_order}};
+	std::string prev_base = get_move_base(prev_move);
+	std::string next_base = get_move_base(next_move);
+	if (prev_base == next_base)
+		return true;
+	auto it_prev = base_to_axis_map.find(prev_base);
+	auto it_next = base_to_axis_map.find(next_base);
+	if (it_prev != base_to_axis_map.end() && it_next != base_to_axis_map.end() && it_prev->second == it_next->second)
+	{
+		const auto &axis_map = *it_prev->second;
+		if (axis_map.at(prev_base) > axis_map.at(next_base))
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+void buidMA2(const std::string &restID, const std::string &mavString, std::vector<bool> &vector)
+{
+	const static std::map<std::string, int> move_to_index_map = []
+	{
+		std::map<std::string, int> m;
+		for (int i = 0; i < move_names.size(); ++i)
+		{
+			m[move_names[i]] = i;
+		}
+		return m;
+	}();
+
+	std::vector<std::string> active_moves;
+	buidMoveRestrict(restID, active_moves);
+
+	const int NUM_COLS = 27;
+	const int NUM_ROWS = 28;
+	vector = std::vector<bool>(NUM_ROWS * NUM_COLS, false);
+
+	std::vector<std::string> row_headers = active_moves;
+	row_headers.push_back("");
+	for (const auto &row_move : row_headers)
+	{
+		for (const auto &col_move : active_moves)
+		{
+			if (should_be_checked_by_default(row_move, col_move))
+			{
+				auto it_row = row_move.empty() ? move_to_index_map.end() : move_to_index_map.find(row_move);
+				auto it_col = move_to_index_map.find(col_move);
+
+				if (it_col != move_to_index_map.end())
+				{
+					int row_index = row_move.empty() ? 27 : it_row->second;
+					vector[row_index * NUM_COLS + it_col->second] = true;
+				}
+			}
+		}
+	}
+
+	auto sanitize = [](std::string s) -> std::string
+	{
+		if (s == "EMPTY")
+			return "";
+		size_t pos = s.find('-');
+		if (pos != std::string::npos)
+		{
+			s.replace(pos, 1, "'");
+		}
+		return s;
+	};
+
+	std::stringstream ss_mav(mavString);
+	std::string override_part;
+	while (std::getline(ss_mav, override_part, '|'))
+	{
+		size_t delim_pos = override_part.find('~');
+		if (delim_pos == std::string::npos)
+			continue;
+
+		std::string row_str = sanitize(override_part.substr(0, delim_pos));
+		std::string col_str = sanitize(override_part.substr(delim_pos + 1));
+
+		auto it_row = row_str.empty() ? move_to_index_map.end() : move_to_index_map.find(row_str);
+		auto it_col = move_to_index_map.find(col_str);
+
+		if (it_col != move_to_index_map.end())
+		{
+			int row_index = row_str.empty() ? 27 : it_row->second;
+			int vector_index = row_index * NUM_COLS + it_col->second;
+			if (vector_index >= 0 && vector_index < vector.size())
+			{
+				vector[vector_index] = !vector[vector_index];
+			}
+		}
+	}
+}
+
+void buildMoveCountVector(const std::string &restID, const std::string &moveCountString, std::vector<int> &move_count_vector)
+{
+	static const std::map<std::string, int> move_to_index_map = []
+	{
+		std::map<std::string, int> m;
+		for (int i = 0; i < move_names.size(); ++i)
+		{
+			m[move_names[i]] = i;
+		}
+		return m;
+	}();
+
+	move_count_vector.assign(move_names.size(), 0);
+
+	std::stringstream rest_ss(restID);
+	std::string rest_move;
+	while (std::getline(rest_ss, rest_move, '_'))
+	{
+		if (rest_move.empty())
+			continue;
+
+		size_t pos = rest_move.find('-');
+		if (pos != std::string::npos)
+		{
+			rest_move.replace(pos, 1, "'");
+		}
+
+		auto it = move_to_index_map.find(rest_move);
+		if (it != move_to_index_map.end())
+		{
+			move_count_vector[it->second] = 20;
+		}
+	}
+
+	std::stringstream count_ss(moveCountString);
+	std::string count_part;
+	while (std::getline(count_ss, count_part, '_'))
+	{
+		size_t delim_pos = count_part.find(':');
+		if (delim_pos == std::string::npos)
+			continue;
+
+		std::string move_str = count_part.substr(0, delim_pos);
+		std::string value_str = count_part.substr(delim_pos + 1);
+
+		size_t pos = move_str.find('-');
+		if (pos != std::string::npos)
+		{
+			move_str.replace(pos, 1, "'");
+		}
+
+		auto it = move_to_index_map.find(move_str);
+		if (it != move_to_index_map.end())
+		{
+			try
+			{
+				move_count_vector[it->second] = std::stoi(value_str);
+			}
+			catch (const std::invalid_argument &e)
+			{
+			}
+		}
+	}
+}
+
+void solve(std::string scramble, std::string rotation, int num, int len, int prune, std::string move_restrict_string, std::string post_alg, int max_rot_count, std::string ma2_string, std::string mcString)
 {
 	int count = 0;
-	int num = std::stoi(sol_num);
-	int len = std::stoi(max_length);
-	int prune = std::stoi(prune_depth);
-	std::vector<int> slot;
+	std::vector<bool> ma2;
+	std::vector<int> mc;
 	std::vector<std::string> move_restrict;
-	for (char c : restrict)
-	{
-		std::string face(1, c);
-		move_restrict.emplace_back(face);
-		move_restrict.emplace_back(face + "2");
-		move_restrict.emplace_back(face + "'");
-	}
+	buidMoveRestrict(move_restrict_string, move_restrict);
+	buidMA2(move_restrict_string, ma2_string, ma2);
+	buildMoveCountVector(move_restrict_string, mcString, mc);
 	search cs;
-	cs.start_search(scramble, rotation, num, len, move_restrict, prune);
+	cs.start_search(scramble, rotation, num, len, move_restrict, prune, post_alg, max_rot_count, ma2, mc);
 }
 
 EMSCRIPTEN_BINDINGS(my_module)

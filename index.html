@@ -2920,6 +2920,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
 
             document.getElementById('ui_solve_btn').addEventListener('click', () => {
                 const ret = getscr();
+                if (ret === "") return;
                 const prerot = document.getElementById('pre_rot').value;
                 document.getElementById('scr').value = prerot + " // Pre Rotations\n" + ret.replace(/2'/g, '2').replace(/[\r\n]+$/, '') + " // setup\n";
                 save();
@@ -3469,7 +3470,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
         function genscr() {
             var cube = min2phase.randomCube();
             var solution = min2phase.solve(cube);
-            var sol_reversed = min2phase.solve(generateTwoPhaseInputWrapper(solution));
+            var sol_reversed = reverse(solution).replace(/2'/g, '2').replace(/[\r\n]+$/, '');
             document.getElementById('scr').value = scr_fix2(sol_reversed) + " // setup\n";
             save();
         }

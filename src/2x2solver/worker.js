@@ -8,11 +8,12 @@ const solverPromise = new Promise(resolve => {
 importScripts('solver.js');
 
 self.onmessage = async function (event) {
-	const { scr, rot, num, len, restrict, prune } = event.data;
+	const { scr, rot, num, len, prune, move_restrict, post_alg, max_rot_count, ma2, mcString } = event.data;
 	try {
 		const Module = await solverPromise;
-		Module.solve(scr, rot, num, len, restrict, prune);
+		Module.solve(scr, rot, num, len, prune, move_restrict, post_alg, max_rot_count, ma2, mcString);
 	} catch (e) {
+		console.error(e);
 		self.postMessage("Error");
 	}
 };
