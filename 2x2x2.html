@@ -1513,10 +1513,35 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                     return null;
                 }
 
+                function adjustOrientation(piece, targetColor, targetIndex) {
+                    const o = piece.orientation;
+                    const currentIdx = o.indexOf(targetColor);
+                    if (currentIdx === -1) return;
+                    const diff = (targetIndex - currentIdx + 3) % 3;
+
+                    if (diff === 1) {
+                        o.unshift(o.pop());
+                    } else if (diff === 2) {
+                        o.push(o.shift());
+                    }
+                }
+
                 function handleIntelligentSwap(selection1, selection2) {
                     const piece1 = selection1.piece;
                     const piece2 = selection2.piece;
+                    const stickerId1 = selection1.stickerId;
+                    const stickerId2 = selection2.stickerId;
+                    const initialPieces = getInitialPieces();
+                    const posDef1 = initialPieces[piece1.pos];
+                    const posDef2 = initialPieces[piece2.pos];
+                    const index1 = posDef1.faces.indexOf(stickerId1);
+                    const index2 = posDef2.faces.indexOf(stickerId2);
+                    const color1 = piece1.orientation[index1];
+                    const color2 = piece2.orientation[index2];
                     [piece1.pos, piece2.pos] = [piece2.pos, piece1.pos];
+                    adjustOrientation(piece1, color1, index2);
+                    adjustOrientation(piece2, color2, index1);
+
                     render();
                 }
 
