@@ -2318,6 +2318,17 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                 }
             });
 
+
+            const details_cubeUI = document.getElementById("details_cubeUI");
+            const summary_cubeUI = document.getElementById("summary_cubeUI");
+            details_cubeUI.addEventListener('toggle', () => {
+                if (details_cubeUI.open) {
+                    summary_cubeUI.textContent = "Hide Cube Editor";
+                } else {
+                    summary_cubeUI.textContent = "Show Cube Edito";
+                }
+            });
+
             window.onload = function () {
                 const urlParams = new URLSearchParams(window.location.search);
                 const scrambleParam = urlParams.get(idToKeyMap['scr']);
