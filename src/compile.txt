@@ -59,4 +59,4 @@ em++ functions.cpp -o functions.js -O3 -msimd128 -flto -s -s WASM=1 --bind
 em++ solver.cpp -o solver.js -O3 -msimd128 -flto -s TOTAL_MEMORY=200MB -s WASM=1 --bind
 
 2x2solverLite
-em++ 2x2solverLite.cpp -o 2x2solverLite.js -O3 -msimd128 -flto -s WASM=1 --bind
+em++ solver.cpp -o solver.js -O3 -msimd128 -flto -s WASM=1 --bind

@@ -712,6 +712,7 @@
     <textarea id="scr" rows="10" cols="10" placeholder="Use // to write comments, as in algs // comment. 
 Write the //setup comment in the appropriate position when viewing on alg.cubing.net or cubedb.net."
         onchange="save()"></textarea><br>
+    <button id="gen" class="button medium">Random</button>
     <button id="reverse" class="button medium" onclick="reverseScramble()">Reverse</button>
     <button id="mirror" class="button medium" onclick="mirrorScramble()">Mirror</button>
     <button id="clear" class="button medium">Clear</button>
@@ -1667,6 +1668,17 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                     }
                 };
 
+                let worker3 = new Worker('src/2x2solverLite/worker_scrambler.js');
+                worker3.onmessage = function (event) {
+                    const scramble = event.data;
+                    if (scramble === undefined || scramble === null) {
+                        return;
+                    } else if (scramble !== "") {
+                        document.getElementById('scr').value = reverse(scramble).replace(/2'/g, '2').replace(/[\r\n]+$/, '') + " // setup\n";
+                        save();
+                    }
+                };
+
                 function getscr() {
                     if (!isFunctionsReady) {
                         alert("The module is still initializing. Please try again in a moment.");
@@ -1683,6 +1695,18 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                     }
                     var args = { defString: defString };
                     worker2.postMessage(args);
+                }
+
+                function genscr() {
+                    if (!isFunctionsReady) {
+                        alert("The module is still initializing. Please try again in a moment.");
+                        return "";
+                    }
+                    if (typeof reverse !== "function") {
+                        alert("Error: The required function is not initialized. Please reload the page manually.");
+                        return "";
+                    }
+                    worker3.postMessage(null);
                 }
 
                 function resetCubeState() {
@@ -1728,6 +1752,10 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
 
                 document.getElementById('get-string-btn').addEventListener('click', () => {
                     getscr();
+                });
+
+                document.getElementById('gen').addEventListener('click', () => {
+                    genscr();
                 });
 
                 cubeContainer.addEventListener('click', (e) => {

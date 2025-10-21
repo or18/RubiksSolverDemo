@@ -9,6 +9,8 @@
 #include <cstdlib>
 #include <map>
 #include <numeric>
+#include <random>
+#include <set>
 
 EM_JS(void, update, (const char *str), {
 	postMessage(UTF8ToString(str));
@@ -389,6 +391,10 @@ struct search
 	std::string tmp;
 	std::vector<int> cp;
 	std::vector<int> co;
+	std::mt19937 generator;
+	std::uniform_int_distribution<> distribution_CP;
+	std::uniform_int_distribution<> distribution_CO;
+	std::vector<int> fullSet;
 
 	search()
 	{
@@ -397,6 +403,11 @@ struct search
 		cp_move_table = create_multi_move_table(8, 1, 8, 40320, single_cp_move_table);
 		co_move_table = create_co_move_table();
 		create_prune_table(0, 40320, cp_move_table, prune_table1);
+		std::random_device rd;
+		generator.seed(rd());
+		distribution_CP = std::uniform_int_distribution<>(0, 5039);
+		distribution_CO = std::uniform_int_distribution<>(0, 728);
+		fullSet = {0, 1, 2, 3, 4, 5, 6, 7};
 	}
 
 	bool depth_limited_search(int arg_index1, int arg_index2, int depth, int prev)
@@ -474,11 +485,69 @@ struct search
 			start_search(index1, index2);
 		}
 	}
+
+	void getScramble()
+	{
+		sol.clear();
+		while (true)
+		{
+			int index1_tmp2 = distribution_CP(generator);
+			int index2_tmp2 = distribution_CO(generator);
+			cp.resize(7);
+			index_to_array(cp, index1_tmp2, 7, 1, 8);
+			for (int i = 0; i < 7; ++i)
+			{
+				cp[i] /= 9;
+			}
+			std::set<int> currentSet(cp.begin(), cp.end());
+			std::vector<int> missing;
+			std::set_difference(fullSet.begin(), fullSet.end(), currentSet.begin(), currentSet.end(), std::back_inserter(missing));
+			auto it = std::find(cp.begin(), cp.end(), 4);
+			if (it == cp.end())
+			{
+				cp.insert(cp.begin() + 4, 4);
+			}
+			else
+			{
+				int index = std::distance(cp.begin(), it);
+				cp.erase(it);
+				if (!missing.empty())
+				{
+					cp.insert(cp.begin() + index, missing[0]);
+				}
+				cp.insert(cp.begin() + 4, 4);
+			}
+			co.resize(7);
+			index_to_o(co, index2_tmp2, 3, 7);
+			co.insert(co.begin() + 4, 0);
+			index1 = array_to_index(cp, 8, 1, 8);
+			index2 = o_to_index(co, 3, 8);
+			prune1_tmp = prune_table1[index1];
+			if (prune1_tmp == 0 && index2 == 0)
+			{
+				continue;
+			}
+			else
+			{
+				break;
+			}
+		}
+		index1 *= 9;
+		index2 *= 9;
+		for (int d = prune1_tmp; d <= 11; d++)
+		{
+			if (depth_limited_search(index1, index2, d, 3))
+			{
+				break;
+			}
+		}
+	}
 };
 
 EMSCRIPTEN_BINDINGS(my_module)
 {
 	emscripten::class_<search>("search")
 		.constructor<>()
-		.function("solve", &search::solve);
+		.function("solve", &search::solve)
+		.function("getScramble", &search::getScramble);
 }
