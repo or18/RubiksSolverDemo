@@ -1451,6 +1451,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
         <details id="maskOptions">
             <summary id="summaryMaskOptions">Show Stickering Settings</summary>
             <div id="preview"></div><br>
+            <div id="preview_solved"></div><br>
             <button id="autoSetMask" class="button medium" onclick="setStickeringOptionAuto()">Auto</button>
             <button id="resetMask" class="button medium" onclick="resetStickeringOptions('-')">Reset</button><br><br>
             <div id="maskOptionsCenterDiv">
@@ -1968,11 +1969,16 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             const convertedMask = convertMask(mask_input.maskInputCenter, mask_input.maskInputEdges, mask_input.maskInputCorners, result_rotation);
             setMask(convertedMask, true);
             try {
-                document.getElementById('preview').innerHTML = '';
+                document.getElementById('preview').innerHTML = '<a>Scramble Preview:</a><br>';
                 const sim = createPlayer(scr + " " + rot, '');
                 sim.controlPanel = "none";
                 sim.experimentalStickeringMaskOrbits = tmp_mask;
                 document.getElementById('preview').appendChild(sim);
+                document.getElementById('preview_solved').innerHTML = '<a>Solved Preview:</a><br>';
+                const sim_solved = createPlayer(result_rotation, '');
+                sim_solved.controlPanel = "none";
+                sim_solved.experimentalStickeringMaskOrbits = tmp_mask;
+                document.getElementById('preview_solved').appendChild(sim_solved);
             } catch (e) {
                 const content = document.createElement('a');
                 content.innerHTML = "Warning: Failed to create TwistyPlayer.<br>";
