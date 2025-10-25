@@ -520,44 +520,212 @@
             box-shadow: 0 0 15px 3px yellow;
             border: 2px solid yellow;
         }
+
+
+        .drawer-overlay {
+            position: fixed;
+            inset: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+        }
+
+        .drawer-overlay.hidden {
+            display: none;
+        }
+
+        .drawer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            height: 100dvh;
+            width: 280px;
+            background: #1e1e1e;
+            border-right: 1px solid #41417f;
+            box-shadow: 0 4px 16px #000a;
+            padding: 16px;
+            transform: translateX(-100%);
+            transition: transform 0.2s ease-in-out;
+            z-index: 1003;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .drawer.open {
+            transform: translateX(0);
+        }
+
+        #hamburger-menu a {
+            display: block;
+            margin-bottom: 8px;
+            white-space: nowrap;
+            color: #fff;
+            text-decoration: none;
+        }
+
+        .drawer-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            padding-bottom: 8px;
+            margin-bottom: 12px;
+            border-bottom: 1px solid #41417f;
+        }
+
+        .drawer-title {
+            margin: 0;
+            font-size: 20px;
+            color: #ffffff;
+        }
+
+        .drawer-close-btn {
+            background: none;
+            border: none;
+            color: #aaa;
+            cursor: pointer;
+            font-size: 1.8rem;
+            line-height: 1;
+            padding: 0 6px;
+        }
+
+        .drawer-close-btn:hover {
+            color: #fff;
+        }
+
+        .drawer-content {
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            padding-right: 4px;
+            padding-bottom: 24px;
+            padding-bottom: calc(24px + env(safe-area-inset-bottom));
+            overscroll-behavior: contain;
+            touch-action: pan-y;
+        }
+
+
+        .drawer-overlay {
+            position: fixed;
+            inset: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+        }
+
+        .drawer-overlay.hidden {
+            display: none;
+        }
+
+        .drawer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            height: 100dvh;
+            width: 280px;
+            background: #1e1e1e;
+            border-right: 1px solid #41417f;
+            box-shadow: 0 4px 16px #000a;
+            padding: 16px;
+            transform: translateX(-100%);
+            transition: transform 0.2s ease-in-out;
+            z-index: 1003;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .drawer.open {
+            transform: translateX(0);
+        }
+
+        #hamburger-menu a {
+            display: block;
+            margin-bottom: 8px;
+            white-space: nowrap;
+            color: #fff;
+            text-decoration: none;
+        }
+
+        .drawer-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            padding-bottom: 8px;
+            margin-bottom: 12px;
+            border-bottom: 1px solid #41417f;
+        }
+
+        .drawer-title {
+            margin: 0;
+            font-size: 20px;
+            color: #ffffff;
+        }
+
+        .drawer-close-btn {
+            background: none;
+            border: none;
+            color: #aaa;
+            cursor: pointer;
+            font-size: 1.8rem;
+            line-height: 1;
+            padding: 0 6px;
+        }
+
+        .drawer-close-btn:hover {
+            color: #fff;
+        }
+
+        .drawer-content {
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            padding-right: 4px;
+            padding-bottom: 24px;
+            padding-bottom: calc(24px + env(safe-area-inset-bottom));
+            overscroll-behavior: contain;
+            touch-action: pan-y;
+        }
     </style>
 </head>
 
 <body>
     <div id="hamburger-menu-container">
         <button id="hamburger-menu-btn" aria-label="Open menu"
-            style="background:none;border:none;cursor:pointer;font-size:2.2rem;position:absolute;top:10px;left:10px;z-index:1000;color:#fff;">
+            style="background:none;border:none;cursor:pointer;font-size:2.2rem;position:absolute;top:10px;left:10px;z-index:1002;color:#fff;">
             &#9776;
         </button>
-        <nav id="hamburger-menu" class="hidden"
-            style="position:absolute;top:50px;left:10px;background:#1e1e1e;border:1px solid #41417f;border-radius:8px;box-shadow:0 4px 16px #000a;padding:16px;min-width:220px;z-index:1001;">
-            <a href="index.html" style="display:block;margin-bottom:8px;white-space:nowrap;color:#fff;">Main Solver</a>
-            <a href="2x2x2.html" rel="noopener noreferrer"
-                style="display:block;margin-bottom:8px;white-space:nowrap;color:#fff;" translate="no">2x2x2 Solver</a>
-            <a href="documentation.html"
-                style="display:block;margin-bottom:8px;white-space:nowrap;color:#fff;">Documentation</a>
-            <span style="font-weight:bold;margin-top:12px;display:block;color:#fff;">Trainers:</span>
-            <a href="cross_trainer.html"
-                style="display:block;margin-bottom:8px;white-space:nowrap;color:#fff;">Cross</a>
-            <a href="xcross_trainer.html"
-                style="display:block;margin-bottom:8px;white-space:nowrap;color:#fff;">XCross</a>
-            <a href="pairing_trainer.html" style="display:block;margin-bottom:8px;white-space:nowrap;color:#fff;">Free
-                Pair</a>
-            <a href="pseudo_xcross_trainer.html"
-                style="display:block;margin-bottom:8px;white-space:nowrap;color:#fff;">Pseudo XCross</a>
-            <a href="pseudo_pairing_trainer.html"
-                style="display:block;margin-bottom:8px;white-space:nowrap;color:#fff;">Pseudo Free Pair</a>
-            <a href="eocross_trainer.html"
-                style="display:block;margin-bottom:8px;white-space:nowrap;color:#fff;">EOCross</a>
-            <span style="font-weight:bold;margin-top:12px;display:block;color:#fff;">External tools:</span>
-            <a href="https://trangium.github.io/MovecountCoefficient/" target="_blank" rel="noopener noreferrer"
-                style="display:block;margin-bottom:8px;white-space:nowrap;color:#fff;" translate="no">MCC by
-                trangium</a>
-            <a href="https://speedcubedb.com/a/2x2/" target="_blank" rel="noopener noreferrer"
-                style="display:block;margin-bottom:8px;white-space:nowrap;color:#fff;"
-                translate="no">speedcubedb.com</a>
-            <a href="https://cstimer.net/" target="_blank" rel="noopener noreferrer"
-                style="display:block;margin-bottom:8px;white-space:nowrap;color:#fff;" translate="no">cstimer.net</a>
+        <div id="drawer-overlay" class="drawer-overlay hidden"></div>
+        <nav id="hamburger-menu" class="drawer" aria-label="Main navigation">
+            <div class="drawer-header">
+                <h2 class="drawer-title">Menu</h2>
+                <button id="drawer-close-btn" class="drawer-close-btn" aria-label="Close menu">&times;</button>
+            </div>
+            <div class="drawer-content">
+                <a href="https://github.com/or18/RubiksSolverDemo" rel="noopener noreferrer" translate="no">Source</a>
+                <a href="index.html">Main Solver</a>
+                <a href="2x2x2.html" rel="noopener noreferrer" translate="no">2x2x2 Solver</a>
+                <a href="documentation.html" translate="no">Documentation</a>
+                <span style="font-weight:bold;margin-top:12px;display:block;color:#fff;">Trainers:</span>
+                <a href="cross_trainer.html" rel="noopener noreferrer" translate="no">Cross</a>
+                <a href="xcross_trainer.html" rel="noopener noreferrer" translate="no">XCross</a>
+                <a href="pairing_trainer.html" rel="noopener noreferrer" translate="no">Free Pair</a>
+                <a href="pseudo_xcross_trainer.html" rel="noopener noreferrer" translate="no">Pseudo XCross</a>
+                <a href="pseudo_pairing_trainer.html" rel="noopener noreferrer" translate="no">Pseudo Free Pair</a>
+                <a href="eocross_trainer.html" rel="noopener noreferrer" translate="no">EOCross</a>
+                <a href="algTrainer.html" rel="noopener noreferrer" translate="no">Alg Trainer</a>
+                <a href="jsonEditor.html" rel="noopener noreferrer" translate="no">JSON Editor</a>
+                <span style="font-weight:bold;margin-top:12px;display:block;color:#fff;">External tools:</span>
+                <a href="https://trangium.github.io/MovecountCoefficient/" target="_blank" rel="noopener noreferrer"
+                    translate="no">MCC by trangium</a>
+                <a href="https://speedcubedb.com/a/3x3/" target="_blank" rel="noopener noreferrer"
+                    translate="no">speedcubedb.com</a>
+                <a href="https://cstimer.net/" target="_blank" rel="noopener noreferrer" translate="no">cstimer.net</a>
+            </div>
         </nav>
     </div>
     <header id="header" style="margin-left:48px;margin-top:10px;position:relative;z-index:10;">
@@ -565,12 +733,40 @@
     </header>
     <script>
         const hamburgerBtn = document.getElementById('hamburger-menu-btn');
-        const hamburgerMenu = document.getElementById('hamburger-menu');
-        document.addEventListener('click', function (e) {
-            if (hamburgerBtn.contains(e.target)) {
-                hamburgerMenu.classList.toggle('hidden');
-            } else if (!hamburgerMenu.contains(e.target)) {
-                hamburgerMenu.classList.add('hidden');
+        const drawer = document.getElementById('hamburger-menu');
+        const overlay = document.getElementById('drawer-overlay');
+        const drawerCloseBtn = document.getElementById('drawer-close-btn');
+
+        function openDrawer() {
+            drawer.classList.add('open');
+            overlay.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeDrawer() {
+            drawer.classList.remove('open');
+            overlay.classList.add('hidden');
+            document.body.style.overflow = '';
+        }
+
+        hamburgerBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (drawer.classList.contains('open')) {
+                closeDrawer();
+            } else {
+                openDrawer();
+            }
+        });
+
+        overlay.addEventListener('click', closeDrawer);
+        if (drawerCloseBtn) drawerCloseBtn.addEventListener('click', closeDrawer);
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && drawer.classList.contains('open')) closeDrawer();
+        });
+        drawer.addEventListener('click', (e) => {
+            const target = e.target;
+            if (target.tagName === 'A') {
+                closeDrawer();
             }
         });
     </script>

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pwa-cash_v22';
+const CACHE_NAME = 'pwa-cash_v23';
 
 const urlsToCache = [
 	'index.html',
@@ -10,6 +10,8 @@ const urlsToCache = [
 	'pseudo_pairing_trainer.html',
 	'pseudo_xcross_trainer.html',
 	'xcross_trainer.html',
+	'jsonEditor.html',
+	'algTrainer.html',
 	'manifest.json',
 	'icons/icon-512x512.png',
 	'icons/icon-192x192.png',
