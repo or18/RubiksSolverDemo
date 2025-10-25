@@ -556,10 +556,14 @@
 						indexInput.value = index;
 						return;
 					}
+					const origOrder = Array.isArray(inner.__order)
+						? inner.__order.slice()
+						: Object.keys(inner).filter(k => !k.startsWith('__'));
 					const renamedInner = renameKeyPreserveOrder(inner, index, newIndexName);
 					if (renamedInner) {
+						const updatedOrder = origOrder.map(k => (k === index ? newIndexName : k)).filter((v, i, a) => a.indexOf(v) === i);
+						renamedInner.__order = updatedOrder;
 						algData[category] = renamedInner;
-						renameIndexInOrder(algData[category], index, newIndexName);
 						populateCategoryList();
 						saveAlgDataDebounced();
 					} else {

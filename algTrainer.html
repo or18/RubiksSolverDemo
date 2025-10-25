@@ -118,7 +118,7 @@
 			max-width: 90px;
 		}
 
-		a {
+		a, pre {
 			color: #ffffff;
 			font-family: Arial, sans-serif;
 			font-size: 20px;
@@ -490,6 +490,8 @@
 		const names = Object.keys(catObj);
 		if (names.length === 0) return null;
 		const randName = names[Math.floor(Math.random() * names.length)];
+		currentRandCategory = randCat;
+		currentRandName = randName;
 		let algVal = catObj[randName];
 		let chosenAlgText = null;
 		if (Array.isArray(algVal)) {
@@ -550,6 +552,8 @@
 	let currentAlgLines = null;
 	let currentRevTopAlg = null;
 	let currentSetup = null;
+	let currentRandCategory = null;
+	let currentRandName = null;
 
 	function pickRandomOptionValue(selectEl) {
 		const opts = Array.from((selectEl && selectEl.options) ? selectEl.options : []);
@@ -608,6 +612,11 @@
 				ansDiv.textContent = 'No selection yet. Please press Next first.';
 				return;
 			}
+			const infoEl = document.createElement('pre');
+			const setText = currentRandCategory ? String(currentRandCategory) : '(unknown)';
+			const nameText = currentRandName ? String(currentRandName) : '(unknown)';
+			infoEl.textContent = `Set: ${setText}\nName: ${nameText}`;
+			ansDiv.appendChild(infoEl);
 			const puzzle = selectPuzzle ? selectPuzzle.value : '2x2x2';
 			currentAlgLines.forEach((alg) => {
 				const detailsEl = document.createElement('details');
