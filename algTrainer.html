@@ -307,46 +307,20 @@
 		});
 	</script>
 	<label for="algJsonFile">Select JSON File: </label>
-	<input type="file" id="algJsonFile" accept=".json" /><br>
-	<div id="categoryChecks"></div>
+	<input type="file" id="algJsonFile" accept=".json" /><br><br>
 	<label for="selectPuzzle">Puzzle: </label>
 	<select translate="no" id="selectPuzzle">
 		<option translate="no" value="2x2x2">2x2x2</option>
 		<option translate="no" value="3x3x3">3x3x3</option>
+		<option translate="no" value="4x4x4">4x4x4</option>
+		<option translate="no" value="5x5x5">5x5x5</option>
+		<option translate="no" value="skewb">skewb</option>
+		<option translate="no" value="pyraminx">pyraminx</option>
+		<option translate="no" value="megaminx">megaminx</option>
+		<option translate="no" value="square1">square1</option>
+		<option translate="no" value="fto">fto</option>
 	</select><br>
-	<label for="rot">Rotation: </label>
-	<select translate="no" id="rot">
-		<option translate="no" value="">None</option>
-		<option translate="no" value="y">y</option>
-		<option translate="no" value="y2">y2</option>
-		<option translate="no" value="y'">y'</option>
-		<option translate="no" value="z2">z2</option>
-		<option translate="no" value="z2 y">z2 y</option>
-		<option translate="no" value="z2 y2">z2 y2</option>
-		<option translate="no" value="z2 y'">z2 y'</option>
-		<option translate="no" value="z'">z'</option>
-		<option translate="no" value="z' y">z' y</option>
-		<option translate="no" value="z' y2">z' y2</option>
-		<option translate="no" value="z' y'">z' y'</option>
-		<option translate="no" value="z">z</option>
-		<option translate="no" value="z y">z y</option>
-		<option translate="no" value="z y2">z y2</option>
-		<option translate="no" value="z y'">z y'</option>
-		<option translate="no" value="x'">x'</option>
-		<option translate="no" value="x' y">x' y</option>
-		<option translate="no" value="x' y2">x' y2</option>
-		<option translate="no" value="x' y'">x' y'</option>
-		<option translate="no" value="x2">x2</option>
-		<option translate="no" value="x2 y">x2 y</option>
-		<option translate="no" value="x2 y2">x2 y2</option>
-		<option translate="no" value="x2 y'">x2 y'</option>
-		<option translate="no" value="x">x</option>
-		<option translate="no" value="x y">x y</option>
-		<option translate="no" value="x y2">x y2</option>
-		<option translate="no" value="x y'">x y'</option>
-	</select><br>
-	<input type="checkbox" id="CheckboxRotationRandomize" class="custom-checkbox" checked>
-	<label for="CheckboxRotationRandomize">Select Random Rotation</label><br><br>
+	<div id="categoryChecks"></div><br>
 	<button id="next" class="button">Next</button><br>
 	<div id="preview"></div>
 	<button id="show" class="button">Show Ans</button>
@@ -492,8 +466,6 @@
 	const nextBtn = document.getElementById('next');
 	const previewDiv = document.getElementById('preview');
 	const selectPuzzle = document.getElementById('selectPuzzle');
-	const rotSelect = document.getElementById('rot');
-	const chkRandomRot = document.getElementById('CheckboxRotationRandomize');
 	const showBtn = document.getElementById('show');
 	const ansDiv = document.getElementById('ans');
 	let currentAlgLines = null;
@@ -503,12 +475,6 @@
 	let currentRandName = null;
 	let currentRandComment = null;
 
-	function pickRandomOptionValue(selectEl) {
-		const opts = Array.from((selectEl && selectEl.options) ? selectEl.options : []);
-		if (opts.length === 0) return '';
-		const idx = Math.floor(Math.random() * opts.length);
-		return opts[idx].value || '';
-	}
 	if (nextBtn && previewDiv) {
 		nextBtn.addEventListener('click', async () => {
 			try {
@@ -525,12 +491,7 @@
 				rev_topAlg = rev_topAlg.trim();
 				currentAlgLines = lines;
 				currentRevTopAlg = rev_topAlg;
-				const rotStr = (chkRandomRot && chkRandomRot.checked) ?
-					pickRandomOptionValue(rotSelect) :
-					(rotSelect ? rotSelect.value : '');
-				const setup = (rotStr && rotStr.trim().length > 0)
-					? `${rotStr.trim()} ${rev_topAlg}`
-					: rev_topAlg;
+				const setup = rev_topAlg;
 				currentSetup = setup;
 				if (ansDiv) ansDiv.innerHTML = '';
 				const puzzle = selectPuzzle ? selectPuzzle.value : '2x2x2';
