@@ -1053,8 +1053,6 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                     <tbody></tbody>
                 </table>
             </div><br>
-            <label for="rot_count">Max Rotation Count: </label>
-            <input type="number" id="rot_count" value=0 min=0 required onchange="updateUrlParams()"><br>
             <label for="count_table">Max Move Count:</label>
             <div id="count_table_wrapper">
                 <table id="count_table" border="2" translate="no">
@@ -1252,7 +1250,6 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                 'rest': 'rest',
                 'mav': 'mav',
                 'premove': 'premove',
-                'rot_count': 'rc',
                 'mcv': 'mcv'
             };
 
@@ -1267,7 +1264,6 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                     'rest': 'U_U2_U-_R_R2_R-_F_F2_F-',
                     'mav': '',
                     'premove': '',
-                    'rot_count': '0',
                     'mcv': ''
                 }
             };
@@ -1281,7 +1277,6 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                 'rest',
                 'mav',
                 'premove',
-                'rot_count',
                 'mcv'
             ];
 
@@ -2124,7 +2119,6 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                 if (mavString) {
                     setMavFromString(mavString);
                 }
-                document.getElementById('rot_count').value = urlParams.get(idToKeyMap['rot_count']) ? urlParams.get(idToKeyMap['rot_count']) : defaultValues[solver]['rot_count'];
 
                 const mcvKey = idToKeyMap['mcv'];
                 const defaultMcv = '';
@@ -2183,15 +2177,13 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                     const restrict = getIds()[1];
                     const premove = scr_fix(document.getElementById('premove').value);
                     const ma = getMavString();
-                    const max_rot_count = document.getElementById('rot_count').value;
                     const mc = getMoveCountString();
                     const prune = document.getElementById('prune').value;
                     document.getElementById("solveButton").textContent = "End";
                     const convertResult = convert(scr);
                     const result_moves = convertResult[0];
                     const result_rotation = convertResult[1] + " " + rot;
-
-                    const args = { scr: result_moves, rot: rot, num: parseInt(num, 10), len: parseInt(len, 10), prune: parseInt(prune, 10), move_restrict: restrict, post_alg: premove, max_rot_count: parseInt(max_rot_count, 10), ma2: ma, mcString: mc };
+                    const args = { scr: result_moves, rot: rot, num: parseInt(num, 10), len: parseInt(len, 10), prune: parseInt(prune, 10), move_restrict: restrict, post_alg: premove, ma2: ma, mcString: mc };
                     worker = new Worker('src/2x2solver/worker.js');
                     worker.postMessage(args);
                     if (worker) {

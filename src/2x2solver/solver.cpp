@@ -16,18 +16,14 @@ struct State
 {
 	std::vector<int> cp;
 	std::vector<int> co;
-	std::vector<int> ep;
-	std::vector<int> eo;
 	std::vector<int> center;
 
-	State(std::vector<int> arg_cp = {0, 1, 2, 3, 4, 5, 6, 7}, std::vector<int> arg_co = {0, 0, 0, 0, 0, 0, 0, 0}, std::vector<int> arg_ep = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11}, std::vector<int> arg_eo = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, std::vector<int> arg_center = {0, 1, 2, 3, 4, 5}) : cp(arg_cp), co(arg_co), ep(arg_ep), eo(arg_eo), center(arg_center) {}
+	State(std::vector<int> arg_cp = {0, 1, 2, 3, 4, 5, 6, 7}, std::vector<int> arg_co = {0, 0, 0, 0, 0, 0, 0, 0}, std::vector<int> arg_center = {0, 1, 2, 3, 4, 5}) : cp(arg_cp), co(arg_co), center(arg_center) {}
 
 	State apply_move(State move)
 	{
 		std::vector<int> new_cp;
 		std::vector<int> new_co;
-		std::vector<int> new_ep;
-		std::vector<int> new_eo;
 		std::vector<int> new_center;
 		for (int i = 0; i < 8; ++i)
 		{
@@ -35,31 +31,12 @@ struct State
 			new_cp.emplace_back(cp[p]);
 			new_co.emplace_back((co[p] + move.co[i]) % 3);
 		}
-		for (int i = 0; i < 12; ++i)
-		{
-			int p = move.ep[i];
-			new_ep.emplace_back(ep[p]);
-			new_eo.emplace_back((eo[p] + move.eo[i]) % 2);
-		}
 		for (int i = 0; i < 6; ++i)
 		{
 			int p = move.center[i];
 			new_center.emplace_back(center[p]);
 		}
-		return State(new_cp, new_co, new_ep, new_eo, new_center);
-	}
-
-	State apply_move_edge(State move, int e)
-	{
-		std::vector<int> new_ep(12, -1);
-		std::vector<int> new_eo(12, -1);
-		auto it = std::find(ep.begin(), ep.end(), e);
-		int index = std::distance(ep.begin(), it);
-		it = std::find(move.ep.begin(), move.ep.end(), e);
-		int index_next = std::distance(move.ep.begin(), it);
-		new_ep[index_next] = e;
-		new_eo[index_next] = (eo[index] + move.eo[index_next]) % 2;
-		return State(cp, co, new_ep, new_eo, center);
+		return State(new_cp, new_co, new_center);
 	}
 
 	State apply_move_corner(State move, int c)
@@ -72,113 +49,38 @@ struct State
 		int index_next = std::distance(move.cp.begin(), it);
 		new_cp[index_next] = c;
 		new_co[index_next] = (co[index] + move.co[index_next]) % 3;
-		return State(new_cp, new_co, ep, eo, center);
+		return State(new_cp, new_co, center);
 	}
 };
 
 std::unordered_map<std::string, State> moves = {
-	{"U", State({3, 0, 1, 2, 4, 5, 6, 7}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 7, 4, 5, 6, 8, 9, 10, 11}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 5})},
-	{"U2", State({2, 3, 0, 1, 4, 5, 6, 7}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 6, 7, 4, 5, 8, 9, 10, 11}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 5})},
-	{"U'", State({1, 2, 3, 0, 4, 5, 6, 7}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 5, 6, 7, 4, 8, 9, 10, 11}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 5})},
-	{"D", State({0, 1, 2, 3, 5, 6, 7, 4}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 8}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 5})},
-	{"D2", State({0, 1, 2, 3, 6, 7, 4, 5}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 5, 6, 7, 10, 11, 8, 9}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 5})},
-	{"D'", State({0, 1, 2, 3, 7, 4, 5, 6}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 5, 6, 7, 11, 8, 9, 10}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 5})},
-	{"L", State({4, 1, 2, 0, 7, 5, 6, 3}, {2, 0, 0, 1, 1, 0, 0, 2}, {11, 1, 2, 7, 4, 5, 6, 0, 8, 9, 10, 3}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 5})},
-	{"L2", State({7, 1, 2, 4, 3, 5, 6, 0}, {0, 0, 0, 0, 0, 0, 0, 0}, {3, 1, 2, 0, 4, 5, 6, 11, 8, 9, 10, 7}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 5})},
-	{"L'", State({3, 1, 2, 7, 0, 5, 6, 4}, {2, 0, 0, 1, 1, 0, 0, 2}, {7, 1, 2, 11, 4, 5, 6, 3, 8, 9, 10, 0}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 5})},
-	{"R", State({0, 2, 6, 3, 4, 1, 5, 7}, {0, 1, 2, 0, 0, 2, 1, 0}, {0, 5, 9, 3, 4, 2, 6, 7, 8, 1, 10, 11}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 5})},
-	{"R2", State({0, 6, 5, 3, 4, 2, 1, 7}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 2, 1, 3, 4, 9, 6, 7, 8, 5, 10, 11}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 5})},
-	{"R'", State({0, 5, 1, 3, 4, 6, 2, 7}, {0, 1, 2, 0, 0, 2, 1, 0}, {0, 9, 5, 3, 4, 1, 6, 7, 8, 2, 10, 11}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 5})},
-	{"F", State({0, 1, 3, 7, 4, 5, 2, 6}, {0, 0, 1, 2, 0, 0, 2, 1}, {0, 1, 6, 10, 4, 5, 3, 7, 8, 9, 2, 11}, {0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 1, 0}, {0, 1, 2, 3, 4, 5})},
-	{"F2", State({0, 1, 7, 6, 4, 5, 3, 2}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 3, 2, 4, 5, 10, 7, 8, 9, 6, 11}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 5})},
-	{"F'", State({0, 1, 6, 2, 4, 5, 7, 3}, {0, 0, 1, 2, 0, 0, 2, 1}, {0, 1, 10, 6, 4, 5, 2, 7, 8, 9, 3, 11}, {0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 1, 0}, {0, 1, 2, 3, 4, 5})},
-	{"B", State({1, 5, 2, 3, 0, 4, 6, 7}, {1, 2, 0, 0, 2, 1, 0, 0}, {4, 8, 2, 3, 1, 5, 6, 7, 0, 9, 10, 11}, {1, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0}, {0, 1, 2, 3, 4, 5})},
-	{"B2", State({5, 4, 2, 3, 1, 0, 6, 7}, {0, 0, 0, 0, 0, 0, 0, 0}, {1, 0, 2, 3, 8, 5, 6, 7, 4, 9, 10, 11}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 5})},
-	{"B'", State({4, 0, 2, 3, 5, 1, 6, 7}, {1, 2, 0, 0, 2, 1, 0, 0}, {8, 4, 2, 3, 0, 5, 6, 7, 1, 9, 10, 11}, {1, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0}, {0, 1, 2, 3, 4, 5})},
-	{"x", State({0, 1, 2, 3, 4, 5, 6, 7}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {4, 5, 2, 3, 1, 0})},
-	{"x2", State({0, 1, 2, 3, 4, 5, 6, 7}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {1, 0, 2, 3, 5, 4})},
-	{"x'", State({0, 1, 2, 3, 4, 5, 6, 7}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {5, 4, 2, 3, 0, 1})},
-	{"y", State({0, 1, 2, 3, 4, 5, 6, 7}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 4, 5, 3, 2})},
-	{"y2", State({0, 1, 2, 3, 4, 5, 6, 7}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 3, 2, 5, 4})},
-	{"y'", State({0, 1, 2, 3, 4, 5, 6, 7}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 5, 4, 2, 3})},
-	{"z", State({0, 1, 2, 3, 4, 5, 6, 7}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {2, 3, 1, 0, 4, 5})},
-	{"z2", State({0, 1, 2, 3, 4, 5, 6, 7}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {1, 0, 3, 2, 4, 5})},
-	{"z'", State({0, 1, 2, 3, 4, 5, 6, 7}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {3, 2, 0, 1, 4, 5})}};
-
-struct VectorHash
-{
-	std::size_t operator()(const std::vector<int> &vec) const
-	{
-		std::size_t hash = 0;
-		for (int num : vec)
-		{
-			hash ^= std::hash<int>()(num) + 0x9e3779b9 + (hash << 6) + (hash >> 2);
-		}
-		return hash;
-	}
-};
-
-struct VectorEqual
-{
-	bool operator()(const std::vector<int> &lhs, const std::vector<int> &rhs) const
-	{
-		return lhs == rhs;
-	}
-};
-
-std::unordered_map<std::vector<int>, int, VectorHash, VectorEqual> center_to_index =
-	{
-		{{0, 1, 2, 3, 4, 5}, 0},
-		{{0, 1, 4, 5, 3, 2}, 1},
-		{{0, 1, 3, 2, 5, 4}, 2},
-		{{0, 1, 5, 4, 2, 3}, 3},
-		{{1, 0, 3, 2, 4, 5}, 4},
-		{{1, 0, 4, 5, 2, 3}, 5},
-		{{1, 0, 2, 3, 5, 4}, 6},
-		{{1, 0, 5, 4, 3, 2}, 7},
-		{{3, 2, 0, 1, 4, 5}, 8},
-		{{3, 2, 4, 5, 1, 0}, 9},
-		{{3, 2, 1, 0, 5, 4}, 10},
-		{{3, 2, 5, 4, 0, 1}, 11},
-		{{2, 3, 1, 0, 4, 5}, 12},
-		{{2, 3, 4, 5, 0, 1}, 13},
-		{{2, 3, 0, 1, 5, 4}, 14},
-		{{2, 3, 5, 4, 1, 0}, 15},
-		{{5, 4, 2, 3, 0, 1}, 16},
-		{{5, 4, 0, 1, 3, 2}, 17},
-		{{5, 4, 3, 2, 1, 0}, 18},
-		{{5, 4, 1, 0, 2, 3}, 19},
-		{{4, 5, 2, 3, 1, 0}, 20},
-		{{4, 5, 1, 0, 3, 2}, 21},
-		{{4, 5, 3, 2, 0, 1}, 22},
-		{{4, 5, 0, 1, 2, 3}, 23}};
-
-std::vector<std::vector<int>> index_to_center =
-	{
-		{0, 1, 2, 3, 4, 5},
-		{0, 1, 4, 5, 3, 2},
-		{0, 1, 3, 2, 5, 4},
-		{0, 1, 5, 4, 2, 3},
-		{1, 0, 3, 2, 4, 5},
-		{1, 0, 4, 5, 2, 3},
-		{1, 0, 2, 3, 5, 4},
-		{1, 0, 5, 4, 3, 2},
-		{3, 2, 0, 1, 4, 5},
-		{3, 2, 4, 5, 1, 0},
-		{3, 2, 1, 0, 5, 4},
-		{3, 2, 5, 4, 0, 1},
-		{2, 3, 1, 0, 4, 5},
-		{2, 3, 4, 5, 0, 1},
-		{2, 3, 0, 1, 5, 4},
-		{2, 3, 5, 4, 1, 0},
-		{5, 4, 2, 3, 0, 1},
-		{5, 4, 0, 1, 3, 2},
-		{5, 4, 3, 2, 1, 0},
-		{5, 4, 1, 0, 2, 3},
-		{4, 5, 2, 3, 1, 0},
-		{4, 5, 1, 0, 3, 2},
-		{4, 5, 3, 2, 0, 1},
-		{4, 5, 0, 1, 2, 3}};
+	{"U", State({3, 0, 1, 2, 4, 5, 6, 7}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 5})},
+	{"U2", State({2, 3, 0, 1, 4, 5, 6, 7}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 5})},
+	{"U'", State({1, 2, 3, 0, 4, 5, 6, 7}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 5})},
+	{"D", State({0, 1, 2, 3, 5, 6, 7, 4}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 5})},
+	{"D2", State({0, 1, 2, 3, 6, 7, 4, 5}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 5})},
+	{"D'", State({0, 1, 2, 3, 7, 4, 5, 6}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 5})},
+	{"L", State({4, 1, 2, 0, 7, 5, 6, 3}, {2, 0, 0, 1, 1, 0, 0, 2}, {0, 1, 2, 3, 4, 5})},
+	{"L2", State({7, 1, 2, 4, 3, 5, 6, 0}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 5})},
+	{"L'", State({3, 1, 2, 7, 0, 5, 6, 4}, {2, 0, 0, 1, 1, 0, 0, 2}, {0, 1, 2, 3, 4, 5})},
+	{"R", State({0, 2, 6, 3, 4, 1, 5, 7}, {0, 1, 2, 0, 0, 2, 1, 0}, {0, 1, 2, 3, 4, 5})},
+	{"R2", State({0, 6, 5, 3, 4, 2, 1, 7}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 5})},
+	{"R'", State({0, 5, 1, 3, 4, 6, 2, 7}, {0, 1, 2, 0, 0, 2, 1, 0}, {0, 1, 2, 3, 4, 5})},
+	{"F", State({0, 1, 3, 7, 4, 5, 2, 6}, {0, 0, 1, 2, 0, 0, 2, 1}, {0, 1, 2, 3, 4, 5})},
+	{"F2", State({0, 1, 7, 6, 4, 5, 3, 2}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 5})},
+	{"F'", State({0, 1, 6, 2, 4, 5, 7, 3}, {0, 0, 1, 2, 0, 0, 2, 1}, {0, 1, 2, 3, 4, 5})},
+	{"B", State({1, 5, 2, 3, 0, 4, 6, 7}, {1, 2, 0, 0, 2, 1, 0, 0}, {0, 1, 2, 3, 4, 5})},
+	{"B2", State({5, 4, 2, 3, 1, 0, 6, 7}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 5})},
+	{"B'", State({4, 0, 2, 3, 5, 1, 6, 7}, {1, 2, 0, 0, 2, 1, 0, 0}, {0, 1, 2, 3, 4, 5})},
+	{"x", State({3, 2, 6, 7, 0, 1, 5, 4}, {2, 1, 2, 1, 1, 2, 1, 2}, {4, 5, 2, 3, 1, 0})},
+	{"x2", State({7, 6, 5, 4, 3, 2, 1, 0}, {0, 0, 0, 0, 0, 0, 0, 0}, {1, 0, 2, 3, 5, 4})},
+	{"x'", State({4, 5, 1, 0, 7, 6, 2, 3}, {2, 1, 2, 1, 1, 2, 1, 2}, {5, 4, 2, 3, 0, 1})},
+	{"y", State({3, 0, 1, 2, 7, 4, 5, 6}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 4, 5, 3, 2})},
+	{"y2", State({2, 3, 0, 1, 6, 7, 4, 5}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 3, 2, 5, 4})},
+	{"y'", State({1, 2, 3, 0, 5, 6, 7, 4}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 1, 5, 4, 2, 3})},
+	{"z", State({4, 0, 3, 7, 5, 1, 2, 6}, {1, 2, 1, 2, 2, 1, 2, 1}, {2, 3, 1, 0, 4, 5})},
+	{"z2", State({5, 4, 7, 6, 1, 0, 3, 2}, {0, 0, 0, 0, 0, 0, 0, 0}, {1, 0, 3, 2, 4, 5})},
+	{"z'", State({1, 5, 6, 2, 0, 4, 7, 3}, {1, 2, 1, 2, 2, 1, 2, 1}, {3, 2, 0, 1, 4, 5})}};
 
 std::vector<std::string> move_names = {"U", "U2", "U'", "D", "D2", "D'", "L", "L2", "L'", "R", "R2", "R'", "F", "F2", "F'", "B", "B2", "B'", "x", "x2", "x'", "y", "y2", "y'", "z", "z2", "z'"};
 
@@ -265,6 +167,81 @@ std::vector<std::vector<int>> rotationMapReverse =
 		{12, 13, 14, 15, 16, 17, 9, 10, 11, 6, 7, 8, 0, 1, 2, 3, 4, 5, 20, 19, 18, 24, 25, 26, 21, 22, 23},
 		{12, 13, 14, 15, 16, 17, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 23, 22, 21, 24, 25, 26, 20, 19, 18}};
 
+struct VectorHash
+{
+	std::size_t operator()(const std::vector<int> &vec) const
+	{
+		std::size_t hash = 0;
+		for (int num : vec)
+		{
+			hash ^= std::hash<int>()(num) + 0x9e3779b9 + (hash << 6) + (hash >> 2);
+		}
+		return hash;
+	}
+};
+
+struct VectorEqual
+{
+	bool operator()(const std::vector<int> &lhs, const std::vector<int> &rhs) const
+	{
+		return lhs == rhs;
+	}
+};
+
+std::unordered_map<std::vector<int>, int, VectorHash, VectorEqual> center_to_index =
+	{
+		{{0, 1, 2, 3, 4, 5}, 0},
+		{{0, 1, 4, 5, 3, 2}, 1},
+		{{0, 1, 3, 2, 5, 4}, 2},
+		{{0, 1, 5, 4, 2, 3}, 3},
+		{{1, 0, 3, 2, 4, 5}, 4},
+		{{1, 0, 4, 5, 2, 3}, 5},
+		{{1, 0, 2, 3, 5, 4}, 6},
+		{{1, 0, 5, 4, 3, 2}, 7},
+		{{3, 2, 0, 1, 4, 5}, 8},
+		{{3, 2, 4, 5, 1, 0}, 9},
+		{{3, 2, 1, 0, 5, 4}, 10},
+		{{3, 2, 5, 4, 0, 1}, 11},
+		{{2, 3, 1, 0, 4, 5}, 12},
+		{{2, 3, 4, 5, 0, 1}, 13},
+		{{2, 3, 0, 1, 5, 4}, 14},
+		{{2, 3, 5, 4, 1, 0}, 15},
+		{{5, 4, 2, 3, 0, 1}, 16},
+		{{5, 4, 0, 1, 3, 2}, 17},
+		{{5, 4, 3, 2, 1, 0}, 18},
+		{{5, 4, 1, 0, 2, 3}, 19},
+		{{4, 5, 2, 3, 1, 0}, 20},
+		{{4, 5, 1, 0, 3, 2}, 21},
+		{{4, 5, 3, 2, 0, 1}, 22},
+		{{4, 5, 0, 1, 2, 3}, 23}};
+
+std::vector<std::vector<int>> index_to_center =
+	{
+		{0, 1, 2, 3, 4, 5},
+		{0, 1, 4, 5, 3, 2},
+		{0, 1, 3, 2, 5, 4},
+		{0, 1, 5, 4, 2, 3},
+		{1, 0, 3, 2, 4, 5},
+		{1, 0, 4, 5, 2, 3},
+		{1, 0, 2, 3, 5, 4},
+		{1, 0, 5, 4, 3, 2},
+		{3, 2, 0, 1, 4, 5},
+		{3, 2, 4, 5, 1, 0},
+		{3, 2, 1, 0, 5, 4},
+		{3, 2, 5, 4, 0, 1},
+		{2, 3, 1, 0, 4, 5},
+		{2, 3, 4, 5, 0, 1},
+		{2, 3, 0, 1, 5, 4},
+		{2, 3, 5, 4, 1, 0},
+		{5, 4, 2, 3, 0, 1},
+		{5, 4, 0, 1, 3, 2},
+		{5, 4, 3, 2, 1, 0},
+		{5, 4, 1, 0, 2, 3},
+		{4, 5, 2, 3, 1, 0},
+		{4, 5, 1, 0, 3, 2},
+		{4, 5, 3, 2, 0, 1},
+		{4, 5, 0, 1, 2, 3}};
+
 std::vector<int> AlgRotation(std::vector<int> &alg, std::vector<int> &rotation_alg, std::vector<std::vector<int>> &table)
 {
 	if (rotation_alg.empty())
@@ -340,7 +317,7 @@ inline void index_to_array(std::vector<int> &p, int index, int n, int c, int pn)
 	}
 	for (int i = 0; i < n; ++i)
 	{
-		p[n - i - 1] = 18 * (c * p[n - i - 1] + o_index % c);
+		p[n - i - 1] = 27 * (c * p[n - i - 1] + o_index % c);
 		o_index /= c;
 	}
 }
@@ -371,22 +348,20 @@ inline void index_to_o(std::vector<int> &o, int index, int c, int pn)
 
 std::vector<int> create_cp_move_table()
 {
-	std::vector<int> move_table(8 * 18, 0);
+	std::vector<int> move_table(8 * 27, 0);
 	for (int i = 0; i < 8; ++i)
 	{
-		std::vector<int> ep(12, 0);
-		std::vector<int> eo(12, 0);
 		std::vector<int> cp(8, -1);
 		std::vector<int> co(8, -1);
 		std::vector<int> center = {0, 1, 2, 3, 4, 5};
 		cp[i] = i;
 		co[i] = 0;
-		State state(cp, co, ep, eo, center);
-		for (int j = 0; j < 18; ++j)
+		State state(cp, co, center);
+		for (int j = 0; j < 27; ++j)
 		{
 			State new_state = state.apply_move_corner(moves[move_names[j]], i);
 			auto it = std::find(new_state.cp.begin(), new_state.cp.end(), i);
-			move_table[18 * i + j] = std::distance(new_state.cp.begin(), it);
+			move_table[27 * i + j] = std::distance(new_state.cp.begin(), it);
 		}
 	}
 	return move_table;
@@ -394,20 +369,18 @@ std::vector<int> create_cp_move_table()
 
 std::vector<int> create_co_move_table()
 {
-	std::vector<int> move_table(2187 * 18, 0);
+	std::vector<int> move_table(2187 * 27, 0);
 	for (int i = 0; i < 2187; ++i)
 	{
-		std::vector<int> ep(12, 0);
-		std::vector<int> eo(12, 0);
 		std::vector<int> cp(8, 0);
 		std::vector<int> co(8, 0);
 		std::vector<int> center = {0, 1, 2, 3, 4, 5};
 		index_to_o(co, i, 3, 8);
-		State state(cp, co, ep, eo, center);
-		for (int j = 0; j < 18; ++j)
+		State state(cp, co, center);
+		for (int j = 0; j < 27; ++j)
 		{
 			State new_state = state.apply_move(moves[move_names[j]]);
-			move_table[18 * i + j] = o_to_index(new_state.co, 3, 8);
+			move_table[27 * i + j] = o_to_index(new_state.co, 3, 8);
 		}
 	}
 	return move_table;
@@ -418,12 +391,10 @@ std::vector<std::vector<int>> create_center_move_table()
 	std::vector<std::vector<int>> move_table(24, std::vector<int>(27, 0));
 	for (int i = 0; i < 24; ++i)
 	{
-		std::vector<int> ep(12, 0);
-		std::vector<int> eo(12, 0);
 		std::vector<int> cp(8, 0);
 		std::vector<int> co(8, 0);
 		std::vector<int> center = index_to_center[i];
-		State state(cp, co, ep, eo, center);
+		State state(cp, co, center);
 		for (int j = 0; j < 27; ++j)
 		{
 			State new_state = state.apply_move(moves[move_names[j]]);
@@ -435,17 +406,17 @@ std::vector<std::vector<int>> create_center_move_table()
 
 std::vector<int> create_multi_move_table(int n, int c, int pn, int size, const std::vector<int> &table)
 {
-	std::vector<int> move_table(size * 18, -1);
+	std::vector<int> move_table(size * 27, -1);
 	int tmp;
 	int tmp_i;
 	std::vector<int> a(n);
 	std::vector<int> b(n);
-	std::vector<int> inv_move = {2, 1, 0, 5, 4, 3, 8, 7, 6, 11, 10, 9, 14, 13, 12, 17, 16, 15};
+	std::vector<int> inv_move = {2, 1, 0, 5, 4, 3, 8, 7, 6, 11, 10, 9, 14, 13, 12, 17, 16, 15, 20, 19, 18, 23, 22, 21, 26, 25, 24};
 	for (int i = 0; i < size; ++i)
 	{
 		index_to_array(a, i, n, c, pn);
-		tmp_i = i * 18;
-		for (int j = 0; j < 18; ++j)
+		tmp_i = i * 27;
+		for (int j = 0; j < 27; ++j)
 		{
 			if (move_table[tmp_i + j] == -1)
 			{
@@ -455,17 +426,16 @@ std::vector<int> create_multi_move_table(int n, int c, int pn, int size, const s
 				}
 				tmp = array_to_index(b, n, c, pn);
 				move_table[tmp_i + j] = tmp;
-				move_table[18 * tmp + inv_move[j]] = i;
+				move_table[27 * tmp + inv_move[j]] = i;
 			}
 		}
 	}
 	return move_table;
 }
 
-void create_prune_table(const std::vector<int> &table1, const std::vector<int> &table2, std::vector<unsigned char> &prune_table, std::vector<int> &move_restrict, int prune_depth, std::vector<unsigned char> &tmp_array, std::vector<std::vector<int>> &center_move_table)
+void create_prune_table(const std::vector<int> &table1, const std::vector<int> &table2, std::vector<unsigned char> &prune_table, std::vector<int> &move_restrict, int prune_depth)
 {
 	int size = 88179840;
-	tmp_array = std::vector<unsigned char>(size, 0);
 	int size2 = 2187;
 	int next_i;
 	int index1_tmp;
@@ -481,11 +451,10 @@ void create_prune_table(const std::vector<int> &table1, const std::vector<int> &
 		std::vector<int> tmp_alg = StringToAlg(tmp_scr);
 		for (int k : tmp_alg)
 		{
-			index1_tmp = table1[index1_tmp * 18 + k];
-			index2_tmp = table2[index2_tmp * 18 + k];
+			index1_tmp = table1[index1_tmp * 27 + k];
+			index2_tmp = table2[index2_tmp * 27 + k];
 		}
 		prune_table[index1_tmp * size2 + index2_tmp] = 0;
-		tmp_array[index1_tmp * size2 + index2_tmp] = 4 * i;
 		for (int j = 0; j < 3; ++j)
 		{
 			tmp_scr = ad[j];
@@ -494,32 +463,14 @@ void create_prune_table(const std::vector<int> &table1, const std::vector<int> &
 			int index2_tmp2 = index2_tmp;
 			for (int k : tmp_alg)
 			{
-				index1_tmp2 = table1[index1_tmp2 * 18 + k];
-				index2_tmp2 = table2[index2_tmp2 * 18 + k];
+				index1_tmp2 = table1[index1_tmp2 * 27 + k];
+				index2_tmp2 = table2[index2_tmp2 * 27 + k];
 			}
 			prune_table[index1_tmp2 * size2 + index2_tmp2] = 0;
-			tmp_array[index1_tmp2 * size2 + index2_tmp2] = 4 * i + j + 1;
 		}
 	}
 	int num = 24;
 	int num_old = 24;
-	int m;
-	int center = 0;
-	int center_tmp;
-	std::bitset<27> computed;
-	std::vector<int> move_restrict_move;
-	std::vector<int> move_restrict_rot;
-	for (int i : move_restrict)
-	{
-		if (i < 18)
-		{
-			move_restrict_move.emplace_back(i);
-		}
-		else
-		{
-			move_restrict_rot.emplace_back(i);
-		}
-	}
 	for (int d = 0; d < prune_depth; ++d)
 	{
 		next_d = d + 1;
@@ -527,78 +478,25 @@ void create_prune_table(const std::vector<int> &table1, const std::vector<int> &
 		{
 			if (prune_table[i] == d)
 			{
-				index1_tmp = (i / size2) * 18;
-				index2_tmp = (i % size2) * 18;
-				center = tmp_array[i];
-				for (int j : move_restrict_move)
+				index1_tmp = (i / size2) * 27;
+				index2_tmp = (i % size2) * 27;
+				for (int j : move_restrict)
 				{
-					computed.reset();
-					if (j >= 18)
+					next_i = table1[index1_tmp + j] * size2 + table2[index2_tmp + j];
+					if (prune_table[next_i] == 255)
 					{
-						continue;
-					}
-					m = rotationMapReverse[center][j];
-					if (!computed[m])
-					{
-						next_i = table1[index1_tmp + m] * size2 + table2[index2_tmp + m];
-						if (prune_table[next_i] == 255)
-						{
-							tmp_array[next_i] = center_move_table[center][j];
-							prune_table[next_i] = next_d;
-							num += 1;
-						}
-						computed.set(m);
-					}
-					else
-					{
-						continue;
-					}
-					for (int r : move_restrict_rot)
-					{
-						center_tmp = center_move_table[center][r];
-						m = rotationMapReverse[center_tmp][j];
-						if (!computed[m])
-						{
-							next_i = table1[index1_tmp + m] * size2 + table2[index2_tmp + m];
-							if (prune_table[next_i] == 255)
-							{
-								tmp_array[next_i] = center_move_table[center][j];
-								prune_table[next_i] = next_d;
-								num += 1;
-							}
-							computed.set(m);
-						}
-						else
-						{
-							continue;
-						}
+						prune_table[next_i] = next_d;
+						num += 1;
 					}
 				}
 			}
-		}
-		if (num == num_old)
-		{
-			break;
-		}
-		num_old = num;
-	}
-}
-
-std::vector<bool> create_ma_table()
-{
-	std::vector<bool> ma;
-	bool condition;
-	for (int prev = 0; prev < 19; ++prev)
-	{
-		for (int i = 0; i < 18; ++i)
-		{
-			condition = (prev < 18) &&
-						(i / 3 == prev / 3 ||
-						 ((i / 3) / 2 == (prev / 3) / 2 && (prev / 3) % 2 > (i / 3) % 2));
-			ma.emplace_back(condition);
+			if (num == num_old)
+			{
+				break;
+			}
+			num_old = num;
 		}
 	}
-	return ma;
 }
 
 struct search
@@ -610,7 +508,6 @@ struct search
 	int sol_num;
 	int count;
 	std::vector<std::vector<int>> center_move_table;
-	std::vector<unsigned char> tmp_array;
 	std::vector<int> single_cp_move_table;
 	std::vector<int> cp_move_table;
 	std::vector<int> co_move_table;
@@ -618,9 +515,6 @@ struct search
 	std::vector<int> alg;
 	std::vector<std::string> restrict;
 	std::vector<int> move_restrict;
-	std::vector<int> move_restrict_move;
-	std::vector<int> move_restrict_rot;
-	std::vector<bool> ma;
 	std::vector<bool> ma2;
 	std::vector<int> mc;
 	std::vector<int> mc_tmp;
@@ -630,11 +524,7 @@ struct search
 	int index2_tmp;
 	int prune_tmp;
 	std::string tmp;
-	int m;
-	int m_tmp;
-	int max_rot_count;
 	std::string post_moves;
-	int initial_center;
 
 	search()
 	{
@@ -645,17 +535,16 @@ struct search
 		co_move_table = create_co_move_table();
 	}
 
-	bool depth_limited_search(int arg_index1, int arg_index2, int depth, int center, int rot_count, int aprev)
+	bool depth_limited_search(int arg_index1, int arg_index2, int depth, int aprev)
 	{
-		for (int i : move_restrict_move)
+		for (int i : move_restrict)
 		{
 			if (ma2[aprev + i] || mc_tmp[i] >= mc[i])
 			{
 				continue;
 			}
-			m = rotationMapReverse[center][i];
-			index1_tmp = cp_move_table[arg_index1 + m];
-			index2_tmp = co_move_table[arg_index2 + m];
+			index1_tmp = cp_move_table[arg_index1 + i];
+			index2_tmp = co_move_table[arg_index2 + i];
 			prune_tmp = prune_table[index1_tmp * 2187 + index2_tmp];
 			if (prune_tmp != 255 && prune_tmp >= depth)
 			{
@@ -670,27 +559,11 @@ struct search
 					bool valid = true;
 					int l = static_cast<int>(sol.size());
 					int c = 0;
-					int rot_count_tmp = 0;
-					int center_tmp = initial_center;
 					int index1_tmp2 = index1;
 					int index2_tmp2 = index2;
 					for (int j : sol)
 					{
-						if (j >= 18)
-						{
-							center_tmp = center_move_table[center_tmp][j];
-							c++;
-							rot_count_tmp++;
-							if (rot_count_tmp > max_rot_count)
-							{
-								valid = false;
-								break;
-							}
-							continue;
-						}
-						m_tmp = rotationMapReverse[center_tmp][j];
-						center_tmp = center_move_table[center_tmp][j];
-						if (index1_tmp2 == cp_move_table[index1_tmp2 + m_tmp] * 18 && index2_tmp2 == co_move_table[index2_tmp2 + m_tmp] * 18)
+						if (index1_tmp2 == cp_move_table[index1_tmp2 + j] * 27 && index2_tmp2 == co_move_table[index2_tmp2 + j] * 27)
 						{
 							valid = false;
 							break;
@@ -698,15 +571,15 @@ struct search
 						else
 						{
 							c += 1;
-							index1_tmp2 = cp_move_table[index1_tmp2 + m_tmp];
-							index2_tmp2 = co_move_table[index2_tmp2 + m_tmp];
+							index1_tmp2 = cp_move_table[index1_tmp2 + j];
+							index2_tmp2 = co_move_table[index2_tmp2 + j];
 							if (c < l && prune_table[index1_tmp2 * 2187 + index2_tmp2] == 0)
 							{
 								valid = false;
 								break;
 							}
-							index1_tmp2 *= 18;
-							index2_tmp2 *= 18;
+							index1_tmp2 *= 27;
+							index2_tmp2 *= 27;
 						}
 					}
 					if (valid)
@@ -728,98 +601,7 @@ struct search
 					}
 				}
 			}
-			else if (depth_limited_search(index1_tmp * 18, index2_tmp * 18, depth - 1, center_move_table[center][i], rot_count, i * 27))
-			{
-				return true;
-			}
-			sol.pop_back();
-			mc_tmp[i] -= 1;
-		}
-		for (int i : move_restrict_rot)
-		{
-			if (ma2[aprev + i] || mc_tmp[i] >= mc[i])
-			{
-				continue;
-			}
-			if (rot_count >= max_rot_count)
-			{
-				continue;
-			}
-			index1_tmp = arg_index1 / 18;
-			index2_tmp = arg_index2 / 18;
-			prune_tmp = prune_table[index1_tmp * 2187 + index2_tmp];
-			if (prune_tmp != 255 && prune_tmp >= depth)
-			{
-				continue;
-			}
-			sol.emplace_back(i);
-			mc_tmp[i] += 1;
-			if (depth == 1)
-			{
-				if (prune_tmp == 0)
-				{
-					bool valid = true;
-					int l = static_cast<int>(sol.size());
-					int c = 0;
-					int rot_count_tmp = 0;
-					int center_tmp = initial_center;
-					int index1_tmp2 = index1;
-					int index2_tmp2 = index2;
-					for (int j : sol)
-					{
-						if (j >= 18)
-						{
-							center_tmp = center_move_table[center_tmp][j];
-							c++;
-							rot_count_tmp++;
-							if (rot_count_tmp > max_rot_count)
-							{
-								valid = false;
-								break;
-							}
-							continue;
-						}
-						m_tmp = rotationMapReverse[center_tmp][j];
-						center_tmp = center_move_table[center_tmp][j];
-						if (index1_tmp2 == cp_move_table[index1_tmp2 + m_tmp] * 18 && index2_tmp2 == co_move_table[index2_tmp2 + m_tmp] * 18)
-						{
-							valid = false;
-							break;
-						}
-						else
-						{
-							c += 1;
-							index1_tmp2 = cp_move_table[index1_tmp2 + m_tmp];
-							index2_tmp2 = co_move_table[index2_tmp2 + m_tmp];
-							if (c < l && prune_table[index1_tmp2 * 2187 + index2_tmp2] == 0)
-							{
-								valid = false;
-								break;
-							}
-							index1_tmp2 *= 18;
-							index2_tmp2 *= 18;
-						}
-					}
-					if (valid)
-					{
-						count += 1;
-						if (rotation == "")
-						{
-							tmp = post_moves + AlgToString(sol);
-						}
-						else
-						{
-							tmp = rotation + " " + post_moves + AlgToString(sol);
-						}
-						update(tmp.c_str());
-						if (count == sol_num)
-						{
-							return true;
-						}
-					}
-				}
-			}
-			else if (depth_limited_search(index1_tmp * 18, index2_tmp * 18, depth, center_move_table[center][i], rot_count + 1, i * 27))
+			else if (depth_limited_search(index1_tmp * 27, index2_tmp * 27, depth - 1, i * 27))
 			{
 				return true;
 			}
@@ -829,7 +611,7 @@ struct search
 		return false;
 	}
 
-	void start_search(std::string arg_scramble = "", std::string arg_rotation = "", int arg_sol_num = 100, int arg_max_length = 12, std::vector<std::string> arg_restrict = move_names, int prune_depth = 8, std::string arg_post_alg = "", int arg_max_rot_count = 0, const std::vector<bool> &arg_ma2 = std::vector<bool>(27 * 27, false), const std::vector<int> &arg_mc = std::vector<int>(27, 20))
+	void start_search(std::string arg_scramble = "", std::string arg_rotation = "", int arg_sol_num = 100, int arg_max_length = 12, std::vector<std::string> arg_restrict = move_names, int prune_depth = 8, std::string arg_post_alg = "", const std::vector<bool> &arg_ma2 = std::vector<bool>(27 * 27, false), const std::vector<int> &arg_mc = std::vector<int>(27, 20))
 	{
 		scramble = arg_scramble;
 		rotation = arg_rotation;
@@ -838,22 +620,11 @@ struct search
 		restrict = arg_restrict;
 		ma2 = arg_ma2;
 		mc = arg_mc;
-		mc_tmp = std::vector<int>(54, 0);
+		mc_tmp = std::vector<int>(27, 0);
 		for (std::string name : restrict)
 		{
 			auto it = std::find(move_names.begin(), move_names.end(), name);
 			move_restrict.emplace_back(std::distance(move_names.begin(), it));
-		}
-		for (int i : move_restrict)
-		{
-			if (i < 18)
-			{
-				move_restrict_move.emplace_back(i);
-			}
-			else
-			{
-				move_restrict_rot.emplace_back(i);
-			}
 		}
 		std::vector<int> scramble_alg = StringToAlg(scramble);
 		std::vector<int> rotation_alg = StringToAlg(rotation);
@@ -870,30 +641,21 @@ struct search
 		{
 			move_restrict_tmp[i] = rotationMapReverse[tc][move_restrict_tmp[i]];
 		}
-		max_rot_count = arg_max_rot_count;
-		create_prune_table(cp_move_table, co_move_table, prune_table, move_restrict, prune_depth, tmp_array, center_move_table);
+		create_prune_table(cp_move_table, co_move_table, prune_table, move_restrict_tmp, prune_depth);
 		index1 = 0;
 		index2 = 0;
 		count = 0;
-		int aprev_tmp = 54;
+		int aprev_tmp = 27;
 		for (int m : alg)
 		{
-			index1 = cp_move_table[index1 * 18 + m];
-			index2 = co_move_table[index2 * 18 + m];
+			index1 = cp_move_table[index1 * 27 + m];
+			index2 = co_move_table[index2 * 27 + m];
 		}
-		initial_center = 0;
-		for (int m_tmp : post_alg)
+		for (int m : post_alg)
 		{
-			aprev_tmp = m_tmp;
-			if (m_tmp >= 18)
-			{
-				initial_center = center_move_table[initial_center][m_tmp];
-				continue;
-			}
-			int m = rotationMapReverse[initial_center][m_tmp];
-			initial_center = center_move_table[initial_center][m_tmp];
-			index1 = cp_move_table[index1 * 18 + m];
-			index2 = co_move_table[index2 * 18 + m];
+			aprev_tmp = m;
+			index1 = cp_move_table[index1 * 27 + m];
+			index2 = co_move_table[index2 * 27 + m];
 		}
 		auto it = std::find(move_restrict.begin(), move_restrict.end(), aprev_tmp);
 		if (it == move_restrict.end())
@@ -907,13 +669,13 @@ struct search
 		}
 		else
 		{
-			index1 *= 18;
-			index2 *= 18;
+			index1 *= 27;
+			index2 *= 27;
 			for (int d = 1; d <= max_length; d++)
 			{
 				tmp = "depth=" + std::to_string(d);
 				update(tmp.c_str());
-				if (depth_limited_search(index1, index2, d, initial_center, 0, aprev_tmp * 27))
+				if (depth_limited_search(index1, index2, d, aprev_tmp * 27))
 				{
 					break;
 				}
@@ -1117,9 +879,8 @@ void buildMoveCountVector(const std::string &restID, const std::string &moveCoun
 	}
 }
 
-void solve(std::string scramble, std::string rotation, int num, int len, int prune, std::string move_restrict_string, std::string post_alg, int max_rot_count, std::string ma2_string, std::string mcString)
+void solve(std::string scramble, std::string rotation, int num, int len, int prune, std::string move_restrict_string, std::string post_alg, std::string ma2_string, std::string mcString)
 {
-	int count = 0;
 	std::vector<bool> ma2;
 	std::vector<int> mc;
 	std::vector<std::string> move_restrict;
@@ -1127,7 +888,7 @@ void solve(std::string scramble, std::string rotation, int num, int len, int pru
 	buidMA2(move_restrict_string, ma2_string, ma2);
 	buildMoveCountVector(move_restrict_string, mcString, mc);
 	search cs;
-	cs.start_search(scramble, rotation, num, len, move_restrict, prune, post_alg, max_rot_count, ma2, mc);
+	cs.start_search(scramble, rotation, num, len, move_restrict, prune, post_alg, ma2, mc);
 }
 
 EMSCRIPTEN_BINDINGS(my_module)
