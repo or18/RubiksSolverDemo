@@ -146,6 +146,8 @@
 			white-space: nowrap;
 			color: #fff;
 			text-decoration: none;
+			font-family: Arial, sans-serif;
+			font-size: 20px;
 		}
 
 		.drawer-header {
@@ -277,7 +279,8 @@
 	<button id="resetData" class="button">Reset</button><br><br>
 	<label for="setSelector" style="margin-left:8px;">Select Set: </label>
 	<select id="setSelector"></select><br>
-	<button id="addCategory" class="button">Add Set</button><br>
+	<button id="addCategory" class="button">Add Set</button>
+	<button id="deleteCategoryTop" class="button" style="margin-left:8px">Delete Set</button><br>
 
 	<div id="categoryContainer"></div>
 
@@ -710,22 +713,6 @@
 
 			div.appendChild(addIndexButton);
 
-			const deleteCategoryBtn = document.createElement('button');
-			deleteCategoryBtn.className = 'button';
-			deleteCategoryBtn.style.display = 'inline-block';
-			deleteCategoryBtn.style.marginLeft = '8px';
-			deleteCategoryBtn.textContent = 'Delete Set';
-			deleteCategoryBtn.onclick = () => {
-				if (confirm(`Delete set "${category}" and all its algs?`)) {
-					delete algData[category];
-					const keys = Object.keys(algData);
-					selectedSetName = keys.length ? keys[0] : null;
-					updateSetSelectorOptions();
-					populateCategoryList();
-					saveAlgDataDebounced();
-				}
-			};
-			div.appendChild(deleteCategoryBtn);
 			categoryContainer.appendChild(div);
 		}
 
@@ -741,6 +728,23 @@
 				alert('Invalid set name or set already exists.');
 			}
 		});
+
+		const deleteCategoryTopBtn = document.getElementById('deleteCategoryTop');
+		if (deleteCategoryTopBtn) {
+			deleteCategoryTopBtn.addEventListener('click', () => {
+				if (!selectedSetName) {
+					alert('No set selected to delete.');
+					return;
+				}
+				if (!confirm(`Delete set "${selectedSetName}" and all its algs?`)) return;
+				delete algData[selectedSetName];
+				const keys = Object.keys(algData);
+				selectedSetName = keys.length ? keys[0] : null;
+				updateSetSelectorOptions();
+				populateCategoryList();
+				saveAlgDataDebounced();
+			});
+		}
 
 		const setSelectorEl = document.getElementById('setSelector');
 		setSelectorEl.addEventListener('change', (e) => {
