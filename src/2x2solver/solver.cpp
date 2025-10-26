@@ -490,11 +490,10 @@ void create_prune_table(const std::vector<int> &table1, const std::vector<int> &
 					}
 				}
 			}
-			if (num == num_old)
-			{
-				break;
-			}
-			num_old = num;
+		}
+		if (num == num_old)
+		{
+			break;
 		}
 	}
 }
