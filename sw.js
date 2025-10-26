@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pwa-cash_v25';
+const CACHE_NAME = 'pwa-cash_v26';
 
 const urlsToCache = [
 	'index.html',
@@ -77,18 +77,6 @@ const urlsToCache = [
 	'src/xcrossTrainer/solver.js',
 	'src/xcrossTrainer/solver.wasm',
 	'src/xcrossTrainer/worker.js',
-	"https://cdn.cubing.net/v0/js/chunks/chunk-B4SCLF2U.js",
-	"https://cdn.cubing.net/v0/js/chunks/chunk-CQCXKBRH.js",
-	"https://cdn.cubing.net/v0/js/chunks/chunk-DYYYICTW.js",
-	"https://cdn.cubing.net/v0/js/chunks/chunk-EVYKBK34.js",
-	"https://cdn.cubing.net/v0/js/chunks/chunk-F2NOVBPD.js",
-	"https://cdn.cubing.net/v0/js/chunks/chunk-FUFHHOEQ.js",
-	"https://cdn.cubing.net/v0/js/chunks/chunk-KJS7TAKR.js",
-	"https://cdn.cubing.net/v0/js/chunks/chunk-LEATPBT6.js",
-	"https://cdn.cubing.net/v0/js/chunks/chunk-MT7YFKW7.js",
-	"https://cdn.cubing.net/v0/js/chunks/chunk-XWO4ZZTV.js",
-	"https://cdn.cubing.net/v0/js/chunks/twisty-dynamic-3d-CCZCZBPC-M7CTSFGG.js",
-	"https://cdn.cubing.net/v0/js/cubing/twisty",
 ];
 
 self.addEventListener('install', (event) => {

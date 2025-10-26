@@ -5,14 +5,14 @@
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>JSON Editor</title>
-    <meta name="description" content="Tool to edit algorithm sets in JSON format.">
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-MXJH30352W"></script>
-    <script>
-        window.dataLayer = window.dataLayer || [];
-        function gtag() { dataLayer.push(arguments); }
-        gtag('js', new Date());
-        gtag('config', 'G-MXJH30352W');
-    </script>
+	<meta name="description" content="Tool to edit algorithm sets in JSON format.">
+	<script async src="https://www.googletagmanager.com/gtag/js?id=G-MXJH30352W"></script>
+	<script>
+		window.dataLayer = window.dataLayer || [];
+		function gtag() { dataLayer.push(arguments); }
+		gtag('js', new Date());
+		gtag('config', 'G-MXJH30352W');
+	</script>
 	<style>
 		header {
 			padding: 2px;
@@ -506,9 +506,10 @@
 			label.style.marginRight = '8px';
 			label.style.verticalAlign = 'middle';
 			const categoryInput = document.createElement('input');
-			categoryInput.style.display = 'inline-block';
+			categoryInput.style.display = 'block';
 			categoryInput.style.verticalAlign = 'middle';
-			categoryInput.style.width = '300px';
+			categoryInput.style.width = '100%';
+			categoryInput.style.maxWidth = '800px';
 			categoryInput.type = 'text';
 			categoryInput.value = category;
 			categoryInput.onchange = () => {
@@ -528,25 +529,29 @@
 			};
 
 			const table = document.createElement('table');
+			table.style.width = '100%';
+			table.style.maxWidth = '800px';
+			table.style.boxSizing = 'border-box';
 			const tbody = document.createElement('tbody');
 
 			const orderedKeys = getOrderForCategory(algData[category]);
 			orderedKeys.forEach((index, idx) => {
 				const trName = document.createElement('tr');
 				const tdName = document.createElement('td');
+				tdName.style.width = '100%';
 
 				const nameLabel = document.createElement('label');
 				nameLabel.textContent = 'Name: ';
 				nameLabel.style.display = 'inline-block';
 				nameLabel.style.marginRight = '8px';
-				nameLabel.style.verticalAlign = 'middle';
-
 				const indexInput = document.createElement('input');
 				indexInput.type = 'text';
 				indexInput.value = index;
-				indexInput.style.display = 'inline-block';
+				indexInput.style.display = 'block';
 				indexInput.style.verticalAlign = 'middle';
-				indexInput.style.width = '300px';
+				indexInput.style.width = '100%';
+				indexInput.style.maxWidth = '800px';
+				indexInput.style.boxSizing = 'border-box';
 				indexInput.onchange = () => {
 					const newIndexName = indexInput.value;
 					if (newIndexName === index) return;
@@ -578,18 +583,52 @@
 
 				const trAlg = document.createElement('tr');
 				const tdAlg = document.createElement('td');
+				tdAlg.style.width = '100%';
 				const algLabel = document.createElement('label');
 				algLabel.textContent = 'Algs:';
 				algLabel.style.display = 'block';
 				algLabel.style.marginBottom = '4px';
 				tdAlg.appendChild(algLabel);
+
+				let entry = algData[category][index];
+				if (typeof entry === 'string') {
+					entry = { alg: entry };
+					algData[category][index] = entry;
+				} else if (Array.isArray(entry)) {
+					entry = { alg: entry.join('\n') };
+					algData[category][index] = entry;
+				} else if (!entry || typeof entry !== 'object') {
+					entry = { alg: '' };
+					algData[category][index] = entry;
+				}
+
 				const algTextarea = document.createElement('textarea');
-				algTextarea.value = algData[category][index].alg;
+				algTextarea.value = entry.alg || '';
+				algTextarea.style.width = '100%';
+				algTextarea.style.maxWidth = '800px';
+				algTextarea.style.boxSizing = 'border-box';
 				algTextarea.oninput = (e) => {
-					algData[category][index].alg = e.target.value;
+					entry.alg = e.target.value;
 					saveAlgDataDebounced();
 				};
 				tdAlg.appendChild(algTextarea);
+
+				const commentLabel = document.createElement('label');
+				commentLabel.textContent = 'Comment:';
+				commentLabel.style.display = 'block';
+				commentLabel.style.marginTop = '6px';
+				tdAlg.appendChild(commentLabel);
+				const commentTextarea = document.createElement('textarea');
+				commentTextarea.style.height = '60px';
+				commentTextarea.style.width = '100%';
+				commentTextarea.style.maxWidth = '800px';
+				commentTextarea.style.boxSizing = 'border-box';
+				commentTextarea.value = entry.comment || '';
+				commentTextarea.oninput = (e) => {
+					entry.comment = e.target.value;
+					saveAlgDataDebounced();
+				};
+				tdAlg.appendChild(commentTextarea);
 				trAlg.appendChild(tdAlg);
 
 				const trBtns = document.createElement('tr');
@@ -660,7 +699,7 @@
 			addIndexButton.onclick = () => {
 				const newIndex = prompt("Enter new alg name:");
 				if (newIndex && !algData[category][newIndex]) {
-					algData[category][newIndex] = { alg: "" };
+					algData[category][newIndex] = { alg: "", comment: "" };
 					getOrderForCategory(algData[category]);
 					populateCategoryList();
 					saveAlgDataDebounced();

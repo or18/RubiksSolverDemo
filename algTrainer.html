@@ -5,14 +5,14 @@
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>Alg Trainer</title>
-    <meta name="description" content="Trainer for 3x3 and 2x2 algorithms.">
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-MXJH30352W"></script>
-    <script>
-        window.dataLayer = window.dataLayer || [];
-        function gtag() { dataLayer.push(arguments); }
-        gtag('js', new Date());
-        gtag('config', 'G-MXJH30352W');
-    </script>
+	<meta name="description" content="Trainer for 3x3 and 2x2 algorithms.">
+	<script async src="https://www.googletagmanager.com/gtag/js?id=G-MXJH30352W"></script>
+	<script>
+		window.dataLayer = window.dataLayer || [];
+		function gtag() { dataLayer.push(arguments); }
+		gtag('js', new Date());
+		gtag('config', 'G-MXJH30352W');
+	</script>
 	<style>
 		header {
 			padding: 2px;
@@ -118,7 +118,8 @@
 			max-width: 90px;
 		}
 
-		a, pre {
+		a,
+		pre {
 			color: #ffffff;
 			font-family: Arial, sans-serif;
 			font-size: 20px;
@@ -355,6 +356,7 @@
 </head>
 <script type="module">
 	import { TwistyPlayer } from "https://cdn.cubing.net/v0/js/cubing/twisty";
+	import { Alg } from "https://cdn.cubing.net/v0/js/cubing/alg"
 	function createPlayer(setup, sol, puzzle) {
 		const player = new TwistyPlayer({
 			puzzle: puzzle,
@@ -364,87 +366,17 @@
 		});
 		return player;
 	}
+	function invertAlg(algstr) {
+		const alg = new Alg(algstr);
+		const algInv = alg.invert();
+		return algInv.toString();
+	}
+
 	window.createPlayer = createPlayer;
+	window.invertAlg = invertAlg;
 </script>
 
 <script>
-	const functionsPromise = new Promise(resolve => {
-		window.Module = {
-			onRuntimeInitialized: () => resolve(window.Module)
-		};
-	});
-</script>
-<script src="src/functions/functions.js"></script>
-
-<script>
-	let reverse;
-	let isFunctionsReady = false;
-
-	async function InitializeFunctions() {
-		const Module = await functionsPromise;
-		reverse = function (scr) {
-			const scr_fixed = scr_fix2(scr);
-			if (scr_fixed === "") {
-				return;
-			}
-			const lines = scr_fixed.split('\n');
-			const processedLines = [];
-			for (let i = lines.length - 1; i >= 0; i--) {
-				const line = lines[i];
-				const [alg, comment] = line.split('//');
-				const alg_revresed = Module.scr_reverse(alg.trim());
-				if (comment) {
-					processedLines.push(`${alg_revresed} // ${comment.trim()}`);
-				} else {
-					processedLines.push(alg_revresed);
-				}
-			}
-			const result = processedLines.join('\n');
-			return result.trim() + "\n";
-		};
-		isFunctionsReady = true;
-	}
-
-	InitializeFunctions();
-
-	function scr_fix(scr) {
-		const fixed_scr = scr_fix2(scr);
-		const output = fixed_scr.split('\n')
-			.map(line => line.split('//')[0].trim())
-			.filter(line => line.length > 0)
-			.join('\n');
-		return output;
-	}
-
-	function scr_fix2(scr) {
-		const outputString = scr.split('\n').map(line => {
-			const commentIndex = line.indexOf('//');
-			if (commentIndex !== -1) {
-				const beforeComment = insertSpaces(line.slice(0, commentIndex));
-				const comment = line.slice(commentIndex);
-				return beforeComment + ' ' + comment.trim();
-			} else {
-				return insertSpaces(line);
-			}
-		}).join('\n');
-		return outputString;
-	}
-
-	function insertSpaces(input) {
-		const keys = ["U", "U2", "U2'", "U'", "D", "D2", "D2'", "D'", "L", "L2", "L2'", "L'", "R", "R2", "R2'", "R'", "F", "F2", "F2'", "F'", "B", "B2", "B2'", "B'", "u", "u2", "u2'", "u'", "d", "d2", "d2'", "d'", "l", "l2", "l2'", "l'", "r", "r2", "r2'", "r'", "f", "f2", "f2'", "f'", "b", "b2", "b2'", "b'", "Uw", "Uw2", "Uw2'", "Uw'", "Dw", "Dw2", "Dw2'", "Dw'", "Lw", "Lw2", "Lw2'", "Lw'", "Rw", "Rw2", "Rw2'", "Rw'", "Fw", "Fw2", "Fw2'", "Fw'", "Bw", "Bw2", "Bw2'", "Bw'", "M", "M2", "M2'", "M'", "S", "S2", "S2'", "S'", "E", "E2", "E2'", "E'", "x", "x2", "x2'", "x'", "y", "y2", "y2'", "y'", "z", "z2", "z2'", "z'"];
-		const regex = new RegExp(`(${keys.join('|')})`, 'g');
-		return input.replace(regex, ' $1').trim()
-			.replace(/\s+/g, ' ');
-	}
-
-	function replaceCharacters(input) {
-		return input
-			.replace(/'/g, '-')
-			.replace(/\n/g, '%0A')
-			.replace(/\//g, '%2F')
-			.replace(/ /g, '_');
-	}
-
 	let algData = {};
 	const jsonFileInput = document.getElementById('algJsonFile');
 	const categoryChecks = document.getElementById('categoryChecks');
@@ -492,6 +424,21 @@
 		const randName = names[Math.floor(Math.random() * names.length)];
 		currentRandCategory = randCat;
 		currentRandName = randName;
+		currentRandComment = null;
+		try {
+			const entry = catObj[randName];
+			if (entry && typeof entry === 'object' && Object.prototype.hasOwnProperty.call(entry, 'comment')) {
+				if (typeof entry.comment === 'string') {
+					currentRandComment = entry.comment;
+				} else if (Array.isArray(entry.comment)) {
+					currentRandComment = entry.comment.join('\n');
+				} else if (entry.comment != null) {
+					currentRandComment = String(entry.comment);
+				}
+			}
+		} catch (e) {
+			currentRandComment = null;
+		}
 		let algVal = catObj[randName];
 		let chosenAlgText = null;
 		if (Array.isArray(algVal)) {
@@ -554,6 +501,7 @@
 	let currentSetup = null;
 	let currentRandCategory = null;
 	let currentRandName = null;
+	let currentRandComment = null;
 
 	function pickRandomOptionValue(selectEl) {
 		const opts = Array.from((selectEl && selectEl.options) ? selectEl.options : []);
@@ -566,22 +514,14 @@
 			try {
 				const lines = getRandomAlgFromCheckedCategories();
 				if (!lines || lines.length === 0) {
-					previewDiv.textContent = 'No alg available. Please load JSON and select categories.';
+					previewDiv.innerHTML = '';
+					const msgEl = document.createElement('pre');
+					msgEl.textContent = 'No alg available. Please load JSON and select categories.';
+					previewDiv.appendChild(msgEl);
 					return;
 				}
 				const topAlg = lines[0];
-				if (typeof window.Module === 'undefined' || !window.Module.calledRun) {
-					if (typeof functionsPromise !== 'undefined') {
-						await functionsPromise;
-					}
-				}
-				if (typeof reverse !== 'function' || !isFunctionsReady) {
-					throw new Error('reverse function is not available or functions not initialized');
-				}
-				let rev_topAlg = reverse(topAlg);
-				if (typeof rev_topAlg !== 'string') {
-					throw new Error('reverse() did not return a string');
-				}
+				let rev_topAlg = invertAlg(topAlg);
 				rev_topAlg = rev_topAlg.trim();
 				currentAlgLines = lines;
 				currentRevTopAlg = rev_topAlg;
@@ -600,7 +540,12 @@
 				previewDiv.appendChild(player);
 			} catch (e) {
 				console.error(e);
-				previewDiv.textContent = 'Failed to generate preview.';
+				if (previewDiv) {
+					previewDiv.innerHTML = '';
+					const errEl = document.createElement('pre');
+					errEl.textContent = 'Failed to generate preview.';
+					previewDiv.appendChild(errEl);
+				}
 			}
 		});
 	}
@@ -609,21 +554,30 @@
 		showBtn.addEventListener('click', () => {
 			ansDiv.innerHTML = '';
 			if (!currentAlgLines || !currentRevTopAlg) {
-				ansDiv.textContent = 'No selection yet. Please press Next first.';
+				ansDiv.innerHTML = '';
+				const noSelEl = document.createElement('pre');
+				noSelEl.textContent = 'No selection yet. Please press Next first.';
+				ansDiv.appendChild(noSelEl);
 				return;
 			}
 			const infoEl = document.createElement('pre');
 			const setText = currentRandCategory ? String(currentRandCategory) : '(unknown)';
 			const nameText = currentRandName ? String(currentRandName) : '(unknown)';
-			infoEl.textContent = `Set: ${setText}\nName: ${nameText}`;
+			let infoText = `Set: ${setText}\nName: ${nameText}`;
+			const commentText = (currentRandComment != null) ? String(currentRandComment) : '';
+			infoText += `\nComment: ${commentText}`;
+			infoEl.textContent = infoText;
 			ansDiv.appendChild(infoEl);
 			const puzzle = selectPuzzle ? selectPuzzle.value : '2x2x2';
 			currentAlgLines.forEach((alg) => {
 				const detailsEl = document.createElement('details');
 				const summaryEl = document.createElement('summary');
+				const setup = currentSetup || currentRevTopAlg || '';
 				summaryEl.textContent = alg;
 				detailsEl.appendChild(summaryEl);
-				const setup = currentSetup || currentRevTopAlg || '';
+				const setupEl = document.createElement('pre');
+				setupEl.textContent = `setup: ${setup}`;
+				detailsEl.appendChild(setupEl);
 				const player = window.createPlayer(setup, alg, puzzle);
 				detailsEl.appendChild(player);
 				ansDiv.appendChild(detailsEl);
