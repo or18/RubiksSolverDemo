@@ -508,6 +508,7 @@
             border-radius: 4px;
             cursor: pointer;
             transition: background-color 0.2s;
+            text-align: center;
         }
 
         .mode-button.active {
@@ -676,17 +677,19 @@
                 <a href="algTrainer.html" rel="noopener noreferrer" translate="no">Alg Trainer</a>
                 <a href="jsonEditor.html" rel="noopener noreferrer" translate="no">JSON Editor</a>
                 <span style="font-weight:bold;margin-top:12px;display:block;color:#fff;">External tools:</span>
-                <a href="https://trangium.github.io/MovecountCoefficient/" target="_blank" rel="noopener noreferrer" translate="no">MCC by trangium</a>
-                <a href="https://speedcubedb.com/a/3x3/" target="_blank" rel="noopener noreferrer" translate="no">speedcubedb.com</a>
+                <a href="https://trangium.github.io/MovecountCoefficient/" target="_blank" rel="noopener noreferrer"
+                    translate="no">MCC by trangium</a>
+                <a href="https://speedcubedb.com/a/3x3/" target="_blank" rel="noopener noreferrer"
+                    translate="no">speedcubedb.com</a>
                 <a href="https://cstimer.net/" target="_blank" rel="noopener noreferrer" translate="no">cstimer.net</a>
             </div>
         </nav>
     </div>
     <script>
-    const hamburgerBtn = document.getElementById('hamburger-menu-btn');
-    const drawer = document.getElementById('hamburger-menu');
-    const overlay = document.getElementById('drawer-overlay');
-    const drawerCloseBtn = document.getElementById('drawer-close-btn');
+        const hamburgerBtn = document.getElementById('hamburger-menu-btn');
+        const drawer = document.getElementById('hamburger-menu');
+        const overlay = document.getElementById('drawer-overlay');
+        const drawerCloseBtn = document.getElementById('drawer-close-btn');
 
         function openDrawer() {
             drawer.classList.add('open');
@@ -815,7 +818,7 @@
                 <div class="control-group">
                     <button id="swap-mode-btn" class="mode-button active">Swap</button>
                     <button id="flip-mode-btn" class="mode-button">Flip</button>
-                    <button id="ui_solve_btn" class="mode-button">Get<br>Scramble</button>
+                    <button id="ui_solve_btn" class="action-button">Get<br>Scramble</button>
                     <button id="reset-cube-btn" class="action-button">Reset</button>
                     <label for="rot">Rotation: </label>
                     <select translate="no" id="pre_rot">
