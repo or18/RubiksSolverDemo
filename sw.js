@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pwa-cash_v33';
+const CACHE_NAME = 'pwa-cash_v34';
 
 const urlsToCache = [
 	'index.html',
@@ -15,6 +15,8 @@ const urlsToCache = [
 	'manifest.json',
 	'icons/icon-512x512.png',
 	'icons/icon-192x192.png',
+	'screenshots/mobile-1284x2778.png',
+	'screenshots/desktop-wide-1280x720.png',
 	'src/2x2solver/solver.js',
 	'src/2x2solver/solver.wasm',
 	'src/2x2solver/worker.js',

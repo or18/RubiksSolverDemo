@@ -14,10 +14,23 @@
 			"type": "image/png"
 		}
 	],
-	"start_url": "index.html",
+	"start_url": "/RubiksSolverDemo/index.html",
 	"display": "standalone",
 	"background_color": "#121212",
 	"theme_color": "#121212",
 	"scope": "/RubiksSolverDemo/",
-	"lang": "en"
+	"lang": "en",
+	"screenshots": [
+		{
+			"src": "screenshots/desktop-wide-1280x720.png",
+			"sizes": "1280x720",
+			"type": "image/png",
+			"form_factor": "wide"
+		},
+		{
+			"src": "screenshots/mobile-1284x2778.png",
+			"sizes": "1284x2778",
+			"type": "image/png"
+		}
+	]
 }
