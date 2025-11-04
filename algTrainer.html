@@ -243,6 +243,7 @@
 			border-radius: 6px;
 		}
 	</style>
+</head>
 
 <body>
 	<header id="header" style="margin-left:48px;margin-top:10px;position:relative;z-index:10;">
@@ -341,226 +342,227 @@
 	<button id="show" class="button">Show Ans</button>
 	<div id="ans"></div>
 
-</body>
-</head>
-<script type="module">
-	import { TwistyPlayer } from "https://cdn.cubing.net/v0/js/cubing/twisty";
-	import { Alg } from "https://cdn.cubing.net/v0/js/cubing/alg"
-	function createPlayer(setup, sol, puzzle) {
-		const player = new TwistyPlayer({
-			puzzle: puzzle,
-			experimentalSetupAlg: setup,
-			alg: sol,
-			background: "none"
-		});
-		return player;
-	}
-	function invertAlg(algstr) {
-		const alg = new Alg(algstr);
-		const algInv = alg.invert();
-		return algInv.toString();
-	}
-
-	window.createPlayer = createPlayer;
-	window.invertAlg = invertAlg;
-</script>
-
-<script>
-	let algData = {};
-	const jsonFileInput = document.getElementById('algJsonFile');
-	const categoryChecks = document.getElementById('categoryChecks');
-
-	function sanitizeId(name) {
-		return 'cat_' + String(name).replace(/[^a-zA-Z0-9_-]/g, '_');
-	}
-
-	function buildCategoryChecks() {
-		if (!categoryChecks) return;
-		categoryChecks.innerHTML = '';
-		const categories = Object.keys(algData || {});
-		categories.forEach((cat) => {
-			const id = sanitizeId(cat);
-			const wrapper = document.createElement('div');
-			const cb = document.createElement('input');
-			cb.type = 'checkbox';
-			cb.className = 'custom-checkbox';
-			cb.id = id;
-			cb.checked = true;
-			const label = document.createElement('label');
-			label.setAttribute('for', id);
-			label.textContent = cat;
-			wrapper.appendChild(cb);
-			wrapper.appendChild(label);
-			categoryChecks.appendChild(wrapper);
-		});
-	}
-
-	function getRandomAlgFromCheckedCategories() {
-		if (!algData || typeof algData !== 'object') return null;
-		if (!categoryChecks) return null;
-		const checkedInputs = Array.from(categoryChecks.querySelectorAll('input.custom-checkbox:checked'));
-		if (checkedInputs.length === 0) return null;
-		const checkedCategories = checkedInputs.map((cb) => {
-			const lbl = categoryChecks.querySelector(`label[for="${cb.id}"]`);
-			return lbl ? lbl.textContent : null;
-		}).filter(Boolean);
-		if (checkedCategories.length === 0) return null;
-		const randCat = checkedCategories[Math.floor(Math.random() * checkedCategories.length)];
-		const catObj = algData[randCat];
-		if (!catObj || typeof catObj !== 'object') return null;
-		const names = Object.keys(catObj);
-		if (names.length === 0) return null;
-		const randName = names[Math.floor(Math.random() * names.length)];
-		currentRandCategory = randCat;
-		currentRandName = randName;
-		currentRandComment = null;
-		try {
-			const entry = catObj[randName];
-			if (entry && typeof entry === 'object' && Object.prototype.hasOwnProperty.call(entry, 'comment')) {
-				if (typeof entry.comment === 'string') {
-					currentRandComment = entry.comment;
-				} else if (Array.isArray(entry.comment)) {
-					currentRandComment = entry.comment.join('\n');
-				} else if (entry.comment != null) {
-					currentRandComment = String(entry.comment);
-				}
-			}
-		} catch (e) {
-			currentRandComment = null;
+	<script type="module">
+		import { TwistyPlayer } from "https://cdn.cubing.net/v0/js/cubing/twisty";
+		import { Alg } from "https://cdn.cubing.net/v0/js/cubing/alg"
+		function createPlayer(setup, sol, puzzle) {
+			const player = new TwistyPlayer({
+				puzzle: puzzle,
+				experimentalSetupAlg: setup,
+				alg: sol,
+				background: "none"
+			});
+			return player;
 		}
-		let algVal = catObj[randName];
-		let chosenAlgText = null;
-		if (Array.isArray(algVal)) {
-			const onlyStrings = algVal.filter(v => typeof v === 'string' && v.trim().length > 0);
-			if (onlyStrings.length > 0) {
-				chosenAlgText = onlyStrings[Math.floor(Math.random() * onlyStrings.length)];
+		function invertAlg(algstr) {
+			const alg = new Alg(algstr);
+			const algInv = alg.invert();
+			return algInv.toString();
+		}
+
+		window.createPlayer = createPlayer;
+		window.invertAlg = invertAlg;
+	</script>
+
+	<script>
+		let algData = {};
+		const jsonFileInput = document.getElementById('algJsonFile');
+		const categoryChecks = document.getElementById('categoryChecks');
+
+		function sanitizeId(name) {
+			return 'cat_' + String(name).replace(/[^a-zA-Z0-9_-]/g, '_');
+		}
+
+		function buildCategoryChecks() {
+			if (!categoryChecks) return;
+			categoryChecks.innerHTML = '';
+			const categories = Object.keys(algData || {});
+			categories.forEach((cat) => {
+				const id = sanitizeId(cat);
+				const wrapper = document.createElement('div');
+				const cb = document.createElement('input');
+				cb.type = 'checkbox';
+				cb.className = 'custom-checkbox';
+				cb.id = id;
+				cb.checked = true;
+				const label = document.createElement('label');
+				label.setAttribute('for', id);
+				label.textContent = cat;
+				wrapper.appendChild(cb);
+				wrapper.appendChild(label);
+				categoryChecks.appendChild(wrapper);
+			});
+		}
+
+		function getRandomAlgFromCheckedCategories() {
+			if (!algData || typeof algData !== 'object') return null;
+			if (!categoryChecks) return null;
+			const checkedInputs = Array.from(categoryChecks.querySelectorAll('input.custom-checkbox:checked'));
+			if (checkedInputs.length === 0) return null;
+			const checkedCategories = checkedInputs.map((cb) => {
+				const lbl = categoryChecks.querySelector(`label[for="${cb.id}"]`);
+				return lbl ? lbl.textContent : null;
+			}).filter(Boolean);
+			if (checkedCategories.length === 0) return null;
+			const randCat = checkedCategories[Math.floor(Math.random() * checkedCategories.length)];
+			const catObj = algData[randCat];
+			if (!catObj || typeof catObj !== 'object') return null;
+			const names = Object.keys(catObj);
+			if (names.length === 0) return null;
+			const randName = names[Math.floor(Math.random() * names.length)];
+			currentRandCategory = randCat;
+			currentRandName = randName;
+			currentRandComment = null;
+			try {
+				const entry = catObj[randName];
+				if (entry && typeof entry === 'object' && Object.prototype.hasOwnProperty.call(entry, 'comment')) {
+					if (typeof entry.comment === 'string') {
+						currentRandComment = entry.comment;
+					} else if (Array.isArray(entry.comment)) {
+						currentRandComment = entry.comment.join('\n');
+					} else if (entry.comment != null) {
+						currentRandComment = String(entry.comment);
+					}
+				}
+			} catch (e) {
+				currentRandComment = null;
 			}
-		} else if (typeof algVal === 'string') {
-			chosenAlgText = algVal;
-		} else if (algVal && typeof algVal === 'object') {
-			if (typeof algVal.alg === 'string') {
-				chosenAlgText = algVal.alg;
-			} else if (Array.isArray(algVal.alg)) {
-				const onlyStrings = algVal.alg.filter(v => typeof v === 'string' && v.trim().length > 0);
+			let algVal = catObj[randName];
+			let chosenAlgText = null;
+			if (Array.isArray(algVal)) {
+				const onlyStrings = algVal.filter(v => typeof v === 'string' && v.trim().length > 0);
 				if (onlyStrings.length > 0) {
 					chosenAlgText = onlyStrings[Math.floor(Math.random() * onlyStrings.length)];
 				}
+			} else if (typeof algVal === 'string') {
+				chosenAlgText = algVal;
+			} else if (algVal && typeof algVal === 'object') {
+				if (typeof algVal.alg === 'string') {
+					chosenAlgText = algVal.alg;
+				} else if (Array.isArray(algVal.alg)) {
+					const onlyStrings = algVal.alg.filter(v => typeof v === 'string' && v.trim().length > 0);
+					if (onlyStrings.length > 0) {
+						chosenAlgText = onlyStrings[Math.floor(Math.random() * onlyStrings.length)];
+					}
+				}
 			}
+			if (typeof chosenAlgText !== 'string') return null;
+			const lines = chosenAlgText.split('\n').map(s => s.trim()).filter(s => s.length > 0);
+			return lines.length > 0 ? lines : null;
 		}
-		if (typeof chosenAlgText !== 'string') return null;
-		const lines = chosenAlgText.split('\n').map(s => s.trim()).filter(s => s.length > 0);
-		return lines.length > 0 ? lines : null;
-	}
 
-	window.getRandomAlgFromCheckedCategories = getRandomAlgFromCheckedCategories;
-	jsonFileInput.addEventListener('change', (event) => {
-		const files = event.target.files;
-		if (!files || !files.length) return;
-		const file = files[0];
-		const reader = new FileReader();
-		reader.onload = (e) => {
-			try {
-				const parsed = JSON.parse(e.target.result);
-				if (!parsed || typeof parsed !== 'object') throw new Error('Invalid JSON root');
-				algData = parsed;
-				window.algData = algData;
-				buildCategoryChecks();
-				window.dispatchEvent(new CustomEvent('algDataLoaded', {
-					detail: { categories: Object.keys(algData || {}).length }
-				}));
-			} catch (err) {
-				console.error('Invalid JSON file.', err);
-				algData = {};
-				window.algData = algData;
-				if (categoryChecks) categoryChecks.innerHTML = '';
-			}
-		};
-		reader.readAsText(file);
-	});
+		window.getRandomAlgFromCheckedCategories = getRandomAlgFromCheckedCategories;
+		jsonFileInput.addEventListener('change', (event) => {
+			const files = event.target.files;
+			if (!files || !files.length) return;
+			const file = files[0];
+			const reader = new FileReader();
+			reader.onload = (e) => {
+				try {
+					const parsed = JSON.parse(e.target.result);
+					if (!parsed || typeof parsed !== 'object') throw new Error('Invalid JSON root');
+					algData = parsed;
+					window.algData = algData;
+					buildCategoryChecks();
+					window.dispatchEvent(new CustomEvent('algDataLoaded', {
+						detail: { categories: Object.keys(algData || {}).length }
+					}));
+				} catch (err) {
+					console.error('Invalid JSON file.', err);
+					algData = {};
+					window.algData = algData;
+					if (categoryChecks) categoryChecks.innerHTML = '';
+				}
+			};
+			reader.readAsText(file);
+		});
 
-	const nextBtn = document.getElementById('next');
-	const previewDiv = document.getElementById('preview');
-	const selectPuzzle = document.getElementById('selectPuzzle');
-	const showBtn = document.getElementById('show');
-	const ansDiv = document.getElementById('ans');
-	let currentAlgLines = null;
-	let currentRevTopAlg = null;
-	let currentSetup = null;
-	let currentRandCategory = null;
-	let currentRandName = null;
-	let currentRandComment = null;
+		const nextBtn = document.getElementById('next');
+		const previewDiv = document.getElementById('preview');
+		const selectPuzzle = document.getElementById('selectPuzzle');
+		const showBtn = document.getElementById('show');
+		const ansDiv = document.getElementById('ans');
+		let currentAlgLines = null;
+		let currentRevTopAlg = null;
+		let currentSetup = null;
+		let currentRandCategory = null;
+		let currentRandName = null;
+		let currentRandComment = null;
 
-	if (nextBtn && previewDiv) {
-		nextBtn.addEventListener('click', async () => {
-			try {
-				const lines = getRandomAlgFromCheckedCategories();
-				if (!lines || lines.length === 0) {
+		if (nextBtn && previewDiv) {
+			nextBtn.addEventListener('click', async () => {
+				try {
+					const lines = getRandomAlgFromCheckedCategories();
+					if (!lines || lines.length === 0) {
+						previewDiv.innerHTML = '';
+						const msgEl = document.createElement('pre');
+						msgEl.textContent = 'No alg available. Please load JSON and select categories.';
+						previewDiv.appendChild(msgEl);
+						return;
+					}
+					const topAlg = lines[0];
+					let rev_topAlg = invertAlg(topAlg);
+					rev_topAlg = rev_topAlg.trim();
+					currentAlgLines = lines;
+					currentRevTopAlg = rev_topAlg;
+					const setup = rev_topAlg;
+					currentSetup = setup;
+					if (ansDiv) ansDiv.innerHTML = '';
+					const puzzle = selectPuzzle ? selectPuzzle.value : '2x2x2';
+					const player = window.createPlayer(setup, "", puzzle);
+					player.controlPanel = "none";
 					previewDiv.innerHTML = '';
-					const msgEl = document.createElement('pre');
-					msgEl.textContent = 'No alg available. Please load JSON and select categories.';
-					previewDiv.appendChild(msgEl);
+					previewDiv.appendChild(player);
+				} catch (e) {
+					console.error(e);
+					if (previewDiv) {
+						previewDiv.innerHTML = '';
+						const errEl = document.createElement('pre');
+						errEl.textContent = 'Failed to generate preview.';
+						previewDiv.appendChild(errEl);
+					}
+				}
+			});
+		}
+
+		if (showBtn && ansDiv) {
+			showBtn.addEventListener('click', () => {
+				ansDiv.innerHTML = '';
+				if (!currentAlgLines || !currentRevTopAlg) {
+					ansDiv.innerHTML = '';
+					const noSelEl = document.createElement('pre');
+					noSelEl.textContent = 'No selection yet. Please press Next first.';
+					ansDiv.appendChild(noSelEl);
 					return;
 				}
-				const topAlg = lines[0];
-				let rev_topAlg = invertAlg(topAlg);
-				rev_topAlg = rev_topAlg.trim();
-				currentAlgLines = lines;
-				currentRevTopAlg = rev_topAlg;
-				const setup = rev_topAlg;
-				currentSetup = setup;
-				if (ansDiv) ansDiv.innerHTML = '';
+				const infoEl = document.createElement('pre');
+				const setText = currentRandCategory ? String(currentRandCategory) : '(unknown)';
+				const nameText = currentRandName ? String(currentRandName) : '(unknown)';
+				let infoText = `Set: ${setText}\nName: ${nameText}`;
+				const commentText = (currentRandComment != null) ? String(currentRandComment) : '';
+				infoText += `\nComment: ${commentText}`;
+				infoEl.textContent = infoText;
+				ansDiv.appendChild(infoEl);
 				const puzzle = selectPuzzle ? selectPuzzle.value : '2x2x2';
-				const player = window.createPlayer(setup, "", puzzle);
-				player.controlPanel = "none";
-				previewDiv.innerHTML = '';
-				previewDiv.appendChild(player);
-			} catch (e) {
-				console.error(e);
-				if (previewDiv) {
-					previewDiv.innerHTML = '';
-					const errEl = document.createElement('pre');
-					errEl.textContent = 'Failed to generate preview.';
-					previewDiv.appendChild(errEl);
-				}
-			}
-		});
-	}
-
-	if (showBtn && ansDiv) {
-		showBtn.addEventListener('click', () => {
-			ansDiv.innerHTML = '';
-			if (!currentAlgLines || !currentRevTopAlg) {
-				ansDiv.innerHTML = '';
-				const noSelEl = document.createElement('pre');
-				noSelEl.textContent = 'No selection yet. Please press Next first.';
-				ansDiv.appendChild(noSelEl);
-				return;
-			}
-			const infoEl = document.createElement('pre');
-			const setText = currentRandCategory ? String(currentRandCategory) : '(unknown)';
-			const nameText = currentRandName ? String(currentRandName) : '(unknown)';
-			let infoText = `Set: ${setText}\nName: ${nameText}`;
-			const commentText = (currentRandComment != null) ? String(currentRandComment) : '';
-			infoText += `\nComment: ${commentText}`;
-			infoEl.textContent = infoText;
-			ansDiv.appendChild(infoEl);
-			const puzzle = selectPuzzle ? selectPuzzle.value : '2x2x2';
-			currentAlgLines.forEach((alg) => {
-				const detailsEl = document.createElement('details');
-				const summaryEl = document.createElement('summary');
-				const setup = currentSetup || currentRevTopAlg || '';
-				summaryEl.textContent = alg;
-				detailsEl.appendChild(summaryEl);
-				const setupEl = document.createElement('pre');
-				setupEl.className = 'setup-pre';
-				setupEl.textContent = `setup: ${setup}`;
-				detailsEl.appendChild(setupEl);
-				const player = window.createPlayer(setup, alg, puzzle);
-				detailsEl.appendChild(player);
-				ansDiv.appendChild(detailsEl);
+				currentAlgLines.forEach((alg) => {
+					const detailsEl = document.createElement('details');
+					const summaryEl = document.createElement('summary');
+					const setup = currentSetup || currentRevTopAlg || '';
+					summaryEl.textContent = alg;
+					detailsEl.appendChild(summaryEl);
+					const setupEl = document.createElement('pre');
+					setupEl.className = 'setup-pre';
+					setupEl.textContent = `setup: ${setup}`;
+					detailsEl.appendChild(setupEl);
+					const player = window.createPlayer(setup, alg, puzzle);
+					detailsEl.appendChild(player);
+					ansDiv.appendChild(detailsEl);
+				});
 			});
-		});
-	}
-</script>
+		}
+	</script>
+	<script src="sw-register.js" defer></script>
+
+</body>
 
 </html>

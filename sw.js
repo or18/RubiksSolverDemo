@@ -1,4 +1,12 @@
-const CACHE_NAME = 'pwa-cash_v34';
+const CACHE_NAME = 'pwa-cache_v39';
+
+const urlsToPrecache = [
+	'index.html',
+	'manifest.json',
+	'icons/icon-512x512.png',
+	'icons/icon-192x192.png',
+	'sw-register.js',
+];
 
 const urlsToCache = [
 	'index.html',
@@ -15,8 +23,7 @@ const urlsToCache = [
 	'manifest.json',
 	'icons/icon-512x512.png',
 	'icons/icon-192x192.png',
-	'screenshots/mobile-1284x2778.png',
-	'screenshots/desktop-wide-1280x720.png',
+	'sw-register.js',
 	'src/2x2solver/solver.js',
 	'src/2x2solver/solver.wasm',
 	'src/2x2solver/worker.js',
@@ -81,43 +88,175 @@ const urlsToCache = [
 	'src/xcrossTrainer/worker.js',
 ];
 
+let precacheDone = false;
+let fullcacheStarted = false;
+
 self.addEventListener('install', (event) => {
-	event.waitUntil(
-		caches.open(CACHE_NAME)
-			.then((cache) => cache.addAll(urlsToCache))
-	);
+	event.waitUntil((async () => {
+		const cache = await caches.open(CACHE_NAME);
+		try {
+			await cache.addAll(urlsToPrecache);
+			precacheDone = true;
+		} catch (e) {
+			console.warn('Precache required assets failed, falling back to individual fetch:', e);
+			let precacheFailed = false;
+			await Promise.all(urlsToPrecache.map(async (url) => {
+				try {
+					const res = await fetch(url);
+					if (res && res.ok) {
+						await cache.put(url, res.clone());
+					} else {
+						console.error(`Failed to cache (bad response): ${url}`);
+						precacheFailed = true;
+					}
+				} catch (err) {
+					console.error(`Failed to cache (fetch error): ${url}`, err);
+					precacheFailed = true;
+				}
+			}));
+
+			if (precacheFailed) {
+				console.error('One of more critical precache assets failed. Install will fail.');
+				throw new Error('Critical precache failed.');
+			}
+			precacheDone = true;
+		}
+	})());
 });
 
 self.addEventListener('activate', (event) => {
-	const cacheWhitelist = [CACHE_NAME];
-	event.waitUntil(
-		caches.keys().then((cacheNames) => {
-			return Promise.all(
-				cacheNames.map((cacheName) => {
-					if (cacheWhitelist.indexOf(cacheName) === -1) {
-						return caches.delete(cacheName);
+	event.waitUntil((async () => {
+		if (self.registration && self.registration.navigationPreload) {
+			try { await self.registration.navigationPreload.enable(); } catch (e) { }
+		}
+		const cacheWhitelist = [CACHE_NAME];
+		const keys = await caches.keys();
+		const hadOldCaches = keys.some(name => name !== CACHE_NAME);
+		await Promise.all(keys.map(name => cacheWhitelist.indexOf(name) === -1 ? caches.delete(name) : Promise.resolve()));
+		try {
+			await self.clients.claim();
+		} catch (e) {
+			console.error('clients.claim() failed:', e);
+		}
+		if (hadOldCaches) {
+			const notify = async (msg) => {
+				try {
+					const all = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+					for (const client of all) {
+						client.postMessage(msg);
 					}
-				})
-			);
-		})
-	);
+				} catch (e) {
+					console.error('Broadcast to clients failed:', e);
+				}
+			};
+			notify({ type: 'SW_UPDATE_AVAILABLE', cacheName: CACHE_NAME });
+		}
+	})());
 });
 
+self.addEventListener('message', (event) => {
+	const data = event.data || {};
+	if (!data || !data.type) return;
+
+	if (data && (data.type === 'DP_PRECACHE' || data.type === 'APP_INSTALLED')) {
+		if (precacheDone) return;
+		event.waitUntil((async () => {
+			const cache = await caches.open(CACHE_NAME);
+			let precacheFailed = false;
+			try {
+				await cache.addAll(urlsToPrecache);
+			} catch (e) {
+				console.warn('Precache required assets failed (from message), falling back to individual fetch:', e);
+				await Promise.all(urlsToPrecache.map(async (url) => {
+					try {
+						const res = await fetch(url);
+						if (res && res.ok) {
+							await cache.put(url, res.clone());
+						} else {
+							console.error(`Failed to cache (bad response): ${url}`);
+							precacheFailed = true;
+						}
+					} catch (err) {
+						console.error(`Failed to cache (fetch error): ${url}`, err);
+						precacheFailed = true;
+					}
+				}));
+			}
+			if (precacheFailed) {
+				console.error('One or more critical precache assets failed (from message).');
+				throw new Error('Critical precache failed (from message).');
+			}
+			precacheDone = true;
+		})());
+	}
+	if (data.type === 'DP_FULLCACHE' || data.type === 'APP_INSTALLED_FULL') {
+		event.waitUntil((async () => {
+			if (fullcacheStarted) return;
+			fullcacheStarted = true;
+			const cache = await caches.open(CACHE_NAME);
+			const concurrency = 4;
+			const list = urlsToCache.filter(u => !urlsToPrecache.includes(u));
+			let idx = 0;
+			const worker = async () => {
+				while (idx < list.length) {
+					const i = idx++;
+					const url = list[i];
+					try {
+						const res = await fetch(url);
+						if (res && res.ok) await cache.put(url, res.clone());
+					} catch (e) { }
+				}
+			};
+			await Promise.all(new Array(concurrency).fill(0).map(() => worker()));
+		})());
+	}
+
+	if (data.type === 'FORCE_ACTIVATE') {
+		event.waitUntil((async () => {
+			try {
+				self.skipWaiting();
+				await self.clients.claim();
+			} catch (e) { }
+		})());
+	}
+})
+
 self.addEventListener('fetch', (event) => {
-	const { request } = event;
-	if (request.mode === 'navigate') {
-		event.respondWith(
-			caches.match(request, { ignoreSearch: true })
-				.then((response) => {
-					return response || fetch(request);
-				})
-		);
+	const req = event.request;
+	if (req.method !== 'GET') return;
+
+	if (req.mode === 'navigate') {
+		event.respondWith((async () => {
+			const match = await caches.match(req, { ignoreSearch: true });
+			if (match) return match;
+
+			const preload = await event.preloadResponse;
+			if (preload) return preload;
+
+			try {
+				const net = await fetch(req);
+				return net;
+			} catch (err) {
+				const pageSpecific = await caches.match(req.url);
+				if (pageSpecific) return pageSpecific;
+				const idx = await caches.match('index.html');
+				if (idx) return idx;
+			}
+		})());
 		return;
 	}
-	event.respondWith(
-		caches.match(request)
-			.then((response) => {
-				return response || fetch(request);
-			})
-	);
+
+	event.respondWith((async () => {
+		const cache = await caches.open(CACHE_NAME);
+		const cachedResponse = await cache.match(req);
+		const networkPromise = fetch(req).then(async (networkResponse) => {
+			if (networkResponse && networkResponse.status === 200) {
+				try { await cache.put(req, networkResponse.clone()); } catch (e) { }
+			}
+			return networkResponse;
+		}).catch(() => null);
+
+		return cachedResponse || await networkPromise || new Response(null, { status: 504 });
+	})());
 });
+

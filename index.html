@@ -9,8 +9,6 @@
     <meta name="description"
         content="Fast solver for Rubik's Cube cross, XCross, EOCross, free pair, pseudo F2L, and last layer. ">
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-MXJH30352W"></script>
-    <script async src="src/min2phase.js/min2phase.js"></script>
-    <script async src="src/functions/list.js"></script>
     <script>
         window.dataLayer = window.dataLayer || [];
         function gtag() { dataLayer.push(arguments); }
@@ -645,12 +643,6 @@
     <header id="header">
         <h1>Rubik's Cube Solver</h1>
     </header>
-    <h2>This is solver for Rubik's cube cross, XCross, XXCross, XXXCross, XXXXCross, free pair, last layer. Pseudo
-        XCross and free pair solver also available. EOCross and XEOCross
-        solver also available.
-    </h2>
-    <h2>Update: The solver and trainers work offline after you install the web app from your browser.
-    </h2>
     <div id="hamburger-menu-container">
         <button id="hamburger-menu-btn" aria-label="Open menu"
             style="background:none;border:none;cursor:pointer;font-size:2.2rem;position:absolute;top:10px;left:10px;z-index:1002;color:#fff;">
@@ -820,7 +812,7 @@
                     <button id="flip-mode-btn" class="mode-button">Flip</button>
                     <button id="ui_solve_btn" class="action-button">Get<br>Scramble</button>
                     <button id="reset-cube-btn" class="action-button">Reset</button>
-                    <label for="rot">Rotation: </label>
+                    <label for="pre_rot">Rotation: </label>
                     <select translate="no" id="pre_rot">
                         <option translate="no" value="">None</option>
                         <option translate="no" value="y">y</option>
@@ -1679,27 +1671,79 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
     <div id="result"></div>
 
     <script type="module">
-        import { TwistyPlayer } from "https://cdn.cubing.net/v0/js/cubing/twisty";
-        function createPlayer(setup, sol) {
-            const player = new TwistyPlayer({
-                puzzle: "3x3x3",
-                experimentalSetupAlg: setup,
-                alg: sol,
-                background: "none"
-            });
-            return player;
+        let twistyPromise = null;
+        function ensureTwisty() {
+            if (!twistyPromise) {
+                twistyPromise = import('https://cdn.cubing.net/v0/js/cubing/twisty')
+                    .then(mod => {
+                        console.log('Twisty module loaded exports:', Object.keys(mod || {}));
+                        const Ctor = mod.TwistyPlayer || mod.default || (mod.default && mod.default.TwistyPlayer) || window.TwistyPlayer || null;
+                        console.log('Resolved TwistyPlayer constructor:', Ctor);
+                        window.__TwistyModule = mod;
+                        window.__TwistyPlayerCtor = Ctor;
+                        return mod;
+                    })
+                    .catch(err => {
+                        console.error('Twisty import failed:', err);
+                        window.__TwistyLoadError = err;
+                        throw err;
+                    });
+            }
+            return twistyPromise;
+        }
+        async function createPlayerLazy(setup, alg) {
+            const mod = await ensureTwisty();
+            const Ctor = mod.TwistyPlayer || mod.default || (mod.default && mod.default.TwistyPlayer) || window.__TwistyPlayerCtor || window.TwistyPlayer;
+            if (!Ctor) throw new Error('TwistyPlayer constructor not found in module');
+            return new Ctor({ puzzle: '3x3x3', experimentalSetupAlg: setup, alg, background: 'none' });
+        }
+        window.createPlayerLazy = createPlayerLazy;
+        function createPlayer(setup, alg) {
+            if (window.__TwistyLoadError) throw window.__TwistyLoadError;
+            const Ctor = window.__TwistyPlayerCtor || window.TwistyPlayer;
+            if (!Ctor) {
+                ensureTwisty().catch(e => console.error('ensureTwisty error:', e));
+                throw new Error('TwistyPlayer not available');
+            }
+            return new Ctor({ puzzle: '3x3x3', experimentalSetupAlg: setup, alg, background: 'none' });
         }
         window.createPlayer = createPlayer;
+        window.ensureTwisty = ensureTwisty;
+        try { ensureTwisty().catch(() => { }); } catch (e) { }
     </script>
 
     <script>
-        const functionsPromise = new Promise(resolve => {
-            window.Module = {
-                onRuntimeInitialized: () => resolve(window.Module)
-            };
-        });
+        function loadScriptAsync(src) {
+            return new Promise((resolve, reject) => {
+                if (document.querySelector('script[src="' + src + '"]')) return resolve();
+                const s = document.createElement('script');
+                s.src = src;
+                s.async = true;
+                s.onload = () => resolve();
+                s.onerror = (e) => reject(new Error('Failed to load ' + src));
+                document.head.appendChild(s);
+            });
+        }
+        window.loadMin2phase = function () {
+            return window.__min2phaseLoading || (window.__min2phaseLoading = loadScriptAsync('src/min2phase.js/min2phase.js').then(() => window.min2phase));
+        };
+        window.loadListJs = function () {
+            return window.__listLoading || (window.__listLoading = loadScriptAsync('src/functions/list.js'));
+        };
+        window.loadFunctionsJs = function () {
+            if (window.__functionsLoading) return window.__functionsLoading;
+            window.__functionsLoading = new Promise((resolve, reject) => {
+                window.Module = {
+                    onRuntimeInitialized: () => resolve(window.Module)
+                };
+                loadScriptAsync('src/functions/functions.js').catch(err => {
+                    window.__functionsLoading = null;
+                    reject(err);
+                });
+            });
+            return window.__functionsLoading;
+        };
     </script>
-    <script src="src/functions/functions.js"></script>
 
     <script>
         let reverse;
@@ -1710,64 +1754,73 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
         let isFunctionsReady = false;
 
         async function InitializeFunctions() {
-            const Module = await functionsPromise;
-            reverse = function (scr) {
-                const scr_fixed = scr_fix2(scr);
-                if (scr_fixed === "") {
-                    return;
-                }
-                const lines = scr_fixed.split('\n');
-                const processedLines = [];
-                for (let i = lines.length - 1; i >= 0; i--) {
-                    const line = lines[i];
-                    const [alg, comment] = line.split('//');
-                    const alg_revresed = Module.scr_reverse(alg.trim());
-                    if (comment) {
-                        processedLines.push(`${alg_revresed} // ${comment.trim()}`);
-                    } else {
-                        processedLines.push(alg_revresed);
+            try {
+                const Module = await window.loadFunctionsJs();
+                reverse = function (scr) {
+                    const scr_fixed = scr_fix2(scr);
+                    if (scr_fixed === "") {
+                        return;
                     }
-                }
-                const result = processedLines.join('\n');
-                return result.trim() + "\n";
-            };
-            mirror = function (scr) {
-                const scr_fixed = scr_fix2(scr);
-                if (scr_fixed === "") {
-                    return;
-                }
-                const lines = scr_fixed.split('\n');
-                const processedLines = [];
-                for (let i = 0; i < lines.length; i++) {
-                    const line = lines[i];
-                    const [alg, comment] = line.split('//');
-                    const alg_mirrored = Module.scr_mirror(alg.trim());
-                    if (comment) {
-                        processedLines.push(`${alg_mirrored} // ${comment.trim()}`);
-                    } else {
-                        processedLines.push(alg_mirrored);
+                    const lines = scr_fixed.split('\n');
+                    const processedLines = [];
+                    for (let i = lines.length - 1; i >= 0; i--) {
+                        const line = lines[i];
+                        const [alg, comment] = line.split('//');
+                        const alg_revresed = Module.scr_reverse(alg.trim());
+                        if (comment) {
+                            processedLines.push(`${alg_revresed} // ${comment.trim()}`);
+                        } else {
+                            processedLines.push(alg_revresed);
+                        }
                     }
-                }
-                const result = processedLines.join('\n');
-                return result.trim() + "\n";
-            };
-            convert = function (scramble) {
-                const result = Module.scr_converter(scramble);
-                const resultArray = result.split(',');
-                return resultArray.map(part => part.trim());
-            };
-            generateTwoPhaseInput = function (scramble) {
-                const result = Module.ScrambleToState(scramble);
-                return result;
-            };
-            convertMask = function (center_input, edge_input, corner_input, rotation_alg) {
-                const result = Module.convertMask(center_input, edge_input, corner_input, rotation_alg);
-                return result;
-            };
-            isFunctionsReady = true;
+                    const result = processedLines.join('\n');
+                    return result.trim() + "\n";
+                };
+                mirror = function (scr) {
+                    const scr_fixed = scr_fix2(scr);
+                    if (scr_fixed === "") {
+                        return;
+                    }
+                    const lines = scr_fixed.split('\n');
+                    const processedLines = [];
+                    for (let i = 0; i < lines.length; i++) {
+                        const line = lines[i];
+                        const [alg, comment] = line.split('//');
+                        const alg_mirrored = Module.scr_mirror(alg.trim());
+                        if (comment) {
+                            processedLines.push(`${alg_mirrored} // ${comment.trim()}`);
+                        } else {
+                            processedLines.push(alg_mirrored);
+                        }
+                    }
+                    const result = processedLines.join('\n');
+                    return result.trim() + "\n";
+                };
+                convert = function (scramble) {
+                    const result = Module.scr_converter(scramble);
+                    const resultArray = result.split(',');
+                    return resultArray.map(part => part.trim());
+                };
+                generateTwoPhaseInput = function (scramble) {
+                    const result = Module.ScrambleToState(scramble);
+                    return result;
+                };
+                convertMask = function (center_input, edge_input, corner_input, rotation_alg) {
+                    const result = Module.convertMask(center_input, edge_input, corner_input, rotation_alg);
+                    return result;
+                };
+                isFunctionsReady = true;
+            } catch (e) {
+                console.error('InitializeFuntions failed:', e);
+                isFunctionsReady = false;
+            }
         }
 
-        InitializeFunctions();
+        if ('requestIdleCallback' in window) {
+            requestIdleCallback(() => { InitializeFunctions(); }, { timeout: 2000 });
+        } else {
+            setTimeout(() => { InitializeFunctions(); }, 2000);
+        }
 
         let worker;
         let worker2;
@@ -2922,8 +2975,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                 return stickerOrder.map(stickerId => currentStickerFaces[stickerId] || '?').join('');
             }
 
-
-            function getscr() {
+            async function getscr() {
                 if (!isFunctionsReady) {
                     alert("The module is still initializing. Please try again in a moment.");
                     return "";
@@ -2933,7 +2985,28 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                     return "";
                 }
                 var cube = getSolverString();
-                var solution = min2phase.solve(cube);
+                let solution;
+                if (typeof min2phase === 'undefined' || typeof min2phase.randomCube !== 'function') {
+                    try {
+                        await window.loadMin2phase();
+                        console.log('min2phase loaded');
+                    } catch (e) {
+                        console.error('Failed to load min2phase:', e);
+                        alert('Failed to load solver module. Please check network or try again later.');
+                        return;
+                    }
+                }
+                if (typeof min2phase === 'undefined' || typeof min2phase.randomCube !== 'function') {
+                    console.error('genscr: min2phase still unavailable after load');
+                    alert('Solver module not available.');
+                    return;
+                }
+                try {
+                    solution = min2phase.solve(cube);
+                } catch (e) {
+                    console.error('genscr error:', e);
+                    alert('Failed to generate scramble: see console for details.');
+                }
                 if (solution === "") {
                     alert("Already solved.");
                     return "";
@@ -3032,12 +3105,17 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                 }
             });
 
-            document.getElementById('ui_solve_btn').addEventListener('click', () => {
-                const ret = getscr();
-                if (ret === "") return;
-                const prerot = document.getElementById('pre_rot').value;
-                document.getElementById('scr').value = prerot + " // Pre Rotations\n" + ret.replace(/2'/g, '2').replace(/[\r\n]+$/, '') + " // setup\n";
-                save();
+            document.getElementById('ui_solve_btn').addEventListener('click', async () => {
+                try {
+                    const ret = await getscr();
+                    if (ret === "") return;
+                    const prerot = document.getElementById('pre_rot').value;
+                    document.getElementById('scr').value = prerot + " // Pre Rotations\n" + ret.replace(/2'/g, '2').replace(/[\r\n]+$/, '') + " // setup\n";
+                    save();
+                } catch (e) {
+                    console.error('ui_solve_btn handler error:', e);
+                    alert('Failed to get scramble.');
+                }
             });
 
             initializePieces();
@@ -3256,7 +3334,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             }
         }
 
-        function startWorker() {
+        async function startWorker() {
             try {
                 if (worker) {
                     worker.terminate();
@@ -3353,8 +3431,41 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                     worker = new Worker('src/pseudoPairingSolver/workerPseudoPairing.js');
                     worker.postMessage(args);
                 } else if (solver === "twophase") {
-                    const sol = min2phase.solve(generateTwoPhaseInput(convert(scr + " " + rot)[0]));
-                    appendSol(scr2, rot + " " + sol);
+                    try {
+                        if (typeof min2phase === 'undefined' || typeof min2phase.solve !== 'function') {
+                            await window.loadMin2phase();
+                        }
+                    } catch (e) {
+                        console.error('Failed to load min2phase:', e);
+                        const element = document.getElementById('result');
+                        const content = document.createElement('a');
+                        content.innerHTML = "Error: Two-phase solver module failed to load.<br>";
+                        element.appendChild(content);
+                        document.getElementById("solveButton").textContent = "Start";
+                        return;
+                    }
+                    if (typeof min2phase === 'undefined' || typeof min2phase.solve !== 'function') {
+                        console.error('twophase: min2phase still unavailable after load');
+                        const element = document.getElementById('result');
+                        const content = document.createElement('a');
+                        content.innerHTML = "Error: Two-phase solver module not available.<br>";
+                        element.appendChild(content);
+                        document.getElementById("solveButton").textContent = "Start";
+                        return;
+                    }
+                    try {
+                        const inputState = generateTwoPhaseInput(convert(scr + " " + rot)[0]);
+                        const sol = min2phase.solve(inputState);
+                        appendSol(scr2, rot + " " + sol);
+                    } catch (e) {
+                        console.error('twophase solve failed:', e);
+                        const element = document.getElementById('result');
+                        const content = document.createElement('a');
+                        content.innerHTML = "Error: Two-phase solve failed.<br>";
+                        element.appendChild(content);
+                        document.getElementById("solveButton").textContent = "Start";
+                        return;
+                    }
                     const element = document.getElementById('result');
                     const content = document.createElement('a');
                     content.textContent = "Search terminated.";
@@ -3415,9 +3526,6 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             } else {
                 messageCount++;
                 const details = document.createElement('details');
-                if (messageCount === 1 || sol_input) {
-                    details.setAttribute('open', '');
-                }
                 body += messageCount + ": " + sol + "\n";
                 const summary = document.createElement('summary');
                 summary.textContent = messageCount + ": " + sol;
@@ -3549,22 +3657,35 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
         let history_input = [];
         let currentIndex = -1;
 
-        function save() {
+        async function save() {
             if (currentIndex < history_input.length - 1) {
                 history_input = history_input.slice(0, currentIndex + 1);
             }
             history_input.push(textarea.value);
             currentIndex++;
             updateButtons();
+            const show = document.getElementById('show');
+            show.innerHTML = '';
+            const scrValue = scr_fix2(textarea.value);
             try {
-                document.getElementById('show').innerHTML = '';
-                const sim = createPlayer(scr_fix2(textarea.value), '');
+                const sim = createPlayer(scrValue, '');
                 sim.controlPanel = "none";
-                document.getElementById('show').appendChild(sim);
-            } catch (e) {
-                const content = document.createElement('a');
-                content.innerHTML = "Warning: Failed to create TwistyPlayer.<br>";
-                document.getElementById('show').appendChild(content);
+                show.appendChild(sim);
+                return;
+            } catch (syncErr) {
+                console.warn('save: sync createPlayer failed, falling back to async', syncErr);
+            }
+            const placeholder = document.createElement('div');
+            placeholder.className = 'twisty-placeholder';
+            placeholder.textContent = 'Loading preview...';
+            show.appendChild(placeholder);
+            try {
+                const real = await createPlayerLazy(scrValue, '');
+                real.controlPanel = "none";
+                placeholder.replaceWith(real);
+            } catch (asyncErr) {
+                console.error('save: async createPlayer failed', asyncErr);
+                placeholder.textContent = 'Warning: Failed to create TwistyPlayer.';
             }
         }
 
@@ -3581,12 +3702,40 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             }
         }
 
-        function genscr() {
-            var cube = min2phase.randomCube();
-            var solution = min2phase.solve(cube);
-            var sol_reversed = reverse(solution).replace(/2'/g, '2').replace(/[\r\n]+$/, '');
-            document.getElementById('scr').value = scr_fix2(sol_reversed) + " // setup\n";
-            save();
+        async function genscr() {
+            if (!isFunctionsReady) {
+                alert("The module is still initializing. Please try again in a moment.");
+                return;
+            }
+            if (typeof reverse !== "function") {
+                alert("Error: The required function is not initialized. Please reload the page manually.");
+                return;
+            }
+            if (typeof min2phase === 'undefined' || typeof min2phase.randomCube !== 'function') {
+                try {
+                    await window.loadMin2phase();
+                    console.log('min2phase loaded');
+                } catch (e) {
+                    console.error('Failed to load min2phase:', e);
+                    alert('Failed to load solver module. Please check network or try again later.');
+                    return;
+                }
+            }
+            if (typeof min2phase === 'undefined' || typeof min2phase.randomCube !== 'function') {
+                console.error('genscr: min2phase still unavailable after load');
+                alert('Solver module not available.');
+                return;
+            }
+            try {
+                const cube = min2phase.randomCube();
+                const solution = min2phase.solve(cube);
+                const sol_reversed = reverse(solution).replace(/2'/g, '2').replace(/[\r\n]+$/, '');
+                document.getElementById('scr').value = scr_fix2(sol_reversed) + " // setup\n";
+                save();
+            } catch (e) {
+                console.error('genscr error:', e);
+                alert('Failed to generate scramble: see console for details.');
+            }
         }
 
         function analyze() {
@@ -3599,7 +3748,13 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                         option_table = {
                             valueNames: ["No", "slot", "D", "U", "L", "R", "F", "B"]
                         };
-                        list_table = new List('table', option_table);
+                        window.loadListJs().then(() => {
+                            try {
+                                list_table = new List('table', option_table);
+                            } catch (e) {
+                                console.error('List init failed (table):', e);
+                            }
+                        }).catch(e => console.error('loadListJs failed:', e));
                     }
                     return;
                 }
@@ -3656,7 +3811,13 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                             option_table = {
                                 valueNames: ["No", "slot", "D", "U", "L", "R", "F", "B"]
                             };
-                            list_table = new List('table', option_table);
+                            window.loadListJs().then(() => {
+                                try {
+                                    list_table = new List('table', option_table);
+                                } catch (e) {
+                                    console.error('List init failed (table):', e);
+                                }
+                            }).catch(e => console.error('loadListJs failed:', e));
                         }
                         const error_message = "<br><a>Error: Analyzer terminated due to an error.</a><br>";
                         document.getElementById('table').innerHTML += error_message;
@@ -3675,7 +3836,13 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                             option_table = {
                                 valueNames: ["No", "slot", "D", "U", "L", "R", "F", "B"]
                             };
-                            list_table = new List('table', option_table);
+                            window.loadListJs().then(() => {
+                                try {
+                                    list_table = new List('table', option_table);
+                                } catch (e) {
+                                    console.error('List init failed (table):', e);
+                                }
+                            }).catch(e => console.error('loadListJs failed:', e));
                             return;
                         }
                     } else {
@@ -3713,9 +3880,15 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                     option_table = {
                         valueNames: ["No", "slot", "D", "U", "L", "R", "F", "B"]
                     };
-                    list_table = new List('table', option_table);
+                    window.loadListJs().then(() => {
+                        try {
+                            list_table = new List('table', option_table);
+                        } catch (e) {
+                            console.error('List init failed (table):', e);
+                        }
+                    }).catch(e => console.error('loadListJs failed:', e));
                 }
-                const error_message = "<br><a>AError: nalyzer terminated due to an error.</a><br>";
+                const error_message = "<br><a>Error: Analyzer terminated due to an error.</a><br>";
                 document.getElementById('table').innerHTML += error_message;
                 return;
             }
@@ -3728,7 +3901,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             setMoveCountFromString(defaults.mcv, defaults.rest);
         }
 
-        function solve(slot_option, rotation_option) {
+        async function solve(slot_option, rotation_option) {
             document.getElementById("solver").value = "F2L";
             document.getElementById('rot').value = rotation_option;
             document.getElementById('slot').value = slot_option;
@@ -3739,9 +3912,9 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             initializeForAnalyzer(defaultValues['F2L']);
             updateUrlParams();
             if (worker) {
-                startWorker();
+                await startWorker();
             }
-            startWorker();
+            await startWorker();
         }
 
         function reverseScramble() {
@@ -4008,7 +4181,13 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                         option_ptable = {
                             valueNames: ["No", "slot", "pslot", "D", "U", "L", "R", "F", "B"]
                         };
-                        list_ptable = new List('ptable', option_ptable);
+                        window.loadListJs().then(() => {
+                            try {
+                                list_ptable = new List('ptable', option_ptable);
+                            } catch (e) {
+                                console.error('List init failed (ptable):', e);
+                            }
+                        }).catch(e => console.error('loadListJs failed:', e));
                     }
                     return;
                 }
@@ -4064,7 +4243,13 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                             option_ptable = {
                                 valueNames: ["No", "slot", "pslot", "D", "U", "L", "R", "F", "B"]
                             };
-                            list_ptable = new List('ptable', option_ptable);
+                            window.loadListJs().then(() => {
+                                try {
+                                    list_ptable = new List('ptable', option_ptable);
+                                } catch (e) {
+                                    console.error('List init failed (ptable):', e);
+                                }
+                            }).catch(e => console.error('loadListJs failed:', e));
                         }
                         const error_message = "<br><a>Analyzer terminated due to an error.</a><br>";
                         document.getElementById('ptable').innerHTML += error_message;
@@ -4083,7 +4268,13 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                             option_ptable = {
                                 valueNames: ["No", "slot", "pslot", "D", "U", "L", "R", "F", "B"]
                             };
-                            list_ptable = new List('ptable', option_ptable);
+                            window.loadListJs().then(() => {
+                                try {
+                                    list_ptable = new List('ptable', option_ptable);
+                                } catch (e) {
+                                    console.error('List init failed (ptable):', e);
+                                }
+                            }).catch(e => console.error('loadListJs failed:', e));
                             return;
                         }
                     } else {
@@ -4121,7 +4312,13 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                     option_ptable = {
                         valueNames: ["No", "slot", "pslot", "D", "U", "L", "R", "F", "B"]
                     };
-                    list_ptable = new List('ptable', option_ptable);
+                    window.loadListJs().then(() => {
+                        try {
+                            list_ptable = new List('ptable', option_ptable);
+                        } catch (e) {
+                            console.error('List init failed (ptable):', e);
+                        }
+                    }).catch(e => console.error('loadListJs failed:', e));
                 }
                 const error_message = "<br><a>Error: Analyzer terminated due to an error.</a><br>";
                 document.getElementById('ptable').innerHTML += error_message;
@@ -4129,7 +4326,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             }
         }
 
-        function psolve(slot_option, pslot_option, rotation_option) {
+        async function psolve(slot_option, pslot_option, rotation_option) {
             document.getElementById("solver").value = "PF2L";
             document.getElementById('rot').value = rotation_option;
             document.getElementById('pslot_edge').value = slot_option;
@@ -4142,9 +4339,9 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             initializeForAnalyzer(defaultValues['PF2L']);
             updateUrlParams();
             if (worker) {
-                startWorker();
+                await startWorker();
             }
-            startWorker();
+            await startWorker();
         }
 
         function pair_analyze() {
@@ -4157,7 +4354,13 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                         option_pair_table = {
                             valueNames: ["No", "slot", "pslot", "D", "U", "L", "R", "F", "B"]
                         };
-                        list_pair_table = new List('pair_table', option_pair_table);
+                        window.loadListJs().then(() => {
+                            try {
+                                list_pair_table = new List('pair_table', option_pair_table);
+                            } catch (e) {
+                                console.error('List init failed (pair_table):', e);
+                            }
+                        }).catch(e => console.error('loadListJs failed:', e));
                     }
                     return;
                 }
@@ -4209,6 +4412,18 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                         }
                         worker4 = null;
                         document.getElementById("pair_analyzer").textContent = "Analyze";
+                        if (messageCount_pair_analyzer > 0) {
+                            option_pair_table = {
+                                valueNames: ["No", "slot", "pslot", "D", "U", "L", "R", "F", "B"]
+                            };
+                            window.loadListJs().then(() => {
+                                try {
+                                    list_pair_table = new List('pair_table', option_pair_table);
+                                } catch (e) {
+                                    console.error('List init failed (pair_table):', e);
+                                }
+                            }).catch(e => console.error('loadListJs failed:', e));
+                        }
                         const error_message = "<br><a>Analyzer terminated due to an error.</a><br>";
                         document.getElementById('pair_table').innerHTML += error_message;
                         return;
@@ -4227,7 +4442,13 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                                 option_pair_table = {
                                     valueNames: ["No", "slot", "pslot", "D", "U", "L", "R", "F", "B"]
                                 };
-                                list_pair_table = new List('pair_table', option_pair_table);
+                                window.loadListJs().then(() => {
+                                    try {
+                                        list_pair_table = new List('pair_table', option_pair_table);
+                                    } catch (e) {
+                                        console.error('List init failed (pair_table):', e);
+                                    }
+                                }).catch(e => console.error('loadListJs failed:', e));
                             }
                             return;
                         }
@@ -4266,7 +4487,13 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                     option_pair_table = {
                         valueNames: ["No", "slot", "pslot", "D", "U", "L", "R", "F", "B"]
                     };
-                    list_pair_table = new List('pair_table', option_pair_table);
+                    window.loadListJs().then(() => {
+                        try {
+                            list_pair_table = new List('pair_table', option_pair_table);
+                        } catch (e) {
+                            console.error('List init failed (pair_table):', e);
+                        }
+                    }).catch(e => console.error('loadListJs failed:', e));
                 }
                 const error_message = "<br><a>Error: Analyzer terminated due to an error.</a><br>";
                 document.getElementById('pair_table').innerHTML += error_message;
@@ -4274,7 +4501,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             }
         }
 
-        function pair_solve(slot_option, pslot_option, rotation_option) {
+        async function pair_solve(slot_option, pslot_option, rotation_option) {
             document.getElementById("solver").value = "F2L_pair";
             document.getElementById('rot').value = rotation_option;
             document.getElementById('slot2').value = slot_option;
@@ -4287,9 +4514,9 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             initializeForAnalyzer(defaultValues['F2L_pair']);
             updateUrlParams();
             if (worker) {
-                startWorker();
+                await startWorker();
             }
-            startWorker();
+            await startWorker();
         }
 
         function pair_panalyze() {
@@ -4302,7 +4529,13 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                         option_pair_ptable = {
                             valueNames: ["No", "slot", "pslot", "a_slot", "a_pslot", "D", "U", "L", "R", "F", "B"]
                         };
-                        list_pair_ptable = new List('pair_ptable', option_pair_ptable);
+                        window.loadListJs().then(() => {
+                            try {
+                                list_pair_ptable = new List('pair_ptable', option_pair_ptable);
+                            } catch (e) {
+                                console.error('List init failed (pair_ptable):', e);
+                            }
+                        }).catch(e => console.error('loadListJs failed:', e));
                     }
                     return;
                 }
@@ -4358,7 +4591,13 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                             option_pair_ptable = {
                                 valueNames: ["No", "slot", "pslot", "a_slot", "a_pslot", "D", "U", "L", "R", "F", "B"]
                             };
-                            list_pair_ptable = new List('pair_ptable', option_pair_ptable);
+                            window.loadListJs().then(() => {
+                                try {
+                                    list_pair_ptable = new List('pair_ptable', option_pair_ptable);
+                                } catch (e) {
+                                    console.error('List init failed (pair_ptable):', e);
+                                }
+                            }).catch(e => console.error('loadListJs failed:', e));
                         }
                         const error_message = "<br><a>Analyzer terminated due to an error.</a><br>";
                         document.getElementById('pair_ptable').innerHTML += error_message;
@@ -4377,7 +4616,13 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                             option_pair_ptable = {
                                 valueNames: ["No", "slot", "pslot", "a_slot", "a_pslot", "D", "U", "L", "R", "F", "B"]
                             };
-                            list_pair_ptable = new List('pair_ptable', option_pair_ptable);
+                            window.loadListJs().then(() => {
+                                try {
+                                    list_pair_ptable = new List('pair_ptable', option_pair_ptable);
+                                } catch (e) {
+                                    console.error('List init failed (pair_ptable):', e);
+                                }
+                            }).catch(e => console.error('loadListJs failed:', e));
                             return;
                         }
                     } else {
@@ -4415,7 +4660,13 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                     option_pair_ptable = {
                         valueNames: ["No", "slot", "pslot", "a_slot", "a_pslot", "D", "U", "L", "R", "F", "B"]
                     };
-                    list_pair_ptable = new List('pair_ptable', option_pair_ptable);
+                    window.loadListJs().then(() => {
+                        try {
+                            list_pair_ptable = new List('pair_ptable', option_pair_ptable);
+                        } catch (e) {
+                            console.error('List init failed (pair_ptable):', e);
+                        }
+                    }).catch(e => console.error('loadListJs failed:', e));
                 }
                 const error_message = "<br><a>Error: Analyzer terminated due to an error.</a><br>";
                 document.getElementById('pair_ptable').innerHTML += error_message;
@@ -4423,7 +4674,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             }
         }
 
-        function pair_psolve(slot_option, pslot_option, a_slot_option, a_pslot_option, rotation_option) {
+        async function pair_psolve(slot_option, pslot_option, a_slot_option, a_pslot_option, rotation_option) {
             document.getElementById("solver").value = "PF2L_pair";
             document.getElementById('rot').value = rotation_option;
             document.getElementById('pslot_edge2').value = slot_option;
@@ -4439,9 +4690,9 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             initializeForAnalyzer(defaultValues['PF2L_pair']);
             updateUrlParams();
             if (worker) {
-                startWorker();
+                await startWorker();
             }
-            startWorker();
+            await startWorker();
         }
 
         function eo_analyze() {
@@ -4454,7 +4705,13 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                         option_eo_table = {
                             valueNames: ["No", "slot", "D", "D1", "U", "U1", "L", "L1", "R", "R1", "F", "F1", "B", "B1"]
                         };
-                        list_eo_table = new List('eo_table', option_eo_table);
+                        window.loadListJs().then(() => {
+                            try {
+                                list_eo_table = new List('eo_table', option_eo_table);
+                            } catch (e) {
+                                console.error('List init failed (eo_table):', e);
+                            }
+                        }).catch(e => console.error('loadListJs failed:', e));
                     }
                     return;
                 }
@@ -4511,7 +4768,13 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                             option_eo_table = {
                                 valueNames: ["No", "slot", "D", "D1", "U", "U1", "L", "L1", "R", "R1", "F", "F1", "B", "B1"]
                             };
-                            list_eo_table = new List('eo_table', option_eo_table);
+                            window.loadListJs().then(() => {
+                                try {
+                                    list_eo_table = new List('eo_table', option_eo_table);
+                                } catch (e) {
+                                    console.error('List init failed (eo_table):', e);
+                                }
+                            }).catch(e => console.error('loadListJs failed:', e));
                         }
                         const error_message = "<br><a>Error: Analyzer terminated due to an error.</a><br>";
                         document.getElementById('eo_table').innerHTML += error_message;
@@ -4530,7 +4793,13 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                             option_eo_table = {
                                 valueNames: ["No", "slot", "D", "D1", "U", "U1", "L", "L1", "R", "R1", "F", "F1", "B", "B1"]
                             };
-                            list_eo_table = new List('eo_table', option_eo_table);
+                            window.loadListJs().then(() => {
+                                try {
+                                    list_eo_table = new List('eo_table', option_eo_table);
+                                } catch (e) {
+                                    console.error('List init failed (eo_table):', e);
+                                }
+                            }).catch(e => console.error('loadListJs failed:', e));
                             return;
                         }
                     } else {
@@ -4568,7 +4837,13 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                     option_eo_table = {
                         valueNames: ["No", "slot", "D", "D1", "U", "U1", "L", "L1", "R", "R1", "F", "F1", "B", "B1"]
                     };
-                    list_eo_table = new List('eo_table', option_eo_table);
+                    window.loadListJs().then(() => {
+                        try {
+                            list_eo_table = new List('eo_table', option_eo_table);
+                        } catch (e) {
+                            console.error('List init failed (eo_table):', e);
+                        }
+                    }).catch(e => console.error('loadListJs failed:', e));
                 }
                 const error_message = "<br><a>AError: nalyzer terminated due to an error.</a><br>";
                 document.getElementById('eo_table').innerHTML += error_message;
@@ -4576,7 +4851,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             }
         }
 
-        function eo_solve(slot_option, rotation_option) {
+        async function eo_solve(slot_option, rotation_option) {
             document.getElementById("solver").value = "EOCross";
             document.getElementById('rot').value = rotation_option;
             document.getElementById('slot_eo').value = slot_option;
@@ -4587,9 +4862,9 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             initializeForAnalyzer(defaultValues['EOCross']);
             updateUrlParams();
             if (worker) {
-                startWorker();
+                await startWorker();
             }
-            startWorker();
+            await startWorker();
         }
 
         function add(s) {
@@ -4763,6 +5038,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             const urlParams = new URLSearchParams(window.location.search);
             const scrambleParam = urlParams.get(idToKeyMap['scr']);
             document.getElementById("result").innerHTML = "";
+            let deferredAppend = null;
             if (scrambleParam) {
                 const scr = decodeURIComponent(scrambleParam.replace(/_/g, ' ').replace(/-/g, '\''));
                 document.getElementById('scr').value = scr;
@@ -4772,7 +5048,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                     messageCount = Number(sol_num) - 1;
                     const sol_fixed = sol.replace(/_/g, ' ').replace(/-/g, '\'');
                     sol_input = true;
-                    appendSol(scr, sol_fixed);
+                    deferredAppend = { scr, sol: sol_fixed };
                     sol_input = false;
                     document.getElementById("countLine").value = 1;
                 } else {
@@ -4787,22 +5063,35 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             undoButton.classList.add("hidden_small");
             redoButton.classList.add("hidden_small");
             setParamsFromUrl(urlParams);
-            save();
+            const startInit = () => {
+                const initPromise = InitializeFunctions();
+                const twistyPromise = (typeof window.ensureTwisty === 'function') ? window.ensureTwisty() : Promise.resolve();
+                Promise.allSettled([initPromise, twistyPromise]).then(() => {
+                    if (deferredAppend) {
+                        try {
+                            sol_input = true;
+                            appendSol(deferredAppend.scr, deferredAppend.sol);
+                        } catch (e) {
+                            console.error('Deferred appendSol failed:', e);
+                        } finally {
+                            sol_input = false;
+                        }
+                    }
+                });
+            };
+            if ('requestIdleCallback' in window) {
+                requestIdleCallback(startInit, { timeout: 2000 });
+            } else {
+                setTimeout(startInit, 50);
+            }
+            try {
+                save();
+            } catch (e) {
+                console.warn('Initial save() failed (ignored):', e);
+            }
         };
     </script>
-    <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js')
-                    .then(registration => {
-                        console.log('Service Worker registered successfully:', registration);
-                    })
-                    .catch(err => {
-                        console.log('Service Worker registration failed:', err);
-                    });
-            });
-        }
-    </script>
+    <script src="sw-register.js" defer></script>
 </body>
 
 </html>

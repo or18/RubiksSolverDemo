@@ -8,7 +8,6 @@
 	<title>Rubik's Cube Free Pair Trainer</title>
 	<meta name="description" content="Simple Rubik's Cube Free Pair Trainer.">
 	<script async src="https://www.googletagmanager.com/gtag/js?id=G-MXJH30352W"></script>
-	<script async src="src/min2phase.js/min2phase.js"></script>
 	<script>
 		window.dataLayer = window.dataLayer || [];
 		function gtag() { dataLayer.push(arguments); }
@@ -409,27 +408,76 @@
 	<div id="result"></div>
 
 	<script type="module">
-		import { TwistyPlayer } from "https://cdn.cubing.net/v0/js/cubing/twisty";
-		function createPlayer(setup, sol) {
-			const player = new TwistyPlayer({
-				puzzle: "3x3x3",
-				experimentalSetupAlg: setup,
-				alg: sol,
-				background: "none"
-			});
-			return player;
+		let twistyPromise = null;
+		function ensureTwisty() {
+			if (!twistyPromise) {
+				twistyPromise = import('https://cdn.cubing.net/v0/js/cubing/twisty')
+					.then(mod => {
+						console.log('Twisty module loaded exports:', Object.keys(mod || {}));
+						const Ctor = mod.TwistyPlayer || mod.default || (mod.default && mod.default.TwistyPlayer) || window.TwistyPlayer || null;
+						console.log('Resolved TwistyPlayer constructor:', Ctor);
+						window.__TwistyModule = mod;
+						window.__TwistyPlayerCtor = Ctor;
+						return mod;
+					})
+					.catch(err => {
+						console.error('Twisty import failed:', err);
+						window.__TwistyLoadError = err;
+						throw err;
+					});
+			}
+			return twistyPromise;
+		}
+		async function createPlayerLazy(setup, alg) {
+			const mod = await ensureTwisty();
+			const Ctor = mod.TwistyPlayer || mod.default || (mod.default && mod.default.TwistyPlayer) || window.__TwistyPlayerCtor || window.TwistyPlayer;
+			if (!Ctor) throw new Error('TwistyPlayer constructor not found in module');
+			return new Ctor({ puzzle: '3x3x3', experimentalSetupAlg: setup, alg, background: 'none' });
+		}
+		window.createPlayerLazy = createPlayerLazy;
+		function createPlayer(setup, alg) {
+			if (window.__TwistyLoadError) throw window.__TwistyLoadError;
+			const Ctor = window.__TwistyPlayerCtor || window.TwistyPlayer;
+			if (!Ctor) {
+				ensureTwisty().catch(e => console.error('ensureTwisty error:', e));
+				throw new Error('TwistyPlayer not available');
+			}
+			return new Ctor({ puzzle: '3x3x3', experimentalSetupAlg: setup, alg, background: 'none' });
 		}
 		window.createPlayer = createPlayer;
+		window.ensureTwisty = ensureTwisty;
+		try { ensureTwisty().catch(() => { }); } catch (e) { }
 	</script>
 
 	<script>
-		const functionsPromise = new Promise(resolve => {
-			window.Module = {
-				onRuntimeInitialized: () => resolve(window.Module)
-			};
-		});
+		function loadScriptAsync(src) {
+			return new Promise((resolve, reject) => {
+				if (document.querySelector('script[src="' + src + '"]')) return resolve();
+				const s = document.createElement('script');
+				s.src = src;
+				s.async = true;
+				s.onload = () => resolve();
+				s.onerror = (e) => reject(new Error('Failed to load ' + src));
+				document.head.appendChild(s);
+			});
+		}
+		window.loadMin2phase = function () {
+			return window.__min2phaseLoading || (window.__min2phaseLoading = loadScriptAsync('src/min2phase.js/min2phase.js').then(() => window.min2phase));
+		};
+		window.loadFunctionsJs = function () {
+			if (window.__functionsLoading) return window.__functionsLoading;
+			window.__functionsLoading = new Promise((resolve, reject) => {
+				window.Module = {
+					onRuntimeInitialized: () => resolve(window.Module)
+				};
+				loadScriptAsync('src/functions/functions.js').catch(err => {
+					window.__functionsLoading = null;
+					reject(err);
+				});
+			});
+			return window.__functionsLoading;
+		};
 	</script>
-	<script src="src/functions/functions.js"></script>
 
 	<script>
 		let reverse;
@@ -440,7 +488,7 @@
 		let isFunctionsReady = false;
 
 		async function InitializeFunctions() {
-			const Module = await functionsPromise;
+			const Module = await window.loadFunctionsJs();
 			reverse = function (scr) {
 				const scr_fixed = scr_fix2(scr);
 				if (scr_fixed === "") {
@@ -481,7 +529,11 @@
 			isFunctionsReady = true;
 		}
 
-		InitializeFunctions();
+		if ('requestIdleCallback' in window) {
+			requestIdleCallback(() => { InitializeFunctions(); }, { timeout: 2000 });
+		} else {
+			setTimeout(() => { InitializeFunctions(); }, 2000);
+		}
 
 		let worker;
 		let worker2;
@@ -745,9 +797,6 @@
 			} else {
 				messageCount++;
 				const details = document.createElement('details');
-				if (messageCount === 1) {
-					details.setAttribute('open', '');
-				}
 				const summary = document.createElement('summary');
 				summary.textContent = messageCount + ": " + sol;
 				summary.setAttribute('translate', 'no');
@@ -834,13 +883,28 @@
 			'FL': "y'"
 		};
 
-		function genscr() {
+		async function genscr() {
 			if (!isFunctionsReady) {
 				alert("The module is still initializing. Please try again in a moment.");
 				return;
 			}
-			if (typeof convert !== "function" || typeof generateTwoPhaseInput !== "function" || typeof convertMask !== "function" || typeof reverse !== "function") {
+			if (typeof reverse !== "function" || typeof convert !== "function" || typeof convertMask !== "function" || typeof generateTwoPhaseInput !== "function") {
 				alert("Error: The required function is not initialized. Please reload the page manually.");
+				return "";
+			}
+			if (typeof min2phase === 'undefined' || typeof min2phase.randomCube !== 'function') {
+				try {
+					await window.loadMin2phase();
+					console.log('min2phase loaded');
+				} catch (e) {
+					console.error('Failed to load min2phase:', e);
+					alert('Failed to load solver module. Please check network or try again later.');
+					return;
+				}
+			}
+			if (typeof min2phase === 'undefined' || typeof min2phase.randomCube !== 'function') {
+				console.error('genscr: min2phase still unavailable after load');
+				alert('Solver module not available.');
 				return;
 			}
 			const sol_len = document.getElementById("len").value;
@@ -849,49 +913,59 @@
 			const mask_input = getMaskInputs();
 			const convertedMask = convertMask(mask_input.maskInputCenter, mask_input.maskInputEdges, mask_input.maskInputCorners, rot);
 			setMask(convertedMask);
-			var cube = min2phase.randomCube();
-			var solution = min2phase.solve(cube);
+			let cube;
+			let solution;
+			try {
+				cube = min2phase.randomCube();
+				solution = min2phase.solve(cube);
+			} catch (e) {
+				console.error('genscr error:', e);
+				alert('Failed to generate scramble: see console for details.');
+				return;
+			}
 			if (!worker2) {
 				worker2 = new Worker('src/pairingTrainer/worker.js');
 			}
 			var args = { scr: solution, len: sol_len };
-			worker2.postMessage(args);
-			if (worker2) {
-				worker2.onmessage = function (event) {
+			const show = document.getElementById('show');
+			worker2.onmessage = async function (event) {
+				try {
 					const ret = (event.data).split(",");
 					var scramble = min2phase.solve(generateTwoPhaseInputWrapper(convert(ret[2] + reverse(ret[3]) + reverse(ret[0] + reverse(ret[1])) + slotToRot[slot])[0]));
 					scramble = scr_fix(rot + scramble);
 					document.getElementById('scr').innerHTML = scramble;
 					try {
-						document.getElementById('show').innerHTML = '';
+						show.innerHTML = '';
 						const sim = createPlayer(scramble, '');
 						sim.experimentalStickeringMaskOrbits = mask;
 						sim.controlPanel = "none";
-						document.getElementById('show').appendChild(sim);
-					} catch (e) {
-						const content = document.createElement('a');
-						content.innerHTML = "Warning: Failed to create TwistyPlayer.<br>";
-						document.getElementById('show').appendChild(content);
+						show.appendChild(sim);
+						return;
+					} catch (syncErr) {
+						console.warn('save: sync createPlayer failed, falling back to async', syncErr);
 					}
-				};
-			}
+					const placeholder = document.createElement('div');
+					placeholder.className = 'twisty-placeholder';
+					placeholder.textContent = 'Loading preview...';
+					show.appendChild(placeholder);
+					try {
+						const real = await createPlayerLazy(scramble, '');
+						real.experimentalStickeringMaskOrbits = mask;
+						real.controlPanel = "none";
+						placeholder.replaceWith(real);
+					} catch (asyncErr) {
+						console.error('save: async createPlayer failed', asyncErr);
+						placeholder.textContent = 'Warning: Failed to create TwistyPlayer.';
+					}
+				} catch (e) {
+					console.error('worker2.onmessage error:', e);
+				}
+			};
+			worker2.postMessage(args);
 		}
 
 	</script>
-
-	<script>
-		if ('serviceWorker' in navigator) {
-			window.addEventListener('load', () => {
-				navigator.serviceWorker.register('sw.js')
-					.then(registration => {
-						console.log('Service Worker registered successfully:', registration);
-					})
-					.catch(err => {
-						console.log('Service Worker registration failed:', err);
-					});
-			});
-		}
-	</script>
+	<script src="sw-register.js" defer></script>
 
 </body>
 
