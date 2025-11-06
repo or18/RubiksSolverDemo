@@ -1952,7 +1952,14 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             document.getElementById("maskOptionLLE").value = 'I';
             document.getElementById("maskOptionLLC").value = 'I';
             if (ll !== '') {
-                const option_array = ll.split(' ');
+                let option_array = ll.split(' ').filter(Boolean);
+                option_array.sort((a, b) => {
+                    if (a === 'CO' && b === 'CP') return -1;
+                    if (a === 'CP' && b === 'CO') return 1;
+                    if (a === 'EO' && b === 'EP') return -1;
+                    if (a === 'EP' && b === 'EO') return 1;
+                    return 0;
+                });
                 option_array.forEach(option => {
                     switch (option) {
                         case 'CO':
@@ -2123,7 +2130,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             }
             const rot = document.getElementById('rot').value;
             const scr_val = document.getElementById("scr").value;
-            const scr = scr_fix2(scr_val);
+            const scr = scr_fix(scr_val);
             const convertResult = convert(scr);
             const result_rotation = convertResult[1] + " " + rot;
             const mask_input = getMaskInputs();
