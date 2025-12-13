@@ -136,6 +136,7 @@
 			width: 100%;
 			max-width: 600px;
 			margin-bottom: 10px;
+            background-color: #000000;
 		}
 
 		.custom-checkbox {
@@ -620,7 +621,7 @@
 				case 'D':
 					return 'dim';
 				case 'I':
-					return 'ignored';
+					return {mask: 'ignored', hintMask: 'invisible'};
 				case '?':
 					return 'oriented';
 			}
