@@ -181,64 +181,48 @@ solve("D F2 L...", 8).then(result => console.log(result));
 
 ## Testing and Debugging
 
-### Available Test Scripts
+### Test Script Reference
 
-The xxcrossTrainer includes several test scripts for different debugging scenarios:
+The xxcrossTrainer includes comprehensive test scripts to validate WASM compilation and functionality. **For complete test implementations and detailed usage, see [WASM_EXPERIMENT_SCRIPTS.md](WASM_EXPERIMENT_SCRIPTS.md).**
 
-| Test Script | Purpose | Runtime | Use Case |
-|-------------|---------|---------|----------|
-| `test_wasm_minimal.js` | Basic loading test | ~30s | Verify WASM compilation and loading |
-| `test_wasm_full.js` | Full solving test | ~60s | Test database construction and solving |
-| `test_instance_reuse.js` | Instance reuse pattern | ~60s | Verify database reuse efficiency |
-| `test_parameterized.js` | Memory configurations | ~180s | Test different memory limits |
-| `test_verification.js` | Bug fix verification | ~60s | Verify critical fixes (num_list[8], etc.) |
+| Test Script | Purpose | Runtime | Documentation |
+|-------------|---------|---------|---------------|
+| `test_wasm_minimal.js` | Basic loading test | ~30s | [Script 2](WASM_EXPERIMENT_SCRIPTS.md#script-2-minimal-wasm-load-test) |
+| `test_wasm_full.js` | Full solving test | ~60s | [Script 3](WASM_EXPERIMENT_SCRIPTS.md#script-3-full-wasm-solve-test) |
+| `test_instance_reuse.js` | Instance reuse pattern | ~60s | [Script 4](WASM_EXPERIMENT_SCRIPTS.md#script-4-instance-reuse-test) |
+| `test_parameterized.js` | Memory configurations | ~180s | [Script 5](WASM_EXPERIMENT_SCRIPTS.md#script-5-parameterized-constructor-test) |
+| `test_verification.js` | Bug fix verification | ~60s | [Script 6](WASM_EXPERIMENT_SCRIPTS.md#script-6-verification-test-num_list8-fix) |
 
-### Running Tests
+### Basic Testing Workflow
 
 ```bash
 cd src/xxcrossTrainer
 
-# Basic loading test
+# 1. Build WASM first
+emcc -O3 solver_dev.cpp -o solver.js \
+  -s ALLOW_MEMORY_GROWTH=1 \
+  -s INITIAL_MEMORY=268435456 \
+  --bind
+
+# 2. Run basic loading test
 node test_wasm_minimal.js
 
-# Full functionality test
+# 3. Run full functionality test
 node test_wasm_full.js
-
-# Instance reuse test (recommended pattern)
-node test_instance_reuse.js
-
-# Memory limit tests
-node test_parameterized.js
-
-# Verification test
-node test_verification.js
 ```
+
+**Note**: All test scripts are archived. Complete implementations are documented in [WASM_EXPERIMENT_SCRIPTS.md](WASM_EXPERIMENT_SCRIPTS.md) for recreation if needed.
 
 ---
 
-## Debugging Scenarios
+## Common Debugging Scenarios
 
-### Scenario 1: Verify WASM Compilation
+### Scenario 1: Verify WASM Compilation Works
 
 **Problem**: Want to confirm WASM binary loads correctly  
-**Test**: `test_wasm_minimal.js`
+**Test**: `test_wasm_minimal.js` ([detailed docs](WASM_EXPERIMENT_SCRIPTS.md#script-2-minimal-wasm-load-test))
 
-**What it tests**:
-- WASM runtime initialization
-- Module loading
-- Instance creation
-- Heap memory allocation
-
-**Expected output**:
-```
-Starting WASM test...
-✓ WASM Runtime initialized
-Creating xxcross_search instance...
-(This builds internal tables and may take 10-30 seconds)
-✓ Instance created successfully!
-Ready for solving. Instance has func() method available.
-Current heap size: 700.00 MB
-```
+**Expected**: Module loads, instance created, ~700MB heap allocated
 
 **Use when**:
 - After recompiling WASM
@@ -247,37 +231,12 @@ Current heap size: 700.00 MB
 
 ---
 
-### Scenario 2: Test Full Solving Functionality
+### Scenario 2: Validate Solving Functionality
 
 **Problem**: Need to verify database construction and solving work end-to-end  
-**Test**: `test_wasm_full.js`
+**Test**: `test_wasm_full.js` ([detailed docs](WASM_EXPERIMENT_SCRIPTS.md#script-3-full-wasm-solve-test))
 
-**What it tests**:
-- Database construction (all depths)
-- Solving at different depths (7, 8)
-- Result parsing
-- Memory usage after initialization
-
-**Expected output**:
-```
-=== xxcrossTrainer WASM Test ===
-✓ WASM Runtime initialized
-Creating xxcross_search instance (building tables)...
-✓ Instance created
-Heap size after initialization: 700.00 MB
-
---- Solving at depth 7 ---
-Time: 0.52s
-Result length: 156 chars
-Solutions found: 2
-
---- Solving at depth 8 ---
-Time: 0.61s
-Result length: 168 chars
-Solutions found: 2
-
-✓ All tests completed successfully!
-```
+**Expected**: Solutions found at different depths, consistent solve times
 
 **Use when**:
 - Validating a new build
@@ -286,147 +245,185 @@ Solutions found: 2
 
 ---
 
-### Scenario 3: Verify Instance Reuse Efficiency
+### Scenario 3: Check Instance Reuse Pattern
 
-**Problem**: Need to confirm database is built once and reused  
-**Test**: `test_instance_reuse.js`
+**Problem**: Need to confirm database is built once and reused (worker.js pattern)  
+**Test**: `test_instance_reuse.js` ([detailed docs](WASM_EXPERIMENT_SCRIPTS.md#script-4-instance-reuse-test))
 
-**What it tests**:
-- Single instance creation
-- Multiple solves with same instance
-- Performance comparison (first vs subsequent)
-- Database persistence across calls
-
-**Expected output**:
-```
-=== xxcrossTrainer Instance Reuse Test ===
-Initializing with default parameters...
-✓ Instance created with default parameters
-Initial heap size: 700.00 MB
-
---- Test 1: depth 7 ---
-Time: 0.543s
-Result length: 156 chars
-
---- Test 2: depth 8 ---
-Time: 0.612s
-Result length: 168 chars
-
---- Test 3 (repeat depth 7) ---
-Time: 0.538s
-Result length: 156 chars
-
-✓ All tests completed successfully!
-Note: The database was built only once during initialization.
-Subsequent func() calls reuse the same database, making them fast.
-```
+**Expected**: Database built once, subsequent solves are fast
 
 **Use when**:
 - Implementing worker pattern
 - Optimizing application architecture
 - Debugging performance issues
-- Verifying memory efficiency
-
-**Key insight**: Notice that Test 3 has similar time to Test 1, confirming database reuse.
 
 ---
 
-### Scenario 4: Test Different Memory Configurations
+### Scenario 4: Test Memory Configurations
 
 **Problem**: Need to find optimal memory limit for target platform  
-**Test**: `test_parameterized.js`
+**Test**: `test_parameterized.js` ([detailed docs](WASM_EXPERIMENT_SCRIPTS.md#script-5-parameterized-constructor-test))
 
-**What it tests**:
-- Default constructor (700MB cap)
-- Custom 500MB configuration
-- Custom 600MB configuration
-- Over-limit request (1000MB → 700MB cap)
-
-**Expected output**:
-```
-=== xxcrossTrainer Parameterized Constructor Test ===
-✓ WASM Runtime initialized
-
---- Default (capped at 700MB) ---
-Parameters: default
-✓ Instance created in 52.34s
-Solve time: 0.587s
-Result: Success
-
---- Custom 500MB ---
-Parameters: [true,6,500]
-✓ Instance created in 28.15s
-Solve time: 0.543s
-Result: Success
-
---- Custom 600MB ---
-Parameters: [true,6,600]
-✓ Instance created in 35.67s
-Solve time: 0.561s
-Result: Success
-
---- Custom 1000MB (will be capped) ---
-Parameters: [true,6,1000]
-✓ Instance created in 52.28s
-Solve time: 0.589s
-Result: Success
-
-=== Summary ===
-Default (capped at 700MB): Init 52.34s, Solve 0.587s
-Custom 500MB: Init 28.15s, Solve 0.543s
-Custom 600MB: Init 35.67s, Solve 0.561s
-Custom 1000MB (will be capped): Init 52.28s, Solve 0.589s
-```
+**Expected**: Different memory limits (500MB, 600MB, 700MB) all work
 
 **Use when**:
 - Optimizing for mobile devices
 - Balancing memory vs performance
-- Testing memory limits
 - Platform-specific tuning
-
-**Key insight**: Lower memory = faster initialization but potentially less database coverage.
 
 ---
 
-### Scenario 5: Verify Critical Bug Fixes
+### Scenario 5: Verify Bug Fixes
 
 **Problem**: Need to confirm recent fixes are working  
-**Test**: `test_verification.js`
+**Test**: `test_verification.js` ([detailed docs](WASM_EXPERIMENT_SCRIPTS.md#script-6-verification-test-num_list8-fix))
 
-**What it tests**:
-- 700MB initial memory (mobile compatibility)
-- num_list[8] bug fix (was showing 0)
-- Native and WASM compilation compatibility
-- Basic solve functionality
-
-**Expected output**:
-```
-=== Verification Test: num_list[8] Fix ===
-
-Test 1: Default constructor (700MB)
-✓ Instance created
-
-Test 2: 500MB memory limit
-✓ Instance created
-
-Quick solve test...
-✓ Solve successful (156 chars)
-
-✓ All verification tests passed!
-
-Key fixes verified:
-  • Initial memory reduced to 700MB (mobile friendly)
-  • num_list[8] now shows correct value (not 0)
-  • Both native and WASM compilation working
-```
+**Expected**: 700MB memory cap enforced, num_list[8] initialized correctly
 
 **Use when**:
 - After applying bug fixes
 - Regression testing
-- Quick sanity check
 - CI/CD validation
 
 ---
+
+## Deployment
+
+### Production Files
+
+After successful build, deploy these files:
+
+```
+src/xxcrossTrainer/
+├── solver.js         # JavaScript loader (generated by emcc)
+├── solver.wasm       # WebAssembly binary (generated by emcc)
+└── worker.js         # Worker wrapper (instance reuse pattern)
+```
+
+### Integration Example
+
+```javascript
+// Load WASM module in worker
+const Module = require('./solver.js');
+
+let solverInstance = null;
+
+// Initialize once
+Module.onRuntimeInitialized = () => {
+    solverInstance = new Module.xxcross_search();
+    console.log('Solver ready');
+};
+
+// Reuse instance for all solves
+function solve(scramble, depth) {
+    return solverInstance.func(scramble, depth);
+}
+```
+
+**Pattern**: This matches the implementation in [worker.js](../../src/xxcrossTrainer/worker.js). See [WASM_EXPERIMENT_SCRIPTS.md Script 4](WASM_EXPERIMENT_SCRIPTS.md#script-4-instance-reuse-test) for detailed explanation.
+
+---
+
+## Troubleshooting
+
+### Build Issues
+
+#### emcc not found
+
+```bash
+# Error: emcc: command not found
+```
+
+**Solution**: Install Emscripten SDK:
+```bash
+git clone https://github.com/emscripten-core/emsdk.git
+cd emsdk
+./emsdk install latest
+./emsdk activate latest
+source ./emsdk_env.sh
+```
+
+---
+
+### Runtime Issues
+
+#### Module fails to load
+
+```javascript
+// Error: Cannot find module './solver.js'
+```
+
+**Solution**: Verify build completed successfully:
+```bash
+ls -l solver.js solver.wasm
+emcc --version
+```
+
+---
+
+#### Out of memory in browser
+
+```
+RuntimeError: memory access out of bounds
+```
+
+**Solution**: Memory growth is enabled by default. Check browser console for limits. Modern browsers support 2GB WASM memory. If issues persist, reduce memory cap in source:
+
+```cpp
+// In solver_dev.cpp
+const size_t MAX_TOTAL_MEMORY_MB = 600;  // Lower from 700
+```
+
+Then rebuild.
+
+---
+
+#### Functions not exported
+
+```javascript
+// TypeError: Module.xxcross_search is not a function
+```
+
+**Solution**: Verify Emscripten bindings in source:
+```cpp
+#ifdef __EMSCRIPTEN__
+#include <emscripten/bind.h>
+
+EMSCRIPTEN_BINDINGS(solver_module) {
+    emscripten::class_<xxcross_search>("xxcross_search")
+        .constructor<>()
+        .constructor<bool, int, int>()
+        .function("func", &xxcross_search::func);
+    
+    emscripten::function("get_xxcross_scramble", &get_xxcross_scramble);
+    emscripten::function("start_search", &start_search);
+}
+#endif
+```
+
+---
+
+### Performance Issues
+
+#### Slow initialization
+
+**Cause**: Database construction time scales with memory limit.
+
+**Solutions**:
+1. Use lower memory limit for faster initialization:
+   ```javascript
+   // 500MB instead of 700MB
+   const solver = new Module.xxcross_search(true, 6, 500);
+   ```
+
+2. Pre-warm instance on application startup
+3. Use Web Worker to avoid blocking UI
+
+See [WASM_EXPERIMENT_SCRIPTS.md](WASM_EXPERIMENT_SCRIPTS.md) for detailed patterns and performance benchmarks.
+
+---
+
+## Debugging Scenarios (Native Build)
 
 ### Scenario 6: Debug Memory Issues (Native)
 
@@ -889,10 +886,12 @@ When making changes to the solver:
 
 ## Related Documentation
 
-- [README.md](README.md) - Comprehensive developer guide (architecture, memory management)
-- [SOURCE_CODE_VERSIONS.md](SOURCE_CODE_VERSIONS.md) - Detailed comparison of development and production versions
-- [MEMORY_OPTIMIZATION_HISTORY.md](MEMORY_OPTIMIZATION_HISTORY.md) - Optimization timeline and history
-- [REHASH_PROTECTION.md](REHASH_PROTECTION.md) - Rehash protection design and implementation
+- [SOLVER_IMPLEMENTATION.md](SOLVER_IMPLEMENTATION.md) - Comprehensive code implementation walkthrough
+- [WASM_EXPERIMENT_SCRIPTS.md](WASM_EXPERIMENT_SCRIPTS.md) - Complete test script implementations
+- [MEMORY_MONITORING.md](MEMORY_MONITORING.md) - /proc monitoring and RSS analysis
+- [EXPERIMENT_SCRIPTS.md](EXPERIMENT_SCRIPTS.md) - Shell scripts for experimentation
+- [../USER_GUIDE.md](../USER_GUIDE.md) - End-user deployment and configuration
+- [../MEMORY_CONFIGURATION_GUIDE.md](../MEMORY_CONFIGURATION_GUIDE.md) - Memory parameter reference
 
 ---
 
@@ -902,8 +901,10 @@ When making changes to the solver:
 
 ```bash
 # Compile WASM (production)
-em++ -I.. solver.cpp -o solver.js -O3 --bind \
-  -s INITIAL_MEMORY=734003200 -s INVOKE_RUN=0
+emcc -O3 solver_dev.cpp -o solver.js \
+  -s ALLOW_MEMORY_GROWTH=1 \
+  -s INITIAL_MEMORY=268435456 \
+  --bind
 
 # Compile native (development)
 g++ -std=c++17 -O3 -g solver_dev.cpp -o solver_dev
@@ -925,4 +926,10 @@ node test_parameterized.js
 4. Implement error handlers (onAbort, onRuntimeInitialized)
 5. Test on target platform before deployment
 
-**For questions or issues, please refer to the documentation or open an issue in the repository.**
+**For complete test implementations, see [WASM_EXPERIMENT_SCRIPTS.md](WASM_EXPERIMENT_SCRIPTS.md).**
+
+---
+
+**Document Version**: 2.0  
+**Last Updated**: 2025-12-30  
+**Status**: Production-ready (restructured for build focus)
