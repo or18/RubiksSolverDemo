@@ -60,3 +60,6 @@ em++ solver.cpp -o solver.js -O3 -msimd128 -flto -s TOTAL_MEMORY=150MB -s WASM=1
 
 2x2solverLite
 em++ solver.cpp -o solver.js -O3 -msimd128 -flto -s WASM=1 --bind
+
+xxcrossTrainer (Standard - 700MB initial, 2GB max for mobile compatibility)
+em++ -I.. solver.cpp -o solver.js -O3 -msimd128 -flto -s ALLOW_MEMORY_GROWTH=1 -s INITIAL_MEMORY=734003200 -s MAXIMUM_MEMORY=2147483648 -s WASM=1 -s EXPORTED_RUNTIME_METHODS='["ccall","cwrap"]' -s INVOKE_RUN=0 --bind

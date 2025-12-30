@@ -4,3 +4,29 @@ temp/
 src_test/
 src_test2/
 archive/
+xxcross_trainer.html
+# Experimental logs and backups (kept locally only)
+*.log
+nohup.out
+*_output.txt
+*_results.txt
+tmp_log/
+backups/
+*_backup_*/
+
+# Binary artifacts (C++ compiled binaries)
+src/xxcrossTrainer/solver_dev
+src/xxcrossTrainer/solver_dev_test
+src/xxcrossTrainer/solver_dev_old
+src/xxcrossTrainer/solver_prod
+src/xxcrossTrainer/solver_test
+
+# WASM build artifacts (exclude from repo, keep source)
+src/xxcrossTrainer/solver.js
+src/xxcrossTrainer/solver.wasm
+src/xxcrossTrainer/solver_mobile.js
+src/xxcrossTrainer/solver_mobile.wasm
+
+# Temporary reports and notes
+CLEANUP_REPORT.md
+*_REPORT.md
