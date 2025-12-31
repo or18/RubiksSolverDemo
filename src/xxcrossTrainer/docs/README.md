@@ -97,29 +97,38 @@ For detailed configuration strategies, see [MEMORY_CONFIGURATION_GUIDE.md](MEMOR
 
 ### Bucket Allocation Logic
 
-The solver uses **flexible bucket allocation** based on available memory:
+The solver uses **calculation-based bucket allocation** that determines bucket sizes dynamically:
 
 ```cpp
-// From solver_dev.cpp (calculate_buckets_flexible)
-const int EMPIRICAL_OVERHEAD = 33;  // bytes per slot
+// From solver_dev.cpp (determine_bucket_sizes)
+// Key calculation components:
+// 1. Remaining memory after Phase 1 BFS (depth 0-6)
+// 2. Safety margin (20-25% for WASM compatibility)
+// 3. Memory per slot (33 bytes empirically measured)
+// 4. Target allocation ratios (e.g., 2:2:2 or 1:2 for n+1:n+2)
 
-if (memory_limit_mb >= 1702) {
-    bucket_7_mb = 16; bucket_8_mb = 16; bucket_9_mb = 16;
-} else if (memory_limit_mb >= 1537) {
-    bucket_7_mb = 8; bucket_8_mb = 16; bucket_9_mb = 8;
-} else if (memory_limit_mb >= 1000) {
-    bucket_7_mb = 8; bucket_8_mb = 8; bucket_9_mb = 8;
+// Example: For 1000 MB limit
+usable_memory = remaining_memory * 0.80;  // 20% safety margin
+target_d9 = usable_memory / (6 * 33);     // 6*d9 for 2:2:2 ratio
+bucket_7 = round_to_power_of_2(target_d9 * 2, 2M, 32M);
+bucket_8 = round_to_power_of_2(target_d9 * 2, 2M, 32M);
+bucket_9 = round_to_power_of_2(target_d9 * 2, 2M, 32M);
+// Result: typically 8M/8M/8M for 1000 MB
+
+// Then flexible upgrade if budget allows
+if (remaining_budget >= bucket_8 * 33) {
+    bucket_8 *= 2;  // Upgrade to 16M if possible
 }
-// ... (see SOLVER_IMPLEMENTATION.md for complete logic)
 ```
 
 ### Memory Behavior
 
-Key empirical findings:
-- **Fixed Overhead**: 62 MB (C++ runtime, allocator metadata, etc.)
-- **Baseline Memory**: `bucket_slots × bytes_per_slot` (27-43 bytes/slot depending on configuration)
-- **No Spike Reserve**: Large buckets (8M+) show minimal transient memory spikes
-- **Load Factor**: Varies 0.6-1.0 (large buckets maintain ~65% load for performance)
+Key characteristics:
+- **Dynamic Calculation**: Bucket sizes determined by runtime logic, not lookup tables
+- **Safety Margins**: 20-25% buffer for WASM compatibility and rehash protection
+- **Baseline Memory**: `bucket_slots × 33 bytes/slot` (empirically measured overhead)
+- **Load Factor**: Varies 0.65-0.90 (large buckets maintain higher load for efficiency)
+- **Stable Parameters**: While calculation-based, empirically-tuned constants are now fixed and stable
 
 For theoretical analysis, see [developer/Experiences/MEMORY_THEORY_ANALYSIS.md](developer/Experiences/MEMORY_THEORY_ANALYSIS.md).
 
@@ -240,12 +249,6 @@ Based on 660,000+ RSS samples:
 ```
 
 For more troubleshooting, see [USER_GUIDE.md](USER_GUIDE.md#troubleshooting).
-
----
-
-## License
-
-(Include license information here)
 
 ---
 
