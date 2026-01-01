@@ -13,6 +13,7 @@
 #include <random>
 #include <deque>
 #include <tsl/robin_set.h>
+#include "bucket_config.h"
 
 #pragma GCC target("avx2")
 
@@ -56,6 +57,11 @@ struct State
 		std::vector<int> new_co;
 		std::vector<int> new_ep;
 		std::vector<int> new_eo;
+		// Pre-reserve for fixed sizes (8 corners, 12 edges)
+		new_cp.reserve(8);
+		new_co.reserve(8);
+		new_ep.reserve(12);
+		new_eo.reserve(12);
 		for (int i = 0; i < 8; ++i)
 		{
 			int p = move.cp[i];
@@ -477,12 +483,17 @@ struct SlidingDepthSets
 		if (static_cast<size_t>(next_depth_idx) < index_pairs.size())
 		{
 			index_pairs[next_depth_idx].clear();
+			// Pre-reserve to reduce reallocation spikes during BFS expansion
+			size_t estimated_next_nodes = expected_nodes_per_depth[next_depth_idx];
+			if (estimated_next_nodes > 0)
+			{
+				index_pairs[next_depth_idx].reserve(estimated_next_nodes);
+			}
 			next.attach_element_vector(&index_pairs[next_depth_idx]);
 			if (verbose)
 			{
-				std::cout << "  [Element vector] Attached to depth=" << next_depth_idx << std::endl;
+				std::cout << "  [Element vector] Attached to depth=" << next_depth_idx << " (reserved: " << estimated_next_nodes << ")" << std::endl;
 			}
-			size_t estimated_next_nodes = expected_nodes_per_depth[next_depth_idx];
 			size_t current_node_count = prev.size() + cur.size();
 
 			if (current_node_count < max_total_nodes)
@@ -655,11 +666,17 @@ struct SlidingDepthSets
 const std::vector<size_t> SlidingDepthSets::expected_nodes_per_depth = {
 	1, 15, 182, 2286, 28611, 349811, 4169855, 47547352, SIZE_MAX}; // depth=8 represents "infinity" with SIZE_MAX
 
-int create_prune_table_sparse(int index1, int index2, int index3, int size1, int size2, int size3, int max_depth, int max_memory_kb, const std::vector<int> &table1, const std::vector<int> &table2, const std::vector<int> &table3, std::vector<std::vector<uint64_t>> &index_pairs, std::vector<int> &num_list, bool verbose = true)
+int create_prune_table_sparse(int index1, int index2, int index3, int size1, int size2, int size3, int max_depth, int max_memory_kb, const std::vector<int> &table1, const std::vector<int> &table2, const std::vector<int> &table3, std::vector<std::vector<uint64_t>> &index_pairs, std::vector<int> &num_list, bool verbose = true, const ResearchConfig& research_config = ResearchConfig())
 {
+	// Memory limit handling
 	const size_t fixed_overhead_kb = 20 * 1024;
 	const size_t adjusted_memory_kb = (static_cast<size_t>(max_memory_kb) > fixed_overhead_kb) ? (static_cast<size_t>(max_memory_kb) - fixed_overhead_kb) : static_cast<size_t>(max_memory_kb);
-	const size_t available_bytes = static_cast<size_t>(adjusted_memory_kb) * 1024;
+	
+	// If ignore_memory_limits is set, use very large budget
+	const size_t available_bytes = research_config.ignore_memory_limits 
+		? SIZE_MAX / 64  // Effectively unlimited
+		: static_cast<size_t>(adjusted_memory_kb) * 1024;
+	
 	const size_t bytes_per_node = 32; // robin_set(24) + index_pairs(8)
 	const uint64_t node_cap = available_bytes / bytes_per_node;
 
@@ -671,9 +688,13 @@ int create_prune_table_sparse(int index1, int index2, int index3, int size1, int
 	// Reserve initial capacity (capacity at depth 0 is small)
 	index_pairs[0].reserve(1);
 
-	std::cout << "Memory budget: " << (max_memory_kb / 1024.0) << " MB"
-			  << " | Available: " << (available_bytes / 1024.0 / 1024.0) << " MB"
-			  << " | Node capacity: " << node_cap << std::endl;
+	if (research_config.ignore_memory_limits) {
+		std::cout << "Memory budget: UNLIMITED (research mode)" << std::endl;
+	} else {
+		std::cout << "Memory budget: " << (max_memory_kb / 1024.0) << " MB"
+				  << " | Available: " << (available_bytes / 1024.0 / 1024.0) << " MB"
+				  << " | Node capacity: " << node_cap << std::endl;
+	}
 
 	const int index23 = index2 * size3 + index3;
 	const uint64_t index123 = index1 * size23 + index23;
@@ -685,10 +706,12 @@ int create_prune_table_sparse(int index1, int index2, int index3, int size1, int
 	if (max_depth >= 1)
 	{
 		index_pairs[1].clear();
+		// Pre-reserve for predictable depth=1 size (~18 nodes)
+		index_pairs[1].reserve(20);
 		visited.next.attach_element_vector(&index_pairs[1]);
 		if (verbose)
 		{
-			std::cout << "[Element vector] Attached to depth=1" << std::endl;
+			std::cout << "[Element vector] Attached to depth=1 (reserved: 20)" << std::endl;
 		}
 	}
 
@@ -762,6 +785,43 @@ int create_prune_table_sparse(int index1, int index2, int index3, int size1, int
 		completed_depth = depth;
 		// Automatic recording by element_vector eliminates the need for manual copying
 		// index_pairs[completed_depth] already contains data
+		
+		// Next-depth reserve optimization (full BFS mode only)
+		if (research_config.enable_next_depth_reserve && !research_config.enable_local_expansion)
+		{
+			int future_depth = next_depth + 1;
+			if (future_depth <= max_depth)
+			{
+				// Predict next depth size using current depth size
+				size_t current_nodes = num_list[next_depth];
+				size_t predicted_nodes = static_cast<size_t>(
+					static_cast<float>(current_nodes) * research_config.next_depth_reserve_multiplier);
+				
+				// Apply upper limit to prevent memory explosion
+				if (predicted_nodes > research_config.max_reserve_nodes)
+				{
+					predicted_nodes = research_config.max_reserve_nodes;
+					if (verbose)
+					{
+						std::cout << "[Reserve] Capped prediction at max_reserve_nodes: "
+								  << research_config.max_reserve_nodes << std::endl;
+					}
+				}
+				
+				// Reserve next depth
+				if (predicted_nodes > 0)
+				{
+					index_pairs[future_depth].reserve(predicted_nodes);
+					if (verbose)
+					{
+						std::cout << "[Reserve] depth=" << future_depth
+								  << " reserved " << predicted_nodes << " nodes"
+								  << " (multiplier=" << research_config.next_depth_reserve_multiplier
+								  << " × " << current_nodes << " current nodes)" << std::endl;
+					}
+				}
+			}
+		}
 	}
 
 	// Process the remainder at the end of the loop
@@ -962,8 +1022,8 @@ LocalExpansionConfig determine_bucket_sizes(
 		size_t total_memory = cur_set_memory_bytes + memory_n1 + memory_n2;
 		size_t predicted_rss = static_cast<size_t>(total_memory * memory_factor);
 
-		// Safety margin: within 98%
-		if (predicted_rss <= static_cast<size_t>(available_memory * 0.98))
+		// Check against available memory (margin removed - handled by outer C++ cushion)
+		if (predicted_rss <= available_memory)
 		{
 			size_t total_nodes = nodes_n1 + nodes_n2;
 			if (total_nodes > best_total_nodes)
@@ -1004,7 +1064,8 @@ LocalExpansionConfig determine_bucket_sizes(
 			size_t total_memory = cur_set_memory_bytes + memory;
 			size_t predicted_rss = static_cast<size_t>(total_memory * params.measured_memory_factor);
 
-			if (predicted_rss <= static_cast<size_t>(available_memory * 0.98))
+			// Check against available memory (margin removed - handled by outer C++ cushion)
+			if (predicted_rss <= available_memory)
 			{
 				config.enable_n1_expansion = true;
 				config.enable_n2_expansion = false;
@@ -1131,10 +1192,13 @@ void local_expand_step2_random_n1(
 	}
 
 	index_pairs[depth_n1].clear();
+	// Pre-reserve capacity to prevent reallocation spikes during attach
+	size_t estimated_n1_capacity = std::min(config.nodes_n1, static_cast<size_t>(config.bucket_n1 * 0.9));
+	index_pairs[depth_n1].reserve(estimated_n1_capacity);
 	depth_n1_nodes.attach_element_vector(&index_pairs[depth_n1]);
 	if (verbose)
 	{
-		std::cout << "  [Step 2] Element vector attached to depth=" << depth_n1 << std::endl;
+		std::cout << "  [Step 2] Element vector attached to depth=" << depth_n1 << " (reserved: " << estimated_n1_capacity << ")" << std::endl;
 	}
 	// Prepare random selection (reuse static RNG)
 	static std::random_device rd;
@@ -1649,6 +1713,13 @@ BacktraceExpansionResult expand_with_backtrace_filter(
 
 	// Process the sampled nodes
 	size_t processed_count = 0;
+	// Pre-declare variables outside loop to avoid repeated allocations
+	int edge_index, corner_index, f2l_edge_index;
+	uint64_t index23_bt;
+	size_t edge_table_index, corner_table_index, f2l_edge_table_index;
+	int next_edge, next_corner, next_f2l_edge, next_index23;
+	uint64_t next_node_bt;
+
 	// size_t debug_limit = 1000;  // Debug release
 	for (uint64_t node : sampled_nodes)
 	{
@@ -1665,10 +1736,10 @@ BacktraceExpansionResult expand_with_backtrace_filter(
 		// }
 
 		// Decompose node index
-		int edge_index = node / size23;
-		uint64_t index23 = node % size23;
-		int corner_index = index23 / size2;	  // F2L_corners
-		int f2l_edge_index = index23 % size2; // F2L_edges
+		edge_index = node / size23;
+		index23_bt = node % size23;
+		corner_index = index23_bt / size2;	  // F2L_corners
+		f2l_edge_index = index23_bt % size2; // F2L_edges
 
 		// if (verbose && processed_count < 5) {
 		//     std::cout << "    edge_index=" << edge_index << ", corner_index=" << corner_index
@@ -1731,31 +1802,32 @@ BacktraceExpansionResult expand_with_backtrace_filter(
 			}
 
 			// Backtrace: check if reachable from depth=n
-			bool is_depth_n_plus_1 = false;
+		// Pre-declare variables outside loop to avoid repeated allocations
+		bool is_depth_n_plus_1 = false;
+		size_t back_edge_table_index, back_corner_table_index, back_f2l_edge_table_index;
+		int parent_edge, parent_corner, parent_f2l_edge, parent_index23;
+		uint64_t parent;
 
-			for (int back_move = 0; back_move < 18; ++back_move)
+		for (int back_move = 0; back_move < 18; ++back_move)
+		{
+			// Boundary check for backtrace table access
+			back_edge_table_index = static_cast<size_t>(next_edge) * 18 + back_move;
+			back_corner_table_index = static_cast<size_t>(next_corner) * 18 + back_move;
+			back_f2l_edge_table_index = static_cast<size_t>(next_f2l_edge) * 18 + back_move;
+
+			if (back_edge_table_index >= multi_move_table_cross_edges.size() ||
+				back_corner_table_index >= multi_move_table_F2L_slots_corners.size() ||
+				back_f2l_edge_table_index >= multi_move_table_F2L_slots_edges.size())
 			{
-				// Boundary check for backtrace table access
-				size_t back_edge_table_index = static_cast<size_t>(next_edge) * 18 + back_move;
-				size_t back_corner_table_index = static_cast<size_t>(next_corner) * 18 + back_move;
-				size_t back_f2l_edge_table_index = static_cast<size_t>(next_f2l_edge) * 18 + back_move;
+				break;
+			}
 
-				if (back_edge_table_index >= multi_move_table_cross_edges.size() ||
-					back_corner_table_index >= multi_move_table_F2L_slots_corners.size() ||
-					back_f2l_edge_table_index >= multi_move_table_F2L_slots_edges.size())
-				{
-					break;
-				}
+			parent_edge = multi_move_table_cross_edges[back_edge_table_index];
+			parent_corner = multi_move_table_F2L_slots_corners[back_corner_table_index];
+			parent_f2l_edge = multi_move_table_F2L_slots_edges[back_f2l_edge_table_index];
 
-				int parent_edge = multi_move_table_cross_edges[back_edge_table_index];
-				int parent_corner = multi_move_table_F2L_slots_corners[back_corner_table_index];
-				int parent_f2l_edge = multi_move_table_F2L_slots_edges[back_f2l_edge_table_index];
-
-				int parent_index23 = parent_corner * size2 + parent_f2l_edge;
-				uint64_t parent = static_cast<uint64_t>(parent_edge) * size23 + parent_index23;
-
-				// Search depth_n_nodes → O(1)
-				if (depth_n_nodes.count(parent))
+			parent_index23 = parent_corner * size2 + parent_f2l_edge;
+			parent = static_cast<uint64_t>(parent_edge) * size23 + parent_index23;
 				{
 					// Reachable from depth=n → Confirm depth=n+1
 					is_depth_n_plus_1 = true;
@@ -1938,7 +2010,8 @@ void build_complete_search_database(
 	const std::vector<int> &multi_move_table_F2L_slots_corners,
 	std::vector<std::vector<uint64_t>> &index_pairs,
 	std::vector<int> &num_list,
-	bool verbose = true)
+	bool verbose = true,
+	const ResearchConfig& research_config = ResearchConfig())
 {
 	if (verbose)
 	{
@@ -1947,23 +2020,47 @@ void build_complete_search_database(
 		std::cout << "Phase 2: Partial Expansion (depth " << BFS_DEPTH << "+1)" << std::endl;
 		std::cout << "Phase 3: Local Expansion depth 7→8 (with depth 6 check)" << std::endl;
 		std::cout << "Phase 4: Local Expansion depth 8→9 (with depth 6 distance check)" << std::endl;
-		std::cout << "Memory limit: " << MEMORY_LIMIT_MB << " MB" << std::endl;
+		
+		if (research_config.ignore_memory_limits) {
+			std::cout << "Memory limit: UNLIMITED (research mode)" << std::endl;
+		} else {
+			std::cout << "Memory limit: " << MEMORY_LIMIT_MB << " MB" << std::endl;
+		}
+		
+		if (!research_config.enable_local_expansion) {
+			std::cout << "Local expansion: DISABLED (full BFS only)" << std::endl;
+		}
+		
+		if (research_config.force_full_bfs_to_depth >= 0) {
+			std::cout << "Forced full BFS to depth: " << research_config.force_full_bfs_to_depth << std::endl;
+		}
 	}
 
 	// ============================================================================
 	// Phase 1: Execute BFS
 	// ============================================================================
+	
+	// Determine effective BFS depth
+	int effective_bfs_depth = BFS_DEPTH;
+	if (research_config.force_full_bfs_to_depth >= 0) {
+		effective_bfs_depth = research_config.force_full_bfs_to_depth;
+		if (verbose) {
+			std::cout << "Forced BFS depth: " << effective_bfs_depth << " (overriding default " << BFS_DEPTH << ")" << std::endl;
+		}
+	}
+	
 	int reached_depth = create_prune_table_sparse(
 		index1, index2, index3,
 		size1, size2, size3,
-		BFS_DEPTH,
+		effective_bfs_depth,
 		1024 * MEMORY_LIMIT_MB,
 		multi_move_table_cross_edges,
 		multi_move_table_F2L_slots_edges,
 		multi_move_table_F2L_slots_corners,
 		index_pairs,
 		num_list,
-		verbose);
+		verbose,
+		research_config);
 
 	if (verbose)
 	{
@@ -2002,6 +2099,29 @@ void build_complete_search_database(
 		if (verbose)
 		{
 			std::cout << "\nPhase 2-4 Skipped: BFS depth < 6" << std::endl;
+		}
+		return;
+	}
+	
+	// Check if local expansion is disabled (research mode: full BFS only)
+	if (!research_config.enable_local_expansion)
+	{
+		if (verbose)
+		{
+			std::cout << "\nPhase 2-4 Skipped: Local expansion disabled (full BFS mode)" << std::endl;
+			std::cout << "Research mode: Only BFS depths 0-" << reached_depth << " were explored" << std::endl;
+		}
+		
+		// Collect statistics if requested
+		if (research_config.collect_detailed_statistics)
+		{
+			std::cout << "\n=== Full BFS Statistics (CSV Format) ===" << std::endl;
+			std::cout << "depth,nodes,rss_mb" << std::endl;
+			for (int d = 0; d <= reached_depth; ++d)
+			{
+				size_t rss_kb = get_rss_kb();
+				std::cout << d << "," << index_pairs[d].size() << "," << (rss_kb / 1024.0) << std::endl;
+			}
 		}
 		return;
 	}
@@ -2236,6 +2356,9 @@ void build_complete_search_database(
 
 	tsl::robin_set<uint64_t> depth_7_nodes(bucket_7);
 	depth_7_nodes.max_load_factor(0.9f);
+	// Pre-reserve capacity to prevent reallocation spikes during attach
+	size_t estimated_d7_capacity = static_cast<size_t>(bucket_7 * 0.9);
+	index_pairs[7].reserve(estimated_d7_capacity);
 	depth_7_nodes.attach_element_vector(&index_pairs[7]);
 
 	if (verbose)
@@ -2244,7 +2367,9 @@ void build_complete_search_database(
 	}
 
 	// Adaptive children per parent for depth 6→7
-	std::vector<uint64_t> depth6_vec(depth_6_nodes.begin(), depth_6_nodes.end());
+	std::vector<uint64_t> depth6_vec;
+	depth6_vec.reserve(depth_6_nodes.size()); // Pre-reserve to avoid reallocation spike
+	depth6_vec.assign(depth_6_nodes.begin(), depth_6_nodes.end());
 	std::mt19937_64 rng_d7(12345);
 	std::shuffle(depth6_vec.begin(), depth6_vec.end(), rng_d7);
 
@@ -2282,20 +2407,33 @@ void build_complete_search_database(
 	}
 
 	// Expand depth 6 → 7
+	// Pre-allocate all_moves outside the loop to avoid repeated allocations
+	std::vector<int> all_moves(18);
+	for (int m = 0; m < 18; ++m)
+		all_moves[m] = m;
+
+	// Pre-declare loop variables outside to avoid repeated allocations
+	uint64_t node123;
+	uint64_t index1_cur, index23, index2_cur, index3_cur;
+	int index1_tmp, index2_tmp, index3_tmp;
+	uint64_t next_index1, next_index2, next_index3, next_node123;
+	std::vector<int> selected_moves;
+	selected_moves.reserve(18);
+
 	for (size_t i = 0; i < depth6_vec.size(); ++i)
 	{
-		uint64_t node123 = depth6_vec[i];
-		const uint64_t index1_cur = node123 / size23;
-		const uint64_t index23 = node123 % size23;
-		const uint64_t index2_cur = index23 / size3;
-		const uint64_t index3_cur = index23 % size3;
+		node123 = depth6_vec[i];
+		index1_cur = node123 / size23;
+		index23 = node123 % size23;
+		index2_cur = index23 / size3;
+		index3_cur = index23 % size3;
 
-		const int index1_tmp = static_cast<int>(index1_cur) * 18;
-		const int index2_tmp = static_cast<int>(index2_cur) * 18;
-		const int index3_tmp = static_cast<int>(index3_cur) * 18;
+		index1_tmp = static_cast<int>(index1_cur) * 18;
+		index2_tmp = static_cast<int>(index2_cur) * 18;
+		index3_tmp = static_cast<int>(index3_cur) * 18;
 
-		// Generate selected moves
-		std::vector<int> selected_moves;
+		// Generate selected moves (reuse vector across iterations)
+		selected_moves.clear();
 		if (children_per_parent_d7 >= 18)
 		{
 			for (int m = 0; m < 18; ++m)
@@ -2307,9 +2445,7 @@ void build_complete_search_database(
 		}
 		else
 		{
-			std::vector<int> all_moves(18);
-			for (int m = 0; m < 18; ++m)
-				all_moves[m] = m;
+			// Shuffle reusable all_moves and select first N
 			std::shuffle(all_moves.begin(), all_moves.end(), rng_d7);
 			for (int j = 0; j < children_per_parent_d7; ++j)
 			{
@@ -2447,6 +2583,9 @@ phase2_done:
 
 	tsl::robin_set<uint64_t> depth_8_nodes(bucket_8);
 	depth_8_nodes.max_load_factor(0.9f);
+	// Pre-reserve capacity to prevent reallocation spikes during attach
+	size_t estimated_d8_capacity = static_cast<size_t>(bucket_8 * 0.9);
+	index_pairs[8].reserve(estimated_d8_capacity);
 	depth_8_nodes.attach_element_vector(&index_pairs[8]);
 
 	if (verbose)
@@ -2458,14 +2597,18 @@ phase2_done:
 	size_t inserted_count = 0; // Track successful inserts for diagnostics
 
 	// Advance one move from all depth 7 nodes
+	// Direct vector construction (no intermediate robin_set to avoid memory spike)
+	std::vector<uint64_t> depth7_vec;
+	depth7_vec.reserve(index_pairs[7].size());
+	depth7_vec.assign(index_pairs[7].begin(), index_pairs[7].end());
+	
+	// Create robin_set for depth 7 duplicate checking (used in depth 8 expansion)
 	tsl::robin_set<uint64_t> depth7_set;
-	for (uint64_t node : index_pairs[7])
-	{
+	depth7_set.max_load_factor(0.9f);
+	depth7_set.reserve(depth7_vec.size()); // Pre-reserve to prevent rehashing during construction
+	for (uint64_t node : depth7_vec) {
 		depth7_set.insert(node);
 	}
-
-	// depth 7→8 is always random sampling (adaptive children per parent)
-	std::vector<uint64_t> depth7_vec(depth7_set.begin(), depth7_set.end());
 	std::mt19937_64 rng_phase3(23456);
 	std::shuffle(depth7_vec.begin(), depth7_vec.end(), rng_phase3);
 
@@ -2503,20 +2646,33 @@ phase2_done:
 		std::cout << "Children per parent: " << children_per_parent_d8 << " (adaptive)" << std::endl;
 	}
 
+	// Pre-allocate all_moves outside the loop to avoid repeated allocations
+	std::vector<int> all_moves_d8(18);
+	for (int m = 0; m < 18; ++m)
+		all_moves_d8[m] = m;
+
+	// Pre-declare loop variables outside to avoid repeated allocations
+	uint64_t node123_d8;
+	uint64_t index1_cur_d8, index23_d8, index2_cur_d8, index3_cur_d8;
+	int index1_tmp_d8, index2_tmp_d8, index3_tmp_d8;
+	uint64_t next_index1_d8, next_index2_d8, next_index3_d8, next_node123_d8;
+	std::vector<int> selected_moves_d8;
+	selected_moves_d8.reserve(18);
+
 	for (size_t idx = 0; idx < depth7_vec.size(); ++idx)
 	{
-		uint64_t node123 = depth7_vec[idx];
-		const uint64_t index1_cur = node123 / size23;
-		const uint64_t index23 = node123 % size23;
-		const uint64_t index2_cur = index23 / size3;
-		const uint64_t index3_cur = index23 % size3;
+		node123_d8 = depth7_vec[idx];
+		index1_cur_d8 = node123_d8 / size23;
+		index23_d8 = node123_d8 % size23;
+		index2_cur_d8 = index23_d8 / size3;
+		index3_cur_d8 = index23_d8 % size3;
 
-		const int index1_tmp = static_cast<int>(index1_cur) * 18;
-		const int index2_tmp = static_cast<int>(index2_cur) * 18;
-		const int index3_tmp = static_cast<int>(index3_cur) * 18;
+		index1_tmp_d8 = static_cast<int>(index1_cur_d8) * 18;
+		index2_tmp_d8 = static_cast<int>(index2_cur_d8) * 18;
+		index3_tmp_d8 = static_cast<int>(index3_cur_d8) * 18;
 
-		// Generate selected_moves based on children_per_parent_d8
-		std::vector<int> selected_moves;
+		// Generate selected_moves based on children_per_parent_d8 (reuse vector)
+		selected_moves_d8.clear();
 		if (children_per_parent_d8 >= 18)
 		{
 			for (int m = 0; m < 18; ++m)
@@ -2528,54 +2684,56 @@ phase2_done:
 		}
 		else
 		{
-			std::vector<int> all_moves(18);
-			for (int m = 0; m < 18; ++m)
-				all_moves[m] = m;
-			std::shuffle(all_moves.begin(), all_moves.end(), rng_phase3);
+			// Shuffle reusable all_moves and select first N
+			std::shuffle(all_moves_d8.begin(), all_moves_d8.end(), rng_phase3);
 			for (int i = 0; i < children_per_parent_d8; ++i)
 			{
-				selected_moves.push_back(all_moves[i]);
+				selected_moves.push_back(all_moves_d8[i]);
 			}
 		}
 
-		for (int move : selected_moves)
+		for (int move : selected_moves_d8)
 		{
 
-			const uint64_t next_index1 = multi_move_table_cross_edges[index1_tmp + move];
-			const uint64_t next_index2 = multi_move_table_F2L_slots_edges[index2_tmp + move];
-			const uint64_t next_index3 = multi_move_table_F2L_slots_corners[index3_tmp + move];
-			const uint64_t next_node123 = next_index1 * size23 + next_index2 * size3 + next_index3;
+			next_index1_d8 = multi_move_table_cross_edges[index1_tmp_d8 + move];
+			next_index2_d8 = multi_move_table_F2L_slots_edges[index2_tmp_d8 + move];
+			next_index3_d8 = multi_move_table_F2L_slots_corners[index3_tmp_d8 + move];
+			next_node123_d8 = next_index1_d8 * size23 + next_index2_d8 * size3 + next_index3_d8;
 
 			// Skip if contained in depth 6
-			if (depth_6_nodes.find(next_node123) != depth_6_nodes.end())
+			if (depth_6_nodes.find(next_node123_d8) != depth_6_nodes.end())
 			{
 				continue;
 			}
 
 			// Skip if already present in depth 7 (avoid duplicates)
-			if (depth7_set.find(next_node123) != depth7_set.end())
+			if (depth7_set.find(next_node123_d8) != depth7_set.end())
 			{
 				rejected_as_depth7++; // Count as depth 7 reject
 				continue;
 			}
 
-			// Check if connected to depth 6 by one move
+			// Check if connected to depth 6 by one move (hoist variables outside)
 			bool connected_to_depth6 = false;
-			const uint64_t check_index1 = next_node123 / size23;
-			const uint64_t check_index23 = next_node123 % size23;
-			const uint64_t check_index2 = check_index23 / size3;
-			const uint64_t check_index3 = check_index23 % size3;
+			uint64_t check_index1, check_index23, check_index2, check_index3;
+			int check_index1_tmp, check_index2_tmp, check_index3_tmp;
+			uint64_t back_index1, back_index2, back_index3, back_node;
+			
+			check_index1 = next_node123_d8 / size23;
+			check_index23 = next_node123_d8 % size23;
+			check_index2 = check_index23 / size3;
+			check_index3 = check_index23 % size3;
 
-			const int check_index1_tmp = static_cast<int>(check_index1) * 18;
-			const int check_index2_tmp = static_cast<int>(check_index2) * 18;
-			const int check_index3_tmp = static_cast<int>(check_index3) * 18;
+			check_index1_tmp = static_cast<int>(check_index1) * 18;
+			check_index2_tmp = static_cast<int>(check_index2) * 18;
+			check_index3_tmp = static_cast<int>(check_index3) * 18;
 
 			for (int m = 0; m < 18; ++m)
 			{
-				const uint64_t back_index1 = multi_move_table_cross_edges[check_index1_tmp + m];
-				const uint64_t back_index2 = multi_move_table_F2L_slots_edges[check_index2_tmp + m];
-				const uint64_t back_index3 = multi_move_table_F2L_slots_corners[check_index3_tmp + m];
-				const uint64_t back_node = back_index1 * size23 + back_index2 * size3 + back_index3;
+				back_index1 = multi_move_table_cross_edges[check_index1_tmp + m];
+				back_index2 = multi_move_table_F2L_slots_edges[check_index2_tmp + m];
+				back_index3 = multi_move_table_F2L_slots_corners[check_index3_tmp + m];
+				back_node = back_index1 * size23 + back_index2 * size3 + back_index3;
 
 				if (depth_6_nodes.find(back_node) != depth_6_nodes.end())
 				{
@@ -2689,16 +2847,23 @@ phase3_done:
 
 	tsl::robin_set<uint64_t> depth_9_nodes(bucket_9);
 	depth_9_nodes.max_load_factor(0.9f);
+	// Pre-reserve capacity to prevent reallocation spikes during attach
+	size_t estimated_d9_capacity = static_cast<size_t>(bucket_9 * 0.9);
+	index_pairs[9].reserve(estimated_d9_capacity);
 	depth_9_nodes.attach_element_vector(&index_pairs[9]);
 
-	// Convert depth 8 nodes to vector and shuffle
+	// Convert depth 8 nodes to vector and shuffle (direct assignment, no intermediate robin_set)
+	std::vector<uint64_t> depth8_vec;
+	depth8_vec.reserve(index_pairs[8].size());
+	depth8_vec.assign(index_pairs[8].begin(), index_pairs[8].end());
+	
+	// Create robin_set for depth 8 duplicate checking (used in depth 9 expansion)
 	tsl::robin_set<uint64_t> depth8_set;
-	for (uint64_t node : index_pairs[8])
-	{
+	depth8_set.max_load_factor(0.9f);
+	depth8_set.reserve(depth8_vec.size()); // Pre-reserve to prevent rehashing during construction
+	for (uint64_t node : depth8_vec) {
 		depth8_set.insert(node);
 	}
-
-	std::vector<uint64_t> depth8_vec(depth8_set.begin(), depth8_set.end());
 	std::mt19937_64 rng_phase4(54321); // Re-seed for reproducibility
 	std::shuffle(depth8_vec.begin(), depth8_vec.end(), rng_phase4);
 
@@ -2737,21 +2902,34 @@ phase3_done:
 		std::cout << "Children per parent: " << children_per_parent << " (adaptive)" << std::endl;
 	}
 
+	// Pre-allocate all_moves outside the loop to avoid repeated allocations
+	std::vector<int> all_moves_d9(18);
+	for (int m = 0; m < 18; ++m)
+		all_moves_d9[m] = m;
+
+	// Pre-declare loop variables outside to avoid repeated allocations
+	uint64_t node123_d9;
+	uint64_t index1_cur_d9, index23_d9, index2_cur_d9, index3_cur_d9;
+	int index1_tmp_d9, index2_tmp_d9, index3_tmp_d9;
+	uint64_t next_index1_d9, next_index2_d9, next_index3_d9, next_node123_d9;
+	std::vector<int> selected_moves_d9;
+	selected_moves_d9.reserve(18);
+
 	for (size_t i = 0; i < depth8_vec.size(); ++i)
 	{
-		uint64_t node123 = depth8_vec[i];
+		node123_d9 = depth8_vec[i];
 
-		const uint64_t index1_cur = node123 / size23;
-		const uint64_t index23 = node123 % size23;
-		const uint64_t index2_cur = index23 / size3;
-		const uint64_t index3_cur = index23 % size3;
+		index1_cur_d9 = node123_d9 / size23;
+		index23_d9 = node123_d9 % size23;
+		index2_cur_d9 = index23_d9 / size3;
+		index3_cur_d9 = index23_d9 % size3;
 
-		const int index1_tmp = static_cast<int>(index1_cur) * 18;
-		const int index2_tmp = static_cast<int>(index2_cur) * 18;
-		const int index3_tmp = static_cast<int>(index3_cur) * 18;
+		index1_tmp_d9 = static_cast<int>(index1_cur_d9) * 18;
+		index2_tmp_d9 = static_cast<int>(index2_cur_d9) * 18;
+		index3_tmp_d9 = static_cast<int>(index3_cur_d9) * 18;
 
-		// Adaptive: Select random children_per_parent moves
-		std::vector<int> selected_moves;
+		// Adaptive: Select random children_per_parent moves (reuse vector)
+		selected_moves_d9.clear();
 		if (children_per_parent >= 18)
 		{
 			// All moves
@@ -2767,14 +2945,11 @@ phase3_done:
 		}
 		else
 		{
-			// Random subset of moves
-			std::vector<int> all_moves(18);
-			for (int m = 0; m < 18; ++m)
-				all_moves[m] = m;
-			std::shuffle(all_moves.begin(), all_moves.end(), rng_phase4);
+			// Random subset of moves (shuffle reusable all_moves)
+			std::shuffle(all_moves_d9.begin(), all_moves_d9.end(), rng_phase4);
 			for (int m = 0; m < children_per_parent; ++m)
 			{
-				selected_moves.push_back(all_moves[m]);
+				selected_moves.push_back(all_moves_d9[m]);
 			}
 		}
 
@@ -2897,6 +3072,51 @@ phase4_done:
 			total_nodes += vec.size();
 		}
 		std::cout << "  index_pairs memory (actual): " << (total_nodes * sizeof(uint64_t) / 1024.0 / 1024.0) << " MB" << std::endl;
+		std::cout << "  Final RSS: " << (get_rss_kb() / 1024.0) << " MB" << std::endl;
+	}
+	
+	// Collect detailed statistics if requested
+	if (research_config.collect_detailed_statistics)
+	{
+		std::cout << "\n=== Detailed Statistics (CSV Format) ===" << std::endl;
+		std::cout << "depth,nodes,rss_mb,capacity_mb" << std::endl;
+		
+		size_t cumulative_capacity = 0;
+		for (size_t d = 0; d < index_pairs.size(); ++d)
+		{
+			size_t nodes = index_pairs[d].size();
+			size_t capacity = index_pairs[d].capacity();
+			cumulative_capacity += capacity * sizeof(uint64_t);
+			
+			size_t rss_kb = get_rss_kb();
+			double rss_mb = rss_kb / 1024.0;
+			double capacity_mb = cumulative_capacity / 1024.0 / 1024.0;
+			
+			std::cout << d << "," << nodes << "," << rss_mb << "," << capacity_mb << std::endl;
+		}
+	}
+	
+	// Dry run mode: clear database (measurement only)
+	if (research_config.dry_run)
+	{
+		if (verbose)
+		{
+			std::cout << "\n[DRY RUN MODE] Clearing database (measurement complete)" << std::endl;
+		}
+		
+		// Clear all data
+		for (auto &vec : index_pairs)
+		{
+			vec.clear();
+			vec.shrink_to_fit();
+		}
+		index_pairs.clear();
+		num_list.clear();
+		
+		if (verbose)
+		{
+			std::cout << "Database cleared. RSS after cleanup: " << (get_rss_kb() / 1024.0) << " MB" << std::endl;
+		}
 	}
 } // End of build_complete_search_database
 
@@ -3322,24 +3542,142 @@ struct xxcross_search
 	std::vector<int> cross_edges_goal_tmp;
 	std::vector<int> F2L_slots_edges_goal_tmp;
 	std::vector<int> F2L_slots_corners_goal_tmp;
+	
+	// New: Configuration storage
+	BucketConfig bucket_config_;
+	ResearchConfig research_config_;
 
-	xxcross_search(bool adj = true, int BFS_DEPTH = 6, int MEMORY_LIMIT_MB = 1600, bool verbose = true)
+	xxcross_search(bool adj = true, int BFS_DEPTH = 6, int MEMORY_LIMIT_MB = 1600, bool verbose = true,
+	               const BucketConfig& bucket_config = BucketConfig(),
+	               const ResearchConfig& research_config = ResearchConfig())
+		: bucket_config_(bucket_config), research_config_(research_config)
 	{
+		// ============================================================================
+		// Phase 1: Configuration Validation
+		// ============================================================================
+		
+		if (verbose) {
+			std::cout << "\n=== xxcross_search Constructor ===" << std::endl;
+			std::cout << "Configuration:" << std::endl;
+			std::cout << "  BFS_DEPTH: " << BFS_DEPTH << std::endl;
+			std::cout << "  MEMORY_LIMIT_MB: " << MEMORY_LIMIT_MB << std::endl;
+			std::cout << "  Adjacent slots: " << (adj ? "yes" : "no") << std::endl;
+			std::cout << "Research mode flags:" << std::endl;
+			std::cout << "  enable_local_expansion: " << research_config_.enable_local_expansion << std::endl;
+			std::cout << "  force_full_bfs_to_depth: " << research_config_.force_full_bfs_to_depth << std::endl;
+			std::cout << "  ignore_memory_limits: " << research_config_.ignore_memory_limits << std::endl;
+			std::cout << "  collect_detailed_statistics: " << research_config_.collect_detailed_statistics << std::endl;
+			std::cout << "  dry_run: " << research_config_.dry_run << std::endl;
+			std::cout << "  enable_custom_buckets: " << research_config_.enable_custom_buckets << std::endl;
+			std::cout << "  high_memory_wasm_mode: " << research_config_.high_memory_wasm_mode << std::endl;
+			std::cout << "  developer_memory_limit_mb: " << research_config_.developer_memory_limit_mb << std::endl;
+		}
+		
+		// Validate WASM environment constraints
+		#ifdef __EMSCRIPTEN__
+			if (!research_config_.high_memory_wasm_mode) {
+				const size_t WASM_SAFE_LIMIT_MB = 1200;
+				if (MEMORY_LIMIT_MB > WASM_SAFE_LIMIT_MB) {
+					throw std::runtime_error(
+						"[WASM] Budget exceeds safe limit: " + std::to_string(MEMORY_LIMIT_MB) + 
+						" MB > " + std::to_string(WASM_SAFE_LIMIT_MB) + 
+						" MB. Use ResearchConfig.high_memory_wasm_mode=true if intentional."
+					);
+				}
+			}
+			
+			// In WASM, disable verbose by default (can be overridden)
+			if (verbose) {
+				std::cout << "[WASM] Environment detected, using WASM safety checks" << std::endl;
+			}
+		#endif
+		
+		// ============================================================================
+		// Phase 2: Bucket Model Selection
+		// ============================================================================
+		
+		BucketModel selected_model = bucket_config_.model;
+		size_t bucket_d7 = 0, bucket_d8 = 0, bucket_d9 = 0;
+		
+		if (selected_model == BucketModel::AUTO) {
+			// Auto-select based on memory budget
+			size_t budget_mb = (bucket_config_.memory_budget_mb > 0) 
+			                 ? bucket_config_.memory_budget_mb 
+			                 : MEMORY_LIMIT_MB;
+			selected_model = select_model(budget_mb);
+			
+			if (verbose) {
+				std::cout << "\nAuto-selected model based on budget " << budget_mb << " MB" << std::endl;
+			}
+		}
+		
+		// Validate model safety
+		validate_model_safety(selected_model, MEMORY_LIMIT_MB, bucket_config_, research_config_);
+		
+		// Get bucket sizes from selected model
+		if (selected_model == BucketModel::CUSTOM) {
+			// Use custom buckets
+			bucket_d7 = bucket_config_.custom_bucket_7;
+			bucket_d8 = bucket_config_.custom_bucket_8;
+			bucket_d9 = bucket_config_.custom_bucket_9;
+			
+			if (verbose) {
+				std::cout << "Using CUSTOM buckets: " 
+				          << (bucket_d7 >> 20) << "M / "
+				          << (bucket_d8 >> 20) << "M / "
+				          << (bucket_d9 >> 20) << "M" << std::endl;
+				
+				size_t estimated_rss = estimate_custom_rss(bucket_d7, bucket_d8, bucket_d9);
+				std::cout << "Estimated RSS: " << estimated_rss << " MB (theoretical)" << std::endl;
+			}
+		} else if (selected_model == BucketModel::FULL_BFS) {
+			// Full BFS mode: use minimal buckets (will be overridden by research mode)
+			bucket_d7 = 1 << 20;  // 1M (placeholder)
+			bucket_d8 = 1 << 20;
+			bucket_d9 = 1 << 20;
+			
+			if (verbose) {
+				std::cout << "Using FULL_BFS mode (local expansion disabled)" << std::endl;
+			}
+		} else {
+			// Use preset model
+			const auto& measured_data = get_measured_data();
+			
+			ModelData model_data;
+			if (selected_model == BucketModel::ULTRA_HIGH) {
+				model_data = get_ultra_high_config();
+			} else if (measured_data.find(selected_model) != measured_data.end()) {
+				model_data = measured_data.at(selected_model);
+			} else {
+				throw std::runtime_error("Unknown bucket model");
+			}
+			
+			bucket_d7 = model_data.d7;
+			bucket_d8 = model_data.d8;
+			bucket_d9 = model_data.d9;
+			
+			if (verbose) {
+				std::cout << "Using preset model with buckets: " 
+				          << (bucket_d7 >> 20) << "M / "
+				          << (bucket_d8 >> 20) << "M / "
+				          << (bucket_d9 >> 20) << "M" << std::endl;
+				
+				if (model_data.measured_rss_mb > 0) {
+					std::cout << "Measured RSS: " << model_data.measured_rss_mb << " MB" << std::endl;
+				} else {
+					std::cout << "WARNING: No measurement data available yet (spike fixes pending)" << std::endl;
+				}
+			}
+		}
+		
+		// ============================================================================
+		// Phase 3: Original Constructor Logic (Move Tables, Prune Tables, etc.)
+		// ============================================================================
+		
 #ifdef __EMSCRIPTEN__
-		// In WebAssembly environment, disable verbose output by default
-		verbose = false;
-		// Reduce memory limit for WASM (800MB initial memory, need headroom for overhead)
-		// User can specify lower values, but values >700 will be capped
+		// Legacy WASM check (now handled by validation above)
+		// Keeping for backwards compatibility
 		int requested_memory = MEMORY_LIMIT_MB;
-		if (MEMORY_LIMIT_MB > 700)
-		{
-			std::cout << "[WASM] Requested memory " << MEMORY_LIMIT_MB << "MB exceeds safe limit, capping at 700MB" << std::endl;
-			MEMORY_LIMIT_MB = 700;
-		}
-		else
-		{
-			std::cout << "[WASM] Using memory limit: " << MEMORY_LIMIT_MB << "MB" << std::endl;
-		}
 #endif
 		// Create move tables
 		edge_move_table = create_edge_move_table();
@@ -3405,7 +3743,8 @@ struct xxcross_search
 			multi_move_table_F2L_slots_corners,
 			index_pairs,
 			num_list,
-			verbose);
+			verbose,
+			research_config_);  // Pass research config
 
 		// reached_depth is calculated from the size of index_pairs
 		reached_depth = static_cast<int>(index_pairs.size()) - 1;

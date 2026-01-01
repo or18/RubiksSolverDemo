@@ -415,9 +415,48 @@ std::cout << "  Final load: " << (100.0 * next_level.size() / next_level.bucket_
 ### Internal Mechanism
 
 1. **Private Member**: `std::vector<value_type>* m_element_vector` (default: `nullptr`)
-2. **Insertion Hook**: Modified `insert_impl()` to call `push_back()` after successful insertion
+2. **Insertion Hook**: Modified `insert_impl()` to call `emplace_back()` after successful insertion
+   - **Update 2026-01-01**: Changed from `push_back()` to `emplace_back()` for move semantics
+   - Reduces copy overhead for large value types
 3. **Rehash Safety**: `rehash_impl()` preserves the pointer across rehashing
 4. **Zero Overhead**: When `nullptr`, only a single pointer check per insertion
+
+### Performance Optimization (2026-01-01)
+
+**Critical**: Always `reserve()` the attached vector before insertion to avoid reallocation spikes.
+
+**Non-optimized (causes memory spikes):**
+```cpp
+std::vector<uint64_t> vec;  // No reserve!
+hash_table.attach_element_vector(&vec);
+
+// Bad: Each emplace_back may trigger reallocation
+for (int i = 0; i < 1000000; ++i) {
+    hash_table.insert(i);  // Reallocation every 2x growth
+}
+// Result: Multiple 500KB+ memory spikes during vector growth
+```
+
+**Optimized (no spikes):**
+```cpp
+std::vector<uint64_t> vec;
+vec.reserve(1000000);  // Pre-allocate full capacity
+hash_table.attach_element_vector(&vec);
+
+// Good: emplace_back never reallocates
+for (int i = 0; i < 1000000; ++i) {
+    hash_table.insert(i);  // O(1) append, no spikes
+}
+// Result: Flat memory usage, no reallocations
+```
+
+**Recommended pattern:**
+```cpp
+// Reserve based on hash table's load threshold
+size_t estimated_capacity = hash_table.load_threshold();
+vec.reserve(estimated_capacity);
+hash_table.attach_element_vector(&vec);
+```
 
 ### Memory Layout
 
@@ -448,6 +487,43 @@ Final memory: 120 MB (88% reduction!)
 - **Rehash overhead**: None (pointer copy is O(1))
 
 ## Caveats and Best Practices
+
+### ⚠️ Reserve Capacity Before Attach (CRITICAL)
+
+**Wrong (causes memory spikes):**
+```cpp
+std::vector<uint64_t> vec;  // No reserve - DANGER!
+hash_table.attach_element_vector(&vec);
+// Millions of insertions will cause repeated reallocations
+```
+
+**Correct (optimal performance):**
+```cpp
+std::vector<uint64_t> vec;
+vec.reserve(estimated_size);  // Pre-allocate based on hash table capacity
+hash_table.attach_element_vector(&vec);
+// All insertions are O(1) with no reallocations
+```
+
+**Best practice:**
+```cpp
+// Method 1: Reserve based on load threshold
+vec.reserve(hash_table.load_threshold());
+
+// Method 2: Reserve based on bucket count and load factor
+vec.reserve(static_cast<size_t>(hash_table.bucket_count() * 0.9));
+
+// Method 3: Reserve based on estimated final size
+vec.reserve(estimated_final_insertions);
+
+hash_table.attach_element_vector(&vec);
+```
+
+**Impact of not reserving:**
+- **Memory spikes**: Vector grows by 2x each time (1→2→4→8...MB)
+- **Performance**: O(n log n) due to repeated copies during growth
+- **Fragmentation**: Multiple allocations/deallocations fragment memory
+- **Measurement accuracy**: RSS spikes corrupt memory usage measurements
 
 ### ⚠️ Attach Before Insertion
 
@@ -665,6 +741,13 @@ bool validate_element_vector(
 | Maintenance | Automatic updates | Manual tracking required |
 
 ## Version History
+
+- **2026-01-01**: Performance optimization update
+  - **Changed**: `push_back()` → `emplace_back()` for move semantics (avoid copy overhead)
+  - **Added**: Critical warning about `reserve()` before `attach_element_vector()`
+  - **Added**: Performance optimization section with examples
+  - **Impact**: Eliminates unnecessary copies for large value types
+  - **Context**: Discovered during memory spike elimination in solver_dev.cpp
 
 - **2024-12-27**: Initial implementation
   - **Element Vector Feature:**

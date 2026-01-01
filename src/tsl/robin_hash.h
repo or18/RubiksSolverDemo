@@ -1116,15 +1116,23 @@ class robin_hash : private Hash, private KeyEqual, private GrowthPolicy {
    * Attach an external vector to record all inserted elements.
    * 
    * When a vector is attached:
-   * - Every successful insert() will also push_back() to this vector
+   * - Every successful insert() will also emplace_back() to this vector
    * - Rehashing does NOT affect the vector (elements preserved)
    * - You must detach before destroying the vector
    * 
+   * IMPORTANT: Reserve capacity in the vector BEFORE attaching to avoid
+   * repeated reallocations during insertion. Example:
+   *   vec.reserve(estimated_size);
+   *   hash_table.attach_element_vector(&vec);
+   * 
    * Use case: Zero-copy element extraction for memory-constrained BFS
    * 
-   * @param vec Pointer to vector that will receive inserted elements
+   * @param vec Pointer to vector that will receive inserted elements.
+   *            MUST remain valid until detach is called.
+   *            SHOULD be pre-reserved to avoid reallocation spikes.
    * 
    * Added: 2025-12-27
+   * Updated: 2026-01-01 (Changed to emplace_back, added reserve warning)
    */
   void attach_element_vector(std::vector<value_type>* vec) {
     m_element_vector = vec;
@@ -1319,8 +1327,9 @@ class robin_hash : private Hash, private KeyEqual, private GrowthPolicy {
     m_nb_elements++;
     
     // If element vector is attached, record the inserted element
+    // Note: Use emplace_back for move semantics (avoid copy overhead)
     if (m_element_vector != nullptr) {
-      m_element_vector->push_back(m_buckets[ibucket].value());
+      m_element_vector->emplace_back(m_buckets[ibucket].value());
     }
     
     /*

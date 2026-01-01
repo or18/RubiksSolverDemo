@@ -1,3 +1,7 @@
 backups/
 tmp_log/
 __pycache__/
+# Logs and temporary outputs
+test_bucket_config
+test_research_mode
+memory_calc_test
