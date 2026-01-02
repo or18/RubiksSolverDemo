@@ -1,7 +1,7 @@
 # Experimental Findings Archive
 
-**Version**: stable-20251230  
-**Last Updated**: 2025-12-30
+**Version**: stable-20260102  
+**Last Updated**: 2026-01-02
 
 > **Navigation**: [← Back to Developer Docs](../../README.md) | [User Guide](../../USER_GUIDE.md) | [Memory Config](../../MEMORY_CONFIGURATION_GUIDE.md)
 >
@@ -11,97 +11,229 @@
 
 ## Purpose
 
-This directory archives **all experimental findings** from memory behavior investigations and measurement campaigns. These documents provide deep insights into solver memory characteristics and the evolution of our understanding.
+This directory contains **current experimental findings** from memory behavior investigations. Older comprehensive measurement campaigns have been archived to `docs/developer/_archive/Experiences_old/`.
 
 ---
 
-## Key Documents
+## Current Documents
 
-### 📊 Comprehensive Measurement Campaign (2025-12-30)
+### � Depth 10 Implementation Results (2026-01-02) - LATEST
 
-**[MEASUREMENT_RESULTS_20251230.md](MEASUREMENT_RESULTS_20251230.md)** - Primary reference
-- 47-point comprehensive measurement results (300-2000 MB)
-- Configuration-by-configuration analysis
-- Theory vs empirical comparison
-- Spike detection and analysis
-- **Most detailed technical analysis**
+**[depth_10_implementation_results.md](depth_10_implementation_results.md)** - **Phase 5 depth expansion proof-of-concept**
+- Successful implementation of depth 9→10 local expansion
+- 4M/4M/4M/2M configuration tested: **1,887,437 nodes at depth 10**
+- Coverage improvement: 30% → ~85% (+185% relative increase)
+- Final RSS: **138 MB** (peak 378 MB during Phase 5)
+- **Critical bug fixes documented**:
+  - Segmentation fault (composite index decomposition)
+  - Rehash detection error
+  - Element vector management (attach timing fix)
+- Performance metrics: ~15-20 seconds for Phase 5 expansion
+- **Recommended for understanding depth 10 implementation**
 
-**[MEASUREMENT_SUMMARY.md](MEASUREMENT_SUMMARY.md)** - Executive summary
-- Key discoveries and recommendations
-- Production configuration table
-- Data files reference
-- Quick-reference format
+**[depth_10_peak_rss_validation.md](depth_10_peak_rss_validation.md)** - **10ms monitoring validation** ⚠️ NEW
+- **Critical finding**: Actual peak RSS **442 MB** (not 378 MB from C++ checkpoints)
+- Gap analysis: +64 MB (+17%) from transient allocations
+- 10ms integrated monitoring captures spikes between checkpoints
+- **WASM implication**: 4M/4M/4M/2M likely **exceeds 512MB mobile limit**
+- Emscripten heap monitoring plan to measure actual WASM overhead
+- **Required reading for production deployment planning**
 
-**[MEMORY_THEORY_ANALYSIS.md](MEMORY_THEORY_ANALYSIS.md)** - Theoretical deep-dive
-- Load factor investigation (0.6-1.0 variation)
-- Bytes-per-slot analysis (27-43 bytes)
-- Spike reserve analysis
-- Alternative model proposals
-- **Best for understanding "why"**
-
-**[THEORETICAL_MODEL_REVISION.md](THEORETICAL_MODEL_REVISION.md)** - Model evolution
-- Formula history and limitations
-- Empirical vs theoretical comparison
-- Fixed overhead discovery (62 MB)
-- Conclusion: Use empirical table
+**Key Achievement**: Mobile-compatible depth 10 support ~~(265 MB WASM estimate)~~ ⚠️ **requires validation with 2M/2M/2M/1M config**
 
 ---
 
-### 📈 Incremental Investigation (2025-12-29)
+### 📊 Depth 10 Expansion Design (2026-01-02)
 
-**[INVESTIGATION_20251229.md](INVESTIGATION_20251229.md)** - Daily investigation log
-- Threshold discovery process
-- Bug fixes and corrections
-- Experimental methodology
-
-**[INVESTIGATION_SUMMARY.md](INVESTIGATION_SUMMARY.md)** - Summary of findings
-- Key insights from investigation
-- Actionable recommendations
+**[depth_10_expansion_design.md](depth_10_expansion_design.md)** - **Strategic design document**
+- Analysis of depth 10 as volume peak (60-70% of all xxcross solutions)
+- 3 implementation options evaluated
+- Memory vs coverage trade-offs
+- Recommended configurations for different platforms
+- **Context for depth 10 implementation decisions**
 
 ---
 
-### 🔬 Specialized Analyses
+### 🔬 Bucket Model RSS Measurement (2026-01-02)
 
-**[SOLVER_VS_THEORY_COMPARISON.md](SOLVER_VS_THEORY_COMPARISON.md)**
-- Direct comparison of solver output vs theoretical predictions
-- Error analysis by configuration
+**[bucket_model_rss_measurement.md](bucket_model_rss_measurement.md)** - **Primary reference for production deployment**
+- Face-diverse expansion implementation and validation
+- Three bucket models tested: 2M/2M/2M, 4M/4M/4M, 8M/8M/8M
+- **Deep dive: Allocator cache investigation**
+  - malloc_trim() analysis
+  - True overhead <4% after cache cleanup
+  - Phase-by-phase memory tracking
+  - No memory leaks detected ✅
+- Production recommendations based on malloc_trim findings
+- **Best for understanding current implementation and deployment**
 
-**[MEMORY_ANALYSIS_DETAILED.md](MEMORY_ANALYSIS_DETAILED.md)**
-- Detailed memory component breakdown
-- RSS monitoring methodology
-
-**[REHASH_PROTECTION.md](REHASH_PROTECTION.md)**
-- Hash table rehashing behavior
-- Robin-set implementation details
-
-**[MEMORY_OPTIMIZATION_HISTORY.md](MEMORY_OPTIMIZATION_HISTORY.md)**
-- Historical optimizations attempted
-- Performance trade-offs documented
-
----
-
-### 🧪 Initial Testing
-
-**[INITIAL_TEST_RESULTS.md](INITIAL_TEST_RESULTS.md)**
-- First measurement results
-- Baseline configurations
-
-**[THEORETICAL_PREDICTIONS.md](THEORETICAL_PREDICTIONS.md)** (Original)
-- Initial theoretical model (33 bytes/slot)
-- 32-point predictions (300-1500 MB)
-
-**[THEORETICAL_PREDICTIONS_CORRECTED.md](THEORETICAL_PREDICTIONS_CORRECTED.md)**
-- Extended to 47 points (300-2000 MB)
-- All 6 thresholds discovered
+**Key Findings**:
+- **Without malloc_trim()**: 8-20% overhead (allocator cache)
+- **With malloc_trim()**: 0.9-3.3% overhead (true overhead)
+- All models achieve 90% load factor consistently
+- 8M/8M/8M recommended for production (225 MB after trim)
 
 ---
 
-### 📝 Source Code Documentation
+### ⚡ Peak RSS Optimization & Memory Spike Investigation (2026-01-02) - LATEST
 
-**[SOURCE_CODE_VERSIONS.md](SOURCE_CODE_VERSIONS.md)**
-- Binary version tracking
-- MD5 checksums for validation
-- Code change history
+**[peak_rss_optimization.md](peak_rss_optimization.md)** - **Comprehensive optimization and validation study**
+- Phase 4 peak breakdown and analysis
+- depth8_vec removal optimization (-58 MB, -8.8%)
+- depth_6_nodes necessity validation
+- Future optimization opportunities
+- Emergency safety mechanisms (documented, not implemented)
+- **NEW: 10ms Spike Investigation Results**
+  - Integrated monitoring system (zero timing gap)
+
+---
+
+### 🌐 malloc_trim() WASM Compatibility (2026-01-02) - LATEST
+
+**[malloc_trim_wasm_verification.md](malloc_trim_wasm_verification.md)** - **Cross-platform verification**
+- Native vs WASM malloc_trim() behavior
+- Test results (3 scenarios):
+  - Simple allocation: 0 MB freed (already freed by delete[])
+  - Vector resize: 0 MB freed (already freed by delete)
+  - Multiple cycles: 10 MB freed ✅
+- **WASM test execution results** (Emscripten 4.0.11)
+- Platform-specific implementation (#ifndef __EMSCRIPTEN__)
+- **NEW: disable_malloc_trim option for WASM-equivalent measurements**
+  - Problem: Native WITH trim underestimates WASM by ~225 MB
+  - Solution: Runtime option to skip malloc_trim() on native
+  - Use case: Accurate WASM memory prediction
+- Production deployment guidance
+
+**Key Findings**:
+- malloc_trim() reduces native RSS by 225 MB (50%)
+- WASM cannot use malloc_trim() (Emscripten limitation)
+- Native WASM-equivalent measurement: DISABLE_MALLOC_TRIM=1
+- Allocator cache: ~16 MB (8M/8M/8M)
+
+---
+
+### 📖 disable_malloc_trim Usage Guide (2026-01-02) - NEW
+
+**[disable_malloc_trim_usage.md](disable_malloc_trim_usage.md)** - **WASM deployment planning guide**
+- Problem statement: Native measurements underestimate WASM memory
+- Solution: WASM-equivalent measurement mode on native
+- Usage examples and decision tree
+- Memory comparison table (native vs WASM-equivalent vs WASM)
+- Example workflow: WASM deployment planning
+- Common mistakes and FAQ
+
+**When to Use**:
+- ✅ Measuring bucket models for WASM deployment
+- ✅ Predicting WASM memory requirements
+- ❌ Production native deployment (use default settings)
+
+**Example**:
+```bash
+# WASM-equivalent measurement
+DISABLE_MALLOC_TRIM=1 BUCKET_MODEL=8M/8M/8M ENABLE_CUSTOM_BUCKETS=1 ./solver_dev
+# → RSS: 241 MB (matches WASM heap)
+
+# Normal native production
+BUCKET_MODEL=8M/8M/8M ENABLE_CUSTOM_BUCKETS=1 ./solver_dev
+# → RSS: 225 MB (optimized)
+```
+
+---
+
+### 🚀 Depth 10 Local Expansion Design (2026-01-02) - NEW
+
+**[depth_10_expansion_design.md](depth_10_expansion_design.md)** - **Next major feature implementation**
+- Background: Depth 10 is the volume peak (~60-70% of all solutions)
+- Current limitation: depth 0-9 only (~30% coverage)
+- Three implementation options:
+  - **Option A**: Direct extension (simplest, 32M bucket, +256 MB)
+  - **Option B**: Hybrid pruning (recommended, 16M bucket, +128 MB)
+  - **Option C**: Progressive two-stage (most optimized, 8M bucket, +64 MB)
+- Memory budget analysis:
+  - 8M/8M/8M/32M: Native safe, **WASM exceeds 512MB limit** ❌
+  - 8M/8M/8M/16M: Native safe, WASM tight (115%) ⚠️
+  - **4M/4M/4M/16M: Both safe (96% WASM utilization)** ✅
+- Implementation roadmap (3 phases)
+- Risk assessment and mitigation strategies
+
+**Key Insights**:
+- Depth 10 is THE MOST IMPORTANT depth for xxcross search
+- Need 4-depth bucket configuration (current: 3-depth)
+- WASM deployment requires careful memory management
+- Recommended: Start with Option A (proof of concept), optimize to Option B if needed
+
+**Status**: Design phase complete, ready for implementation
+
+---
+  - 16,971 samples at 10ms intervals
+  - C++ checkpoint accuracy validated: 656.69 MB vs 657 MB (0.05% difference)
+  - 11 memory spikes detected (all normal allocation behavior)
+  - **No transient spikes beyond checkpoint values**
+  - Production safety confirmed: 657 MB true peak, 943 MB margin (59%)
+
+**Key Findings (Spike Investigation 2026-01-02)**:
+- **Hypothesis tested**: "C++ checkpoints may miss high-speed transient spikes"
+- **Result**: FALSE - Checkpoints capture true peaks, not "ideal case" approximations
+- **Validation method**: 10ms /proc-based monitoring (16,971 samples over 180s)
+- **Largest spike**: +27 MB in 10ms during BFS depth 6 (normal bucket allocation)
+- **Conclusion**: Checkpoint methodology is comprehensive and accurate ✅
+
+**Production Status**:
+- Peak RSS: 657 MB (8M/8M/8M, validated by 10ms monitoring)
+- Final RSS: 225 MB (after malloc_trim)
+- Safety margin: 943 MB (59% of 1600 MB limit)
+- System stable, predictable, and thoroughly validated ✅
+- **Ready for production deployment**
+
+**Tools & Documentation**:
+- [MEMORY_MONITORING.md](../MEMORY_MONITORING.md#integrated-monitoring-system-2026-01-02) - Monitoring infrastructure
+- `tools/memory_monitoring/run_integrated_monitoring.py` - Integrated monitoring system
+- `backups/logs/memory_monitoring_20260102/` - Detailed investigation logs
+
+**Deprecated Documents** (consolidated into peak_rss_optimization.md):
+- `memory_spike_analysis.md` → Moved to backups (VERBOSE checkpoint validation)
+- `spike_investigation_summary.md` → Moved to backups (initial investigation notes)
+
+---
+
+### 🧪 malloc_trim() WASM Compatibility Verification (2026-01-02)
+
+**[malloc_trim_wasm_verification.md](malloc_trim_wasm_verification.md)** - **WASM environment compatibility study**
+- Test file: `test_malloc_trim_wasm.cpp`
+- Native vs WASM malloc_trim() behavior comparison
+- 3 test cases: simple allocation, vector resize, multiple cycles
+- **Key Finding**: malloc_trim() reduces native RSS by 225 MB (50%)
+- **WASM Status**: malloc_trim() NOT available (Emscripten limitation)
+- **Conclusion**: Current #ifndef __EMSCRIPTEN__ guard is correct ✅
+
+**Native Results**:
+- malloc_trim() effective after multiple allocation cycles
+- Reduces final RSS from ~450 MB to ~225 MB
+- Critical for production native deployment
+
+**WASM Results**:
+- malloc_trim() not available in Emscripten
+- Memory managed by Emscripten runtime
+- Final heap ~450 MB (no trim benefit)
+- Still acceptable for browser environment
+
+**Implementation Status**: ✅ No changes needed - current code is correct
+
+---
+
+### 📊 Comprehensive Measurement Campaign (2025-12-30) - ARCHIVED
+
+Older comprehensive measurement documents have been moved to:
+**[../_archive/Experiences_old/](../_archive/Experiences_old/)**
+
+Archived documents include:
+- `MEASUREMENT_RESULTS_20251230.md` - 47-point comprehensive results
+- `MEASUREMENT_SUMMARY.md` - Executive summary
+- `MEMORY_THEORY_ANALYSIS.md` - Theoretical deep-dive
+- `THEORETICAL_MODEL_REVISION.md` - Model evolution
+- `bucket_model_rss_measurement_old.md` - Earlier bucket measurements
+
+These documents remain available for historical reference but are superseded by the current documents above.
 
 ---
 
@@ -111,20 +243,17 @@ This directory archives **all experimental findings** from memory behavior inves
 Production Deployment
 ├─ ../../MEMORY_CONFIGURATION_GUIDE.md (Use this for deployment)
 │
-Understanding Memory Behavior
-├─ MEASUREMENT_RESULTS_20251230.md (Empirical data, most comprehensive)
-├─ MEMORY_THEORY_ANALYSIS.md (Theoretical understanding)
-└─ THEORETICAL_MODEL_REVISION.md (Model limitations)
-    
-Historical Context
-├─ INVESTIGATION_20251229.md (How we got here)
-├─ MEASUREMENT_SUMMARY.md (Quick reference)
-└─ MEMORY_OPTIMIZATION_HISTORY.md (What we tried)
+Current Findings (2026-01-02)
+├─ bucket_model_rss_measurement.md (Face-diverse expansion, malloc_trim analysis)
+├─ peak_rss_optimization.md (Optimization + spike investigation)
+└─ ../MEMORY_MONITORING.md (Monitoring infrastructure)
 
-Technical Deep-Dives
-├─ SOLVER_VS_THEORY_COMPARISON.md (Accuracy analysis)
-├─ MEMORY_ANALYSIS_DETAILED.md (Component breakdown)
-└─ REHASH_PROTECTION.md (Implementation details)
+Archived Findings (2025-12-30)
+└─ ../_archive/Experiences_old/
+   ├─ MEASUREMENT_RESULTS_20251230.md
+   ├─ MEASUREMENT_SUMMARY.md
+   ├─ MEMORY_THEORY_ANALYSIS.md
+   └─ THEORETICAL_MODEL_REVISION.md
 ```
 
 ---
@@ -133,106 +262,60 @@ Technical Deep-Dives
 
 ### For Production Deployment
 1. **[../../MEMORY_CONFIGURATION_GUIDE.md](../../MEMORY_CONFIGURATION_GUIDE.md)** - Complete production guide
-2. **[MEASUREMENT_SUMMARY.md](MEASUREMENT_SUMMARY.md)** - Quick reference
+2. **[bucket_model_rss_measurement.md](bucket_model_rss_measurement.md)** - Current implementation details
 
 ### For Understanding Memory Behavior
-1. **[MEMORY_THEORY_ANALYSIS.md](MEMORY_THEORY_ANALYSIS.md)** - Start here for theory
-2. **[MEASUREMENT_RESULTS_20251230.md](MEASUREMENT_RESULTS_20251230.md)** - Empirical validation
-3. **[THEORETICAL_MODEL_REVISION.md](THEORETICAL_MODEL_REVISION.md)** - Model limitations
-
-### For Debugging/Troubleshooting
-1. **[SOLVER_VS_THEORY_COMPARISON.md](SOLVER_VS_THEORY_COMPARISON.md)** - Compare predictions
-2. **[MEMORY_ANALYSIS_DETAILED.md](MEMORY_ANALYSIS_DETAILED.md)** - Component-level analysis
-3. **[REHASH_PROTECTION.md](REHASH_PROTECTION.md)** - Hash table behavior
+1. **[peak_rss_optimization.md](peak_rss_optimization.md)** - Optimization strategies and spike validation
+2. **[bucket_model_rss_measurement.md](bucket_model_rss_measurement.md)** - Allocator behavior and malloc_trim
+3. **[../MEMORY_MONITORING.md](../MEMORY_MONITORING.md)** - Monitoring methodology
 
 ### For Historical Context
-1. **[INVESTIGATION_20251229.md](INVESTIGATION_20251229.md)** - Investigation process
-2. **[MEMORY_OPTIMIZATION_HISTORY.md](MEMORY_OPTIMIZATION_HISTORY.md)** - Optimization attempts
-3. **[SOURCE_CODE_VERSIONS.md](SOURCE_CODE_VERSIONS.md)** - Code evolution
+1. **[../_archive/Experiences_old/MEMORY_THEORY_ANALYSIS.md](../_archive/Experiences_old/)** - Earlier theoretical models
+2. **[../_archive/Experiences_old/MEASUREMENT_RESULTS_20251230.md](../_archive/Experiences_old/)** - Comprehensive 47-point campaign
 
 ---
 
 ## Key Findings Summary
 
-### Empirical Measurements (stable-20251230)
+### Current Production Configuration (2026-01-02)
 
-**7 Bucket Configurations**:
-- 2M/2M/2M: 293 MB peak (CV: 0.027%)
-- 2M/4M/2M: 404 MB peak (CV: 0.012%)
-- 4M/4M/4M: 434 MB peak (CV: 0.008%)
-- 4M/8M/4M: 655 MB peak (CV: 0.000%)
-- 8M/8M/8M: 748 MB peak (CV: 0.008%) ← **Recommended**
-- 8M/16M/8M: 1189 MB peak (CV: 0.006%)
-- 16M/16M/16M: 1375 MB peak (CV: 0.010%)
+**8M/8M/8M Model** (Recommended):
+- Peak RSS: 657 MB (validated with 10ms monitoring)
+- Final RSS: 225 MB (after malloc_trim)
+- Safety margin: 943 MB (59% of 1600 MB limit)
+- System validated: Stable, predictable, production-ready ✅
 
-**Thresholds** (±1 MB precision):
-- 569, 613, 921, 1000, 1537, 1702 MB
+**Validation**:
+- C++ checkpoint accuracy: ±0.05%
+- No transient spikes beyond checkpoints
+- 11 allocation spikes detected (all normal rehashing)
+- Integrated monitoring: 16,971 samples over 180s
 
-**Memory Stability**:
-- Peak variation: <0.5 MB within configuration
-- CV < 0.03% across all configs
-- 660,000+ samples analyzed
-
-### Theoretical Insights
-
-**Fixed Overhead**: 62 MB (constant across all configs)
-- C++ runtime: ~15 MB
-- Phase 1 remnants: ~20 MB
-- OS allocator: ~10 MB
-- Misc: ~17 MB
-
-**Bytes per Slot**: 27-43 bytes (not constant 33!)
-- Small buckets (2M-4M): 38-43 bytes/slot
-- Medium buckets (4M-8M): 31-37 bytes/slot
-- Large buckets (8M+): 27-29 bytes/slot
-
-**Load Factor**: Varies by bucket size
-- Small buckets: 0.9-1.0 (maximize space)
-- Large buckets: 0.6-0.7 (maximize speed)
-
-**Spike Reserve**: Not needed for large buckets
-- Allocator efficiently reuses memory
-- No measurable transient peaks for 8M+ buckets
+**Optimization Achievements**:
+- depth8_vec removal: -58 MB (-8.8%)
+- Allocator cache cleanup: +225 MB reduction (after malloc_trim)
+- True overhead: <4% (down from 8-20% before cleanup)
 
 ---
 
-## Measurement Campaign Stats
+## Experimental Data Archive
 
-**Date**: 2025-12-30  
-**Duration**: ~2 hours  
-**Test Points**: 47 (300-2000 MB range)  
-**Success Rate**: 100% (47/47)  
-**Total Samples**: ~660,000 RSS measurements  
-**Sampling Rate**: 10ms intervals  
-
-**Binary**: solver_dev_test  
-**MD5**: 5066d1321c2a02310b4c85ff98dbbfd3  
-**Status**: Declared stable-20251230  
-
----
-
-## Production Recommendations
-
-### Safe Configuration (Recommended)
-
-```bash
-./solver_dev 1005  # 8M/8M/8M with 10% safety margin
+Measurement data and experimental logs are archived in:
+```
+src/xxcrossTrainer/backups/logs/
+├─ experiments_20260102/          (Latest experiments)
+│  ├─ measurements_20260102_*/    (10ms monitoring runs)
+│  ├─ spike_analysis_verbose/     (VERBOSE checkpoint validation)
+│  ├─ spike_detection/            (Spike detection test runs)
+│  ├─ model_*M.log               (Model measurement logs)
+│  └─ *.csv                      (RSS trace data)
+└─ memory_monitoring_20260102/    (Spike investigation archive)
+   ├─ 10MS_SPIKE_INVESTIGATION.md
+   ├─ memory_spike_analysis_deprecated.md
+   └─ spike_investigation_summary_deprecated.md
 ```
 
-**Characteristics**:
-- Peak: 748 MB
-- Limit: 1005 MB
-- Buffer: 257 MB (34%)
-- **Best balance** of performance and safety
-
-### Alternative Margins
-
-| Margin | Limit | Use Case |
-|--------|-------|----------|
-| +2% (More Aggressive) | 823 MB | Exact binary match, known platform |
-| +5% (Aggressive) | 861 MB | Controlled environments |
-| **+10% (Safe)** | **1005 MB** | **Production deployments** ✅ |
-| +15% (Conservative) | 1092 MB | Critical systems, unknowns |
+**Note**: Experimental data is excluded from git repository (see .gitignore). Data remains available locally for reference.
 
 ---
 
@@ -240,9 +323,9 @@ Technical Deep-Dives
 
 ### In Parent Directory
 - **[../SOLVER_IMPLEMENTATION.md](../SOLVER_IMPLEMENTATION.md)** - Code implementation
-- **[../MEMORY_MONITORING.md](../MEMORY_MONITORING.md)** - Monitoring techniques
+- **[../MEMORY_MONITORING.md](../MEMORY_MONITORING.md)** - Monitoring techniques and tools
 - **[../EXPERIMENT_SCRIPTS.md](../EXPERIMENT_SCRIPTS.md)** - Testing scripts
-- **[../WASM_BUILD_GUIDE.md](../WASM_BUILD_GUIDE.md)** - WASM compilation
+- **[../IMPLEMENTATION_PROGRESS.md](../IMPLEMENTATION_PROGRESS.md)** - Development tracking
 
 ### In Root docs/
 - **[../../README.md](../../README.md)** - Developer entry point
@@ -251,23 +334,6 @@ Technical Deep-Dives
 
 ---
 
-## Data Files
+**Document Purpose**: This README serves as a navigation guide to current experimental findings. Historical documents are preserved in `_archive/` for reference.
 
-Original measurement data archived locally in:
-```
-RubiksSolverDemo/src/xxcrossTrainer/backups/logs/
-└─ tmp_log_run_measurements_20251230_1715/
-   ├─ measurement_results.csv (47 test summaries)
-   ├─ measurement_log_20251230.txt (502 lines)
-   ├─ solver_*MB.log (47 files)
-   ├─ monitor_*MB.log (47 files)
-   └─ rss_*MB.csv (47 files, ~14K samples each)
-```
-
-**Note**: Log files are excluded from git repository (see .gitignore). They remain available locally for reference but are not pushed to remote.
-
----
-
-**Document Purpose**: This README serves as a navigation guide to all experimental findings. Use it to understand the relationships between documents and find the information you need quickly.
-
-**Status**: Archive complete, all findings documented.
+**Status**: Current findings documented (2026-01-02), older documents archived.

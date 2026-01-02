@@ -2,11 +2,34 @@
 
 **Version**: 1.0  
 **Date**: 2026-01-01  
-**Status**: Implementation In Progress
+**Last Updated**: 2026-01-02  
+**Status**: Design Complete, Implementation In Progress
 
 ---
 
-## Implementation Progress
+## Quick Links
+
+- **[Implementation Progress](IMPLEMENTATION_PROGRESS.md)** - Detailed progress tracking (Phases 1-5)
+- [Developer Documentation Index](../README.md)
+- [Memory Monitoring Guide](MEMORY_MONITORING.md)
+
+---
+
+## Document Purpose
+
+This document specifies the **design** of the measured-based memory allocation system for the xxcross solver. For implementation progress and completion status, see [IMPLEMENTATION_PROGRESS.md](IMPLEMENTATION_PROGRESS.md).
+
+---
+
+## Design Status Summary
+
+- ✅ **Phase 1-4**: Infrastructure, Research Mode, Memory Spike Elimination - COMPLETE
+- 🔄 **Phase 5**: Model Measurement - IN PROGRESS
+- ⏸️ **Phase 6-9**: Future work (see Section 9: Implementation Roadmap)
+
+---
+
+## Table of Contents
 
 ### Phase 1: Infrastructure ✅ COMPLETED (2026-01-01)
 - [x] Create `BucketConfig` and `ResearchConfig` structs (bucket_config.h)
@@ -607,26 +630,23 @@ g++ -std=c++17 -O2 memory_calculator_test.cpp -o memory_calc_test
 - **Faster debugging**: Identify unexpected memory usage patterns immediately
 - **Research support**: CSV output enables data-driven parameter optimization
 
-**Current Status**: Standalone library, **not yet included in solver_dev.cpp**
-- Ready for integration when needed (conditional compilation, research mode)
-- Can be used independently for offline analysis and planning
+---
 
-### Phase 5: Model Measurement
-- [ ] Measure 7 preset models (after spike fixes)
-- [ ] Record RSS data per depth
-- [ ] Update `MEASURED_DATA` table
-- [ ] Validate measurements across multiple runs
-- [ ] Document intermediate model gaps for future development
+## Table of Contents
+
+1. [Design Principles](#1-design-principles)
+2. [Bucket Allocation Models](#2-bucket-allocation-models)
+3. [Developer Research Mode](#3-developer-research-mode)
+4. [Memory Margin Strategy](#4-memory-margin-strategy)
+5. [Memory Spike Elimination](#5-memory-spike-elimination)
+6. [Model Selection Algorithm](#6-model-selection-algorithm)
+7. [WASM-Specific Considerations](#7-wasm-specific-considerations)
+8. [Testing and Validation](#8-testing-and-validation)
+9. [Implementation Roadmap](#9-implementation-roadmap)
 
 ---
 
-## Status: Design Specification (Implementation In Progress)
-
-> **Navigation**: [← Back to Developer Docs](../README.md) | [Implementation Details](SOLVER_IMPLEMENTATION.md) | [Memory Monitoring](MEMORY_MONITORING.md)
-
----
-
-## Executive Summary
+## 1. Design Principles
 
 This document specifies a **measured-based memory allocation system** that replaces theoretical calculations with empirical RSS measurements. The new design eliminates complex threshold logic, provides explicit bucket allocation models, and includes developer research modes for exploring new trainer configurations.
 

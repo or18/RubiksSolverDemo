@@ -5,3 +5,4 @@ __pycache__/
 test_bucket_config
 test_research_mode
 memory_calc_test
+calc_theoretical

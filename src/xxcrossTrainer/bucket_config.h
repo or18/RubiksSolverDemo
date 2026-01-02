@@ -58,6 +58,7 @@ struct BucketConfig {
     size_t custom_bucket_7 = 0;  // Must be power of 2 (1M-64M)
     size_t custom_bucket_8 = 0;
     size_t custom_bucket_9 = 0;
+    size_t custom_bucket_10 = 0; // Depth 10 bucket (NEW: for volume peak coverage)
     
     // For AUTO model (optional override)
     size_t memory_budget_mb = 0;  // 0 = use constructor's MEMORY_LIMIT_MB
@@ -82,6 +83,13 @@ struct ResearchConfig {
     bool enable_next_depth_reserve = true;         // true = reserve next depth using predicted size
     float next_depth_reserve_multiplier = 12.5f;   // Prediction multiplier (e.g., 12.5x previous depth)
     size_t max_reserve_nodes = 200000000;          // Upper limit for reserve (200M nodes, ~1.6GB)
+    
+    // Allocator cache control (for WASM-equivalent measurements on native)
+    bool disable_malloc_trim = false;         // true = skip malloc_trim() for WASM-equivalent RSS measurement
+    
+    // Developer convenience options
+    bool skip_search = false;                 // true = exit after database construction (measurement only)
+    int benchmark_iterations = 1;             // Number of search iterations for benchmarking (1 = normal)
 };
 
 // =============================================================================
@@ -172,6 +180,20 @@ inline void validate_custom_buckets(const BucketConfig& cfg, const ResearchConfi
         throw std::runtime_error(
             "Custom bucket sizes must be in range [1M, 64M]"
         );
+    }
+    
+    // Check 4: If bucket_d10 specified, validate it too
+    if (cfg.custom_bucket_10 > 0) {
+        if (!is_power_of_two(cfg.custom_bucket_10)) {
+            throw std::runtime_error(
+                "Custom bucket_d10 must be power of 2 (1M, 2M, 4M, 8M, 16M, 32M, 64M)"
+            );
+        }
+        if (cfg.custom_bucket_10 < MIN_BUCKET || cfg.custom_bucket_10 > MAX_BUCKET) {
+            throw std::runtime_error(
+                "Custom bucket_d10 must be in range [1M, 64M]"
+            );
+        }
     }
 }
 

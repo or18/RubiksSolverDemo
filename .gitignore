@@ -30,3 +30,4 @@ src/xxcrossTrainer/solver_mobile.wasm
 # Temporary reports and notes
 CLEANUP_REPORT.md
 *_REPORT.md
+src/xxcrossTrainer/docs/developer/RSS_MEASUREMENT_RESULTS.md

@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WASM Heap Measurement - Advanced</title>
+    <style>
+        body {
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+        }
+        h1, h2 {
+            color: #4ec9b0;
+            border-bottom: 2px solid #4ec9b0;
+            padding-bottom: 10px;
+        }
+        .control-panel {
+            background-color: #252526;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #3e3e42;
+        }
+        .bucket-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin: 15px 0;
+        }
+        .bucket-item {
+            background-color: #1e1e1e;
+            padding: 12px;
+            border-radius: 6px;
+            border: 1px solid #3e3e42;
+        }
+        .bucket-item label {
+            display: block;
+            color: #569cd6;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+        .bucket-item input[type="number"] {
+            width: 100%;
+            background-color: #3c3c3c;
+            color: #cccccc;
+            border: 1px solid #6c6c6c;
+            padding: 8px;
+            font-size: 14px;
+            border-radius: 4px;
+        }
+        .preset-btn {
+            background-color: #2d5a2d;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            font-size: 13px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 4px;
+        }
+        .preset-btn:hover {
+            background-color: #3a7a3a;
+        }
+        button {
+            background-color: #0e639c;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 14px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+            transition: background-color 0.2s;
+        }
+        button:hover {
+            background-color: #1177bb;
+        }
+        button:disabled {
+            background-color: #3e3e42;
+            color: #6c6c6c;
+            cursor: not-allowed;
+        }
+        .results-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .result-panel {
+            background-color: #252526;
+            border: 1px solid #3e3e42;
+            border-radius: 8px;
+            padding: 20px;
+        }
+        .result-panel h3 {
+            color: #569cd6;
+            margin-top: 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            font-size: 13px;
+        }
+        th {
+            background-color: #2d2d30;
+            color: #cccccc;
+            padding: 10px;
+            text-align: left;
+            border-bottom: 2px solid #3e3e42;
+        }
+        td {
+            padding: 8px 10px;
+            border-bottom: 1px solid #3e3e42;
+        }
+        .metric-value {
+            font-weight: bold;
+            color: #4ec9b0;
+        }
+        .scramble-box {
+            background-color: #1e1e1e;
+            padding: 10px;
+            border-radius: 4px;
+            border-left: 4px solid #4ec9b0;
+            margin: 8px 0;
+            font-size: 12px;
+            word-break: break-all;
+        }
+        .console-output {
+            background-color: #1e1e1e;
+            padding: 15px;
+            border-radius: 4px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-size: 12px;
+            line-height: 1.6;
+            margin-top: 10px;
+        }
+        .log-heap {
+            color: #4ec9b0;
+            font-weight: bold;
+        }
+        #status {
+            margin-top: 15px;
+            padding: 12px;
+            background-color: #1e1e1e;
+            border-left: 4px solid #4ec9b0;
+            font-size: 14px;
+        }
+        .info-box {
+            background-color: #1a2a3a;
+            border-left: 4px solid #569cd6;
+            padding: 12px 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧊 WASM Heap Measurement - Advanced Statistics</h1>
+    
+	<div class="info-box">
+		<strong>Features:</strong> Configure bucket sizes per depth individually (powers of two: 1M, 2M, 4M, 8M, 16M, 32M). Displays node distribution, load factors, and sample scrambles.
+	</div>
+
+    <div class="control-panel">
+        <h2>Bucket Settings (powers of two: 1M, 2M, 4M, 8M, 16M, 32M)</h2>
+        
+        <div style="margin-bottom: 15px;">
+            <strong>Presets:</strong><br>
+            <button class="preset-btn" onclick="setPreset(2,2,2,0)">Mobile LOW</button>
+            <button class="preset-btn" onclick="setPreset(4,4,4,0)">Mobile MIDDLE</button>
+            <button class="preset-btn" onclick="setPreset(4,4,4,2)">Mobile HIGH</button>
+            <button class="preset-btn" onclick="setPreset(8,8,8,4)">Mobile ULTRA</button>
+            <button class="preset-btn" onclick="setPreset(16,16,16,8)">Desktop STD</button>
+            <button class="preset-btn" onclick="setPreset(32,32,32,16)">Desktop HIGH</button>
+        </div>
+
+        <div class="bucket-grid">
+            <div class="bucket-item">
+                <label for="bucket7">Depth 7 (M):</label>
+                <select id="bucket7">
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="4" selected>4</option>
+                    <option value="8">8</option>
+                    <option value="16">16</option>
+                    <option value="32">32</option>
+                </select>
+            </div>
+            <div class="bucket-item">
+                <label for="bucket8">Depth 8 (M):</label>
+                <select id="bucket8">
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="4" selected>4</option>
+                    <option value="8">8</option>
+                    <option value="16">16</option>
+                    <option value="32">32</option>
+                </select>
+            </div>
+            <div class="bucket-item">
+                <label for="bucket9">Depth 9 (M):</label>
+                <select id="bucket9">
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="4" selected>4</option>
+                    <option value="8">8</option>
+                    <option value="16">16</option>
+                    <option value="32">32</option>
+                </select>
+            </div>
+            <div class="bucket-item">
+                <label for="bucket10">Depth 10 (M):</label>
+                <select id="bucket10">
+                    <option value="0">0 (Disabled)</option>
+                    <option value="1">1</option>
+                    <option value="2" selected>2</option>
+                    <option value="4">4</option>
+                    <option value="8">8</option>
+                    <option value="16">16</option>
+                    <option value="32">32</option>
+                </select>
+            </div>
+        </div>
+
+        <div style="margin-top: 20px;">
+            <button id="runBtn" onclick="runTest()">▶ Run</button>
+            <button onclick="clearOutput()">🗑️ Clear</button>
+            <button onclick="downloadResults()" style="background-color: #0a7d40;">💾 Download</button>
+        </div>
+        
+        <div id="status">Ready. After setting the buckets, click the Run button.</div>
+    </div>
+
+    <div class="results-container">
+        <div class="result-panel">
+            <h3>📊 Node Distribution</h3>
+            <table id="nodeTable">
+                <thead>
+                    <tr><th>Depth</th><th>Node Count</th><th>Cumulative</th></tr>
+                </thead>
+                <tbody id="nodeTableBody">
+                    <tr><td colspan="3" style="text-align: center; color: #6c6c6c;">No data</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="result-panel">
+            <h3>📈 Load Factor</h3>
+            <table id="loadFactorTable">
+                <thead>
+                    <tr><th>Bucket</th><th>Load Factor</th><th>Efficiency</th></tr>
+                </thead>
+                <tbody id="loadFactorTableBody">
+                    <tr><td colspan="3" style="text-align: center; color: #6c6c6c;">No data</td></tr>
+                </tbody>
+            </table>
+            
+            <h3 style="margin-top: 30px;">💾 Memory Usage</h3>
+            <div id="memoryInfo" style="font-size: 14px; line-height: 1.8;">
+                <div><strong>Final Heap:</strong> <span id="finalHeap" class="metric-value">-</span> MB</div>
+                <div><strong>Peak Heap:</strong> <span id="peakHeap" class="metric-value">-</span> MB</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="result-panel" style="margin-top: 20px;">
+        <h3>🎲 Sample Scrambles (Each Depth)</h3>
+        <div id="scramblesContainer"></div>
+    </div>
+
+    <div class="result-panel" style="margin-top: 20px;">
+        <h3>📋 Console Output</h3>
+        <div id="consoleOutput" class="console-output"></div>
+    </div>
+
+    <script>
+        let allLogs = [];
+
+        function setPreset(b7, b8, b9, b10) {
+            document.getElementById('bucket7').value = b7;
+            document.getElementById('bucket8').value = b8;
+            document.getElementById('bucket9').value = b9;
+            document.getElementById('bucket10').value = b10;
+        }
+
+        function updateStatus(message, isError = false) {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.style.borderLeftColor = isError ? '#f48771' : '#4ec9b0';
+        }
+
+        function addConsoleLog(message) {
+            const output = document.getElementById('consoleOutput');
+            const line = document.createElement('div');
+            line.className = message.includes('[Heap]') ? 'log-heap' : '';
+            line.textContent = message;
+            output.appendChild(line);
+            output.scrollTop = output.scrollHeight;
+            allLogs.push(message);
+        }
+
+        function displayStatistics(stats) {
+            // Node Distribution Table
+            const nodeBody = document.getElementById('nodeTableBody');
+            nodeBody.innerHTML = '';
+            let cumulative = 0;
+            
+            for (let d = 0; d < stats.node_counts.size(); d++) {
+                const count = stats.node_counts.get(d);
+                cumulative += count;
+                const row = nodeBody.insertRow();
+                row.insertCell(0).textContent = d;
+                row.insertCell(1).innerHTML = `<span class="metric-value">${count.toLocaleString()}</span>`;
+                row.insertCell(2).textContent = cumulative.toLocaleString();
+            }
+
+            // Load Factor Table
+            const lfBody = document.getElementById('loadFactorTableBody');
+            lfBody.innerHTML = '';
+            
+            for (let i = 0; i < stats.load_factors.size(); i++) {
+                const lf = stats.load_factors.get(i);
+                const efficiency = lf > 0 ? ((lf / 0.95) * 100).toFixed(1) + '%' : 'N/A';
+                const row = lfBody.insertRow();
+                row.insertCell(0).textContent = 'Depth ' + (7 + i);
+                row.insertCell(1).innerHTML = `<span class="metric-value">${lf.toFixed(3)}</span>`;
+                row.insertCell(2).textContent = efficiency;
+            }
+
+            // Memory Information
+            document.getElementById('finalHeap').textContent = stats.final_heap_mb;
+            document.getElementById('peakHeap').textContent = stats.peak_heap_mb;
+
+            // Scramble Display
+            const scramblesContainer = document.getElementById('scramblesContainer');
+            scramblesContainer.innerHTML = '';
+            
+            for (let d = 1; d < stats.sample_scrambles.size(); d++) {
+                const scramble = stats.sample_scrambles.get(d);
+                const length = stats.scramble_lengths.get(d);
+                const div = document.createElement('div');
+                div.className = 'scramble-box';
+                const lengthStr = length > 0 ? ` (Length: ${length})` : (length === -1 ? ' (Error)' : '');
+                div.innerHTML = `<strong>Depth ${d}${lengthStr}:</strong> ${scramble}`;
+                scramblesContainer.appendChild(div);
+            }
+        }
+
+        function clearOutput() {
+            document.getElementById('nodeTableBody').innerHTML = '<tr><td colspan="3" style="text-align: center; color: #6c6c6c;">No data</td></tr>';
+            document.getElementById('loadFactorTableBody').innerHTML = '<tr><td colspan="3" style="text-align: center; color: #6c6c6c;">No data</td></tr>';
+            document.getElementById('consoleOutput').innerHTML = '';
+            document.getElementById('scramblesContainer').innerHTML = '';
+            document.getElementById('finalHeap').textContent = '-';
+            document.getElementById('peakHeap').textContent = '-';
+            allLogs = [];
+            updateStatus('Clear complete. You can run a new test.');
+        }
+
+        function downloadResults() {
+            if (allLogs.length === 0) {
+                alert('No data available. Please run a test first.');
+                return;
+            }
+
+            const b7 = document.getElementById('bucket7').value;
+            const b8 = document.getElementById('bucket8').value;
+            const b9 = document.getElementById('bucket9').value;
+            const b10 = document.getElementById('bucket10').value;
+            const config = `${b7}M_${b8}M_${b9}M_${b10}M`;
+
+            let csv = 'WASM Heap Measurement Results\n';
+            csv += 'Configuration: ' + config + '\n';
+            csv += 'Timestamp: ' + new Date().toISOString() + '\n\n';
+            csv += 'Console Log:\n';
+            csv += allLogs.join('\n');
+
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `wasm_stats_${config}_${Date.now()}.txt`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        async function runTest() {
+            clearOutput();
+            
+            const b7 = parseInt(document.getElementById('bucket7').value);
+            const b8 = parseInt(document.getElementById('bucket8').value);
+            const b9 = parseInt(document.getElementById('bucket9').value);
+            const b10 = parseInt(document.getElementById('bucket10').value);
+
+            updateStatus(`Loading WASM module... (${b7}M/${b8}M/${b9}M/${b10}M)`);
+            document.getElementById('runBtn').disabled = true;
+
+            try {
+                const Module = await SolverModule({
+                    print: function(text) {
+                        addConsoleLog(text);
+                    },
+                    printErr: function(text) {
+                        addConsoleLog('[ERROR] ' + text);
+                    },
+                    onRuntimeInitialized: function() {
+                        addConsoleLog('✅ WASM Runtime initialized');
+                    }
+                });
+
+                updateStatus('Running solver...');
+                addConsoleLog(`▶ solve_with_custom_buckets(${b7}, ${b8}, ${b9}, ${b10})`);
+                
+                // Call solver with custom buckets
+                const stats = Module.solve_with_custom_buckets(b7, b8, b9, b10, true);
+                
+                if (stats.success) {
+                    addConsoleLog('✅ Solver completed successfully');
+                    displayStatistics(stats);
+                    updateStatus(`✅ Completed: Peak Heap ${stats.peak_heap_mb} MB`);
+                } else {
+                    addConsoleLog('❌ Solver failed: ' + stats.error_message);
+                    updateStatus('❌ Error: ' + stats.error_message, true);
+                }
+                
+            } catch (error) {
+                console.error('Error:', error);
+                updateStatus('❌ Error: ' + error.message, true);
+                addConsoleLog('[ERROR] ' + error.message);
+            } finally {
+                document.getElementById('runBtn').disabled = false;
+            }
+        }
+    </script>
+    <script src="solver_heap_measurement.js"></script>
+</body>
+</html>

@@ -1,17 +1,17 @@
 # Memory Monitoring System
 
-**Version**: stable-20251230  
-**Last Updated**: 2025-12-30
+**Version**: 1.1 (Updated with integrated monitoring)  
+**Last Updated**: 2026-01-02
 
 > **Navigation**: [← Back to Developer Docs](../README.md) | [User Guide](../USER_GUIDE.md) | [Memory Config](../MEMORY_CONFIGURATION_GUIDE.md)
 >
-> **Related**: [Implementation](SOLVER_IMPLEMENTATION.md) | [Experiment Scripts](EXPERIMENT_SCRIPTS.md) | [Measurement Results](Experiences/MEASUREMENT_RESULTS_20251230.md)
+> **Related**: [Implementation](SOLVER_IMPLEMENTATION.md) | [Experiment Scripts](EXPERIMENT_SCRIPTS.md) | [Measurement Results](Experiences/peak_rss_optimization.md)
 
 ---
 
 ## Purpose
 
-This document describes the `/proc`-based memory monitoring system used for empirical memory measurements. The system provides **high-frequency (10ms intervals)** RSS tracking with minimal overhead.
+This document describes the `/proc`-based memory monitoring system used for empirical memory measurements. The system provides **high-frequency (10ms intervals)** RSS tracking with minimal overhead and validated accuracy through spike investigation.
 
 ---
 
@@ -525,11 +525,165 @@ mv rss_*.csv results/$(date +%Y%m%d_%H%M%S)/
 ## Related Documentation
 
 - [EXPERIMENT_SCRIPTS.md](EXPERIMENT_SCRIPTS.md) - Automated testing scripts
-- [Experiences/MEASUREMENT_RESULTS_20251230.md](Experiences/MEASUREMENT_RESULTS_20251230.md) - Campaign results
+- [Experiences/peak_rss_optimization.md](Experiences/peak_rss_optimization.md) - Optimization experiments and spike investigation
 - [Experiences/MEMORY_THEORY_ANALYSIS.md](Experiences/MEMORY_THEORY_ANALYSIS.md) - Theoretical analysis
 
 ---
 
-**Document Version**: 1.0  
-**Status**: Production-ready  
-**Last Validated**: 2025-12-30 (47-point campaign)
+## Integrated Monitoring System (2026-01-02)
+
+### Purpose
+
+The **integrated monitoring system** eliminates timing gaps by launching the solver as a subprocess from the monitoring script. This ensures complete capture of memory allocation from process start to finish.
+
+### Implementation
+
+**File**: `tools/memory_monitoring/run_integrated_monitoring.py`
+
+```python
+#!/usr/bin/env python3
+"""
+Integrated monitoring system
+Starts solver and monitors memory simultaneously
+Based on stable-20251230 backup scripts
+"""
+
+import subprocess
+import sys
+import os
+import time
+from pathlib import Path
+from monitor_memory import MemoryMonitor
+
+def run_with_monitoring(solver_path, memory_limit_mb, bucket_model, output_dir):
+    """
+    Launch solver and monitor memory usage
+    
+    Returns:
+        dict: Summary statistics including peak RSS
+    """
+    
+    # Prepare environment
+    env = os.environ.copy()
+    env['MEMORY_LIMIT_MB'] = str(memory_limit_mb)
+    env['ENABLE_CUSTOM_BUCKETS'] = '1'
+    env['BUCKET_MODEL'] = bucket_model
+    
+    # Output files
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    
+    csv_file = output_dir / "rss_trace.csv"
+    log_file = output_dir / "solver.log"
+    config_file = output_dir / "config.txt"
+    
+    # Start solver
+    with open(log_file, 'w') as log:
+        process = subprocess.Popen(
+            [solver_path],
+            env=env,
+            stdout=log,
+            stderr=subprocess.STDOUT,
+            cwd=Path(solver_path).parent
+        )
+    
+    # Start monitoring immediately (no timing gap)
+    monitor = MemoryMonitor(process.pid, sample_interval_ms=10, output_csv=str(csv_file))
+    summary = monitor.monitor(timeout_seconds=180)
+    
+    # Wait for solver completion
+    exit_code = process.wait()
+    
+    # Save configuration
+    with open(config_file, 'w') as f:
+        f.write(f"Memory Limit: {memory_limit_mb} MB\n")
+        f.write(f"Bucket Model: {bucket_model}\n")
+        f.write(f"Peak VmRSS: {summary['peak_vmrss_mb']:.2f} MB\n")
+        f.write(f"Samples: {summary['samples']}\n")
+    
+    return summary
+
+if __name__ == "__main__":
+    if len(sys.argv) < 4:
+        print("Usage: python3 run_integrated_monitoring.py <solver_path> <memory_limit_mb> <bucket_model> [output_dir]")
+        print("Example: python3 run_integrated_monitoring.py ./solver_dev 1600 8M/8M/8M")
+        sys.exit(1)
+    
+    solver_path = sys.argv[1]
+    memory_limit = int(sys.argv[2])
+    bucket_model = sys.argv[3]
+    output_dir = sys.argv[4] if len(sys.argv) > 4 else f"measurements_{time.strftime('%Y%m%d_%H%M%S')}"
+    
+    summary = run_with_monitoring(solver_path, memory_limit, bucket_model, output_dir)
+    
+    print(f"\n=== Final Summary ===")
+    print(f"Peak VmRSS: {summary['peak_vmrss_mb']:.2f} MB")
+```
+
+### Usage
+
+```bash
+cd src/xxcrossTrainer/tools/memory_monitoring
+
+# Run integrated monitoring
+python3 run_integrated_monitoring.py \
+    /path/to/solver_dev \
+    1600 \
+    8M/8M/8M
+
+# Results saved to measurements_YYYYMMDD_HHMMSS/
+# - rss_trace.csv: Time-series data (10ms samples)
+# - solver.log: Solver output
+# - config.txt: Test configuration
+```
+
+### Spike Analysis
+
+**File**: `tools/memory_monitoring/analyze_spikes.py`
+
+Detects rapid memory allocations (>20 MB within 1 second):
+
+```bash
+python3 analyze_spikes.py measurements_20260102_160224/rss_trace.csv
+```
+
+**Output**:
+```
+=== Memory Analysis ===
+Duration: 180.00s
+Samples: 16971
+Peak VmRSS: 656.69 MB (at t=61.11s)
+
+Memory Spikes (>20 MB within 1s): 11
+Top 10 spikes by magnitude:
+Time (s)     RSS (MB)     Increase (MB)   Duration (ms)   Rate (MB/s)    
+--------------------------------------------------------------------------------
+32.85        255.0        27.1            10.0            2712.5         
+44.92        413.1        25.0            11.0            2272.7         
+...
+```
+
+### Validation Results (2026-01-02)
+
+**Test**: 8M/8M/8M model with 1600 MB limit
+
+| Metric | 10ms Monitoring | C++ Checkpoint | Difference |
+|--------|----------------|----------------|------------|
+| **Peak VmRSS** | **656.69 MB** | 657 MB | -0.31 MB (-0.05%) |
+| Peak VmSize | 669.13 MB | N/A | - |
+| Peak VmData | 662.96 MB | N/A | - |
+| Samples | 16,971 | - | - |
+
+**Findings**:
+1. ✅ C++ checkpoint measurements are accurate (validated within 0.05%)
+2. ✅ No transient spikes beyond checkpoint values detected
+3. ✅ 11 allocation spikes detected (>20 MB/s) - all normal rehashing behavior
+4. ✅ Peak RSS confirmed: **657 MB** for 8M/8M/8M model
+
+**Detailed Report**: See [peak_rss_optimization.md](Experiences/peak_rss_optimization.md#spike-investigation-results-2026-01-02)
+
+---
+
+**Document Version**: 1.1  
+**Status**: Production-ready (validated 2026-01-02)  
+**Last Validated**: 2026-01-02 (10ms spike investigation)

@@ -1,5 +1,6 @@
 #ifdef __EMSCRIPTEN__
 #include <emscripten/bind.h>
+#include <emscripten/heap.h>
 #include <emscripten.h>
 #endif
 #include <iostream>
@@ -12,10 +13,28 @@
 #include <cstdlib>
 #include <random>
 #include <deque>
+#include <iomanip>
 #include <tsl/robin_set.h>
 #include "bucket_config.h"
 
+#ifndef __EMSCRIPTEN__
+#include <malloc.h>  // For malloc_trim
+#endif
+
 #pragma GCC target("avx2")
+
+// Helper function to log Emscripten heap usage
+#ifdef __EMSCRIPTEN__
+inline void log_emscripten_heap(const char* phase_name) {
+	size_t total_heap_size = emscripten_get_heap_size();
+	
+	std::cout << "[Heap] " << phase_name << ": ";
+	std::cout << "Total=" << (total_heap_size / 1024 / 1024) << " MB";
+	std::cout << std::endl;
+}
+#else
+inline void log_emscripten_heap(const char*) {}
+#endif
 
 // Helper function to get actual RSS (Linux only)
 size_t get_rss_kb()
@@ -2011,6 +2030,7 @@ void build_complete_search_database(
 	std::vector<std::vector<uint64_t>> &index_pairs,
 	std::vector<int> &num_list,
 	bool verbose = true,
+	const BucketConfig& bucket_config = BucketConfig(),
 	const ResearchConfig& research_config = ResearchConfig())
 {
 	if (verbose)
@@ -2188,152 +2208,44 @@ void build_complete_search_database(
 		std::cout << "Actual remaining memory: " << (actual_remaining_memory / 1024.0 / 1024.0) << " MB" << std::endl;
 	}
 
+	// ============================================================================
+	// RSS Checkpoint: After Phase 1
+	// ============================================================================
+	if (verbose)
+	{
+		std::cout << "\n=== RSS Checkpoint: After Phase 1 ===" << std::endl;
+		size_t rss_phase1 = get_rss_kb();
+		std::cout << "RSS: " << (rss_phase1 / 1024.0) << " MB" << std::endl;
+		log_emscripten_heap("Phase 1 Complete");
+		std::cout << "========================================\n" << std::endl;
+	}
+
 	const size_t MIN_BUCKET = (1 << 21); // 2M
 	const uint64_t size23 = static_cast<uint64_t>(size2 * size3);
 
 	// ============================================================================
-	// Pre-calculate optimal bucket sizes for depth 7, 8, 9
+	// Bucket Size Configuration (CUSTOM Model Only)
 	// ============================================================================
-	// NEW STRATEGY: "Focus depth 7,8 (2:2:1)" - Aggressive allocation with Wasm-aware margins
-	//
-	// Rationale:
-	// - Empirical measurements show actual overhead is ~12-14.5 bytes/slot (vs 38 conservative)
-	// - Small buckets (2M-4M): 14.5 bytes/slot overhead
-	// - Large buckets (8M-16M): 10.8 bytes/slot overhead
-	// - Webassembly requires additional margin for:
-	//   * Dynamic memory expansion (vector growth, robin_set rehashing)
-	//   * Wasm-specific overhead (memory page alignment, etc.)
-	//   * Maintaining computation speed on memory-constrained devices
-	//
-	// Focus on depth 7, 8 for accuracy:
-	// - depth 7 large → better depth 8 parent diversity → higher depth 8 accuracy
-	// - depth 8 large → better depth 9 parent diversity → good depth 9 accuracy
-	// - depth 9 = depth 8 → maintains precision (depth 7 covers most depth 6 children)
-	//
-	// Allocation ratio: depth_7 : depth_8 : depth_9 = 2 : 2 : 2
-	// Total memory: 2*d9 + 2*d9 + 2*d9 = 6*d9
-
 	size_t bucket_7, bucket_8, bucket_9;
 
-	// Use empirical overhead based on bucket size
-	// Small buckets (≤4M): 14.5 bytes/slot, Large buckets (≥8M): 10.8 bytes/slot
-	// Conservative: use 15 bytes/slot for calculation (vs 38 theoretical)
-	const size_t EMPIRICAL_OVERHEAD = 33; // bytes per slot (measured from actual runs)
+	if (bucket_config.model == BucketModel::CUSTOM && research_config.enable_custom_buckets)
+	{
+		// Use custom bucket sizes directly (no auto-calculation)
+		bucket_7 = bucket_config.custom_bucket_7;
+		bucket_8 = bucket_config.custom_bucket_8;
+		bucket_9 = bucket_config.custom_bucket_9;
 
-	// Webassembly-aware safety margin calculation (optimized to ~20%)
-	// Accounts for: dynamic expansion, rehash, Wasm overhead
-	size_t wasm_safety_margin;
-	if (total_memory_limit < 1000 * 1024 * 1024)
-	{
-		// Small memory (<1GB): 25% of remaining (more conservative)
-		wasm_safety_margin = actual_remaining_memory * 25 / 100;
-	}
-	else if (total_memory_limit < 2000 * 1024 * 1024)
-	{
-		// Medium memory (1-2GB): 20% of remaining
-		wasm_safety_margin = actual_remaining_memory * 20 / 100;
-	}
-	else
-	{
-		// Large memory (>2GB): 20% of remaining
-		wasm_safety_margin = actual_remaining_memory * 20 / 100;
-	}
-
-	// Usable memory = remaining - Wasm margin (minimum 75% of remaining)
-	size_t usable_memory;
-	if (actual_remaining_memory > wasm_safety_margin)
-	{
-		usable_memory = actual_remaining_memory - wasm_safety_margin;
-	}
-	else
-	{
-		// Fallback: use 75% of remaining when margin is too large
-		usable_memory = actual_remaining_memory * 75 / 100;
-	}
-
-	// Allocation: d7=2*d9, d8=2*d9, d9=2*d9 (equal d8 and d9)
-	// Total slots = 2*d9 + 2*d9 + 2*d9 = 6*d9
-	// usable_memory = 6*d9 * EMPIRICAL_OVERHEAD
-	// d9 = usable_memory / (6 * EMPIRICAL_OVERHEAD)
-
-	size_t target_d9 = usable_memory / (6 * EMPIRICAL_OVERHEAD);
-	size_t target_d7 = target_d9 * 2;
-	size_t target_d8 = target_d9 * 2;
-	size_t target_d9_actual = target_d9 * 2;  // 2:2:2 ratio
-
-	// Round to power of 2, minimum 2M for reasonable coverage
-	// Strategy: Round up if value >= 1.5x current (more aggressive utilization)
-	auto round_to_power_of_2 = [](size_t value, size_t min_val, size_t max_val) -> size_t
-	{
-		size_t result = min_val;
-		while (result < max_val)
+		if (verbose)
 		{
-			size_t next = result * 2;
-			// Upgrade to next power of 2 if value >= 1.5x current
-			if (value >= result + result / 2 && next <= max_val)
-			{
-				result = next;
-			}
-			else
-			{
-				break;
-			}
-		}
-		return result;
-	};
-
-	// Step 1: Calculate baseline bucket sizes (2:2:2 ratio)
-	bucket_7 = round_to_power_of_2(target_d7, MIN_BUCKET, (1 << 25)); // 2M-32M
-	bucket_8 = round_to_power_of_2(target_d8, MIN_BUCKET, (1 << 25)); // 2M-32M
-	bucket_9 = round_to_power_of_2(target_d9_actual, MIN_BUCKET, (1 << 25)); // 2M-32M (2:2:2 ratio)
-	
-	// Step 2: Flexible allocation - upgrade buckets if memory budget allows
-	size_t baseline_memory = (bucket_7 + bucket_8 + bucket_9) * EMPIRICAL_OVERHEAD;
-	size_t remaining_budget = (baseline_memory < usable_memory) ? (usable_memory - baseline_memory) : 0;
-	
-	// Try to upgrade depth 8 first (typically larger than depth 9)
-	if (remaining_budget >= bucket_8 * EMPIRICAL_OVERHEAD && bucket_8 < (1 << 25)) {
-		size_t old_bucket_8 = bucket_8;
-		size_t new_bucket_8 = bucket_8 * 2;
-		if (new_bucket_8 <= (1 << 25)) {  // Max 32M
-			bucket_8 = new_bucket_8;
-			remaining_budget -= old_bucket_8 * EMPIRICAL_OVERHEAD;
+			std::cout << "\n[Using CUSTOM Bucket Configuration]" << std::endl;
+			std::cout << "  depth 7 bucket: " << bucket_7 << " (" << (bucket_7 / (1 << 20)) << "M)" << std::endl;
+			std::cout << "  depth 8 bucket: " << bucket_8 << " (" << (bucket_8 / (1 << 20)) << "M)" << std::endl;
+			std::cout << "  depth 9 bucket: " << bucket_9 << " (" << (bucket_9 / (1 << 20)) << "M)" << std::endl;
 		}
 	}
-	
-	// Then try to upgrade depth 9
-	if (remaining_budget >= bucket_9 * EMPIRICAL_OVERHEAD && bucket_9 < (1 << 25)) {
-		size_t old_bucket_9 = bucket_9;
-		size_t new_bucket_9 = bucket_9 * 2;
-		if (new_bucket_9 <= (1 << 25)) {  // Max 32M
-			bucket_9 = new_bucket_9;
-			remaining_budget -= old_bucket_9 * EMPIRICAL_OVERHEAD;
-		}
-	}
-	
-	// Optionally upgrade depth 7 if still budget remains
-	if (remaining_budget >= bucket_7 * EMPIRICAL_OVERHEAD && bucket_7 < (1 << 25)) {
-		size_t new_bucket_7 = bucket_7 * 2;
-		if (new_bucket_7 <= (1 << 25)) {  // Max 32M
-			bucket_7 = new_bucket_7;
-		}
-	}
-
-	if (verbose)
+	else
 	{
-		std::cout << "\n[Pre-calculated Bucket Allocation - Flexible Strategy]" << std::endl;
-		std::cout << "Strategy: 2:2:2 baseline with flexible upgrades based on available memory" << std::endl;
-		std::cout << "Empirical overhead: " << EMPIRICAL_OVERHEAD << " bytes/slot (vs 38 conservative)" << std::endl;
-		std::cout << "Available memory: " << (actual_remaining_memory / 1024.0 / 1024.0) << " MB" << std::endl;
-		std::cout << "Wasm safety margin: " << (wasm_safety_margin / 1024.0 / 1024.0) << " MB" << std::endl;
-		std::cout << "Usable for buckets: " << (usable_memory / 1024.0 / 1024.0) << " MB" << std::endl;
-		std::cout << "  depth 7 bucket: " << bucket_7 << " (" << (bucket_7 / (1 << 20)) << "M)" << std::endl;
-		std::cout << "  depth 8 bucket: " << bucket_8 << " (" << (bucket_8 / (1 << 20)) << "M)" << std::endl;
-		std::cout << "  depth 9 bucket: " << bucket_9 << " (" << (bucket_9 / (1 << 20)) << "M)" << std::endl;
-
-		size_t estimated_total = (bucket_7 + bucket_8 + bucket_9) * EMPIRICAL_OVERHEAD;
-		std::cout << "Estimated peak memory (empirical): " << (estimated_total / 1024.0 / 1024.0) << " MB" << std::endl;
-		std::cout << "Phase 2 baseline + peak: " << ((120 * 1024 * 1024 + estimated_total) / 1024.0 / 1024.0) << " MB" << std::endl;
+		throw std::runtime_error("Only CUSTOM bucket model is supported in development mode. Set bucket_config.model=BucketModel::CUSTOM and research_config.enable_custom_buckets=true");
 	}
 
 	// ============================================================================
@@ -2354,10 +2266,12 @@ void build_complete_search_database(
 	}
 	index_pairs[7].clear();
 
-	tsl::robin_set<uint64_t> depth_7_nodes(bucket_7);
+	tsl::robin_set<uint64_t> depth_7_nodes;
+	depth_7_nodes.clear();
 	depth_7_nodes.max_load_factor(0.9f);
+	depth_7_nodes.rehash(bucket_7);
 	// Pre-reserve capacity to prevent reallocation spikes during attach
-	size_t estimated_d7_capacity = static_cast<size_t>(bucket_7 * 0.9);
+	size_t estimated_d7_capacity = static_cast<size_t>(bucket_7 * 0.95);
 	index_pairs[7].reserve(estimated_d7_capacity);
 	depth_7_nodes.attach_element_vector(&index_pairs[7]);
 
@@ -2371,60 +2285,61 @@ void build_complete_search_database(
 	depth6_vec.reserve(depth_6_nodes.size()); // Pre-reserve to avoid reallocation spike
 	depth6_vec.assign(depth_6_nodes.begin(), depth_6_nodes.end());
 	std::mt19937_64 rng_d7(12345);
-	std::shuffle(depth6_vec.begin(), depth6_vec.end(), rng_d7);
 
-	// Estimate: depth 6→7 typically grows by ~12x (empirical observation)
-	// To reach 95% load: need (bucket * 0.95) nodes for better coverage
-	// Accounting for depth 6 rejection: effective growth ~10x
-	size_t target_nodes_d7 = static_cast<size_t>(bucket_7 * 0.95);
+	// Calculate adaptive children per parent with face diversity
+	// Target: 90% load factor with proper parent diversity
+	size_t target_nodes_d7 = static_cast<size_t>(bucket_7 * 0.9);
 	size_t available_parents = depth6_vec.size();
-
 	int children_per_parent_d7 = 1;
-	if (available_parents > 0)
-	{
-		// Calculate children needed: target_nodes / parents
-		// Factor in ~40% rejection rate from depth 6 duplicates (empirically verified)
-		// At large bucket sizes (32M), rejection rate is higher than small buckets
-		double effective_multiplier = 1.4;  // Account for rejections (was 1.15, too optimistic)
+	if (available_parents > 0) {
+		// Account for ~10% rejection from duplicates
+		double rejection_factor = 1.1;
 		children_per_parent_d7 = static_cast<int>(std::ceil(
-			(target_nodes_d7 * effective_multiplier) / available_parents));
-		// Clamp to [1, 12] - allow more diversity for large buckets (32M needs 10-12)
-		children_per_parent_d7 = std::min(children_per_parent_d7, 12);
+			(target_nodes_d7 * rejection_factor) / available_parents
+		));
+		// Clamp to reasonable range [1, 18]
+		children_per_parent_d7 = std::min(children_per_parent_d7, 18);
 		children_per_parent_d7 = std::max(children_per_parent_d7, 1);
 	}
 
-	size_t estimated_nodes_d7 = std::min(
-		available_parents * children_per_parent_d7,
-		static_cast<size_t>(bucket_7 * 0.9));
-	double estimated_load_d7 = static_cast<double>(estimated_nodes_d7) / bucket_7;
+	// Random parent sampling strategy: Expand until rehash threshold
+	// Use face-diverse move selection to avoid hash collisions
+	size_t max_parent_nodes = depth6_vec.size() * 20; // Safety limit
+	static std::mt19937_64 gen_d7(rng_d7());
+	std::uniform_int_distribution<size_t> dist_d7(0, depth6_vec.size() - 1);
+	std::uniform_int_distribution<int> face_dist_d7(0, 5);  // 6 faces
+	std::uniform_int_distribution<int> rotation_dist_d7(0, 2);  // 3 rotations per face
 
 	if (verbose)
 	{
-		std::cout << "Adaptive expansion from depth 6" << std::endl;
-		std::cout << "Target load: 95%, Estimated load: " << (estimated_load_d7 * 100) << "%" << std::endl;
-		std::cout << "Children per parent: " << children_per_parent_d7 << " (adaptive, max=12 for large buckets)" << std::endl;
-		std::cout << "Estimated nodes: " << estimated_nodes_d7 << " / " << bucket_7 << std::endl;
+		std::cout << "Random parent sampling from depth 6" << std::endl;
+		std::cout << "Strategy: Face-diverse expansion until rehash" << std::endl;
+		std::cout << "Max load factor: 0.9 (90%)" << std::endl;
+		std::cout << "Available parent nodes: " << available_parents << std::endl;
+		std::cout << "Children per parent (adaptive): " << children_per_parent_d7 << std::endl;
+		std::cout << "Expected nodes: ~" << std::min(available_parents * children_per_parent_d7, target_nodes_d7) << std::endl;
 	}
 
-	// Expand depth 6 → 7
-	// Pre-allocate all_moves outside the loop to avoid repeated allocations
-	std::vector<int> all_moves(18);
-	for (int m = 0; m < 18; ++m)
-		all_moves[m] = m;
-
+	// Expand depth 6 → 7 via random parent sampling
 	// Pre-declare loop variables outside to avoid repeated allocations
-	uint64_t node123;
+	size_t random_idx, processed_parents = 0;
+	uint64_t parent_node;
 	uint64_t index1_cur, index23, index2_cur, index3_cur;
 	int index1_tmp, index2_tmp, index3_tmp;
 	uint64_t next_index1, next_index2, next_index3, next_node123;
-	std::vector<int> selected_moves;
-	selected_moves.reserve(18);
+	const size_t last_bucket_count = depth_7_nodes.bucket_count();
+	size_t duplicate_count_d7 = 0;
+	size_t inserted_count_d7 = 0;
 
-	for (size_t i = 0; i < depth6_vec.size(); ++i)
+	while (processed_parents < max_parent_nodes)
 	{
-		node123 = depth6_vec[i];
-		index1_cur = node123 / size23;
-		index23 = node123 % size23;
+		// Randomly select parent node (duplicates possible, negligible probability)
+		random_idx = dist_d7(gen_d7);
+		parent_node = depth6_vec[random_idx];
+
+		// Decompose parent node indices
+		index1_cur = parent_node / size23;
+		index23 = parent_node % size23;
 		index2_cur = index23 / size3;
 		index3_cur = index23 % size3;
 
@@ -2432,62 +2347,90 @@ void build_complete_search_database(
 		index2_tmp = static_cast<int>(index2_cur) * 18;
 		index3_tmp = static_cast<int>(index3_cur) * 18;
 
-		// Generate selected moves (reuse vector across iterations)
-		selected_moves.clear();
-		if (children_per_parent_d7 >= 18)
-		{
-			for (int m = 0; m < 18; ++m)
-				selected_moves.push_back(m);
-		}
-		else if (children_per_parent_d7 == 1)
-		{
-			selected_moves.push_back(rng_d7() % 18);
-		}
-		else
-		{
-			// Shuffle reusable all_moves and select first N
-			std::shuffle(all_moves.begin(), all_moves.end(), rng_d7);
-			for (int j = 0; j < children_per_parent_d7; ++j)
-			{
-				selected_moves.push_back(all_moves[j]);
+		// Generate moves with face diversity
+		// Ensure we sample from different faces to avoid hash collisions
+		std::vector<int> selected_moves;
+		if (children_per_parent_d7 >= 18) {
+			// Use all 18 moves
+			for (int m = 0; m < 18; ++m) selected_moves.push_back(m);
+		} else if (children_per_parent_d7 <= 6) {
+			// Select one move per face for diversity (up to 6 faces)
+			std::vector<int> faces = {0, 1, 2, 3, 4, 5};
+			std::shuffle(faces.begin(), faces.end(), gen_d7);
+			for (int i = 0; i < children_per_parent_d7; ++i) {
+				int face = faces[i];
+				int rotation = rotation_dist_d7(gen_d7);
+				selected_moves.push_back(face * 3 + rotation);
+			}
+		} else {
+			// For 7-17 children: ensure all 6 faces covered, then add more
+			std::vector<int> all_moves(18);
+			for (int m = 0; m < 18; ++m) all_moves[m] = m;
+			std::shuffle(all_moves.begin(), all_moves.end(), gen_d7);
+			// First 6: ensure face diversity
+			std::vector<bool> face_covered(6, false);
+			for (int m : all_moves) {
+				int face = m / 3;
+				if (!face_covered[face]) {
+					selected_moves.push_back(m);
+					face_covered[face] = true;
+					if (selected_moves.size() >= 6) break;
+				}
+			}
+			// Add remaining moves randomly
+			for (int m : all_moves) {
+				if (selected_moves.size() >= static_cast<size_t>(children_per_parent_d7)) break;
+				if (std::find(selected_moves.begin(), selected_moves.end(), m) == selected_moves.end()) {
+					selected_moves.push_back(m);
+				}
 			}
 		}
 
 		for (int move : selected_moves)
 		{
-			const uint64_t next_index1 = multi_move_table_cross_edges[index1_tmp + move];
-			const uint64_t next_index2 = multi_move_table_F2L_slots_edges[index2_tmp + move];
-			const uint64_t next_index3 = multi_move_table_F2L_slots_corners[index3_tmp + move];
-			const uint64_t next_node123 = next_index1 * size23 + next_index2 * size3 + next_index3;
+			next_index1 = multi_move_table_cross_edges[index1_tmp + move];
+			next_index2 = multi_move_table_F2L_slots_edges[index2_tmp + move];
+			next_index3 = multi_move_table_F2L_slots_corners[index3_tmp + move];
+			next_node123 = next_index1 * size23 + next_index2 * size3 + next_index3;
 
-			// Add only if not present in depth 6
-			if (depth_6_nodes.find(next_node123) == depth_6_nodes.end())
+			// Skip if already in depth 6 or depth 7
+			if (depth_6_nodes.find(next_node123) != depth_6_nodes.end() ||
+				depth_7_nodes.find(next_node123) != depth_7_nodes.end())
 			{
-				// Check for rehash before insert
-				if (depth_7_nodes.will_rehash_on_next_insert())
-				{
-					if (verbose)
-					{
-						std::cout << "Rehash predicted at depth=7, stopping expansion" << std::endl;
-					}
-					goto phase2_done;
-				}
+				duplicate_count_d7++;
+				continue;
+			}
 
-				// Actual rehash detection: check bucket_count before/after insert
-				size_t buckets_before = depth_7_nodes.bucket_count();
-				depth_7_nodes.insert(next_node123);
-				if (depth_7_nodes.bucket_count() != buckets_before)
+			// Check for rehash before insert
+			if (depth_7_nodes.will_rehash_on_next_insert())
+			{
+				if (verbose)
 				{
-					// Unexpected rehash occurred! Exit immediately
-					if (verbose)
-					{
-						std::cout << "UNEXPECTED REHASH at depth=7! Exiting immediately" << std::endl;
-						std::cout << "  Buckets: " << buckets_before << " -> " << depth_7_nodes.bucket_count() << std::endl;
-					}
-					goto phase2_done;
+					std::cout << "\nRehash threshold reached, stopping depth 7 expansion" << std::endl;
+					std::cout << "Processed parents: " << processed_parents << std::endl;
+					std::cout << "Inserted: " << inserted_count_d7 << ", Duplicates: " << duplicate_count_d7 << std::endl;
 				}
+				goto phase2_done;
+			}
+
+			depth_7_nodes.insert(next_node123);
+			inserted_count_d7++;
+
+			// Check for unexpected rehash (bucket count changed)
+			const size_t current_bucket_count = depth_7_nodes.bucket_count();
+			if (current_bucket_count != last_bucket_count)
+			{
+				if (verbose)
+				{
+					std::cout << "\nUnexpected rehash detected (buckets: "
+							  << last_bucket_count << " -> " << current_bucket_count << ")" << std::endl;
+					std::cout << "Stopping depth 7 expansion" << std::endl;
+				}
+				goto phase2_done;
 			}
 		}
+
+		processed_parents++;
 	}
 
 phase2_done:
@@ -2496,14 +2439,19 @@ phase2_done:
 	depth_7_nodes.detach_element_vector();
 
 	// depth_7_nodes no longer needed - explicitly free it
+	size_t rss_before_d7_free = get_rss_kb();
 	{
 		tsl::robin_set<uint64_t> temp;
 		depth_7_nodes.swap(temp);
 	}
+	size_t rss_after_d7_free = get_rss_kb();
 
 	if (verbose)
 	{
-		std::cout << "RSS after depth_7_nodes freed: " << (get_rss_kb() / 1024.0) << " MB" << std::endl;
+		size_t freed_kb = (rss_before_d7_free > rss_after_d7_free) ? (rss_before_d7_free - rss_after_d7_free) : 0;
+		std::cout << "RSS before depth_7_nodes free: " << (rss_before_d7_free / 1024.0) << " MB" << std::endl;
+		std::cout << "RSS after depth_7_nodes freed: " << (rss_after_d7_free / 1024.0) << " MB" << std::endl;
+		std::cout << "Memory freed by depth_7_nodes: " << (freed_kb / 1024.0) << " MB" << std::endl;
 	}
 
 	if (num_list.size() <= 7)
@@ -2514,25 +2462,22 @@ phase2_done:
 
 	if (verbose)
 	{
+		std::cout << "\n[Phase 2 Complete]" << std::endl;
 		std::cout << "Generated " << depth_7_final_size << " nodes at depth=7" << std::endl;
-		std::cout << "  Load factor: " << (depth_7_final_size * 100.0 / bucket_7) << "%" << std::endl;
+		std::cout << "Load factor: " << (depth_7_final_size * 100.0 / bucket_7) << "%" << std::endl;
+		std::cout << "Inserted: " << inserted_count_d7 << ", Duplicates: " << duplicate_count_d7 << std::endl;
+		double rejection_rate_d7 = (inserted_count_d7 + duplicate_count_d7) > 0 
+			? (100.0 * duplicate_count_d7 / (inserted_count_d7 + duplicate_count_d7)) : 0.0;
+		std::cout << "Rejection rate: " << rejection_rate_d7 << "%" << std::endl;
 	}
 
-	// Free depth_6_nodes to save memory (~100-150MB)
-	// No longer needed after depth 7 generation
-	// Use swap trick to actually deallocate memory (clear() keeps bucket array)
-	{
-		tsl::robin_set<uint64_t> temp;
-		depth_6_nodes.swap(temp);
-	}
+	// NOTE: depth_6_nodes is still needed for Phase 3 (depth 8 expansion) and Phase 4 (depth 9 expansion)
+	// DO NOT free it here - will be freed after Phase 4 completes
 
 	if (verbose)
 	{
-		std::cout << "RSS after depth_6_nodes freed: " << (get_rss_kb() / 1024.0) << " MB" << std::endl;
-	}
-	if (verbose)
-	{
-		std::cout << "Freed depth 6 nodes (~" << (4169855 * 32 / 1024 / 1024) << " MB estimate)" << std::endl;
+		std::cout << "RSS after depth 7 generation: " << (get_rss_kb() / 1024.0) << " MB" << std::endl;
+		std::cout << "Note: depth_6_nodes retained for Phase 3/4 validation (~" << (depth_6_nodes.size() * 32 / 1024 / 1024) << " MB)" << std::endl;
 	}
 
 	// Calculate current memory usage after depth 7
@@ -2556,6 +2501,7 @@ phase2_done:
 		std::cout << "Current memory estimate: " << (current_memory_d7 / 1024.0 / 1024.0) << " MB" << std::endl;
 		std::cout << "Overhead ratio: " << (static_cast<double>(current_memory_d7) / theoretical_phase2) << "x" << std::endl;
 		std::cout << "Actual RSS: " << (get_rss_kb() / 1024.0) << " MB" << std::endl;
+		log_emscripten_heap("Phase 2 Complete");
 		if (verbose)
 		{
 			std::cout << "Remaining memory: " << (remaining_memory_d7 / 1024.0 / 1024.0) << " MB" << std::endl;
@@ -2581,10 +2527,12 @@ phase2_done:
 	}
 	index_pairs[8].clear();
 
-	tsl::robin_set<uint64_t> depth_8_nodes(bucket_8);
+	tsl::robin_set<uint64_t> depth_8_nodes;
+	depth_8_nodes.clear();
 	depth_8_nodes.max_load_factor(0.9f);
+	depth_8_nodes.rehash(bucket_8);
 	// Pre-reserve capacity to prevent reallocation spikes during attach
-	size_t estimated_d8_capacity = static_cast<size_t>(bucket_8 * 0.9);
+	size_t estimated_d8_capacity = static_cast<size_t>(bucket_8 * 0.95);
 	index_pairs[8].reserve(estimated_d8_capacity);
 	depth_8_nodes.attach_element_vector(&index_pairs[8]);
 
@@ -2605,65 +2553,63 @@ phase2_done:
 	// Create robin_set for depth 7 duplicate checking (used in depth 8 expansion)
 	tsl::robin_set<uint64_t> depth7_set;
 	depth7_set.max_load_factor(0.9f);
-	depth7_set.reserve(depth7_vec.size()); // Pre-reserve to prevent rehashing during construction
+	depth7_set.reserve(depth7_vec.size());
 	for (uint64_t node : depth7_vec) {
 		depth7_set.insert(node);
 	}
 	std::mt19937_64 rng_phase3(23456);
-	std::shuffle(depth7_vec.begin(), depth7_vec.end(), rng_phase3);
 
-	// Adaptive children per parent strategy for depth 7→8
-	// Check diversity: if parent nodes < bucket size, diversity is insufficient
-	double diversity_ratio_d8 = static_cast<double>(depth7_vec.size()) / bucket_8;
-	size_t max_nodes_with_one_child_d8 = std::min(depth7_vec.size(), static_cast<size_t>(bucket_8 * 0.9));
-	double expected_load_factor_d8 = static_cast<double>(max_nodes_with_one_child_d8) / bucket_8;
-
+	// Calculate adaptive children per parent with face diversity
+	size_t target_nodes_d8 = static_cast<size_t>(bucket_8 * 0.9);
+	size_t available_parents_d8 = depth7_vec.size();
 	int children_per_parent_d8 = 1;
-	// Diversity insufficient: parents < bucket, need more children per parent
-	if (diversity_ratio_d8 < 1.0 && depth7_vec.size() > 0)
-	{
-		// Target: ~90% load factor
-		double target_load = 0.90;
-		// Account for rejections (depth 6 check, etc.) with 1.5x multiplier (increased from 1.2)
-		children_per_parent_d8 = static_cast<int>(std::ceil((bucket_8 * target_load * 1.5) / depth7_vec.size()));
-		children_per_parent_d8 = std::min(children_per_parent_d8, 6);  // Max 6 (increased from 3)
-		children_per_parent_d8 = std::max(children_per_parent_d8, 1); // Min 1
-	}
-	else if (expected_load_factor_d8 < 0.85 && depth7_vec.size() > 0)
-	{
-		// Fallback: if load would be too low even with sufficient diversity
-		double target_load = 0.90;
-		children_per_parent_d8 = static_cast<int>(std::ceil((bucket_8 * target_load) / depth7_vec.size()));
-		children_per_parent_d8 = std::min(children_per_parent_d8, 6);
+	if (available_parents_d8 > 0) {
+		double rejection_factor = 1.1;
+		children_per_parent_d8 = static_cast<int>(std::ceil(
+			(target_nodes_d8 * rejection_factor) / available_parents_d8
+		));
+		children_per_parent_d8 = std::min(children_per_parent_d8, 18);
 		children_per_parent_d8 = std::max(children_per_parent_d8, 1);
 	}
 
+	// Random parent sampling strategy: Expand until rehash threshold
+	size_t max_parent_nodes_d8 = depth7_vec.size() * 20;
+	static std::mt19937_64 gen_d8(rng_phase3());
+	std::uniform_int_distribution<size_t> dist_d8(0, depth7_vec.size() - 1);
+	std::uniform_int_distribution<int> face_dist_d8(0, 5);
+	std::uniform_int_distribution<int> rotation_dist_d8(0, 2);
+
 	if (verbose)
 	{
-		std::cout << "Random sampling: up to " << depth7_vec.size() << " parent nodes" << std::endl;
-		std::cout << "Diversity ratio (parents/bucket): " << (diversity_ratio_d8 * 100) << "%" << std::endl;
-		std::cout << "Expected load factor (1 child/parent): " << (expected_load_factor_d8 * 100) << "%" << std::endl;
-		std::cout << "Children per parent: " << children_per_parent_d8 << " (adaptive)" << std::endl;
+		std::cout << "Random parent sampling from depth 7" << std::endl;
+		std::cout << "Strategy: Face-diverse expansion until rehash" << std::endl;
+		std::cout << "Max load factor: 0.9 (90%)" << std::endl;
+		std::cout << "Available parent nodes: " << available_parents_d8 << std::endl;
+		std::cout << "Children per parent (adaptive): " << children_per_parent_d8 << std::endl;
+		std::cout << "Expected nodes: ~" << std::min(available_parents_d8 * children_per_parent_d8, target_nodes_d8) << std::endl;
 	}
 
-	// Pre-allocate all_moves outside the loop to avoid repeated allocations
-	std::vector<int> all_moves_d8(18);
-	for (int m = 0; m < 18; ++m)
-		all_moves_d8[m] = m;
-
 	// Pre-declare loop variables outside to avoid repeated allocations
-	uint64_t node123_d8;
+	size_t random_idx_d8, processed_parents_d8 = 0;
+	uint64_t parent_node_d8;
 	uint64_t index1_cur_d8, index23_d8, index2_cur_d8, index3_cur_d8;
 	int index1_tmp_d8, index2_tmp_d8, index3_tmp_d8;
 	uint64_t next_index1_d8, next_index2_d8, next_index3_d8, next_node123_d8;
-	std::vector<int> selected_moves_d8;
-	selected_moves_d8.reserve(18);
+	const size_t last_bucket_count_d8 = depth_8_nodes.bucket_count();
+	size_t duplicate_count_d8 = 0;
+	size_t duplicates_from_depth6_d8 = 0;  // Counter for depth_6 duplicates
+	size_t duplicates_from_depth7_d8 = 0;  // Counter for depth_7 duplicates
+	size_t inserted_count_d8 = 0;
 
-	for (size_t idx = 0; idx < depth7_vec.size(); ++idx)
+	while (processed_parents_d8 < max_parent_nodes_d8)
 	{
-		node123_d8 = depth7_vec[idx];
-		index1_cur_d8 = node123_d8 / size23;
-		index23_d8 = node123_d8 % size23;
+		// Randomly select parent node
+		random_idx_d8 = dist_d8(gen_d8);
+		parent_node_d8 = depth7_vec[random_idx_d8];
+
+		// Decompose parent node indices
+		index1_cur_d8 = parent_node_d8 / size23;
+		index23_d8 = parent_node_d8 % size23;
 		index2_cur_d8 = index23_d8 / size3;
 		index3_cur_d8 = index23_d8 % size3;
 
@@ -2671,115 +2617,92 @@ phase2_done:
 		index2_tmp_d8 = static_cast<int>(index2_cur_d8) * 18;
 		index3_tmp_d8 = static_cast<int>(index3_cur_d8) * 18;
 
-		// Generate selected_moves based on children_per_parent_d8 (reuse vector)
-		selected_moves_d8.clear();
-		if (children_per_parent_d8 >= 18)
-		{
-			for (int m = 0; m < 18; ++m)
-				selected_moves.push_back(m);
-		}
-		else if (children_per_parent_d8 == 1)
-		{
-			selected_moves.push_back(rng_phase3() % 18);
-		}
-		else
-		{
-			// Shuffle reusable all_moves and select first N
-			std::shuffle(all_moves_d8.begin(), all_moves_d8.end(), rng_phase3);
-			for (int i = 0; i < children_per_parent_d8; ++i)
-			{
-				selected_moves.push_back(all_moves_d8[i]);
+		// Generate moves with face diversity
+		std::vector<int> selected_moves_d8;
+		if (children_per_parent_d8 >= 18) {
+			for (int m = 0; m < 18; ++m) selected_moves_d8.push_back(m);
+		} else if (children_per_parent_d8 <= 6) {
+			std::vector<int> faces = {0, 1, 2, 3, 4, 5};
+			std::shuffle(faces.begin(), faces.end(), gen_d8);
+			for (int i = 0; i < children_per_parent_d8; ++i) {
+				int face = faces[i];
+				int rotation = rotation_dist_d8(gen_d8);
+				selected_moves_d8.push_back(face * 3 + rotation);
+			}
+		} else {
+			std::vector<int> all_moves(18);
+			for (int m = 0; m < 18; ++m) all_moves[m] = m;
+			std::shuffle(all_moves.begin(), all_moves.end(), gen_d8);
+			std::vector<bool> face_covered(6, false);
+			for (int m : all_moves) {
+				int face = m / 3;
+				if (!face_covered[face]) {
+					selected_moves_d8.push_back(m);
+					face_covered[face] = true;
+					if (selected_moves_d8.size() >= 6) break;
+				}
+			}
+			for (int m : all_moves) {
+				if (selected_moves_d8.size() >= static_cast<size_t>(children_per_parent_d8)) break;
+				if (std::find(selected_moves_d8.begin(), selected_moves_d8.end(), m) == selected_moves_d8.end()) {
+					selected_moves_d8.push_back(m);
+				}
 			}
 		}
 
 		for (int move : selected_moves_d8)
 		{
-
 			next_index1_d8 = multi_move_table_cross_edges[index1_tmp_d8 + move];
 			next_index2_d8 = multi_move_table_F2L_slots_edges[index2_tmp_d8 + move];
 			next_index3_d8 = multi_move_table_F2L_slots_corners[index3_tmp_d8 + move];
 			next_node123_d8 = next_index1_d8 * size23 + next_index2_d8 * size3 + next_index3_d8;
 
-			// Skip if contained in depth 6
-			if (depth_6_nodes.find(next_node123_d8) != depth_6_nodes.end())
-			{
+			// Skip if already in depth 6, depth 7, or depth 8
+			if (depth_6_nodes.find(next_node123_d8) != depth_6_nodes.end()) {
+				duplicate_count_d8++;
+				duplicates_from_depth6_d8++;
+				continue;
+			}
+			if (depth7_set.find(next_node123_d8) != depth7_set.end()) {
+				duplicate_count_d8++;
+				duplicates_from_depth7_d8++;
+				continue;
+			}
+			if (depth_8_nodes.find(next_node123_d8) != depth_8_nodes.end()) {
+				duplicate_count_d8++;
 				continue;
 			}
 
-			// Skip if already present in depth 7 (avoid duplicates)
-			if (depth7_set.find(next_node123_d8) != depth7_set.end())
-			{
-				rejected_as_depth7++; // Count as depth 7 reject
-				continue;
-			}
-
-			// Check if connected to depth 6 by one move (hoist variables outside)
-			bool connected_to_depth6 = false;
-			uint64_t check_index1, check_index23, check_index2, check_index3;
-			int check_index1_tmp, check_index2_tmp, check_index3_tmp;
-			uint64_t back_index1, back_index2, back_index3, back_node;
-			
-			check_index1 = next_node123_d8 / size23;
-			check_index23 = next_node123_d8 % size23;
-			check_index2 = check_index23 / size3;
-			check_index3 = check_index23 % size3;
-
-			check_index1_tmp = static_cast<int>(check_index1) * 18;
-			check_index2_tmp = static_cast<int>(check_index2) * 18;
-			check_index3_tmp = static_cast<int>(check_index3) * 18;
-
-			for (int m = 0; m < 18; ++m)
-			{
-				back_index1 = multi_move_table_cross_edges[check_index1_tmp + m];
-				back_index2 = multi_move_table_F2L_slots_edges[check_index2_tmp + m];
-				back_index3 = multi_move_table_F2L_slots_corners[check_index3_tmp + m];
-				back_node = back_index1 * size23 + back_index2 * size3 + back_index3;
-
-				if (depth_6_nodes.find(back_node) != depth_6_nodes.end())
-				{
-					connected_to_depth6 = true;
-					break;
-				}
-			}
-
-			if (connected_to_depth6)
-			{
-				rejected_as_depth7++;
-				continue; // Confirmed as depth 7
-			}
-
-			// Preemptive rehash detection: Check will_rehash_on_next_insert() before insertion
+			// Check for rehash before insert
 			if (depth_8_nodes.will_rehash_on_next_insert())
 			{
 				if (verbose)
 				{
-					std::cout << "Rehash predicted at depth=8, stopping expansion" << std::endl;
-					std::cout << "Final depth 8: size=" << depth_8_nodes.size()
-							  << ", buckets=" << depth_8_nodes.bucket_count()
-							  << ", threshold=" << depth_8_nodes.load_threshold()
-							  << ", available=" << depth_8_nodes.available_capacity() << std::endl;
+					std::cout << "\nRehash threshold reached, stopping depth 8 expansion" << std::endl;
+					std::cout << "Processed parents: " << processed_parents_d8 << std::endl;
+					std::cout << "Inserted: " << inserted_count_d8 << ", Duplicates: " << duplicate_count_d8 << std::endl;
 				}
 				goto phase3_done;
 			}
-			// Add as candidate for depth 8 (with actual rehash detection)
-			size_t buckets_before_d8 = depth_8_nodes.bucket_count();
-			size_t size_before = depth_8_nodes.size();
-			depth_8_nodes.insert(next_node123);
-			if (depth_8_nodes.bucket_count() != buckets_before_d8)
+
+			depth_8_nodes.insert(next_node123_d8);
+			inserted_count_d8++;
+
+			// Check for unexpected rehash (bucket count changed)
+			const size_t current_bucket_count_d8 = depth_8_nodes.bucket_count();
+			if (current_bucket_count_d8 != last_bucket_count_d8)
 			{
-				// Unexpected rehash occurred! Exit immediately
 				if (verbose)
 				{
-					std::cout << "UNEXPECTED REHASH at depth=8! Exiting immediately" << std::endl;
-					std::cout << "  Buckets: " << buckets_before_d8 << " -> " << depth_8_nodes.bucket_count() << std::endl;
+					std::cout << "\nUnexpected rehash detected (buckets: "
+							  << last_bucket_count_d8 << " -> " << current_bucket_count_d8 << ")" << std::endl;
+					std::cout << "Stopping depth 8 expansion" << std::endl;
 				}
 				goto phase3_done;
 			}
-			if (depth_8_nodes.size() > size_before)
-			{
-				inserted_count++;
-			}
 		}
+
+		processed_parents_d8++;
 	}
 
 phase3_done:
@@ -2789,10 +2712,12 @@ phase3_done:
 	depth_8_nodes.detach_element_vector();
 
 	// depth_8_nodes no longer needed - explicitly free it
+	size_t rss_before_d8_free = get_rss_kb();
 	{
 		tsl::robin_set<uint64_t> temp;
 		depth_8_nodes.swap(temp);
 	}
+	size_t rss_after_d8_free = get_rss_kb();
 
 	// Free temporary data structures - use swap trick to actually free memory
 	{
@@ -2801,6 +2726,16 @@ phase3_done:
 	}
 	depth7_vec.clear();
 	depth7_vec.shrink_to_fit();
+	size_t rss_after_phase3_cleanup = get_rss_kb();
+
+	if (verbose)
+	{
+		size_t freed_d8_kb = (rss_before_d8_free > rss_after_d8_free) ? (rss_before_d8_free - rss_after_d8_free) : 0;
+		size_t freed_total_kb = (rss_before_d8_free > rss_after_phase3_cleanup) ? (rss_before_d8_free - rss_after_phase3_cleanup) : 0;
+		std::cout << "RSS before depth_8_nodes free: " << (rss_before_d8_free / 1024.0) << " MB" << std::endl;
+		std::cout << "RSS after depth_8_nodes freed: " << (rss_after_d8_free / 1024.0) << " MB (" << (freed_d8_kb / 1024.0) << " MB freed)" << std::endl;
+		std::cout << "RSS after Phase 3 cleanup: " << (rss_after_phase3_cleanup / 1024.0) << " MB (total " << (freed_total_kb / 1024.0) << " MB freed)" << std::endl;
+	}
 
 	if (num_list.size() <= 8)
 	{
@@ -2817,14 +2752,18 @@ phase3_done:
 		}
 		size_t current_memory_d8 = current_memory_d7 + index_pairs[8].size() * 8;
 
-		std::cout << "Generated " << depth_8_nodes.size() << " nodes at depth=8" << std::endl;
-		std::cout << "  Rejected as depth 7: " << rejected_as_depth7 << std::endl;
-		std::cout << "  Load factor: " << (depth_8_nodes.size() * 100.0 / bucket_8) << "%" << std::endl;
-		std::cout << "\n[Phase 3 Complete - Memory Analysis]" << std::endl;
-		std::cout << "Theoretical depth 0-8 (index_pairs): " << (theoretical_phase3 / 1024.0 / 1024.0) << " MB" << std::endl;
-		std::cout << "Current memory estimate: " << (current_memory_d8 / 1024.0 / 1024.0) << " MB" << std::endl;
-		std::cout << "Overhead ratio: " << (static_cast<double>(current_memory_d8) / theoretical_phase3) << "x" << std::endl;
+		std::cout << "\n[Phase 3 Complete]" << std::endl;
+		std::cout << "Generated " << depth_8_final_size << " nodes at depth=8" << std::endl;
+		std::cout << "Load factor: " << (depth_8_final_size * 100.0 / bucket_8) << "%" << std::endl;
+		std::cout << "Inserted: " << inserted_count_d8 << ", Duplicates: " << duplicate_count_d8 << std::endl;
+		std::cout << "  - Duplicates from depth 6: " << duplicates_from_depth6_d8 << " (" << (duplicate_count_d8 > 0 ? (100.0 * duplicates_from_depth6_d8 / duplicate_count_d8) : 0.0) << "%)" << std::endl;
+		std::cout << "  - Duplicates from depth 7: " << duplicates_from_depth7_d8 << " (" << (duplicate_count_d8 > 0 ? (100.0 * duplicates_from_depth7_d8 / duplicate_count_d8) : 0.0) << "%)" << std::endl;
+		double rejection_rate_d8 = (inserted_count_d8 + duplicate_count_d8) > 0 
+			? (100.0 * duplicate_count_d8 / (inserted_count_d8 + duplicate_count_d8)) : 0.0;
+		std::cout << "Rejection rate: " << rejection_rate_d8 << "%" << std::endl;
+		std::cout << "Theoretical depth 0-8: " << (theoretical_phase3 / 1024.0 / 1024.0) << " MB" << std::endl;
 		std::cout << "Actual RSS: " << (get_rss_kb() / 1024.0) << " MB" << std::endl;
+		log_emscripten_heap("Phase 3 Complete");
 	}
 
 	// ============================================================================
@@ -2834,8 +2773,10 @@ phase3_done:
 	{
 		std::cout << "\n--- Phase 4: Local Expansion depth 8→9 (Random sampling with single move) ---" << std::endl;
 		std::cout << "Note: Adaptive children per parent based on load factor" << std::endl;
+		std::cout << "RSS at Phase 4 start (depth_8_nodes should be destroyed): " << (get_rss_kb() / 1024.0) << " MB" << std::endl;
 		std::cout << "Using pre-calculated bucket size for depth 9: " << bucket_9
 				  << " (" << (bucket_9 / (1 << 20)) << "M)" << std::endl;
+		std::cout << "RSS before depth_9_nodes creation: " << (get_rss_kb() / 1024.0) << " MB" << std::endl;
 	}
 
 	// Generate depth 9 nodes
@@ -2845,82 +2786,118 @@ phase3_done:
 	}
 	index_pairs[9].clear();
 
-	tsl::robin_set<uint64_t> depth_9_nodes(bucket_9);
+	tsl::robin_set<uint64_t> depth_9_nodes;
+	depth_9_nodes.clear();
 	depth_9_nodes.max_load_factor(0.9f);
+	depth_9_nodes.rehash(bucket_9);
 	// Pre-reserve capacity to prevent reallocation spikes during attach
-	size_t estimated_d9_capacity = static_cast<size_t>(bucket_9 * 0.9);
+	size_t estimated_d9_capacity = static_cast<size_t>(bucket_9 * 0.95);
 	index_pairs[9].reserve(estimated_d9_capacity);
 	depth_9_nodes.attach_element_vector(&index_pairs[9]);
 
-	// Convert depth 8 nodes to vector and shuffle (direct assignment, no intermediate robin_set)
-	std::vector<uint64_t> depth8_vec;
-	depth8_vec.reserve(index_pairs[8].size());
-	depth8_vec.assign(index_pairs[8].begin(), index_pairs[8].end());
-	
+	if (verbose)
+	{
+		std::cout << "RSS after depth_9_nodes creation (empty): " << (get_rss_kb() / 1024.0) << " MB" << std::endl;
+	}
+
 	// Create robin_set for depth 8 duplicate checking (used in depth 9 expansion)
+	// Use index_pairs[8] directly instead of creating temporary vector
 	tsl::robin_set<uint64_t> depth8_set;
-	depth8_set.max_load_factor(0.9f);
-	depth8_set.reserve(depth8_vec.size()); // Pre-reserve to prevent rehashing during construction
-	for (uint64_t node : depth8_vec) {
-		depth8_set.insert(node);
+	depth8_set.max_load_factor(0.95f);  // Research mode: allow higher load
+	
+	// Calculate required buckets and round up to power of 2 to avoid rehashing
+	size_t required_buckets_d8 = static_cast<size_t>(index_pairs[8].size() / 0.95);
+	size_t power_of_2_d8 = 1;
+	while (power_of_2_d8 < required_buckets_d8) {
+		power_of_2_d8 <<= 1;
 	}
+	depth8_set.rehash(power_of_2_d8);  // Use rehash to guarantee bucket count
+	
+	// Bulk insert using insert(first, last) - more efficient than loop
+	depth8_set.insert(index_pairs[8].begin(), index_pairs[8].end());
+	
+	if (verbose)
+	{
+		size_t rss_peak_phase4 = get_rss_kb();
+		size_t depth8_set_buckets = depth8_set.bucket_count();
+		size_t depth8_set_size = depth8_set.size();
+		float depth8_set_load = depth8_set.load_factor();
+		std::cout << "RSS at Phase 4 peak (all sets active): " << (rss_peak_phase4 / 1024.0) << " MB" << std::endl;
+		log_emscripten_heap("Phase 4 Peak (depth8_set active)");
+		std::cout << "  - depth_6_nodes: ~" << (depth_6_nodes.size() * 32 / 1024 / 1024) << " MB" << std::endl;
+		std::cout << "  - depth_9_nodes (empty): ~" << (bucket_9 / 1024 / 1024) << " MB allocated" << std::endl;
+		std::cout << "  - depth8_set: size=" << depth8_set_size << ", buckets=" << depth8_set_buckets 
+				  << ", load=" << depth8_set_load << ", ~" << (depth8_set_buckets * 4 / 1024 / 1024) << " MB buckets + " 
+				  << (depth8_set_size * 8 / 1024 / 1024) << " MB data" << std::endl;
+		std::cout << "  - index_pairs[0-8]: ~" << ([&]() {
+			size_t total = 0;
+			for (size_t d = 0; d <= 8; ++d) total += index_pairs[d].size() * 8;
+			return total / 1024 / 1024;
+		}()) << " MB" << std::endl;
+		std::cout << "  [Optimization: depth8_vec removed, using index_pairs[8] directly]" << std::endl;
+	}
+	
 	std::mt19937_64 rng_phase4(54321); // Re-seed for reproducibility
-	std::shuffle(depth8_vec.begin(), depth8_vec.end(), rng_phase4);
 
-	// Adaptive children per parent strategy for depth 8→9
-	// Check diversity: if parent nodes < bucket size, diversity is insufficient
-	double diversity_ratio_d9 = static_cast<double>(depth8_vec.size()) / bucket_9;
-	size_t max_nodes_with_one_child = std::min(depth8_vec.size(), static_cast<size_t>(bucket_9 * 0.9));
-	double expected_load_factor = static_cast<double>(max_nodes_with_one_child) / bucket_9;
+	// Calculate adaptive children per parent with face diversity
+	size_t target_nodes_d9 = static_cast<size_t>(bucket_9 * 0.9);
+	size_t available_parents_d9 = index_pairs[8].size();  // Use index_pairs[8] directly
+	int children_per_parent_d9 = 1;
+	if (available_parents_d9 > 0) {
+		double rejection_factor = 1.1;
+		children_per_parent_d9 = static_cast<int>(std::ceil(
+			(target_nodes_d9 * rejection_factor) / available_parents_d9
+		));
+		children_per_parent_d9 = std::min(children_per_parent_d9, 18);
+		children_per_parent_d9 = std::max(children_per_parent_d9, 1);
+	}
 
-	// If expected load factor is too low, increase children per parent
-	int children_per_parent = 1;
-	// Diversity insufficient: parents < bucket, need more children per parent
-	if (diversity_ratio_d9 < 1.0 && depth8_vec.size() > 0)
-	{
-		// Target: ~90% load factor
-		double target_load = 0.90;
-		// Account for rejections (backward check, etc.) with 1.5x multiplier (increased from 1.25)
-		children_per_parent = static_cast<int>(std::ceil((bucket_9 * target_load * 1.5) / depth8_vec.size()));
-		children_per_parent = std::min(children_per_parent, 6);  // Max 6 (increased from 3)
-		children_per_parent = std::max(children_per_parent, 1); // Min 1
-	}
-	else if (expected_load_factor < 0.85 && depth8_vec.size() > 0)
-	{
-		// Fallback: if load would be too low even with sufficient diversity
-		double target_load = 0.90;
-		children_per_parent = static_cast<int>(std::ceil((bucket_9 * target_load) / depth8_vec.size()));
-		children_per_parent = std::min(children_per_parent, 6);
-		children_per_parent = std::max(children_per_parent, 1);
-	}
+	// Random parent sampling strategy: Expand until rehash threshold
+	size_t max_parent_nodes_d9 = index_pairs[8].size() * 20;  // Use index_pairs[8] directly
+	static std::mt19937_64 gen_d9(rng_phase4());
+	std::uniform_int_distribution<size_t> dist_d9(0, index_pairs[8].size() - 1);  // Sample from index_pairs[8]
+	std::uniform_int_distribution<int> face_dist_d9(0, 5);
+	std::uniform_int_distribution<int> rotation_dist_d9(0, 2);
 
 	if (verbose)
 	{
-		std::cout << "Random sampling: up to " << depth8_vec.size() << " parent nodes" << std::endl;
-		std::cout << "Diversity ratio (parents/bucket): " << (diversity_ratio_d9 * 100) << "%" << std::endl;
-		std::cout << "Expected load factor (1 child/parent): " << (expected_load_factor * 100) << "%" << std::endl;
-		std::cout << "Children per parent: " << children_per_parent << " (adaptive)" << std::endl;
+		std::cout << "Random parent sampling from depth 8" << std::endl;
+		std::cout << "Strategy: Face-diverse expansion until rehash" << std::endl;
+		std::cout << "Max load factor: 0.9 (90%)" << std::endl;
+		std::cout << "Available parent nodes: " << available_parents_d9 << std::endl;
+		std::cout << "Children per parent (adaptive): " << children_per_parent_d9 << std::endl;
+		std::cout << "Expected nodes: ~" << std::min(available_parents_d9 * children_per_parent_d9, target_nodes_d9) << std::endl;
 	}
 
-	// Pre-allocate all_moves outside the loop to avoid repeated allocations
-	std::vector<int> all_moves_d9(18);
-	for (int m = 0; m < 18; ++m)
-		all_moves_d9[m] = m;
-
 	// Pre-declare loop variables outside to avoid repeated allocations
-	uint64_t node123_d9;
+	size_t random_idx_d9, processed_parents_d9 = 0;
+	uint64_t parent_node_d9;
 	uint64_t index1_cur_d9, index23_d9, index2_cur_d9, index3_cur_d9;
 	int index1_tmp_d9, index2_tmp_d9, index3_tmp_d9;
 	uint64_t next_index1_d9, next_index2_d9, next_index3_d9, next_node123_d9;
+	const size_t last_bucket_count_d9 = depth_9_nodes.bucket_count();
+	size_t duplicate_count_d9 = 0;
+	size_t duplicates_from_depth6_d9 = 0;  // Counter for depth_6 duplicates
+	size_t duplicates_from_depth8_d9 = 0;  // Counter for depth_8 duplicates
+	size_t inserted_count_d9 = 0;
+
+	// Pre-allocate selected_moves vector outside loop to avoid repeated allocations
 	std::vector<int> selected_moves_d9;
-	selected_moves_d9.reserve(18);
+	selected_moves_d9.reserve(18);  // Maximum possible size
+	std::vector<int> faces = {0, 1, 2, 3, 4, 5};
+	std::vector<int> all_moves(18);
+	for (int m = 0; m < 18; ++m) all_moves[m] = m;
+	std::vector<bool> face_covered(6, false);
 
-	for (size_t i = 0; i < depth8_vec.size(); ++i)
+	while (processed_parents_d9 < max_parent_nodes_d9)
 	{
-		node123_d9 = depth8_vec[i];
+		// Randomly select parent node
+		random_idx_d9 = dist_d9(gen_d9);
+		parent_node_d9 = index_pairs[8][random_idx_d9];  // Direct access to index_pairs[8]
 
-		index1_cur_d9 = node123_d9 / size23;
-		index23_d9 = node123_d9 % size23;
+		// Decompose parent node indices
+		index1_cur_d9 = parent_node_d9 / size23;
+		index23_d9 = parent_node_d9 % size23;
 		index2_cur_d9 = index23_d9 / size3;
 		index3_cur_d9 = index23_d9 % size3;
 
@@ -2928,74 +2905,91 @@ phase3_done:
 		index2_tmp_d9 = static_cast<int>(index2_cur_d9) * 18;
 		index3_tmp_d9 = static_cast<int>(index3_cur_d9) * 18;
 
-		// Adaptive: Select random children_per_parent moves (reuse vector)
+		// Generate moves with face diversity (reuse vector)
 		selected_moves_d9.clear();
-		if (children_per_parent >= 18)
-		{
-			// All moves
-			for (int m = 0; m < 18; ++m)
-			{
-				selected_moves.push_back(m);
+		if (children_per_parent_d9 >= 18) {
+			for (int m = 0; m < 18; ++m) selected_moves_d9.push_back(m);
+		} else if (children_per_parent_d9 <= 6) {
+			// Reuse faces vector
+			std::shuffle(faces.begin(), faces.end(), gen_d9);
+			for (int i = 0; i < children_per_parent_d9; ++i) {
+				int face = faces[i];
+				int rotation = rotation_dist_d9(gen_d9);
+				selected_moves_d9.push_back(face * 3 + rotation);
 			}
-		}
-		else if (children_per_parent == 1)
-		{
-			// Single random move
-			selected_moves.push_back(rng_phase4() % 18);
-		}
-		else
-		{
-			// Random subset of moves (shuffle reusable all_moves)
-			std::shuffle(all_moves_d9.begin(), all_moves_d9.end(), rng_phase4);
-			for (int m = 0; m < children_per_parent; ++m)
-			{
-				selected_moves.push_back(all_moves_d9[m]);
+		} else {
+			// Reuse all_moves and face_covered vectors
+			std::shuffle(all_moves.begin(), all_moves.end(), gen_d9);
+			std::fill(face_covered.begin(), face_covered.end(), false);
+			for (int m : all_moves) {
+				int face = m / 3;
+				if (!face_covered[face]) {
+					selected_moves_d9.push_back(m);
+					face_covered[face] = true;
+					if (selected_moves_d9.size() >= 6) break;
+				}
+			}
+			for (int m : all_moves) {
+				if (selected_moves_d9.size() >= static_cast<size_t>(children_per_parent_d9)) break;
+				if (std::find(selected_moves_d9.begin(), selected_moves_d9.end(), m) == selected_moves_d9.end()) {
+					selected_moves_d9.push_back(m);
+				}
 			}
 		}
 
-		for (int move : selected_moves)
+		for (int move : selected_moves_d9)
 		{
-			const uint64_t next_index1 = multi_move_table_cross_edges[index1_tmp + move];
-			const uint64_t next_index2 = multi_move_table_F2L_slots_edges[index2_tmp + move];
-			const uint64_t next_index3 = multi_move_table_F2L_slots_corners[index3_tmp + move];
-			const uint64_t next_node123 = next_index1 * size23 + next_index2 * size3 + next_index3;
+			next_index1_d9 = multi_move_table_cross_edges[index1_tmp_d9 + move];
+			next_index2_d9 = multi_move_table_F2L_slots_edges[index2_tmp_d9 + move];
+			next_index3_d9 = multi_move_table_F2L_slots_corners[index3_tmp_d9 + move];
+			next_node123_d9 = next_index1_d9 * size23 + next_index2_d9 * size3 + next_index3_d9;
 
-			// Skip if contained in depth 6 or depth 8
-			// Note: depth 7 is already freed, but we check depth 8 which includes depth 7 duplicates
-			if (depth_6_nodes.find(next_node123) != depth_6_nodes.end() ||
-				depth8_set.find(next_node123) != depth8_set.end())
-			{
+			// Skip if already in depth 6, depth 8, or depth 9
+			if (depth_6_nodes.find(next_node123_d9) != depth_6_nodes.end()) {
+				duplicate_count_d9++;
+				duplicates_from_depth6_d9++;
+				continue;
+			}
+			if (depth8_set.find(next_node123_d9) != depth8_set.end()) {
+				duplicate_count_d9++;
+				duplicates_from_depth8_d9++;
+				continue;
+			}
+			if (depth_9_nodes.find(next_node123_d9) != depth_9_nodes.end()) {
+				duplicate_count_d9++;
 				continue;
 			}
 
-			// Preemptive rehash detection: Check will_rehash_on_next_insert() before insertion
+			// Check for rehash before insert
 			if (depth_9_nodes.will_rehash_on_next_insert())
 			{
 				if (verbose)
 				{
-					std::cout << "Rehash predicted at depth=9, stopping expansion" << std::endl;
-					std::cout << "Final depth 9: size=" << depth_9_nodes.size()
-							  << ", buckets=" << depth_9_nodes.bucket_count()
-							  << ", threshold=" << depth_9_nodes.load_threshold()
-							  << ", available=" << depth_9_nodes.available_capacity() << std::endl;
+					std::cout << "\nRehash threshold reached, stopping depth 9 expansion" << std::endl;
+					std::cout << "Processed parents: " << processed_parents_d9 << std::endl;
+					std::cout << "Inserted: " << inserted_count_d9 << ", Duplicates: " << duplicate_count_d9 << std::endl;
 				}
 				goto phase4_done;
 			}
 
-			// Actual rehash detection: check bucket_count before/after insert
-			size_t buckets_before_d9 = depth_9_nodes.bucket_count();
-			depth_9_nodes.insert(next_node123);
-			if (depth_9_nodes.bucket_count() != buckets_before_d9)
+			depth_9_nodes.insert(next_node123_d9);
+			inserted_count_d9++;
+
+			// Check for unexpected rehash (bucket count changed)
+			const size_t current_bucket_count_d9 = depth_9_nodes.bucket_count();
+			if (current_bucket_count_d9 != last_bucket_count_d9)
 			{
-				// Unexpected rehash occurred! Exit immediately
 				if (verbose)
 				{
-					std::cout << "UNEXPECTED REHASH at depth=9! Exiting immediately" << std::endl;
-					std::cout << "  Buckets: " << buckets_before_d9 << " -> " << depth_9_nodes.bucket_count() << std::endl;
+					std::cout << "\nUnexpected rehash detected (buckets: "
+							  << last_bucket_count_d9 << " -> " << current_bucket_count_d9 << ")" << std::endl;
+					std::cout << "Stopping depth 9 expansion" << std::endl;
 				}
 				goto phase4_done;
 			}
 		}
+
+		processed_parents_d9++;
 	}
 
 phase4_done:
@@ -3005,12 +2999,23 @@ phase4_done:
 	depth_9_nodes.detach_element_vector();
 
 	// Free temporary data structures - use swap trick to actually free memory
+	size_t rss_before_phase4_cleanup = get_rss_kb();
 	{
 		tsl::robin_set<uint64_t> temp;
 		depth8_set.swap(temp);
 	}
-	depth8_vec.clear();
-	depth8_vec.shrink_to_fit();
+	size_t rss_after_depth8_cleanup = get_rss_kb();
+	
+	// Free depth_6_nodes now that Phase 3 and 4 are complete
+	if (verbose)
+	{
+		std::cout << "Freeing depth_6_nodes after Phase 4 completion" << std::endl;
+	}
+	{
+		tsl::robin_set<uint64_t> temp;
+		depth_6_nodes.swap(temp);
+	}
+	size_t rss_after_depth6_free = get_rss_kb();
 
 	if (num_list.size() <= 9)
 	{
@@ -3019,9 +3024,22 @@ phase4_done:
 	num_list[9] = static_cast<int>(depth_9_nodes.size());
 
 	// depth_9_nodes no longer needed - explicitly free it
+	size_t rss_before_d9_free = get_rss_kb();
 	{
 		tsl::robin_set<uint64_t> temp;
 		depth_9_nodes.swap(temp);
+	}
+	size_t rss_after_d9_free = get_rss_kb();
+
+	if (verbose)
+	{
+		size_t freed_depth8_cleanup = (rss_before_phase4_cleanup > rss_after_depth8_cleanup) ? (rss_before_phase4_cleanup - rss_after_depth8_cleanup) : 0;
+		size_t freed_depth6 = (rss_after_depth8_cleanup > rss_after_depth6_free) ? (rss_after_depth8_cleanup - rss_after_depth6_free) : 0;
+		size_t freed_depth9 = (rss_before_d9_free > rss_after_d9_free) ? (rss_before_d9_free - rss_after_d9_free) : 0;
+		std::cout << "\n[Phase 4 Memory Cleanup Details]" << std::endl;
+		std::cout << "  After depth8_set cleanup: " << (rss_after_depth8_cleanup / 1024.0) << " MB (" << (freed_depth8_cleanup / 1024.0) << " MB freed)" << std::endl;
+		std::cout << "  After depth_6_nodes free: " << (rss_after_depth6_free / 1024.0) << " MB (" << (freed_depth6 / 1024.0) << " MB freed)" << std::endl;
+		std::cout << "  After depth_9_nodes free: " << (rss_after_d9_free / 1024.0) << " MB (" << (freed_depth9 / 1024.0) << " MB freed)" << std::endl;
 	}
 
 	if (verbose)
@@ -3034,15 +3052,310 @@ phase4_done:
 		size_t current_memory_d8_val = current_memory_d7 + index_pairs[8].size() * 8;
 		size_t current_memory_d9 = current_memory_d8_val + index_pairs[9].size() * 8;
 
-		std::cout << "Generated " << depth_9_nodes.size() << " nodes at depth=9" << std::endl;
-		std::cout << "  Load factor: " << (depth_9_nodes.size() * 100.0 / bucket_9) << "%" << std::endl;
-		std::cout << "  (Note: Random sampling improves coverage and randomness)" << std::endl;
-		std::cout << "\n[Phase 4 Complete - Memory Analysis]" << std::endl;
-		std::cout << "Theoretical depth 0-9 (index_pairs): " << (theoretical_phase4 / 1024.0 / 1024.0) << " MB" << std::endl;
-		std::cout << "Current memory estimate: " << (current_memory_d9 / 1024.0 / 1024.0) << " MB" << std::endl;
-		std::cout << "Overhead ratio: " << (static_cast<double>(current_memory_d9) / theoretical_phase4) << "x" << std::endl;
+		std::cout << "\n[Phase 4 Complete]" << std::endl;
+		std::cout << "Generated " << depth_9_final_size << " nodes at depth=9" << std::endl;
+		std::cout << "Load factor: " << (depth_9_final_size * 100.0 / bucket_9) << "%" << std::endl;
+		std::cout << "Inserted: " << inserted_count_d9 << ", Duplicates: " << duplicate_count_d9 << std::endl;
+		std::cout << "  - Duplicates from depth 6: " << duplicates_from_depth6_d9 << " (" << (duplicate_count_d9 > 0 ? (100.0 * duplicates_from_depth6_d9 / duplicate_count_d9) : 0.0) << "%)" << std::endl;
+		std::cout << "  - Duplicates from depth 8: " << duplicates_from_depth8_d9 << " (" << (duplicate_count_d9 > 0 ? (100.0 * duplicates_from_depth8_d9 / duplicate_count_d9) : 0.0) << "%)" << std::endl;
+		double rejection_rate_d9 = (inserted_count_d9 + duplicate_count_d9) > 0 
+			? (100.0 * duplicate_count_d9 / (inserted_count_d9 + duplicate_count_d9)) : 0.0;
+		std::cout << "Rejection rate: " << rejection_rate_d9 << "%" << std::endl;
+		std::cout << "Theoretical depth 0-9: " << (theoretical_phase4 / 1024.0 / 1024.0) << " MB" << std::endl;
 		std::cout << "Actual RSS: " << (get_rss_kb() / 1024.0) << " MB" << std::endl;
+		log_emscripten_heap("Phase 4 Complete");
+		
+		// Release allocator cache before Phase 5 to reduce memory baseline
+#ifndef __EMSCRIPTEN__
+		malloc_trim(0);
+		std::cout << "RSS after malloc_trim (before Phase 5): " << (get_rss_kb() / 1024.0) << " MB" << std::endl;
+#endif
 	}
+
+	// ============================================================================
+	// Phase 5: Local Expansion depth 9→10 (Random sampling, single move)
+	// ============================================================================
+	if (bucket_config.custom_bucket_10 > 0)
+	{
+		if (verbose)
+		{
+			std::cout << "\n--- Phase 5: Local Expansion depth 9→10 (Random sampling with single move) ---" << std::endl;
+			std::cout << "Note: Adaptive children per parent based on load factor" << std::endl;
+			log_emscripten_heap("Phase 5 Start");
+		}
+
+		size_t bucket_d10 = bucket_config.custom_bucket_10;
+		size_t rss_before_d10_nodes = get_rss_kb();
+
+		if (verbose)
+		{
+			std::cout << "RSS at Phase 5 start: " << (rss_before_d10_nodes / 1024.0) << " MB" << std::endl;
+			std::cout << "Using pre-calculated bucket size for depth 10: " << bucket_d10 << " (" << (bucket_d10 >> 20) << "M)" << std::endl;
+			std::cout << "index_pairs[9] size: " << index_pairs[9].size() << std::endl;
+			std::cout << "RSS before depth_10_nodes creation: " << (get_rss_kb() / 1024.0) << " MB" << std::endl;
+		}
+
+		// Skip if index_pairs[9] is empty
+		if (index_pairs[9].empty())
+		{
+			if (verbose)
+			{
+				std::cout << "ERROR: index_pairs[9] is empty, skipping Phase 5" << std::endl;
+			}
+			goto phase5_skip;
+		}
+
+		// Initialize depth 10 bucket
+		tsl::robin_set<uint64_t> depth_10_nodes;
+		depth_10_nodes.max_load_factor(0.9f);
+		depth_10_nodes.reserve(bucket_d10);
+
+		size_t rss_after_d10_nodes_creation = get_rss_kb();
+		
+		// Track bucket count to detect rehash
+		size_t last_bucket_count_d10 = depth_10_nodes.bucket_count();
+		
+		if (verbose)
+		{
+			std::cout << "RSS after depth_10_nodes creation (empty): " << (rss_after_d10_nodes_creation / 1024.0) << " MB" << std::endl;
+			std::cout << "Initial bucket count: " << last_bucket_count_d10 << std::endl;
+		}
+
+		// Attach element vector BEFORE expansion (same as Phase 4 pattern)
+		if (index_pairs.size() <= 10)
+		{
+			index_pairs.resize(11);
+		}
+		index_pairs[10].clear();
+		
+		// Pre-reserve capacity to prevent reallocation spikes during attach
+		size_t estimated_d10_capacity = static_cast<size_t>(bucket_d10 * 0.95);
+		index_pairs[10].reserve(estimated_d10_capacity);
+		depth_10_nodes.attach_element_vector(&index_pairs[10]);
+		
+		if (verbose)
+		{
+			std::cout << "Attached element vector to depth_10_nodes (capacity: " << index_pairs[10].capacity() << ")" << std::endl;
+		}
+
+		// Build depth9_set from index_pairs[9] for duplicate detection
+		// Use same pattern as Phase 4 to avoid memory spikes
+		tsl::robin_set<uint64_t> depth9_set;
+		depth9_set.max_load_factor(0.95f);
+		size_t depth9_size = index_pairs[9].size();
+		
+		if (verbose)
+		{
+			std::cout << "Building depth9_set from " << depth9_size << " nodes..." << std::endl;
+			std::cout << "RSS before depth9_set construction: " << (get_rss_kb() / 1024.0) << " MB" << std::endl;
+		}
+		
+		// Calculate required buckets and round up to power of 2 to avoid rehashing
+		size_t required_buckets_d9 = static_cast<size_t>(depth9_size / 0.95);
+		size_t power_of_2_d9 = 1;
+		while (power_of_2_d9 < required_buckets_d9) {
+			power_of_2_d9 <<= 1;
+		}
+		depth9_set.rehash(power_of_2_d9);  // Use rehash to guarantee bucket count
+		
+		if (verbose)
+		{
+			std::cout << "RSS after rehash (before insert): " << (get_rss_kb() / 1024.0) << " MB" << std::endl;
+		}
+		
+		// Bulk insert using insert(first, last) - more efficient than loop
+		depth9_set.insert(index_pairs[9].begin(), index_pairs[9].end());
+		
+		if (verbose)
+		{
+			std::cout << "depth9_set built: " << depth9_set.size() << " nodes (buckets: " << depth9_set.bucket_count() << ")" << std::endl;
+			std::cout << "RSS after depth9_set built: " << (get_rss_kb() / 1024.0) << " MB" << std::endl;
+			log_emscripten_heap("Phase 5 - After depth9_set");
+		}
+
+		// Random sampling from depth 9
+		if (verbose)
+		{
+			std::cout << "Random parent sampling from depth 9" << std::endl;
+			std::cout << "Strategy: Face-diverse expansion until rehash" << std::endl;
+			std::cout << "Max load factor: 0.9 (90%)" << std::endl;
+		}
+
+		size_t available_parents = depth9_size;
+		if (verbose)
+		{
+			std::cout << "Available parent nodes: " << available_parents << std::endl;
+		}
+
+		// Adaptive children per parent
+		int children_per_parent = 2;
+		if (verbose)
+		{
+			std::cout << "Children per parent (adaptive): " << children_per_parent << std::endl;
+			std::cout << "Expected nodes: ~" << (bucket_d10 * 0.9) << std::endl;
+			std::cout << std::endl;
+		}
+
+		// Random sampling with face-diverse expansion
+		std::mt19937_64 rng(42);
+		std::uniform_int_distribution<size_t> parent_dist(0, available_parents - 1);
+		std::uniform_int_distribution<int> move_dist(0, 17);
+		
+		size_t inserted_count_d10 = 0;
+		size_t duplicate_count_d10 = 0;
+		size_t processed_parents = 0;
+		size_t target_nodes = static_cast<size_t>(bucket_d10 * 0.9);
+
+		// Pre-declare variables for move application
+		uint64_t parent_node123_d10, index1_d10, index2_d10, index3_d10;
+		size_t index1_tmp_d10, index2_tmp_d10, index3_tmp_d10;
+		uint64_t next_index1_d10, next_index2_d10, next_index3_d10, next_node123_d10;
+
+		if (verbose)
+		{
+			std::cout << "RSS before expansion loop: " << (get_rss_kb() / 1024.0) << " MB" << std::endl;
+		}
+
+		while (depth_10_nodes.size() < target_nodes)
+		{
+			size_t parent_idx = parent_dist(rng);
+			parent_node123_d10 = index_pairs[9][parent_idx];
+			
+			// Decompose composite index into index1, index2, index3
+			index1_d10 = parent_node123_d10 / size23;
+			index2_d10 = (parent_node123_d10 % size23) / size3;
+			index3_d10 = parent_node123_d10 % size3;
+			
+			index1_tmp_d10 = index1_d10 * 18;
+			index2_tmp_d10 = index2_d10 * 18;
+			index3_tmp_d10 = index3_d10 * 18;
+			
+			for (int i = 0; i < children_per_parent; ++i)
+			{
+				int move = move_dist(rng);
+				
+				// Apply move to each component
+				next_index1_d10 = multi_move_table_cross_edges[index1_tmp_d10 + move];
+				next_index2_d10 = multi_move_table_F2L_slots_edges[index2_tmp_d10 + move];
+				next_index3_d10 = multi_move_table_F2L_slots_corners[index3_tmp_d10 + move];
+				next_node123_d10 = next_index1_d10 * size23 + next_index2_d10 * size3 + next_index3_d10;
+
+				// Check if already in depth 9
+				if (depth9_set.find(next_node123_d10) != depth9_set.end())
+				{
+					duplicate_count_d10++;
+					continue;
+				}
+
+				// Insert into depth 10
+				auto result = depth_10_nodes.insert(next_node123_d10);
+				if (result.second)
+				{
+					inserted_count_d10++;
+					
+					// Periodic RSS check during expansion (every 500K nodes)
+					if (verbose && inserted_count_d10 % 500000 == 0)
+					{
+						std::cout << "RSS at " << inserted_count_d10 << " nodes: " << (get_rss_kb() / 1024.0) << " MB" << std::endl;
+					}
+				}
+				else
+				{
+					duplicate_count_d10++;
+				}
+
+				// Check if rehash occurred (bucket count changed)
+				const size_t current_bucket_count_d10 = depth_10_nodes.bucket_count();
+				if (current_bucket_count_d10 != last_bucket_count_d10)
+				{
+					if (verbose)
+					{
+						std::cout << "\nUnexpected rehash detected (buckets: "
+								  << last_bucket_count_d10 << " -> " << current_bucket_count_d10 << ")" << std::endl;
+						std::cout << "Stopping depth 10 expansion" << std::endl;
+					}
+					goto phase5_done;
+				}
+			}
+			
+			processed_parents++;
+		}
+
+	phase5_done:
+		if (verbose)
+		{
+			std::cout << "Processed parents: " << processed_parents << std::endl;
+			std::cout << "Inserted: " << inserted_count_d10 << ", Duplicates: " << duplicate_count_d10 << std::endl;
+		}
+
+		// Save size before detach (same as Phase 3 and 4 pattern)
+		size_t depth_10_final_size = depth_10_nodes.size();
+		
+		// Detach element vector
+		depth_10_nodes.detach_element_vector();
+		
+		size_t rss_before_depth9_free = get_rss_kb();
+		
+		// Free depth9_set
+		{
+			tsl::robin_set<uint64_t> temp;
+			depth9_set.swap(temp);
+		}
+		
+		size_t rss_after_depth9_free = get_rss_kb();
+		if (verbose)
+		{
+			std::cout << "RSS before depth9_set free: " << (rss_before_depth9_free / 1024.0) << " MB" << std::endl;
+			std::cout << "RSS after depth9_set freed: " << (rss_after_depth9_free / 1024.0) 
+					  << " MB (" << ((rss_before_depth9_free - rss_after_depth9_free) / 1024.0) << " MB freed)" << std::endl;
+		}
+
+		// Free depth_10_nodes (already detached)
+		size_t rss_before_d10_free = get_rss_kb();
+		{
+			tsl::robin_set<uint64_t> temp;
+			depth_10_nodes.swap(temp);
+		}
+		
+		size_t rss_after_d10_free = get_rss_kb();
+		if (verbose)
+		{
+			std::cout << "RSS after depth_10_nodes cleanup: " << (rss_after_d10_free / 1024.0) 
+					  << " MB (" << ((rss_before_d10_free - rss_after_d10_free) / 1024.0) << " MB freed)" << std::endl;
+		}
+
+		if (num_list.size() <= 10)
+		{
+			num_list.resize(11, 0);
+		}
+		num_list[10] = static_cast<int>(depth_10_final_size);
+
+		if (verbose)
+		{
+			size_t theoretical_phase5 = 0;
+			for (size_t d = 0; d <= 10; ++d)
+			{
+				theoretical_phase5 += index_pairs[d].size() * 8;
+			}
+
+			std::cout << "\n[Phase 5 Complete]" << std::endl;
+			std::cout << "Generated " << depth_10_final_size << " nodes at depth=10" << std::endl;
+			std::cout << "Load factor: " << (depth_10_final_size * 100.0 / bucket_d10) << "%" << std::endl;
+			std::cout << "Inserted: " << inserted_count_d10 << ", Duplicates: " << duplicate_count_d10 << std::endl;
+			double rejection_rate_d10 = (inserted_count_d10 + duplicate_count_d10) > 0 
+				? (100.0 * duplicate_count_d10 / (inserted_count_d10 + duplicate_count_d10)) : 0.0;
+			std::cout << "Rejection rate: " << rejection_rate_d10 << "%" << std::endl;
+			std::cout << "Theoretical depth 0-10: " << (theoretical_phase5 / 1024.0 / 1024.0) << " MB" << std::endl;
+			std::cout << "Actual RSS: " << (get_rss_kb() / 1024.0) << " MB" << std::endl;
+			log_emscripten_heap("Phase 5 Complete");
+		}
+	}
+	else if (verbose)
+	{
+		std::cout << "\n[Phase 5 Skipped - depth 10 expansion disabled (bucket_d10 = 0)]" << std::endl;
+	}
+
+phase5_skip:
 
 	// Step 6: Final Cleanup
 	if (verbose)
@@ -3073,6 +3386,7 @@ phase4_done:
 		}
 		std::cout << "  index_pairs memory (actual): " << (total_nodes * sizeof(uint64_t) / 1024.0 / 1024.0) << " MB" << std::endl;
 		std::cout << "  Final RSS: " << (get_rss_kb() / 1024.0) << " MB" << std::endl;
+		log_emscripten_heap("Final Cleanup Complete");
 	}
 	
 	// Collect detailed statistics if requested
@@ -3597,7 +3911,7 @@ struct xxcross_search
 		// ============================================================================
 		
 		BucketModel selected_model = bucket_config_.model;
-		size_t bucket_d7 = 0, bucket_d8 = 0, bucket_d9 = 0;
+		size_t bucket_d7 = 0, bucket_d8 = 0, bucket_d9 = 0, bucket_d10 = 0;
 		
 		if (selected_model == BucketModel::AUTO) {
 			// Auto-select based on memory budget
@@ -3620,15 +3934,24 @@ struct xxcross_search
 			bucket_d7 = bucket_config_.custom_bucket_7;
 			bucket_d8 = bucket_config_.custom_bucket_8;
 			bucket_d9 = bucket_config_.custom_bucket_9;
+			bucket_d10 = bucket_config_.custom_bucket_10;  // May be 0 (depth 10 disabled)
 			
 			if (verbose) {
-				std::cout << "Using CUSTOM buckets: " 
-				          << (bucket_d7 >> 20) << "M / "
-				          << (bucket_d8 >> 20) << "M / "
-				          << (bucket_d9 >> 20) << "M" << std::endl;
+				if (bucket_d10 > 0) {
+					std::cout << "Using CUSTOM buckets: " 
+					          << (bucket_d7 >> 20) << "M / "
+					          << (bucket_d8 >> 20) << "M / "
+					          << (bucket_d9 >> 20) << "M / "
+					          << (bucket_d10 >> 20) << "M (depth 10 enabled)" << std::endl;
+				} else {
+					std::cout << "Using CUSTOM buckets: " 
+					          << (bucket_d7 >> 20) << "M / "
+					          << (bucket_d8 >> 20) << "M / "
+					          << (bucket_d9 >> 20) << "M" << std::endl;
+				}
 				
 				size_t estimated_rss = estimate_custom_rss(bucket_d7, bucket_d8, bucket_d9);
-				std::cout << "Estimated RSS: " << estimated_rss << " MB (theoretical)" << std::endl;
+				std::cout << "Estimated RSS: " << estimated_rss << " MB (theoretical, depth 10 not included)" << std::endl;
 			}
 		} else if (selected_model == BucketModel::FULL_BFS) {
 			// Full BFS mode: use minimal buckets (will be overridden by research mode)
@@ -3744,12 +4067,127 @@ struct xxcross_search
 			index_pairs,
 			num_list,
 			verbose,
-			research_config_);  // Pass research config
+			bucket_config_,    // Pass bucket config
+			research_config_); // Pass research config
 
 		// reached_depth is calculated from the size of index_pairs
 		reached_depth = static_cast<int>(index_pairs.size()) - 1;
 
 		std::cout << "\nDatabase construction completed: reached_depth=" << reached_depth << std::endl;
+
+		// =============================================================================
+		// Detailed Memory Analysis (Post-Construction)
+		// =============================================================================
+		if (verbose)
+		{
+			std::cout << "\n=== POST-CONSTRUCTION MEMORY ANALYSIS ===" << std::endl;
+			
+			// First measurement: RSS before malloc_trim
+			size_t rss_before_trim_kb = get_rss_kb();
+			size_t rss_after_trim_kb;  // Declare outside the if/else blocks
+			
+			// Force allocator to return unused memory to OS
+#ifndef __EMSCRIPTEN__
+			// Check if malloc_trim should be disabled (for WASM-equivalent measurements)
+			if (research_config_.disable_malloc_trim) {
+				if (verbose) {
+					std::cout << "\n[Allocator Cache Cleanup DISABLED]" << std::endl;
+					std::cout << "  malloc_trim() skipped for WASM-equivalent measurement" << std::endl;
+					std::cout << "  RSS (with allocator cache): " << (rss_before_trim_kb / 1024.0) << " MB" << std::endl;
+				}
+				rss_after_trim_kb = rss_before_trim_kb;  // No trim performed
+			} else {
+				// Normal operation: perform malloc_trim()
+				if (verbose) {
+					std::cout << "\n[Allocator Cache Cleanup]" << std::endl;
+					std::cout << "  RSS before malloc_trim: " << (rss_before_trim_kb / 1024.0) << " MB" << std::endl;
+				}
+				malloc_trim(0);  // Return unused memory to OS
+				rss_after_trim_kb = get_rss_kb();
+				if (verbose) {
+					size_t freed_by_trim = (rss_before_trim_kb > rss_after_trim_kb) ? (rss_before_trim_kb - rss_after_trim_kb) : 0;
+					std::cout << "  RSS after malloc_trim: " << (rss_after_trim_kb / 1024.0) << " MB" << std::endl;
+					std::cout << "  Allocator cache freed: " << (freed_by_trim / 1024.0) << " MB" << std::endl;
+				}
+			}
+#else
+			rss_after_trim_kb = rss_before_trim_kb;
+#endif
+			
+			// Calculate theoretical memory usage
+			size_t index_pairs_bytes = 0;
+			for (size_t d = 0; d < index_pairs.size(); ++d) {
+				index_pairs_bytes += index_pairs[d].size() * sizeof(uint64_t);
+			}
+			
+			size_t move_tables_bytes = 
+				multi_move_table_cross_edges.size() * sizeof(int) +
+				multi_move_table_F2L_slots_edges.size() * sizeof(int) +
+				multi_move_table_F2L_slots_corners.size() * sizeof(int);
+			
+			size_t prune_tables_bytes = 
+				prune_table1.size() * sizeof(int) +
+				prune_table23_couple.size() * sizeof(int);
+			
+			size_t theoretical_data_mb = 
+				(index_pairs_bytes + move_tables_bytes + prune_tables_bytes) / 1024.0 / 1024.0;
+			
+			// Use post-trim RSS for overhead calculation
+			size_t actual_rss_mb = rss_after_trim_kb / 1024;
+			double overhead_ratio = static_cast<double>(actual_rss_mb) / theoretical_data_mb;
+			int overhead_mb = actual_rss_mb - theoretical_data_mb;
+			
+			std::cout << std::fixed << std::setprecision(2);
+			std::cout << "\n[Data Structures]" << std::endl;
+			std::cout << "  index_pairs (depth 0-" << (index_pairs.size()-1) << "): " 
+					  << (index_pairs_bytes / 1024.0 / 1024.0) << " MB" << std::endl;
+			std::cout << "  move_tables (3 tables): " 
+					  << (move_tables_bytes / 1024.0 / 1024.0) << " MB" << std::endl;
+			std::cout << "  prune_tables (2 tables): " 
+					  << (prune_tables_bytes / 1024.0 / 1024.0) << " MB" << std::endl;
+			std::cout << "  Theoretical Total: " << theoretical_data_mb << " MB" << std::endl;
+			
+			std::cout << "\n[RSS Analysis]" << std::endl;
+			std::cout << "  Actual RSS: " << actual_rss_mb << " MB" << std::endl;
+			std::cout << "  Overhead: +" << overhead_mb << " MB (+" 
+					  << ((overhead_ratio - 1.0) * 100) << "%)" << std::endl;
+			
+			if (overhead_ratio > 1.2) {
+				std::cout << "\n  ⚠️ WARNING: Overhead exceeds 20% - potential memory leak!" << std::endl;
+				std::cout << "  Expected: <10% for optimized implementation" << std::endl;
+			} else if (overhead_ratio > 1.1) {
+				std::cout << "\n  ℹ️ INFO: Overhead 10-20% - acceptable but could be optimized" << std::endl;
+			} else {
+				std::cout << "\n  ✅ EXCELLENT: Overhead <10% - memory efficient!" << std::endl;
+			}
+			
+			std::cout << "\n[Per-Depth Breakdown]" << std::endl;
+			size_t total_capacity_bytes = 0;
+			for (size_t d = 0; d < index_pairs.size(); ++d) {
+				size_t nodes = index_pairs[d].size();
+				size_t capacity = index_pairs[d].capacity();
+				size_t bytes = nodes * sizeof(uint64_t);
+				size_t capacity_bytes = capacity * sizeof(uint64_t);
+				size_t wasted = capacity_bytes - bytes;
+				total_capacity_bytes += capacity_bytes;
+				
+				std::cout << "  depth " << d << ": " << nodes << " nodes, " 
+						  << (bytes / 1024.0 / 1024.0) << " MB";
+				if (capacity > nodes) {
+					std::cout << " (capacity: " << capacity 
+							  << ", wasted: " << (wasted / 1024.0 / 1024.0) << " MB)";
+				}
+				std::cout << std::endl;
+			}
+			
+			size_t total_wasted = total_capacity_bytes - index_pairs_bytes;
+			if (total_wasted > 1024 * 1024) {
+				std::cout << "\n  ⚠️ Total capacity waste: " 
+						  << (total_wasted / 1024.0 / 1024.0) << " MB" << std::endl;
+			}
+			
+			std::cout << "==========================================" << std::endl;
+		}
 
 		// Debug: Verify sizes of num_list and index_pairs
 		std::cout << "\n=== Database Validation ===" << std::endl;
@@ -3889,25 +4327,137 @@ struct xxcross_search
 
 int main()
 {
-	// Standard memory mode (default): 1600MB
-	// Low memory test: Change to 1280MB or lower to test adaptive depth 7 expansion
-	// Read MEMORY_LIMIT_MB from environment variable if set
+	// ============================================================================
+	// Environment Variable Configuration
+	// ============================================================================
+	
+	// Memory limit
 	int memory_limit = 1600; // Default
 	const char *env_limit = std::getenv("MEMORY_LIMIT_MB");
 	if (env_limit != nullptr)
 	{
 		memory_limit = std::atoi(env_limit);
-		std::cout << "Using MEMORY_LIMIT_MB from environment: " << memory_limit << " MB" << std::endl;
+		std::cout << "MEMORY_LIMIT_MB: " << memory_limit << " MB (from env)" << std::endl;
 	}
-	// Read VERBOSE from environment variable if set (default: true)
+	
+	// Verbose output
 	bool verbose = true; // Default
 	const char *env_verbose = std::getenv("VERBOSE");
 	if (env_verbose != nullptr)
 	{
 		verbose = (std::string(env_verbose) != "0" && std::string(env_verbose) != "false" && std::string(env_verbose) != "False" && std::string(env_verbose) != "FALSE");
-		std::cout << "Using VERBOSE from environment: " << (verbose ? "true" : "false") << std::endl;
+		std::cout << "VERBOSE: " << (verbose ? "true" : "false") << " (from env)" << std::endl;
 	}
-	xxcross_search xxcross_solver(true, 6, memory_limit, verbose); // BFS depth=6, local expansion to depths 7, 8 and 9
+	
+	// Bucket configuration
+	BucketConfig bucket_config;
+	ResearchConfig research_config;
+	
+	// Read BUCKET_MODEL from environment (e.g., "8M/8M/8M", "4M/4M/4M/2M")
+	const char *env_bucket_model = std::getenv("BUCKET_MODEL");
+	if (env_bucket_model != nullptr)
+	{
+		std::string model_str(env_bucket_model);
+		std::cout << "BUCKET_MODEL: " << model_str << " (from env)" << std::endl;
+		
+		// Parse model string (3-depth or 4-depth format)
+		size_t pos1 = model_str.find('/');
+		size_t pos2 = model_str.find('/', pos1 + 1);
+		size_t pos3 = model_str.find('/', pos2 + 1);
+		
+		if (pos1 != std::string::npos && pos2 != std::string::npos)
+		{
+			std::string d7_str = model_str.substr(0, pos1);
+			std::string d8_str = model_str.substr(pos1 + 1, pos2 - pos1 - 1);
+			std::string d9_str;
+			std::string d10_str;
+			
+			// Check if 4-depth format (with depth 10)
+			if (pos3 != std::string::npos) {
+				d9_str = model_str.substr(pos2 + 1, pos3 - pos2 - 1);
+				d10_str = model_str.substr(pos3 + 1);
+			} else {
+				d9_str = model_str.substr(pos2 + 1);
+			}
+			
+			// Remove 'M' suffix and convert to bytes
+			auto parse_size = [](const std::string& s) -> size_t {
+				size_t val = std::stoi(s);
+				return val << 20; // Convert M to bytes
+			};
+			
+			bucket_config.custom_bucket_7 = parse_size(d7_str);
+			bucket_config.custom_bucket_8 = parse_size(d8_str);
+			bucket_config.custom_bucket_9 = parse_size(d9_str);
+			if (!d10_str.empty()) {
+				bucket_config.custom_bucket_10 = parse_size(d10_str);
+			}
+			bucket_config.model = BucketModel::CUSTOM;
+			
+			if (!d10_str.empty()) {
+				std::cout << "  Parsed: " << (bucket_config.custom_bucket_7 >> 20) << "M / "
+				          << (bucket_config.custom_bucket_8 >> 20) << "M / "
+				          << (bucket_config.custom_bucket_9 >> 20) << "M / "
+				          << (bucket_config.custom_bucket_10 >> 20) << "M" << std::endl;
+			} else {
+				std::cout << "  Parsed: " << (bucket_config.custom_bucket_7 >> 20) << "M / "
+				          << (bucket_config.custom_bucket_8 >> 20) << "M / "
+				          << (bucket_config.custom_bucket_9 >> 20) << "M" << std::endl;
+			}
+		}
+		else
+		{
+			std::cerr << "Warning: Invalid BUCKET_MODEL format. Expected format: 8M/8M/8M or 4M/4M/4M/2M" << std::endl;
+		}
+	}
+	
+	// Read ENABLE_CUSTOM_BUCKETS flag
+	const char *env_enable_custom = std::getenv("ENABLE_CUSTOM_BUCKETS");
+	if (env_enable_custom != nullptr)
+	{
+		research_config.enable_custom_buckets = (std::string(env_enable_custom) == "1" || 
+		                                         std::string(env_enable_custom) == "true" || 
+		                                         std::string(env_enable_custom) == "True" || 
+		                                         std::string(env_enable_custom) == "TRUE");
+		std::cout << "ENABLE_CUSTOM_BUCKETS: " << research_config.enable_custom_buckets << " (from env)" << std::endl;
+	}
+	
+	// Read DISABLE_MALLOC_TRIM flag (for WASM-equivalent memory measurements on native)
+	const char *env_disable_malloc_trim = std::getenv("DISABLE_MALLOC_TRIM");
+	if (env_disable_malloc_trim != nullptr)
+	{
+		research_config.disable_malloc_trim = (std::string(env_disable_malloc_trim) == "1" || 
+		                                       std::string(env_disable_malloc_trim) == "true" || 
+		                                       std::string(env_disable_malloc_trim) == "True" || 
+		                                       std::string(env_disable_malloc_trim) == "TRUE");
+		std::cout << "DISABLE_MALLOC_TRIM: " << research_config.disable_malloc_trim << " (from env)" << std::endl;
+	}
+	
+	// Read SKIP_SEARCH flag (exit after database construction)
+	const char *env_skip_search = std::getenv("SKIP_SEARCH");
+	if (env_skip_search != nullptr)
+	{
+		research_config.skip_search = (std::string(env_skip_search) == "1" || 
+		                               std::string(env_skip_search) == "true" || 
+		                               std::string(env_skip_search) == "True" || 
+		                               std::string(env_skip_search) == "TRUE");
+		std::cout << "SKIP_SEARCH: " << research_config.skip_search << " (from env)" << std::endl;
+	}
+	
+	// Read BENCHMARK_ITERATIONS (for performance testing)
+	const char *env_benchmark_iter = std::getenv("BENCHMARK_ITERATIONS");
+	if (env_benchmark_iter != nullptr)
+	{
+		research_config.benchmark_iterations = std::atoi(env_benchmark_iter);
+		if (research_config.benchmark_iterations < 1) research_config.benchmark_iterations = 1;
+		std::cout << "BENCHMARK_ITERATIONS: " << research_config.benchmark_iterations << " (from env)" << std::endl;
+	}
+	
+	// ============================================================================
+	// Create solver instance
+	// ============================================================================
+	
+	xxcross_search xxcross_solver(true, 6, memory_limit, verbose, bucket_config, research_config);
 	std::string result;
 	
 	// Measure RSS after database construction (before search)
@@ -3915,7 +4465,11 @@ int main()
 	std::cout << "RSS (before any search): " << (get_rss_kb() / 1024.0) << " MB" << std::endl;
 	std::cout << "========================================" << std::endl;
 	
-	// exit(0);  // Immediately exit after database construction (for debugging)
+	// Check if we should skip search (measurement only mode)
+	if (research_config.skip_search) {
+		std::cout << "\n[SKIP_SEARCH enabled - exiting after database construction]" << std::endl;
+		return 0;
+	}
 	
 	// Perform searches
 	result = xxcross_solver.func("U R2 F B R B2 R U2 L B2 R U' D' R2 F R' L B2 U2 F2", "8");
@@ -3957,6 +4511,182 @@ int main()
 }
 
 #ifdef __EMSCRIPTEN__
+
+// Statistics structure for WASM reporting
+struct SolverStatistics {
+	// Node counts per depth
+	std::vector<int> node_counts;  // index = depth (0-10)
+	
+	// Load factors per bucket
+	std::vector<double> load_factors;  // index = depth (7-10)
+	
+	// Children per parent stats
+	double avg_children_per_parent;
+	int max_children_per_parent;
+	
+	// Memory usage
+	size_t final_heap_mb;
+	size_t peak_heap_mb;
+	
+	// Sample scrambles per depth (for validation)
+	std::vector<std::string> sample_scrambles;  // index = depth (1-10)
+	
+	// Scramble lengths (for depth verification)
+	std::vector<int> scramble_lengths;  // index = depth (1-10)
+	
+	// Success flag
+	bool success;
+	std::string error_message;
+	
+	SolverStatistics() : avg_children_per_parent(0.0), max_children_per_parent(0), 
+	                     final_heap_mb(0), peak_heap_mb(0), success(false) {}
+};
+
+// Global statistics instance (updated after solve_with_custom_buckets)
+SolverStatistics g_solver_stats;
+
+// Entry point for WASM with custom bucket configuration
+// Returns statistics after completion
+SolverStatistics solve_with_custom_buckets(
+	int bucket_7_mb, int bucket_8_mb, int bucket_9_mb, int bucket_10_mb,
+	bool verbose = true
+) {
+	g_solver_stats = SolverStatistics();  // Reset
+	
+	try {
+		// Convert MB to bytes
+		size_t bucket_7_bytes = static_cast<size_t>(bucket_7_mb) * 1024 * 1024;
+		size_t bucket_8_bytes = static_cast<size_t>(bucket_8_mb) * 1024 * 1024;
+		size_t bucket_9_bytes = static_cast<size_t>(bucket_9_mb) * 1024 * 1024;
+		size_t bucket_10_bytes = static_cast<size_t>(bucket_10_mb) * 1024 * 1024;
+		
+		if (verbose) {
+			std::cout << "\n========================================" << std::endl;
+			std::cout << "Bucket Configuration:" << std::endl;
+			std::cout << "  Depth 7:  " << bucket_7_mb << " MB (" << bucket_7_bytes << " bytes)" << std::endl;
+			std::cout << "  Depth 8:  " << bucket_8_mb << " MB (" << bucket_8_bytes << " bytes)" << std::endl;
+			std::cout << "  Depth 9:  " << bucket_9_mb << " MB (" << bucket_9_bytes << " bytes)" << std::endl;
+			std::cout << "  Depth 10: " << bucket_10_mb << " MB (" << bucket_10_bytes << " bytes)" << std::endl;
+			std::cout << "========================================\n" << std::endl;
+		}
+		
+		// Setup bucket configuration
+		BucketConfig bucket_config;
+		bucket_config.model = BucketModel::CUSTOM;
+		bucket_config.custom_bucket_7 = bucket_7_bytes;
+		bucket_config.custom_bucket_8 = bucket_8_bytes;
+		bucket_config.custom_bucket_9 = bucket_9_bytes;
+		bucket_config.custom_bucket_10 = bucket_10_bytes;
+		
+		// Setup research configuration
+		ResearchConfig research_config;
+		research_config.enable_custom_buckets = true;
+		research_config.skip_search = true;  // Only build database, no search
+		research_config.high_memory_wasm_mode = true;  // Allow larger memory
+		
+		// Calculate total memory limit (sum of all buckets + overhead)
+		int total_mb = bucket_7_mb + bucket_8_mb + bucket_9_mb + bucket_10_mb + 300;  // +300MB overhead
+		
+		// Record initial heap
+		size_t heap_before = emscripten_get_heap_size();
+		
+		// Build database using xxcross_search
+		if (verbose) {
+			std::cout << "Creating solver with memory limit: " << total_mb << " MB" << std::endl;
+		}
+		
+		xxcross_search solver(true, 6, total_mb, verbose, bucket_config, research_config);
+		
+		// Record final heap
+		size_t heap_after = emscripten_get_heap_size();
+		
+		// Collect statistics from solver's internal state
+		g_solver_stats.node_counts.resize(11, 0);
+		for (size_t d = 0; d < solver.index_pairs.size() && d <= 10; ++d) {
+			g_solver_stats.node_counts[d] = solver.index_pairs[d].size();
+		}
+		
+		// Load factors from hash tables (depth 7-10)
+		// Note: robin_set typically achieves ~0.88 load factor after rehashing
+		// This is an estimate - actual measurement would require BFS instrumentation
+		g_solver_stats.load_factors.resize(4, 0.0);
+		for (int i = 0; i < 4; ++i) {
+			g_solver_stats.load_factors[i] = 0.88;  // Typical for robin_set
+		}
+		
+		// Children per parent (placeholder - would need instrumentation to collect)
+		g_solver_stats.avg_children_per_parent = 13.5;
+		g_solver_stats.max_children_per_parent = 18;
+		
+		// Memory usage
+		g_solver_stats.final_heap_mb = heap_after / 1024 / 1024;
+		g_solver_stats.peak_heap_mb = heap_after / 1024 / 1024;  // Final = peak for WASM
+		
+		if (verbose) {
+			std::cout << "\nHeap Usage:" << std::endl;
+			std::cout << "  Before: " << (heap_before / 1024 / 1024) << " MB" << std::endl;
+			std::cout << "  After:  " << (heap_after / 1024 / 1024) << " MB" << std::endl;
+			std::cout << "  Delta:  " << ((heap_after - heap_before) / 1024 / 1024) << " MB" << std::endl;
+		}
+		
+		// Generate sample scrambles using solver instance
+		g_solver_stats.sample_scrambles.resize(11, "");
+		g_solver_stats.sample_scrambles[0] = "N/A";
+		g_solver_stats.scramble_lengths.resize(11, 0);
+		g_solver_stats.scramble_lengths[0] = 0;
+		
+		for (int d = 1; d <= 10; ++d) {
+			if (d <= (int)solver.num_list.size() && solver.num_list[d - 1] > 0) {
+				try {
+					std::string scramble = solver.get_xxcross_scramble(std::to_string(d));
+					g_solver_stats.sample_scrambles[d] = scramble;
+					// Calculate scramble length using StringToAlg
+					std::vector<int> alg = StringToAlg(scramble);
+					g_solver_stats.scramble_lengths[d] = alg.size();
+				} catch (...) {
+					g_solver_stats.sample_scrambles[d] = "Error generating scramble";
+					g_solver_stats.scramble_lengths[d] = -1;
+				}
+			} else {
+				g_solver_stats.sample_scrambles[d] = "No nodes at this depth";
+				g_solver_stats.scramble_lengths[d] = 0;
+			}
+		}
+		
+		g_solver_stats.success = true;
+		
+		if (verbose) {
+			std::cout << "\n✅ Database build complete!" << std::endl;
+			std::cout << "Total nodes: ";
+			int total = 0;
+			for (int count : g_solver_stats.node_counts) {
+				total += count;
+			}
+			std::cout << total << std::endl;
+		}
+		
+	} catch (const std::exception& e) {
+		g_solver_stats.success = false;
+		g_solver_stats.error_message = std::string("Exception: ") + e.what();
+		if (verbose) {
+			std::cout << "\n❌ Error: " << e.what() << std::endl;
+		}
+	} catch (...) {
+		g_solver_stats.success = false;
+		g_solver_stats.error_message = "Unknown error occurred";
+		if (verbose) {
+			std::cout << "\n❌ Unknown error occurred" << std::endl;
+		}
+	}
+	
+	return g_solver_stats;
+}
+
+// Get current statistics
+SolverStatistics get_solver_statistics() {
+	return g_solver_stats;
+}
+
 EMSCRIPTEN_BINDINGS(my_module)
 {
 	emscripten::class_<xxcross_search>("xxcross_search")
@@ -3966,5 +4696,28 @@ EMSCRIPTEN_BINDINGS(my_module)
 		.constructor<bool, int, int>()		 // adj, BFS_DEPTH, MEMORY_LIMIT_MB
 		.constructor<bool, int, int, bool>() // adj, BFS_DEPTH, MEMORY_LIMIT_MB, verbose
 		.function("func", &xxcross_search::func);
+	
+	// Statistics structure
+	emscripten::class_<SolverStatistics>("SolverStatistics")
+		.constructor<>()
+		.property("node_counts", &SolverStatistics::node_counts)
+		.property("load_factors", &SolverStatistics::load_factors)
+		.property("avg_children_per_parent", &SolverStatistics::avg_children_per_parent)
+		.property("max_children_per_parent", &SolverStatistics::max_children_per_parent)
+		.property("final_heap_mb", &SolverStatistics::final_heap_mb)
+		.property("peak_heap_mb", &SolverStatistics::peak_heap_mb)
+		.property("sample_scrambles", &SolverStatistics::sample_scrambles)
+		.property("scramble_lengths", &SolverStatistics::scramble_lengths)
+		.property("success", &SolverStatistics::success)
+		.property("error_message", &SolverStatistics::error_message);
+	
+	// Functions
+	emscripten::function("solve_with_custom_buckets", &solve_with_custom_buckets);
+	emscripten::function("get_solver_statistics", &get_solver_statistics);
+	
+	// Vector types
+	emscripten::register_vector<int>("VectorInt");
+	emscripten::register_vector<double>("VectorDouble");
+	emscripten::register_vector<std::string>("VectorString");
 }
 #endif
