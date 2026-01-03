@@ -3589,7 +3589,7 @@ Phase 5 complete:                   313 MB
 
 **Objective**: Fix scramble generation failure in Solver Test
 
-**Issue Reported**: "Solver Testで深さを固定してスクランブルを出すことができない"
+**Issue Reported**: "Cannot generate scrambles with a fixed depth in Solver Test"
 
 **Investigation**:
 - Worker receives scramble requests correctly
