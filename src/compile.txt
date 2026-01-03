@@ -1,5 +1,5 @@
 setup
-../../emsdk/emsdk_env.sh 
+source ~/emsdk/emsdk_env.sh 
 
 crossAnalyzer 
 em++ analyzer.cpp -o analyzer.js -O3 -msimd128 -flto -s TOTAL_MEMORY=50MB -s WASM=1 --bind
@@ -61,5 +61,8 @@ em++ solver.cpp -o solver.js -O3 -msimd128 -flto -s TOTAL_MEMORY=150MB -s WASM=1
 2x2solverLite
 em++ solver.cpp -o solver.js -O3 -msimd128 -flto -s WASM=1 --bind
 
-xxcrossTrainer (Standard - 700MB initial, 2GB max for mobile compatibility)
-em++ -I.. solver.cpp -o solver.js -O3 -msimd128 -flto -s ALLOW_MEMORY_GROWTH=1 -s INITIAL_MEMORY=734003200 -s MAXIMUM_MEMORY=2147483648 -s WASM=1 -s EXPORTED_RUNTIME_METHODS='["ccall","cwrap"]' -s INVOKE_RUN=0 --bind
+xxcrossTrainer (Production - solver_dev.cpp with MODULARIZE)
+em++ -I../.. solver_dev.cpp -o solver_dev.js -std=c++17 -O3 -s WASM=1 -s ALLOW_MEMORY_GROWTH=1 -s MAXIMUM_MEMORY=4294967296 -s EXPORTED_RUNTIME_METHODS='["cwrap"]' -s MODULARIZE=1 -s EXPORT_NAME="createModule" --bind -s INITIAL_MEMORY=67108864
+
+xxcrossTrainer (Test - test_solver.js without MODULARIZE for test_wasm_browser.html)
+em++ -I.. solver_dev.cpp -o test_solver.js -std=c++17 -O3 -s WASM=1 -s ALLOW_MEMORY_GROWTH=1 -s MAXIMUM_MEMORY=4294967296 -s EXPORTED_RUNTIME_METHODS='["ENV"]' -s INVOKE_RUN=0 --bind -s INITIAL_MEMORY=67108864

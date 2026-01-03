@@ -4310,25 +4310,83 @@ struct xxcross_search
 	{
 		sol.clear();
 		int len = std::stoi(arg_length);
-		std::uniform_int_distribution<> distribution(0, num_list[len - 1] - 1);
-		uint64_t xxcross_index = index_pairs[len - 1][distribution(generator)];
-		index1 = static_cast<int>(xxcross_index / (size2 * size3));
-		int index23packed = static_cast<int>(xxcross_index % (size2 * size3));
-		index2 = index23packed / size3;
-		index3 = index23packed % size3;
-		std::cout << xxcross_index << ", " << index1 << ", " << index2 << ", " << index3 << std::endl;
-		index1 *= 18;
-		index2 *= 18;
-		index3 *= 18;
-		for (int d = len; d <= reached_depth + 1; ++d)
+		
+		// Validate depth range
+		std::cout << "get_xxcross_scramble called with len=" << len << std::endl;
+		std::cout << "num_list[" << len << "] = " << num_list[len] << std::endl;
+		std::cout << "index_pairs[" << len << "].size() = " << index_pairs[len].size() << std::endl;
+		
+		if (num_list[len] == 0 || index_pairs[len].empty())
 		{
-			if (depth_limited_search(index1, index2, index3, d, 324))
+			std::cout << "ERROR: No states available at depth " << len << std::endl;
+			tmp = "";
+			return tmp;
+		}
+		
+		// Depth guarantee: Try multiple nodes until we find one with exact depth len
+		// Reason: index_pairs[len] contains nodes discovered at depth len,
+		// but some may have shorter optimal solutions (especially for depths 7+)
+		const int max_attempts = 100;
+		std::uniform_int_distribution<> distribution(0, num_list[len] - 1);
+		
+		for (int attempt = 0; attempt < max_attempts; ++attempt)
+		{
+			sol.clear();
+			// Select random node from depth len
+			uint64_t xxcross_index = index_pairs[len][distribution(generator)];
+			index1 = static_cast<int>(xxcross_index / (size2 * size3));
+			int index23packed = static_cast<int>(xxcross_index % (size2 * size3));
+			index2 = index23packed / size3;
+			index3 = index23packed % size3;
+			
+			if (attempt == 0) {
+				std::cout << "Selected xxcross_index=" << xxcross_index 
+				          << ", index1=" << index1 << ", index2=" << index2 
+				          << ", index3=" << index3 << std::endl;
+				prune1_tmp = prune_table1[index1];
+				prune23_tmp = prune_table23_couple[index2 * size3 + index3];
+				std::cout << "Prune values: prune1=" << prune1_tmp 
+				          << ", prune23=" << prune23_tmp 
+				          << ", max=" << std::max(prune1_tmp, prune23_tmp) << std::endl;
+			}
+			
+			index1 *= 18;
+			index2 *= 18;
+			index3 *= 18;
+			
+			// Find actual optimal solution depth by trying depths 1 to len
+			int actual_depth = -1;
+			for (int d = 1; d <= len; ++d)
 			{
-				break;
+				if (depth_limited_search(index1, index2, index3, d, 324))
+				{
+					actual_depth = d;
+					break;
+				}
+			}
+			
+			// Check if actual depth matches requested depth
+			if (actual_depth == len)
+			{
+				std::cout << "✓ Found valid node at attempt " << (attempt + 1) 
+				          << ": requested=" << len << ", actual=" << actual_depth << std::endl;
+				std::cout << "XXCross Solution from get_xxcross_scramble: " << AlgToString(sol) << std::endl;
+				tmp = AlgToString(sol);
+				return tmp;
+			}
+			
+			// Log mismatch and retry
+			if (attempt < 5 || (attempt + 1) % 10 == 0) {
+				std::cout << "✗ Attempt " << (attempt + 1) << ": requested=" << len 
+				          << ", actual=" << actual_depth << " - retrying" << std::endl;
 			}
 		}
-		std::cout << "XXCross Solution from get_xxcross_scramble: " << AlgToString(sol) << std::endl;
-		tmp = AlgToString(sol);  // Store scramble in tmp before returning
+		
+		// Failed to find exact depth after max_attempts
+		std::cout << "ERROR: Could not find node with exact depth " << len 
+		          << " after " << max_attempts << " attempts" << std::endl;
+		std::cout << "WARNING: Returning last generated solution (may not be exact depth)" << std::endl;
+		tmp = AlgToString(sol);
 		return tmp;
 	}
 
