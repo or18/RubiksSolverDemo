@@ -3,7 +3,7 @@
 **Version**: 1.1 (Updated with integrated monitoring)  
 **Last Updated**: 2026-01-02
 
-> **Navigation**: [← Back to Developer Docs](../README.md) | [User Guide](../USER_GUIDE.md) | [Memory Config](../MEMORY_CONFIGURATION_GUIDE.md)
+> **Navigation**: [← Back to Developer Docs](../README.md) | [User Guide](../USER_GUIDE.md)
 >
 > **Related**: [Implementation](SOLVER_IMPLEMENTATION.md) | [Experiment Scripts](EXPERIMENT_SCRIPTS.md) | [Measurement Results](Experiences/peak_rss_optimization.md)
 
@@ -623,6 +623,7 @@ if __name__ == "__main__":
 ### Usage
 
 ```bash
+# From workspace root
 cd src/xxcrossTrainer/tools/memory_monitoring
 
 # Run integrated monitoring

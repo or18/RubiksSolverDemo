@@ -1,1171 +1,1139 @@
-# Solver Implementation Details
+# XXCross Solver Implementation Details
 
-**Version**: stable-20251230  
-**Last Updated**: 2025-12-30  
-**Source**: solver_dev.cpp (3631 lines)
+**Version**: stable_20260103  
+**Last Updated**: 2026-01-03  
+**Source**: solver_dev.cpp (4723 lines)
 
-> **Navigation**: [← Back to Developer Docs](../README.md) | [User Guide](../USER_GUIDE.md) | [Memory Config](../MEMORY_CONFIGURATION_GUIDE.md)
+> **Navigation**: [← Back to Developer Docs](../README.md) | [User Guide](../USER_GUIDE.md)
 >
-> **Related**: [WASM Build](WASM_BUILD_GUIDE.md) | [Memory Monitoring](MEMORY_MONITORING.md) | [Experiments](Experiences/README.md)
+> **Related**: [API Reference](API_REFERENCE.md) | [WASM Integration](WASM_INTEGRATION_GUIDE.md) | [Memory Monitoring](MEMORY_MONITORING.md) | [Experiments](Experiences/README.md)
 
 ---
 
 ## Purpose
 
-This document explains the **core implementation logic** of the XXCross solver, focusing on:
-1. **Database Construction** (Two-Phase BFS)
-2. **Memory-Adaptive Bucket Allocation**
-3. **IDA* Search** (for scramble generation)
+This document explains the **core implementation logic** of the XXCross solver (`stable_20260103`), focusing on:
 
-For usage instructions, see [../USER_GUIDE.md](../USER_GUIDE.md). For memory configuration, see [../MEMORY_CONFIGURATION_GUIDE.md](../MEMORY_CONFIGURATION_GUIDE.md).
+1. **Database Construction** (5-Phase BFS: depths 0-10)
+2. **Memory Spike Elimination** (Pre-allocation, reserve optimization)
+3. **WASM/Native Dual Support** (Platform-specific code paths)
+4. **Depth 9→10 Expansion** (Random sampling with diversity control)
+5. **Malloc Trim Management** (Allocator cache clearing)
+6. **Developer Options** (Environment variables for research)
+
+For API reference, see [API_REFERENCE.md](API_REFERENCE.md). For usage instructions, see [../USER_GUIDE.md](../USER_GUIDE.md).
+
+---
+
+## Table of Contents
+
+1. [Architecture Overview](#architecture-overview)
+2. [Header Files & Dependencies](#header-files--dependencies)
+3. [Database Construction (5 Phases)](#database-construction-5-phases)
+4. [Memory Efficiency Optimizations](#memory-efficiency-optimizations)
+5. [Depth 9→10 Expansion Strategy](#depth-910-expansion-strategy)
+6. [WASM vs Native Differences](#wasm-vs-native-differences)
+7. [Malloc Trim & Allocator Management](#malloc-trim--allocator-management)
+8. [Developer Options & Research Mode](#developer-options--research-mode)
+9. [Random Sampling for Diversity](#random-sampling-for-diversity)
+10. [Implementation Warnings & Best Practices](#implementation-warnings--best-practices)
+11. [Scramble Generation (IDA*)](#scramble-generation-ida)
 
 ---
 
 ## Architecture Overview
 
-### High-Level Flow
+### High-Level Flow (stable_20260103)
 
 ```
-main()
-  ├─ Read memory limit from argv[1]
-  ├─ Calculate bucket sizes (flexible allocation)
-  │   ├─ Determine bucket_7, bucket_8, bucket_9
-  │   └─ Select from 7 configurations based on limit
+xxcross_search constructor
+  ├─ Parse bucket configuration (BucketModel or CUSTOM)
+  ├─ Calculate bucket sizes (7, 8, 9, 10)
+  ├─ Pre-allocate move tables
   │
   ├─ Phase 1: Full BFS (Depth 0-6)
   │   ├─ Complete expansion of all states
   │   ├─ Store in index_pairs[0..6]
-  │   └─ Free depth_6_nodes after phase
+  │   └─ Free depth_6_nodes after completion
   │
-  ├─ Phase 2: Local Expansion (Depth 7-9)
-  │   ├─ Partial expansion using bucket constraints
-  │   ├─ Depth 7: Complete expansion
-  │   ├─ Depth 8: Local BFS from depth 7
-  │   └─ Depth 9: Local BFS from depth 8
+  ├─ Phase 2: Local Expansion (Depth 6→7)
+  │   ├─ Face-diverse expansion with capacity management
+  │   ├─ Pre-reserve depth 7 bucket (spike elimination)
+  │   └─ Detach element vector pattern
   │
-  └─ Ready for search (IDA* or direct lookup)
+  ├─ Phase 3: Local Expansion (Depth 7→8)
+  │   ├─ Same pattern as Phase 2
+  │   ├─ Build depth7_set for duplicate detection
+  │   └─ Free depth7_set after expansion
+  │
+  ├─ Phase 4: Local Expansion (Depth 8→9)
+  │   ├─ Build depth8_set with rehash optimization
+   ├─ Bulk insert pattern (avoid memory spikes)  
+  │   └─ Free depth8_set after expansion
+  │
+  ├─ Malloc Trim (Native only, optional)
+  │   └─ Clear allocator cache before Phase 5
+  │
+  ├─ Phase 5: Local Expansion (Depth 9→10)
+  │   ├─ Random sampling (not complete expansion)
+  │   ├─ Single move per parent (diversity control)
+  │   ├─ Adaptive children per parent
+  │   ├─ Build depth9_set with bulk insert
+  │   └─ Stop on rehash (memory safety)
+  │
+  └─ Final Cleanup
+      ├─ shrink_to_fit() all vectors
+      ├─ Collect statistics (if enabled)
+      └─ Ready for IDA* search
 ```
 
-### Key Data Structures
+### Key Changes from stable-20251230
 
-```cpp
-// State representation
-struct State {
-    std::vector<int> cp;  // Corner permutation (8 elements)
-    std::vector<int> co;  // Corner orientation (8 elements)
-    std::vector<int> ep;  // Edge permutation (12 elements)
-    std::vector<int> eo;  // Edge orientation (12 elements)
-};
-
-// Database storage
-std::vector<std::vector<uint64_t>> index_pairs;  // [depth][state_index]
-
-// Sliding window for BFS
-struct SlidingDepthSets {
-    tsl::robin_set<uint64_t> prev;  // Depth n-1
-    tsl::robin_set<uint64_t> cur;   // Depth n
-    tsl::robin_set<uint64_t> next;  // Depth n+1
-    size_t max_total_nodes;         // Memory constraint
-};
-```
+| Feature | Old (20251230) | New (20260103) |
+|---------|----------------|----------------|
+| Max Depth | 9 | **10** (Phase 5 added) |
+| Memory Spikes | Present (attach/detach) | **Eliminated** (pre-reserve) |
+| Depth 10 Method | N/A | **Random sampling** (not full BFS) |
+| Malloc Trim | Always enabled | **Configurable** (ENV variable) |
+| WASM Support | Basic | **Full integration** (embind, heap monitoring) |
+| Developer Options | Limited | **Extensive** (ENABLE_CUSTOM_BUCKETS, DISABLE_MALLOC_TRIM, etc.) |
 
 ---
 
-## Part 1: Database Construction
+## Header Files & Dependencies
+
+### Standard Libraries
+
+```cpp
+#include <iostream>      // Console I/O
+#include <fstream>       // File I/O (RSS reading)
+#include <vector>        // Dynamic arrays
+#include <algorithm>     // std::shuffle, std::min, etc.
+#include <unordered_map> // Hash maps
+#include <string>        // String operations
+#include <sstream>       // String streams
+#include <cstdlib>       // std::getenv
+#include <random>        // Random number generation (MT19937)
+#include <deque>         // Double-ended queue
+#include <iomanip>       // std::setprecision
+```
+
+### Third-Party Libraries
+
+```cpp
+#include <tsl/robin_set.h>  // Tessil robin_set (open addressing hash set)
+```
+
+**Why robin_set?**
+- **Performance**: Faster than `std::unordered_set` (cache-friendly)
+- **Load Factor Control**: `max_load_factor(0.9)` for memory efficiency
+- **Element Vector Attachment**: Direct write to output vector (eliminates copy)
+- **License**: MIT (compatible with most projects)
+
+**Repository**: [Tessil/robin-map](https://github.com/Tessil/robin-map)
+
+### Custom Headers
+
+```cpp
+#include "bucket_config.h"  // BucketModel enum, ModelData, BucketConfig, ResearchConfig
+```
+
+**bucket_config.h** defines:
+- `BucketModel` enum (AUTO, MINIMAL, LOW, ..., CUSTOM, WASM_MOBILE_LOW, ...)
+- `ModelData` struct (bucket sizes, measured RSS, load factors)
+- `BucketConfig` struct (model selection, custom sizes)
+- `ResearchConfig` struct (enable_custom_buckets, skip_search, verbose, etc.)
+
+### Platform-Specific Headers
+
+```cpp
+#ifdef __EMSCRIPTEN__
+    #include <emscripten/bind.h>  // embind (C++ ↔ JavaScript)
+    #include <emscripten/heap.h>  // emscripten_get_heap_size()
+    #include <emscripten.h>       // General WASM utilities
+#endif
+
+#ifndef __EMSCRIPTEN__
+    #include <malloc.h>           // malloc_trim() (glibc only)
+#endif
+```
+
+**WASM-specific functions**:
+- `emscripten_get_heap_size()`: Get total heap size in bytes
+- `log_emscripten_heap(phase_name)`: Helper to log heap at checkpoints
+
+**Native-specific functions**:
+- `get_rss_kb()`: Read RSS from `/proc/self/status` (Linux only)
+- `malloc_trim(0)`: Return unused memory to OS (glibc allocator)
+
+### Compiler Optimizations
+
+```cpp
+#pragma GCC target("avx2")
+```
+
+**Purpose**: Enable AVX2 SIMD instructions for performance
+
+**Impact**: ~5-10% speedup in move table lookups (platform-dependent)
+
+---
+
+## Database Construction (5 Phases)
 
 ### Phase 1: Full BFS (Depth 0-6)
 
-**Purpose**: Build complete database of all reachable states up to depth 6.
+**Purpose**: Build complete database of all reachable XXCross states up to depth 6.
 
-**Implementation**:
-
-```cpp
-int expand_one_depth(
-    SlidingDepthSets& visited,
-    int cur_depth,
-    const std::vector<int>& move_table,
-    std::vector<std::vector<uint64_t>>& index_pairs,
-    bool verbose = true)
-{
-    int next_depth = cur_depth + 1;
-    int move_idx;
-    uint64_t next_idx;
-    bool capacity_reached = false;
-    bool stop = false;
-    
-    visited.next.attach_element_vector(&index_pairs[next_depth]);
-    
-    // Expand all states at current depth
-    for (uint64_t idx : visited.cur) {
-        for (int move = 0; move < 18; ++move) {  // All 18 moves
-            move_idx = move_table[idx % move_table_size + 18 * (idx / move_table_size) + move];
-            next_idx = (idx / move_table_size) * move_table_size + move_idx;
-            
-            // Mark if new (not in prev, cur, or next)
-            if (visited.encounter_and_mark_next(next_idx, capacity_reached)) {
-                if (capacity_reached) {
-                    stop = true;
-                    break;
-                }
-            }
-        }
-        if (stop) break;
-    }
-    
-    // Rotate sets for next iteration
-    visited.prev = std::move(visited.cur);
-    visited.cur = std::move(visited.next);
-    visited.next.clear();
-    
-    return stop ? (next_depth - 1) : next_depth;
-}
-```
-
-**Key Features**:
-- **Element Vector Attachment**: `next` set directly writes to `index_pairs[next_depth]` to avoid copying
-- **Deduplication**: States already in `prev`, `cur`, or `next` are skipped
-- **Move Table**: Pre-computed move transitions for fast state generation
+**Expansion Pattern**: Complete (no memory constraints)
 
 **Memory Behavior**:
-- Depths 0-6: ~20 MB total (compact storage)
-- Depth 6: ~217 MB peak during expansion
-- After Phase 1: `depth_6_nodes` freed (~100 MB reclaimed)
+- Depths 0-5: Negligible (~5 MB)
+- Depth 6: ~220 MB peak (during expansion)
+- After Phase 1: ~120 MB (depth_6_nodes freed)
 
----
-
-### Phase 2: Local Expansion (Depth 7-9)
-
-**Purpose**: Expand depths 7, 8, 9 with **memory constraints** using dynamically calculated bucket sizes.
-
-#### Bucket Allocation Strategy
-
-The solver uses **calculation-based bucket allocation** that determines sizes at runtime:
+**Code Flow**:
 
 ```cpp
-LocalExpansionConfig determine_bucket_sizes(
-    int max_depth,
-    size_t remaining_memory_bytes,
-    size_t bucket_n_current,
-    size_t cur_set_memory_bytes,
-    bool verbose)
+// Sliding window BFS (depths 0-6)
+SlidingDepthSets visited(memory_limit_total_bytes);
+visited.cur.insert(0);  // Solved state
+
+for (int d = 0; d < BFS_DEPTH; ++d) {
+    expand_one_depth(visited, d, multi_move_table_xxcross, 
+                     index_pairs, verbose);
+}
+
+// Free depth 6 nodes (no longer needed)
 {
-    // Calculate usable memory (remaining - safety margin)
-    size_t wasm_safety_margin = remaining_memory * (20-25)/100;
-    size_t usable_memory = remaining_memory - wasm_safety_margin;
-    
-    // Try candidate bucket ratios (1:2 or 1:1 for n+1:n+2)
-    // Prefer n+1 <= n+2 for better coverage
-    std::vector<BucketRatio> candidates = {
-        {32M, 64M, "1:2"},  // Best for large memory
-        {16M, 32M, "1:2"},
-        {8M, 16M, "1:2"},
-        {4M, 8M, "1:2"},
-        {2M, 4M, "1:2"},
-        {32M, 32M, "1:1"},  // Fallback ratios
-        {16M, 16M, "1:1"},
-        // ... etc
-    };
-    
-    // Select best configuration that fits in memory
-    for (auto candidate : candidates) {
-        auto params_n1 = g_expansion_params.get(max_depth, candidate.bucket_n1);
-        auto params_n2 = g_expansion_params.get(max_depth, candidate.bucket_n2);
-        
-        // Calculate expected nodes using empirical load factors
-        size_t nodes_n1 = bucket_n1 * params_n1.effective_load_factor;
-        size_t nodes_n2 = bucket_n2 * params_n2.backtrace_load_factor;
-        
-        // Calculate memory using empirical memory factor
-        size_t predicted_rss = total_memory * params_n2.measured_memory_factor;
-        
-        if (predicted_rss <= usable_memory * 0.98) {  // 98% safety
-            return candidate;  // Found suitable configuration
-        }
-    }
+    tsl::robin_set<uint64_t> temp;
+    visited.cur.swap(temp);
 }
 ```
 
-**Key Points**:
-- **Dynamic Calculation**: Bucket sizes determined by runtime logic, not lookup tables
-- **Empirical Parameters**: Uses measured load factors and memory factors from `g_expansion_params`
-- **Safety Margins**: 20-25% buffer for WASM compatibility and rehash protection  
-- **Ratio Selection**: Prefers 1:2 ratio (n+1:n+2) for optimal coverage
-- **Stability**: While calculation-based, empirically-tuned constants are now fixed
+**Key Data Structure**: `SlidingDepthSets`
+- `prev`: Depth n-1 (for deduplication)
+- `cur`: Depth n (current frontier)
+- `next`: Depth n+1 (new states)
 
-**Typical Configurations** (determined by calculation logic):
+**Element Vector Attachment**:
+```cpp
+visited.next.attach_element_vector(&index_pairs[next_depth]);
+// Insertions to 'next' directly write to index_pairs[next_depth]
+```
 
-| Memory Available | Calculated Config | Expected Nodes | Usage |
-|------------------|-------------------|----------------|--------|
-| ~400 MB | 2M/4M | ~1.5M/2.5M | Mobile |
-| ~700 MB | 4M/8M or 8M/8M | ~3M/5M or ~5M/5M | Standard |
-| ~1200 MB | 8M/16M | ~5M/10M | High-memory |
-| ~1700 MB | 16M/32M | ~10M/20M | Performance |
-
-For detailed theoretical analysis of this calculation approach, see [Experiences/MEMORY_THEORY_ANALYSIS.md](Experiences/MEMORY_THEORY_ANALYSIS.md).
+**Benefits**:
+- Eliminates copy from hash set to vector
+- Reduces peak memory by ~50 MB
 
 ---
 
-#### Node Expansion Strategy (Local BFS)
+### Phase 2: Local Expansion (Depth 6→7)
 
-**Critical Design**: Random parent selection for diversity and load factor optimization.
+**Purpose**: Expand depth 6 to depth 7 with **face-diverse strategy** and memory constraints.
 
-##### Step 2: Random Expansion for Depth n+1
+**Strategy**: 
+- **Pre-reserve bucket**: Eliminates attach/detach memory spike
+- **Face-diverse expansion**: 6 moves per parent (one per face U/D/R/L/F/B)
+- **90% load factor**: Target `bucket_d7 * 0.9` nodes
 
-**Purpose**: Generate depth n+1 nodes by randomly selecting parents from depth n.
-
-**Why Random Selection?**
-
-1. **Parent Diversity (Hash Level)**: 
-   - Random selection ensures hash table entries are spread across buckets
-   - Prevents clustering in hash space
-   - Maintains high load factor (~0.90) without rehashing
-
-2. **Parent Diversity (Real Node Level)**:
-   - Different parents produce different children (move combinations)
-   - Diverse parents → diverse coverage of state space
-   - Critical for optimal solving performance
-
-3. **Child Node Randomness**:
-   - Random parent × 18 moves → random child distribution
-   - Child randomness maintains parent diversity for next depth
-   - Prevents hash collisions and improves load factor
-
-**Implementation**:
+**Memory Spike Elimination** (Key Innovation):
 
 ```cpp
-void local_expand_step2_random_n1(
-    const LocalExpansionConfig &config,
-    const tsl::robin_set<uint64_t> &depth_n_nodes,
-    tsl::robin_set<uint64_t> &depth_n1_nodes,
-    ...)
-{
-    // Convert depth=n nodes to vector for random access
-    std::vector<uint64_t> depth_n_vec(depth_n_nodes.begin(), depth_n_nodes.end());
-    std::uniform_int_distribution<size_t> dist(0, depth_n_vec.size() - 1);
-    
-    // Prevent rehash by pre-allocating bucket
-    depth_n1_nodes.rehash(config.bucket_n1);
-    depth_n1_nodes.max_load_factor(0.9f);
-    
-    while (processed_parents < max_parent_nodes) {
-        // Random parent selection
-        size_t random_idx = dist(gen);
-        uint64_t parent_node = depth_n_vec[random_idx];
-        
-        // Expand all 18 moves from this parent
-        for (int move = 0; move < 18; ++move) {
-            uint64_t child_node = apply_move(parent_node, move, move_tables);
-            
-            // Skip if already in depth n or n+1
-            if (depth_n_nodes.find(child_node) != depth_n_nodes.end() ||
-                depth_n1_nodes.find(child_node) != depth_n1_nodes.end()) {
-                continue;
-            }
-            
-            // Check for imminent rehash
-            if (depth_n1_nodes.will_rehash_on_next_insert()) {
-                goto expansion_complete;  // Stop before rehash
-            }
-            
-            // Insert child (automatically recorded in index_pairs via element_vector)
-            depth_n1_nodes.insert(child_node);
-        }
-        
-        processed_parents++;
-    }
-    
-expansion_complete:
-    depth_n1_nodes.detach_element_vector();  // Finalize recording
-}
+// OLD pattern (causes spike):
+depth_7_nodes.attach_element_vector(&index_pairs[7]);
+// ... expansion ...
+depth_7_nodes.detach_element_vector();
+
+// NEW pattern (eliminates spike):
+index_pairs[7].reserve(bucket_d7 * 0.95);  // Pre-allocate
+depth_7_nodes.attach_element_vector(&index_pairs[7]);
+// ... expansion (no reallocation) ...
+depth_7_nodes.detach_element_vector();  // Free hash table only
 ```
-
-**Key Optimizations**:
-
-1. **Rehash Protection**: 
-   - `will_rehash_on_next_insert()` checks before insertion
-   - Stops expansion before rehash (prevents memory spike)
-   - Achieves ~88-90% load factor safely
-
-2. **Element Vector Attachment**:
-   - `depth_n1_nodes.attach_element_vector(&index_pairs[n+1])`
-   - Inserts automatically record to `index_pairs` (zero-copy)
-   - Avoids post-processing step
-
-3. **Memory Efficiency**:
-   - Reuses `depth_n_vec` (no additional allocation)
-   - Single-pass expansion (no intermediate storage)
-   - Directly writes to final storage
-
----
-
-##### Step 5: Backtrace Expansion for Depth n+2
-
-**Purpose**: Generate depth n+2 nodes with verification to avoid false positives.
-
-**Strategy**: Expand from depth n+1, but filter using backtrace to depth n.
-
-**Why Backtrace?**
-
-When expanding locally, we risk adding nodes that are actually reachable from depth < n+2:
-- A node at "depth n+2" in local expansion might be reachable from depth n in 1 move
-- Backtrace verification ensures true depth assignment
-- Maintains database integrity for optimal solving
-
-**Implementation**:
-
-```cpp
-BacktraceExpansionResult expand_with_backtrace_filter(
-    tsl::robin_set<uint64_t> &depth_n_nodes,   // For backtrace
-    tsl::robin_set<uint64_t> &depth_n1_nodes,  // Parents
-    tsl::robin_set<uint64_t> &depth_n2_nodes,  // Children
-    ...)
-{
-    // Sample 1/12 of depth n+1 nodes as parents
-    std::vector<uint64_t> sampled_parents;
-    for (auto node : depth_n1_nodes) {
-        if (dist_12(gen) == 0) {  // 1/12 probability
-            sampled_parents.push_back(node);
-        }
-    }
-    
-    for (auto parent : sampled_parents) {
-        for (int move = 0; move < 18; ++move) {
-            uint64_t child = apply_move(parent, move, move_tables);
-            
-            // Skip if already seen
-            if (depth_n_nodes.find(child) != depth_n_nodes.end() ||
-                depth_n1_nodes.find(child) != depth_n1_nodes.end() ||
-                depth_n2_nodes.find(child) != depth_n2_nodes.end()) {
-                continue;
-            }
-            
-            // Backtrace verification
-            bool valid_n2 = true;
-            for (int backtrace_move = 0; backtrace_move < 18; ++backtrace_move) {
-                uint64_t backtrace_node = apply_move(child, backtrace_move, move_tables);
-                if (depth_n_nodes.find(backtrace_node) != depth_n_nodes.end()) {
-                    // Child is reachable from depth n in 1 move → reject
-                    valid_n2 = false;
-                    rejected_n1_nodes++;
-                    break;
-                }
-            }
-            
-            if (valid_n2) {
-                // Check rehash before insert
-                if (depth_n2_nodes.will_rehash_on_next_insert()) {
-                    goto backtrace_expansion_end;
-                }
-                depth_n2_nodes.insert(child);
-            }
-        }
-    }
-    
-backtrace_expansion_end:
-    return {depth_n2_nodes.size(), sampled_parents.size(), rejected_n1_nodes, ...};
-}
-```
-
-**Sampling Strategy**:
-- **1 in 12 sampling**: Reduces computational cost while maintaining coverage
-- **Random selection**: Ensures diverse parent set
-- **Sufficient coverage**: Empirically validated to fill buckets effectively
-
-**Backtrace Filter Benefits**:
-- Ensures depth assignment accuracy
-- Prevents solving errors (incorrect depth → wrong solutions)
-- Small cost (~10% overhead) for correctness guarantee
-
----
-
-#### Memory Optimization Techniques
-
-**1. In-Place Expansion**:
-```cpp
-// Directly write to index_pairs during insertion
-depth_n1_nodes.attach_element_vector(&index_pairs[n+1]);
-depth_n1_nodes.insert(node);  // Automatically records to vector
-```
-
-**2. Rehash Prevention**:
-```cpp
-// Check before every insertion
-if (robin_set.will_rehash_on_next_insert()) {
-    stop_expansion();  // Prevents memory spike
-}
-```
-
-**3. Set Rotation** (Phase 1 BFS):
-```cpp
-// Reuse memory across depths
-visited.prev = std::move(visited.cur);
-visited.cur = std::move(visited.next);
-visited.next.clear();  // Ready for next depth
-```
-
-**4. Element Vector Optimization**:
-- Zero-copy recording (no separate storage step)
-- Automatic during insertion (no post-processing)
-- Detach after expansion to free robin_set overhead
-
-**5. Load Factor Control**:
-```cpp
-robin_set.max_load_factor(0.9f);  // High load for memory efficiency
-```
-
-**Memory Behavior**:
-- **Predictable peaks**: Determined by bucket size × load factor
-- **No spikes**: Rehash protection ensures stable memory
-- **Efficient reuse**: Move semantics avoid copying large sets
-
----
-
-## Part 2: Common Systems
-
-### Move Tables
-
-Move tables provide **O(1) state transitions** for cube pieces. This is a **standard system** used across all solvers in this repository and is considered foundational knowledge.
-
-**Concept**: Pre-compute all piece transitions for 18 moves:
-
-```cpp
-std::vector<int> edge_move_table(24 * 18);  // 24 states × 18 moves
-std::vector<int> corner_move_table(24 * 18);
-
-// Usage: O(1) lookup
-int new_edge_state = edge_move_table[current_state * 18 + move];
-```
-
-For detailed implementation, see move table creation functions in lines 220-340 of solver_dev.cpp.
-
----
-
-### IDA* Search
-
-IDA* (Iterative Deepening A*) is used for **scramble generation** from the database. This is another **standard system** used repository-wide.
-
-**High-level Flow**:
-1. Select random state from database at depth d
-2. Use IDA* to find path from solved state to target
-3. Return path as scramble sequence
-
-This functionality is well-established and documented in other solvers within this repository.
-
----
-
-## Part 3: Sparse Database Construction System
-
-### Overview
-
-The core innovation of this solver is the **sparse database construction system** - a collection of classes and functions that enable memory-adaptive BFS with local expansion.
-
-**Key Components** (Lines 350-2500):
-
-1. **SlidingDepthSets** - BFS engine with rehash protection
-2. **LocalExpansionConfig** - Configuration for local expansion
-3. **ExpansionParams** - Empirical parameters (load factors, memory factors)
-4. **determine_bucket_sizes()** - Dynamic bucket allocation logic
-5. **local_expand_step2_random_n1()** - Random parent expansion
-6. **expand_with_backtrace_filter()** - Backtrace verification expansion
-7. **local_bfs_n_to_n2()** - Complete local expansion coordinator
-
-### SlidingDepthSets Class (Lines 350-550)
-
-**Purpose**: Sliding window BFS engine with three robin_sets (prev, cur, next).
-
-**Key Features**:
-```cpp
-struct SlidingDepthSets {
-    tsl::robin_set<uint64_t> prev, cur, next;
-    size_t max_total_nodes;
-    bool expansion_stopped;
-    
-    // Rehash protection
-    bool will_rehash_on_next_insert() {
-        return next.size() >= next.load_threshold();
-    }
-    
-    // Zero-copy recording
-    void attach_element_vector(std::vector<uint64_t>* vec) {
-        next.attach_element_vector(vec);
-    }
-    
-    // Memory-efficient rotation
-    void advance_depth() {
-        prev = std::move(cur);
-        cur = std::move(next);
-        next.clear();
-    }
-};
-```
-
-**Innovations**:
-- **Rehash prediction**: Stops before memory spike
-- **Element vector**: Direct recording to index_pairs (zero-copy)
-- **Move semantics**: Efficient set rotation without copying
-
-### LocalExpansionConfig (Lines 800-890)
-
-**Purpose**: Container for bucket configuration and expansion parameters.
-
-```cpp
-struct LocalExpansionConfig {
-    bool enable_n1_expansion;    // Can we expand to depth n+1?
-    bool enable_n2_expansion;    // Can we expand to depth n+2?
-    
-    size_t bucket_n;             // Current depth bucket size
-    size_t bucket_n1;            // Depth n+1 bucket size
-    size_t bucket_n2;            // Depth n+2 bucket size
-    
-    size_t nodes_n1;             // Expected nodes at n+1
-    size_t nodes_n2;             // Expected nodes at n+2
-};
-```
-
-Returned by `determine_bucket_sizes()` based on available memory.
-
-### ExpansionParams Class (Lines 550-800)
-
-**Purpose**: Store empirical parameters for each (depth, bucket_size) combination.
-
-```cpp
-struct ExpansionParams {
-    double effective_load_factor;      // For random expansion (Step 2)
-    double backtrace_load_factor;      // For backtrace expansion (Step 5)
-    double measured_memory_factor;     // Actual RSS / theoretical memory
-};
-
-// Global parameter database
-ExpansionParamsDatabase g_expansion_params;
-
-// Usage
-auto params = g_expansion_params.get(max_depth, bucket_size);
-double expected_load = params.effective_load_factor;
-```
-
-**Empirical Tuning**:
-- Measured from 660,000+ RSS samples
-- Stable across configurations (<0.03% variation)
-- Used for accurate bucket selection
-
-### Bucket Allocation Logic (Lines 890-1080)
-
-**determine_bucket_sizes()** - The heart of memory-adaptive allocation:
-
-**Algorithm**:
-1. Calculate usable memory (remaining - safety margin)
-2. Try candidate bucket ratios (1:2, 1:1 for n+1:n+2)
-3. For each candidate:
-   - Get empirical load factors from g_expansion_params
-   - Calculate expected nodes: `bucket * load_factor`
-   - Calculate predicted RSS: `total_memory * memory_factor`
-   - Check if RSS <= usable_memory * 0.98 (safety)
-4. Select best configuration (maximum total nodes)
-
-**Fallback Strategy**:
-- If n+2 not possible → try n+1 only
-- If n+1 not possible → skip local expansion
-
-### Random Parent Expansion (Lines 1083-1280)
-
-**local_expand_step2_random_n1()** - Generate depth n+1 nodes:
-
-**Key Steps**:
-1. Pre-allocate bucket: `depth_n1_nodes.rehash(bucket_n1)`
-2. Convert depth n nodes to vector for random access
-3. Random selection loop:
-   - Select random parent
-   - Expand all 18 moves
-   - Check rehash before each insert
-   - Stop when `will_rehash_on_next_insert()` returns true
-4. Detach element_vector to finalize
 
 **Why This Works**:
-- Random parents → diverse hash distribution
-- Diverse hash → high load factor without rehashing
-- Random children → parent diversity for next depth
+- `attach_element_vector()` uses vector's existing capacity
+- No reallocation during expansion → no spike
+- `detach()` frees hash table (~50% of set memory)
 
-### Backtrace Expansion (Lines 1564-1900)
+**Face-Diverse Expansion**:
 
-**expand_with_backtrace_filter()** - Generate depth n+2 with verification:
+```cpp
+std::vector<int> selected_moves;
+selected_moves.reserve(18);  // Avoid reallocation
 
-**Key Steps**:
-1. Sample 1/12 of depth n+1 nodes as parents
-2. For each parent:
-   - Expand all 18 moves to get children
-   - For each child:
-     - Backtrace: try all 18 moves backward
-     - If backtrace reaches depth n → reject (false n+2)
-     - If valid → insert (check rehash first)
-3. Return statistics (nodes added, rejected, etc.)
-
-**Backtrace Verification**:
-- Ensures depth n+2 nodes are NOT reachable from depth n in 1 move
-- Prevents database corruption
-- Small overhead (~10%) for correctness
-
-### Local BFS Coordinator (Lines 2900-3500)
-
-**local_bfs_n_to_n2()** - Orchestrates complete local expansion:
-
-**Flow**:
-```
-Step 0: determine_bucket_sizes()  → config
-Step 1: Calculate capacity N from config
-Step 2: local_expand_step2_random_n1()  → depth n+1 nodes
-Step 3: Data reorganization (prev/cur/next sets)
-Step 4: Build sampled_nodes (1/12 of n+1)
-Step 5: expand_with_backtrace_filter()  → depth n+2 nodes
-Step 6: Statistics and cleanup
+for (int face = 0; face < 6; ++face) {
+    int move = all_moves[face];  // U, D, R, L, F, B
+    selected_moves.push_back(move);
+}
 ```
 
-**Memory Management**:
-- Careful set rotation to minimize peak
-- Element vector attachment for zero-copy
-- Explicit cleanup of intermediate data
+**Benefits**:
+- Depth accuracy: Only moves exactly 1 ply from parent depth
+- Diversity: Explores all directions equally
+- Memory safety: Fixed 6 moves per parent (predictable growth)
+
+**Experiment Reference**: See [Experiences/depth_10_memory_spike_investigation.md](Experiences/depth_10_memory_spike_investigation.md) for spike analysis.
 
 ---
 
-## Part 4: Class Structure (xxcross_search)
+### Phase 3: Local Expansion (Depth 7→8)
 
-### Overview
+**Purpose**: Expand depth 7 to depth 8 using same pattern as Phase 2.
 
-The solver is organized as a single class `xxcross_search` that encapsulates all solver functionality. All major components (move tables, database, search functions) are organized within this class.
+**Key Addition**: **depth7_set** for duplicate detection
 
 ```cpp
-struct xxcross_search {
-    // Move tables (pre-computation)
-    std::vector<int> edge_move_table;
-    std::vector<int> corner_move_table;
-    std::vector<int> multi_move_table_cross_edges;
-    std::vector<int> multi_move_table_F2L_slots_edges;
-    std::vector<int> multi_move_table_F2L_slots_corners;
+// Build depth7_set from index_pairs[7]
+tsl::robin_set<uint64_t> depth7_set;
+depth7_set.max_load_factor(0.95f);
+
+size_t depth7_size = index_pairs[7].size();
+size_t required_buckets = static_cast<size_t>(depth7_size / 0.95);
+
+// Round up to power of 2 (avoid rehash)
+size_t power_of_2 = 1;
+while (power_of_2 < required_buckets) {
+    power_of_2 <<= 1;
+}
+depth7_set.rehash(power_of_2);
+
+// Bulk insert (more efficient than loop)
+depth7_set.insert(index_pairs[7].begin(), index_pairs[7].end());
+```
+
+**Why Bulk Insert?**
+- Single allocation instead of incremental growth
+- Reduces allocator fragmentation
+- ~20% faster than loop with `insert(node)`
+
+**Duplicate Check**:
+```cpp
+if (depth7_set.find(next_node) != depth7_set.end()) {
+    continue;  // Skip (already in depth 7)
+}
+```
+
+**Memory Lifecycle**:
+1. Build depth7_set (~50 MB for 3.7M nodes)
+2. Expand depth 7→8
+3. Free depth7_set (swap with empty set)
+4. RSS drops by ~50 MB
+
+---
+
+### Phase 4: Local Expansion (Depth 8→9)
+
+**Purpose**: Expand depth 8 to depth 9 with **maximum memory efficiency**.
+
+**Same Pattern**: Pre-reserve + attach + expand + detach
+
+**Depth8_set Construction** (Optimized):
+
+```cpp
+tsl::robin_set<uint64_t> depth8_set;
+depth8_set.max_load_factor(0.95f);
+
+size_t depth8_size = index_pairs[8].size();
+
+// Calculate buckets and round to power of 2
+size_t required_buckets = static_cast<size_t>(depth8_size / 0.95);
+size_t power_of_2 = 1;
+while (power_of_2 < required_buckets) {
+    power_of_2 <<= 1;
+}
+depth8_set.rehash(power_of_2);  // Guarantee bucket count
+
+// Bulk insert
+depth8_set.insert(index_pairs[8].begin(), index_pairs[8].end());
+```
+
+**Why rehash() instead of reserve()**?
+- `reserve(n)` sets minimum capacity (may round up unpredictably)
+- `rehash(buckets)` guarantees exact bucket count
+- Power-of-2 buckets prevent future rehashing
+
+**Expansion Statistics** (typical):
+- Depth 8 size: ~3.7M nodes
+- Depth 9 target: ~7.5M nodes (90% of 8M bucket)
+- depth8_set memory: ~50 MB
+- Expansion time: ~15 seconds
+
+---
+
+### Malloc Trim (Native Only)
+
+**Purpose**: Clear allocator cache before Phase 5 to reduce memory baseline.
+
+**Why Needed?**
+
+Glibc allocator (`malloc/free`) maintains a cache of freed memory:
+- Speeds up future allocations
+- But inflates RSS measurement
+- Can accumulate 50-100 MB of cached memory
+
+**When to Use**:
+- **Native measurements**: Always (accurate RSS)
+- **WASM mode**: Never (no `malloc_trim()` in WASM)
+- **WASM-equivalent native**: Disabled via `DISABLE_MALLOC_TRIM=1`
+
+**Code**:
+
+```cpp
+#ifndef __EMSCRIPTEN__
+if (!research_config_.disable_malloc_trim) {
+    size_t rss_before = get_rss_kb();
+    malloc_trim(0);  // Return unused memory to OS
+    size_t rss_after = get_rss_kb();
     
-    // Pruning tables
-    std::vector<unsigned char> prune_table1;
-    std::vector<unsigned char> prune_table23_couple;
+    if (verbose) {
+        std::cout << "  RSS before malloc_trim: " << (rss_before / 1024.0) << " MB" << std::endl;
+        std::cout << "  RSS after malloc_trim: " << (rss_after / 1024.0) << " MB" << std::endl;
+        std::cout << "  Freed: " << ((rss_before - rss_after) / 1024.0) << " MB" << std::endl;
+    }
+}
+#endif
+```
+
+**Typical Savings**: 50-80 MB
+
+**Experiment Reference**: See [Experiences/wasm_heap_measurement_data.md](Experiences/wasm_heap_measurement_data.md) - Phase 4 peak measurements.
+
+---
+
+### Phase 5: Local Expansion (Depth 9→10)
+
+**Purpose**: Partially expand depth 9 to depth 10 using **random sampling**.
+
+**Why Random Sampling?**
+
+Complete expansion of depth 9→10 would generate ~30M nodes:
+- Requires ~32M bucket (256 MB hash table)
+- Total RSS would exceed 1.5 GB for 16M bucket
+- Not feasible for mobile devices
+
+**Random sampling advantages**:
+- Controlled memory: Fill exactly 90% of bucket
+- Depth accuracy: All nodes are exactly depth 10
+- Diversity: Random parent selection ensures variety
+- Scalability: Works with any bucket size
+
+**Algorithm**:
+
+```cpp
+// 1. Build depth9_set for duplicate detection
+tsl::robin_set<uint64_t> depth9_set;
+// ... (same bulk insert pattern as Phase 4) ...
+
+// 2. Initialize depth 10 bucket
+tsl::robin_set<uint64_t> depth_10_nodes;
+depth_10_nodes.max_load_factor(0.9f);
+depth_10_nodes.reserve(bucket_d10);
+index_pairs[10].reserve(bucket_d10 * 0.95);
+depth_10_nodes.attach_element_vector(&index_pairs[10]);
+
+// 3. Random sampling
+std::mt19937_64 rng(42);  // Fixed seed for reproducibility
+std::uniform_int_distribution<size_t> parent_dist(0, index_pairs[9].size() - 1);
+std::uniform_int_distribution<int> move_dist(0, 17);
+
+int children_per_parent = 2;  // Adaptive (can be 1, 2, or 3)
+size_t target_nodes = static_cast<size_t>(bucket_d10 * 0.9);
+
+while (depth_10_nodes.size() < target_nodes) {
+    // Random parent
+    size_t parent_idx = parent_dist(rng);
+    uint64_t parent_node = index_pairs[9][parent_idx];
     
-    // Database (BFS results)
-    std::vector<std::vector<uint64_t>> index_pairs;
-    
-    // Search state
-    std::vector<int> sol;
-    std::string scramble;
-    int max_length;
-    // ... other search variables
-    
-    // Constructor: performs ALL pre-computation
-    xxcross_search(bool adj = true, 
-                   int BFS_DEPTH = 6, 
-                   int MEMORY_LIMIT_MB = 1600, 
-                   bool verbose = true);
-    
-    // Public API
-    std::string start_search(std::string arg_scramble = "");
-    std::string get_xxcross_scramble(std::string arg_length = "7");
-    std::string func(std::string arg_scramble = "", std::string arg_length = "7");
+    // Apply random moves
+    for (int i = 0; i < children_per_parent; ++i) {
+        int move = move_dist(rng);
+        uint64_t next_node = apply_move(parent_node, move);
+        
+        // Skip if in depth 9
+        if (depth9_set.find(next_node) != depth9_set.end()) {
+            continue;
+        }
+        
+        // Insert (automatic dedup by robin_set)
+        depth_10_nodes.insert(next_node);
+        
+        // Safety: Stop on rehash
+        if (depth_10_nodes.bucket_count() != last_bucket_count) {
+            goto phase5_done;
+        }
+    }
+}
+phase5_done:
+```
+
+**Key Safety Feature**: **Rehash Detection**
+
+```cpp
+const size_t current_bucket_count = depth_10_nodes.bucket_count();
+if (current_bucket_count != last_bucket_count) {
+    // Unexpected rehash → stop immediately
+    // (Prevents memory spike from exceeding bucket limit)
+    goto phase5_done;
+}
+```
+
+**Why This Matters**:
+- Robin_set rehashes when load exceeds `max_load_factor * bucket_count`
+- Rehashing doubles bucket count → doubles memory
+- Early stop prevents OOM on constrained devices
+
+**Adaptive Children Per Parent**:
+
+Current implementation: `children_per_parent = 2`
+
+Future optimization (commented out):
+```cpp
+// Adaptive based on rejection rate
+double rejection_rate = duplicate_count / (inserted_count + duplicate_count);
+if (rejection_rate < 0.3) {
+    children_per_parent = 3;  // Low rejection → more children
+} else if (rejection_rate > 0.7) {
+    children_per_parent = 1;  // High rejection → fewer children
+}
+```
+
+**Statistics**:
+- Typical bucket: 16M nodes
+- Target fill: 14.4M nodes (90%)
+- Rejection rate: ~60-70% (depth 9 duplicates + depth 10 duplicates)
+- Processed parents: ~40-50K
+
+**Experiment Reference**: See [Experiences/depth_10_implementation_results.md](Experiences/depth_10_implementation_results.md) for performance analysis.
+
+---
+
+## Memory Efficiency Optimizations
+
+### 1. Pre-Reserve Pattern (Spike Elimination)
+
+**Problem**: Attaching element vector to empty robin_set causes reallocation spike
+
+**Old Pattern** (causes spike):
+```cpp
+robin_set.attach_element_vector(&vector);  // vector.size() == 0
+// ... insertions cause vector reallocation ...
+```
+
+**New Pattern** (eliminates spike):
+```cpp
+vector.reserve(expected_size);  // Pre-allocate
+robin_set.attach_element_vector(&vector);  // No reallocation needed
+```
+
+**Impact**: Eliminates ~50-100 MB transient spikes
+
+**Experiment**: [Experiences/depth_10_memory_spike_investigation.md](Experiences/depth_10_memory_spike_investigation.md)
+
+### 2. Bulk Insert for Hash Sets
+
+**Problem**: Incremental insert causes multiple rehashes
+
+**Old Pattern**:
+```cpp
+for (uint64_t node : nodes) {
+    set.insert(node);  // May trigger rehash multiple times
+}
+```
+
+**New Pattern**:
+```cpp
+// Calculate final bucket count
+size_t required_buckets = nodes.size() / load_factor;
+size_t power_of_2 = next_power_of_2(required_buckets);
+set.rehash(power_of_2);  // Single allocation
+
+// Bulk insert
+set.insert(nodes.begin(), nodes.end());  // No rehash
+```
+
+**Impact**: ~20% faster, ~30 MB less peak memory
+
+### 3. Hoist Allocations Outside Loops
+
+**Problem**: Repeated allocations in tight loops
+
+**Old Pattern**:
+```cpp
+for (uint64_t parent : parents) {
+    std::vector<int> all_moves(18);  // Allocated every iteration!
+    std::shuffle(all_moves.begin(), all_moves.end(), rng);
+    // ...
+}
+```
+
+**New Pattern**:
+```cpp
+std::vector<int> all_moves(18);  // Allocated once
+for (uint64_t parent : parents) {
+    std::shuffle(all_moves.begin(), all_moves.end(), rng);
+    // ...
+}
+```
+
+**Impact**: Eliminates millions of small allocations, reduces fragmentation
+
+### 4. Reserve for Known Sizes
+
+**Pattern**: Always reserve vectors with known final size
+
+```cpp
+// Bad
+std::vector<int> selected_moves;
+for (int i = 0; i < 6; ++i) {
+    selected_moves.push_back(move);  // May reallocate
+}
+
+// Good
+std::vector<int> selected_moves;
+selected_moves.reserve(18);  // Max possible size
+for (int i = 0; i < 6; ++i) {
+    selected_moves.push_back(move);  // No reallocation
+}
+```
+
+**Impact**: Microseconds per call, but millions of calls → seconds saved
+
+---
+
+## Depth 9→10 Expansion Strategy
+
+### Random Sampling Rationale
+
+**Why Not Complete Expansion?**
+
+Complete BFS expansion of depth 9→10:
+- Parents: ~7.5M nodes
+- Branching factor: ~18 moves
+- Expected children: ~30M nodes (after dedup)
+- Required bucket: 32M+ (>256 MB hash table)
+- Total RSS: >1.5 GB (exceeds mobile budget)
+
+**Random Sampling Benefits**:
+- **Memory control**: Fill exactly to bucket capacity
+- **Depth accuracy**: All nodes are exactly depth 10 (no depth 9 nodes included)
+- **Diversity**: Random parent selection explores state space uniformly
+- **Scalability**: Works with 4M, 8M, 16M buckets
+
+### Diversity Control
+
+**Face-Diverse Expansion** (Phases 2-4):
+- Select 6 moves per parent (one per face)
+- Ensures balanced exploration of move space
+
+**Random Move Selection** (Phase 5):
+- Uniform distribution over 18 moves
+- Compensates for single-move-per-parent constraint
+
+**Why Single Move Per Parent?**
+
+Multiple moves per parent causes **depth contamination**:
+- Move 1: depth 10 ✓
+- Move 2 from same parent: depth 10 ✓
+- But: Both moves might generate same region of state space
+- Result: Lower diversity than expected
+
+**Single move per parent** + **random parent selection**:
+- Each insertion explores different region
+- Maximum diversity for given number of samples
+
+### Rejection Rate Analysis
+
+**Typical Statistics** (8M/8M/8M/16M bucket):
+- Total attempts: ~50M
+- Inserted: ~14.4M
+- Duplicates: ~35.6M
+- Rejection rate: ~71%
+
+**Breakdown**:
+- Depth 9 duplicates: ~40% (already in depth9_set)
+- Depth 10 duplicates: ~31% (already in depth_10_nodes)
+
+**Adaptive Strategy** (Future):
+- Monitor rejection rate during expansion
+- Increase `children_per_parent` if rejection < 30%
+- Decrease if rejection > 70%
+- Target: Balance between speed and diversity
+
+---
+
+## WASM vs Native Differences
+
+### Platform Detection
+
+```cpp
+#ifdef __EMSCRIPTEN__
+    // WASM-specific code
+#else
+    // Native-specific code
+#endif
+```
+
+### Heap Monitoring
+
+**WASM**:
+```cpp
+#ifdef __EMSCRIPTEN__
+size_t heap_bytes = emscripten_get_heap_size();
+size_t heap_mb = heap_bytes / (1024 * 1024);
+std::cout << "[Heap] Phase: " << heap_mb << " MB" << std::endl;
+#endif
+```
+
+**Native**:
+```cpp
+#ifndef __EMSCRIPTEN__
+size_t rss_kb = get_rss_kb();  // Read from /proc/self/status
+size_t rss_mb = rss_kb / 1024;
+std::cout << "RSS: " << rss_mb << " MB" << std::endl;
+#endif
+```
+
+### Memory Behavior
+
+**WASM Heap Characteristics**:
+- **Never shrinks**: `free()` does not reduce heap size
+- **Growth granularity**: 64 KB pages (WebAssembly.Memory)
+- **Max size**: 2 GB (32-bit addressing) or 4 GB (browser limit)
+- **Measurement point**: Final heap size == peak heap size
+
+**Native RSS Characteristics**:
+- **Shrinks with malloc_trim()**: Returns memory to OS
+- **Growth granularity**: OS page size (4 KB on Linux)
+- **Max size**: System-dependent (typically GB-TB range)
+- **Measurement point**: Peak RSS during construction
+
+### Malloc Trim
+
+**Only available on Native** (glibc):
+
+```cpp
+#ifndef __EMSCRIPTEN__
+malloc_trim(0);  // Not available in WASM
+#endif
+```
+
+**WASM Equivalent**: No action needed (heap never caches freed memory)
+
+### Function Export
+
+**WASM** (embind):
+```cpp
+#ifdef __EMSCRIPTEN__
+EMSCRIPTEN_BINDINGS(my_module) {
+    emscripten::function("solve_with_custom_buckets", &solve_with_custom_buckets);
+    emscripten::class_<SolverStatistics>("SolverStatistics")
+        .property("node_counts", &SolverStatistics::node_counts)
+        // ...
+}
+#endif
+```
+
+**Native**: Standard C++ (no special exports)
+
+---
+
+## Malloc Trim & Allocator Management
+
+### Purpose
+
+Glibc's `ptmalloc2` allocator maintains a cache of freed memory:
+- Speeds up future allocations (reduces system calls)
+- But inflates RSS measurements
+- Cache can accumulate 50-100 MB
+
+**malloc_trim(0)** forces allocator to return unused memory to OS:
+- Reduces RSS to actual allocated memory
+- Useful for accurate memory measurements
+- No effect on WASM (no malloc cache)
+
+### Usage Pattern
+
+**When to Enable**:
+- Native RSS measurements
+- Production code (reduce memory footprint)
+
+**When to Disable**:
+- WASM compilation (function not available)
+- WASM-equivalent native measurements (for fair comparison)
+
+### Environment Variable Control
+
+```cpp
+const char *env_disable = std::getenv("DISABLE_MALLOC_TRIM");
+if (env_disable != nullptr) {
+    research_config.disable_malloc_trim = (std::string(env_disable) == "1");
+}
+```
+
+**Usage**:
+```bash
+# Normal operation (malloc_trim enabled)
+./solver_dev 308
+
+# WASM-equivalent measurement (malloc_trim disabled)
+DISABLE_MALLOC_TRIM=1 ./solver_dev 308
+```
+
+### Typical Impact
+
+**With malloc_trim**:
+- Phase 4 end: ~600 MB RSS
+- After malloc_trim: ~550 MB RSS
+- Phase 5 peak: ~750 MB RSS
+
+**Without malloc_trim** (WASM-equivalent):
+- Phase 4 end: ~650 MB RSS (cache accumulation)
+- No trim: ~650 MB RSS
+- Phase 5 peak: ~800 MB RSS
+
+**Delta**: ~50 MB difference (allocator cache)
+
+**Experiment**: [Experiences/wasm_heap_measurement_data.md](Experiences/wasm_heap_measurement_data.md) - "Final Cleanup Complete" measurements.
+
+---
+
+## Developer Options & Research Mode
+
+### Environment Variables
+
+**ENABLE_CUSTOM_BUCKETS**:
+```bash
+ENABLE_CUSTOM_BUCKETS=1 ./solver_dev 7 8 8 8
+```
+- Enables custom bucket specification
+- Overrides BucketModel selection
+- Required for WASM measurements
+
+**DISABLE_MALLOC_TRIM**:
+```bash
+DISABLE_MALLOC_TRIM=1 ./solver_dev 308
+```
+- Skips `malloc_trim()` call
+- Use for WASM-equivalent native measurements
+
+**VERBOSE**:
+```bash
+VERBOSE=0 ./solver_dev 308
+```
+- Disable all console output (CSV mode)
+- Use for automated benchmarks
+
+### Command-Line Formats
+
+**Single Memory Limit** (Legacy):
+```bash
+./solver_dev 308
+# Uses auto-calculated buckets based on 308 MB limit
+```
+
+**Custom 3-Bucket** (Depths 7-9):
+```bash
+ENABLE_CUSTOM_BUCKETS=1 ./solver_dev 8 8 8
+# 8 MB for each of depths 7, 8, 9 (depth 10 disabled)
+```
+
+**Custom 4-Bucket** (Depths 7-10):
+```bash
+ENABLE_CUSTOM_BUCKETS=1 ./solver_dev 8 8 8 16
+# 8 MB for depths 7-9, 16 MB for depth 10
+```
+
+### ResearchConfig Fields
+
+```cpp
+struct ResearchConfig {
+    bool enable_custom_buckets = false;   // Allow 3/4-bucket CLI
+    bool skip_search = false;             // Skip IDA* (database only)
+    bool verbose = true;                  // Console logging
+    bool disable_malloc_trim = false;     // WASM-equivalent mode
+    bool collect_detailed_statistics = false;  // CSV per-depth output
 };
 ```
 
-### Constructor (Lines 3325-3400)
-
-All pre-computation happens in the constructor:
-
+**Usage in Code**:
 ```cpp
-xxcross_search::xxcross_search(bool adj, int BFS_DEPTH, int MEMORY_LIMIT_MB, bool verbose) {
-    // Step 1: Create move tables
-    edge_move_table = create_edge_move_table();
-    corner_move_table = create_corner_move_table();
-    create_multi_move_table(4, 2, 12, 24*22*20*18, edge_move_table, multi_move_table_cross_edges);
-    create_multi_move_table(2, 2, 12, 24*22, edge_move_table, multi_move_table_F2L_slots_edges);
-    create_multi_move_table(2, 3, 8, 24*21, corner_move_table, multi_move_table_F2L_slots_corners);
-    
-    // Step 2: Create pruning tables
-    prune_table1 = std::vector<unsigned char>(24*22*20*18, 255);
-    prune_table23_couple = std::vector<unsigned char>(24*22*24*21, 255);
-    create_prune_table(index1, size1, 8, multi_move_table_cross_edges, prune_table1);
-    create_prune_table2(index2, index3, size2, size3, 9, 
-                        multi_move_table_F2L_slots_edges, 
-                        multi_move_table_F2L_slots_corners, 
-                        prune_table23_couple);
-    
-    // Step 3: Build complete search database (BFS + Local Expansion)
-    build_complete_search_database(
-        index1, index2, index3,
-        size1, size2, size3,
-        multi_move_table_cross_edges,
-        multi_move_table_F2L_slots_edges,
-        multi_move_table_F2L_slots_corners,
-        index_pairs,  // Output: populated with BFS results
-        BFS_DEPTH,
-        MEMORY_LIMIT_MB,
-        verbose
-    );
+ResearchConfig research;
+research.enable_custom_buckets = true;
+research.skip_search = true;  // Build database only (no scramble generation)
+
+xxcross_search solver(308, bucket_config, research, true);
+```
+
+---
+
+## Random Sampling for Diversity
+
+### Why Randomness?
+
+**Deterministic expansion** (BFS):
+- Explores states in breadth-first order
+- Guarantees complete coverage
+- But: Not feasible for depth 10 (memory constraints)
+
+**Random sampling**:
+- Explores random subset of state space
+- No completeness guarantee
+- But: Scalable to any bucket size
+
+### Diversity Metrics
+
+**Parent Selection**:
+- Uniform distribution over `index_pairs[9]`
+- All ~7.5M parents have equal probability
+- Ensures no bias toward specific regions
+
+**Move Selection**:
+- Uniform distribution over 18 moves
+- Balances face exploration (U/D/R/L/F/B)
+
+**Result**: Depth 10 database is **representative sample** of full state space
+
+### Validation
+
+**Test**: Generate 1000 scrambles from depth 10 database
+- Expected: Diverse scrambles (no duplicates)
+- Actual: 1000 unique scrambles ✓
+- Conclusion: Sufficient diversity for training
+
+**Experiment**: Manual testing (no formal document yet)
+
+### Tradeoff Analysis
+
+| Approach | Coverage | Memory | Depth Accuracy | Diversity |
+|----------|----------|--------|----------------|-----------|
+| **Complete BFS** | 100% | High (32M+) | Perfect (all d=10) | Perfect |
+| **Random Sampling** | ~0.5% | Controlled (16M) | Perfect (all d=10) | High |
+| **Greedy Expansion** | Biased | Controlled | Imperfect (d=9,10 mix) | Low |
+
+**Chosen**: Random sampling (best tradeoff for mobile constraints)
+
+---
+
+## Implementation Warnings & Best Practices
+
+### 1. Always Pre-Reserve Before Attach
+
+**❌ Bad**:
+```cpp
+robin_set.attach_element_vector(&vector);  // vector.capacity() == 0
+// Insertions cause reallocation → memory spike
+```
+
+**✅ Good**:
+```cpp
+vector.reserve(expected_size);  // Pre-allocate capacity
+robin_set.attach_element_vector(&vector);  // No reallocation
+```
+
+### 2. Use Bulk Insert for Hash Sets
+
+**❌ Bad**:
+```cpp
+for (uint64_t node : nodes) {
+    set.insert(node);  // May rehash multiple times
 }
 ```
 
-**Design Rationale**:
-- **All-in-one initialization**: After construction, the solver is immediately ready for search
-- **No separate initialization methods**: Reduces user error (forgetting to call init)
-- **RAII pattern**: Resource acquisition is initialization
-- **Member storage**: Move tables and database persist for repeated searches
-
-**Memory Lifecycle**:
-1. Construction: All tables and database built (~1-2 GB)
-2. Search calls: Use pre-built data (no additional allocation)
-3. Destruction: All resources automatically freed
-
-### Search Functions (Lines 3460-3550)
-
-After the constructor completes, these functions can be called repeatedly:
-
-**start_search()** (Lines 3505-3543):
-
+**✅ Good**:
 ```cpp
-std::string start_search(std::string arg_scramble = "") {
-    // Purpose: Solve a given scramble to find XXCross solution
-    // Uses: Pre-built database (index_pairs) + IDA* search
+set.rehash(next_power_of_2(nodes.size() / load_factor));
+set.insert(nodes.begin(), nodes.end());  // Single allocation
+```
+
+### 3. Hoist Allocations Out of Loops
+
+**❌ Bad**:
+```cpp
+for (int i = 0; i < 1000000; ++i) {
+    std::vector<int> temp(18);  // Allocated 1M times!
+}
+```
+
+**✅ Good**:
+```cpp
+std::vector<int> temp(18);  // Allocated once
+for (int i = 0; i < 1000000; ++i) {
+    std::shuffle(temp.begin(), temp.end(), rng);
+}
+```
+
+### 4. Free Large Data Structures Explicitly
+
+**❌ Bad**:
+```cpp
+{
+    robin_set<uint64_t> large_set(10000000);
+    // ... use set ...
+}  // Destructor may delay memory return
+```
+
+**✅ Good**:
+```cpp
+{
+    robin_set<uint64_t> large_set(10000000);
+    // ... use set ...
     
-    // Parse scramble and apply to goal state
-    std::vector<int> alg = StringToAlg(scramble);
-    for (int move : alg) {
-        index1 = multi_move_table_cross_edges[index1 * 18 + move];
-        index2 = multi_move_table_F2L_slots_edges[index2 * 18 + move];
-        index3 = multi_move_table_F2L_slots_corners[index3 * 18 + move];
+    // Explicit swap-with-empty (immediate deallocation)
+    robin_set<uint64_t> temp;
+    large_set.swap(temp);
+}
+```
+
+### 5. Check for Unexpected Rehash
+
+**❌ Bad**:
+```cpp
+set.reserve(target_size);
+while (set.size() < target_size) {
+    set.insert(node);
+    // No check → may exceed memory if rehash occurs
+}
+```
+
+**✅ Good**:
+```cpp
+size_t last_bucket_count = set.bucket_count();
+while (set.size() < target_size) {
+    set.insert(node);
+    if (set.bucket_count() != last_bucket_count) {
+        // Unexpected rehash → stop immediately
+        break;
     }
-    
-    // Get pruning table lower bounds
-    prune1_tmp = prune_table1[index1];
-    prune23_tmp = prune_table23_couple[index2 * size3 + index3];
-    
-    // Iterative deepening search
-    for (int d = std::max(prune1_tmp, prune23_tmp); d <= max_length; ++d) {
-        if (depth_limited_search(index1, index2, index3, d, 324)) {
-            break;  // Solution found
-        }
-    }
-    
-    return AlgToString(sol);
 }
 ```
 
-**Key Points**:
-- Uses pre-built `multi_move_table_*` for O(1) state transitions
-- Pruning tables provide lower bound for IDA* depth
-- No database construction during search (all pre-built)
+### 6. Use Consistent Load Factors
 
-**get_xxcross_scramble()** (Lines 3460-3500):
+**Recommendation**:
+- **Expansion buckets** (depths 7-10): `max_load_factor(0.9)` for memory efficiency
+- **Temporary sets** (depth7_set, depth8_set, depth9_set): `max_load_factor(0.95)` for speed
+
+**Reason**: Higher load factor → more collisions but less memory
+
+### 7. Measure at Correct Checkpoints
+
+**WASM**:
+```cpp
+log_emscripten_heap("Phase 5 Complete");  // Use heap size
+// "[Heap] Final Cleanup Complete" is peak (heap never shrinks)
+```
+
+**Native**:
+```cpp
+std::cout << "RSS after Phase 5: " << (get_rss_kb() / 1024.0) << " MB" << std::endl;
+// RSS may include allocator cache (use malloc_trim for accuracy)
+```
+
+---
+
+## Scramble Generation (IDA*)
+
+### Overview
+
+IDA* (Iterative Deepening A*) is used to generate optimal scrambles:
+- Start from solved state
+- Search for state in database at target depth
+- Return move sequence to reach that state
+
+**See [API_REFERENCE.md](API_REFERENCE.md) for detailed function signatures.**
+
+### High-Level Flow
 
 ```cpp
-st::string get_xxcross_scramble(std::string arg_length = "7") {
-    // Purpose: Generate a random scramble of specified length
-    // Uses: Pre-built database to select random state at target depth
+std::string get_xxcross_scramble(std::string target_depth) {
+    int depth = std::stoi(target_depth);
     
-    int len = std::stoi(arg_length);
+    // Random target state from database
+    size_t idx = random_index(index_pairs[depth].size());
+    uint64_t target_node = index_pairs[depth][idx];
+    State target = decode_node(target_node);
     
-    // Select random state from database at depth=len
-    std::uniform_int_distribution<int> dist(0, index_pairs[len].size() - 1);
-    int random_index = dist(generator);
-    uint64_t selected_state = index_pairs[len][random_index];
+    // IDA* search
+    std::vector<int> solution = start_search(target, depth, adj);
     
-    // Decode state and solve back to scrambled position
-    // (IDA* search from selected_state to goal)
-    // ...
-    
-    return tmp;  // Scramble string
+    tmp = AlgToString(solution);  // Store before returning
+    return tmp;
 }
 ```
 
-**Key Points**:
-- Database (`index_pairs[depth]`) stores all states at each depth
-- Random sampling ensures variety
-- No real-time BFS required (uses pre-built database)
+**Fix (2026-01-03)**: Added `tmp = AlgToString(solution);` before return to ensure scramble string is properly assigned. Previously, function was returning uninitialized or stale `tmp` value, causing scramble length to always show as 1 move in browser UI.
 
-**func()** - Convenience wrapper:
+### Key Functions
+
+**start_search**:
+- Iterative deepening from depth 0 to target_depth
+- Calls `depth_limited_search` for each depth limit
+
+**depth_limited_search**:
+- Recursive DFS with depth limit
+- Database pruning: Skip states already in database at ≤ current depth
+- Returns `true` if solution found
+
+**Database Pruning**:
 ```cpp
-std::string func(std::string arg_scramble = "", std::string arg_length = "7") {
-    // Solves arg_scramble, then generates new scramble of length arg_length
-    return arg_scramble + start_search(arg_scramble) + "," + get_xxcross_scramble(arg_length);
+int estimated_depth = get_depth_from_database(current_state);
+if (estimated_depth <= remaining_depth) {
+    return false;  // Prune (can't improve on database entry)
 }
 ```
 
-**Note**: `depth_limited_search()` is omitted from documentation as it is a standard IDA* implementation (common repository knowledge).
-
----
-
-## Part 5: Memory Management
-
-### RSS Monitoring
-
-The solver can monitor its own memory usage:
-
-```cpp
-size_t get_rss_kb() {
-#ifdef __EMSCRIPTEN__
-    return 0;  // Not available in WebAssembly
-#else
-    std::ifstream status("/proc/self/status");
-    std::string line;
-    
-    while (std::getline(status, line)) {
-        if (line.substr(0, 6) == "VmRSS:") {
-            size_t pos = line.find_last_of(" \t");
-            if (pos != std::string::npos) {
-                return std::stoull(line.substr(6, pos - 6));
-            }
-        }
-    }
-    
-    return 0;
-#endif
-}
-```
-
-Usage:
-
-```cpp
-size_t rss_before = get_rss_kb();
-expand_one_depth(visited, cur_depth, move_table, index_pairs, verbose);
-size_t rss_after = get_rss_kb();
-
-std::cout << "RSS increase: " << (rss_after - rss_before) / 1024 << " MB" << std::endl;
-```
-
-### robin_hash Capacity Monitoring and Memory Release
-
-The solver uses several advanced features from `tsl::robin_hash` (documented in [src/tsl/ELEMENT_VECTOR_FEATURE.md](../../../tsl/ELEMENT_VECTOR_FEATURE.md)):
-
-**Capacity Monitoring API**:
-- `load_threshold()` - Get precomputed rehash threshold (bucket_count × max_load_factor)
-- `available_capacity()` - Calculate remaining capacity before rehash
-- `will_rehash_on_next_insert()` - Predict if next insert will trigger rehash
-
-**Usage in solver_dev.cpp**:
-```cpp
-// Prevent rehash during expansion
-while (!depth_n1_nodes.will_rehash_on_next_insert()) {
-    depth_n1_nodes.insert(child_node);
-}
-```
-
-**Explicit Memory Release via swap()**:
-
-While `tsl::robin_hash` provides `clear()`, it does NOT release the allocated bucket memory. To force memory deallocation, use the **swap idiom**:
-
-```cpp
-// Standard clear() - does NOT free memory
-depth_n1_nodes.clear();  
-// Bucket array still allocated (size=0, capacity unchanged)
-
-// Explicit memory release via swap
-tsl::robin_set<uint64_t>().swap(depth_n1_nodes);
-// Creates temporary empty set, swaps with depth_n1_nodes, temporary destructs
-// Result: depth_n1_nodes now has 0 capacity, all memory freed
-```
-
-**Real Usage in solver_dev.cpp** (Lines 2850-2900):
-```cpp
-// After depth 7 expansion complete
-index_pairs[7] = std::move(depth_7_vector);  // Transfer ownership
-
-// Free intermediate depth 6 data
-tsl::robin_set<uint64_t>().swap(depth_6_nodes);  // Explicit memory release
-index_pairs[6].clear();  // Clear vector
-index_pairs[6].shrink_to_fit();  // Release vector capacity
-
-std::cout << "RSS after depth 6 cleanup: " << (get_rss_kb() / 1024.0) << " MB" << std::endl;
-```
-
-**Why swap() instead of clear()**:
-- `clear()` only removes elements, bucket array remains allocated
-- `swap()` with temporary empty set forces complete deallocation
-- Critical in memory-constrained environments (WASM, embedded systems)
-- Reduces peak RSS by ~200-400 MB in typical configurations
-
-**Pattern Summary**:
-```cpp
-container.clear();           // Elements removed, capacity unchanged
-container.shrink_to_fit();   // Hint to reduce capacity (not guaranteed)
-Container().swap(container); // Guaranteed full memory release (C++11 idiom)
-```
-
-See [src/tsl/ELEMENT_VECTOR_FEATURE.md](../../../tsl/ELEMENT_VECTOR_FEATURE.md) for complete API reference.
-
-### Memory Composition
-
-For 8M/8M/8M configuration:
-
-```
-Total Peak: 748 MB
-├─ Fixed Overhead: 62 MB
-│  ├─ C++ runtime: ~15 MB
-│  ├─ Phase 1 remnants: ~20 MB
-│  ├─ OS allocator: ~10 MB
-│  └─ Misc: ~17 MB
-│
-└─ Bucket Memory: 686 MB
-   ├─ Bucket arrays: (8M+8M+8M) × 4 bytes = 96 MB
-   ├─ Robin set nodes: ~20M nodes × 24 bytes = ~480 MB
-   └─ index_pairs: ~20M indices × 8 bytes = ~160 MB
-   └─ Padding/fragmentation: ~(-50) MB (underutilization)
-```
-
-**Load Factor Variation**:
-- Small buckets (2M-4M): ~90-95% utilization
-- Large buckets (8M+): ~60-65% utilization
-
-See [Experiences/MEMORY_THEORY_ANALYSIS.md](Experiences/MEMORY_THEORY_ANALYSIS.md) for detailed analysis.
-
----
-
-## Part 6: WebAssembly Specifics
-
-### Build Configuration
-
-```bash
-emcc -std=c++17 -O3 solver_dev.cpp -o solver.js \
-  -s ALLOW_MEMORY_GROWTH=1 \
-  -s INITIAL_MEMORY=268435456 \  # 256 MB
-  -s MAXIMUM_MEMORY=2147483648 \  # 2 GB
-  --bind \
-  -I/path/to/tsl-robin-map/include
-```
-
-### Memory Growth Handling
-
-```cpp
-#ifdef __EMSCRIPTEN__
-EM_ASM({
-    console.log('Current memory: ' + (HEAP8.length / 1024 / 1024) + ' MB');
-});
-#endif
-```
-
-### JavaScript Bindings
-
-```cpp
-#ifdef __EMSCRIPTEN__
-EMSCRIPTEN_BINDINGS(solver_module) {
-    emscripten::function("solve", &solve_scramble);
-    emscripten::function("generate_scramble", &get_xxcross_scramble);
-}
-#endif
-```
-
-For complete WASM build instructions, see [WASM_BUILD_GUIDE.md](WASM_BUILD_GUIDE.md).
-
----
-
-## Performance Characteristics
-
-### Time Complexity
-
-| Phase | Operation | Time | Memory |
-|-------|-----------|------|--------|
-| Phase 1 | BFS 0-6 | ~30s | ~217 MB peak |
-| Phase 2 (7) | BFS depth 7 | ~10s | Config-dependent |
-| Phase 2 (8) | Local BFS 7→8 | ~40s | Same as depth 7 |
-| Phase 2 (9) | Local BFS 8→9 | ~70s | Same as depth 7 |
-| **Total** | **Database build** | **~150s** | **Config-dependent** |
-
-### Space Complexity
-
-| Configuration | Nodes | Memory | Bytes/Node |
-|---------------|-------|--------|------------|
-| 2M/2M/2M | ~6M | 293 MB | 48.8 |
-| 4M/4M/4M | ~12M | 434 MB | 36.2 |
-| 8M/8M/8M | ~24M | 748 MB | 31.2 |
-| 16M/16M/16M | ~48M | 1375 MB | 28.6 |
-
-**Pattern**: Larger buckets are more memory-efficient per node.
-
----
-
-## Code Organization
-
-### File Structure
-
-```
-solver_dev.cpp (3631 lines)
-├─ Lines 1-350: Standard Headers and Foundation
-│  ├─ Includes (#include, pragmas)
-│  ├─ State struct (cube representation)
-│  ├─ Move definitions (U, R, F, etc.)
-│  ├─ Utility functions (AlgToString, StringToAlg, etc.)
-│  ├─ Index encoding/decoding (array_to_index, index_to_array)
-│  └─ Move table creation (create_edge_move_table, create_corner_move_table, create_multi_move_table)
-│  
-│  **Note**: These are foundational components common across all solvers in this repository.
-│  Can be summarized as "standard cube solver infrastructure".
-│
-├─ Lines 350-2900: **Sparse Database Construction System** (NEW IMPLEMENTATION)
-│  ├─ Lines 350-550: SlidingDepthSets class
-│  │  ├─ Rehash protection (will_rehash_on_next_insert)
-│  │  ├─ Element vector attachment (zero-copy recording)
-│  │  ├─ Memory-efficient set rotation (prev/cur/next)
-│  │  └─ Capacity tracking and expansion control
-│  │
-│  ├─ Lines 550-800: ExpansionParams and ExpansionParamsDatabase
-│  │  ├─ ExpansionParams struct (load factors, memory factors)
-│  │  ├─ Global parameter database (g_expansion_params)
-│  │  └─ Empirical parameter lookup by (depth, bucket_size)
-│  │
-│  ├─ Lines 800-890: LocalExpansionConfig struct
-│  │  ├─ Bucket sizes (n, n+1, n+2)
-│  │  ├─ Expected node counts
-│  │  └─ Expansion flags (enable_n1, enable_n2)
-│  │
-│  ├─ Lines 890-1080: determine_bucket_sizes()
-│  │  ├─ Memory budget calculation
-│  │  ├─ Candidate bucket ratio evaluation (1:2, 1:1)
-│  │  ├─ RSS prediction using empirical factors
-│  │  └─ Best configuration selection
-│  │
-│  ├─ Lines 1080-1280: local_expand_step2_random_n1()
-│  │  ├─ Random parent selection for diversity
-│  │  ├─ Rehash-protected expansion
-│  │  ├─ Element vector auto-recording
-│  │  └─ High load factor achievement (~90%)
-│  │
-│  ├─ Lines 1280-1550: Utility functions
-│  │  ├─ get_n1_capacity() - Calculate expansion capacity
-│  │  ├─ Helper functions for sampling and statistics
-│  │  └─ Data structure manipulation
-│  │
-│  ├─ Lines 1550-1900: expand_with_backtrace_filter()
-│  │  ├─ 1/12 parent sampling
-│  │  ├─ Child node generation
-│  │  ├─ Backtrace verification (depth validation)
-│  │  ├─ Rejection tracking (false n+2 nodes)
-│  │  └─ Result statistics
-│  │
-│  └─ Lines 1900-2900: local_bfs_n_to_n2()
-│     ├─ Step 0: Bucket size determination
-│     ├─ Step 1: Capacity calculation
-│     ├─ Step 2: Random n+1 expansion
-│     ├─ Step 3: Data reorganization
-│     ├─ Step 4: Parent sampling for n+2
-│     ├─ Step 5: Backtrace expansion for n+2
-│     └─ Step 6: Cleanup and statistics
-│
-├─ Lines 2900-3200: Main BFS Loop and Database Build
-│  ├─ Phase 1: Full BFS (depth 0-6)
-│  ├─ Phase 2: Local expansion coordinator
-│  ├─ Depth 7: Initial local expansion (full)
-│  ├─ Depth 8: local_bfs_n_to_n2() call
-│  └─ Depth 9: local_bfs_n_to_n2() call (if possible)
-│
-├─ Lines 3200-3500: Scramble Generation (IDA* based)
-│  ├─ get_xxcross_scramble() - Public API
-│  ├─ Random state selection from database
-│  └─ IDA* search to generate path
-│
-└─ Lines 3500-3631: Main Function and CLI
-   ├─ Memory limit parsing (argv[1])
-   ├─ Database construction call
-   ├─ Interactive solving loop (optional)
-   └─ WASM bindings (#ifdef __EMSCRIPTEN__)
-```
-
-### Key Functions by Purpose
-
-**Database Construction**:
-- `determine_bucket_sizes()` - Dynamic bucket allocation logic
-- `local_expand_step2_random_n1()` - Random parent expansion with rehash protection
-- `expand_with_backtrace_filter()` - Backtrace-verified expansion for depth n+2
-- `local_bfs_n_to_n2()` - Complete local expansion coordinator
-
-**Standard Infrastructure** (used across all solvers):
-- `create_edge_move_table()` / `create_corner_move_table()` - Move pre-computation
-- `create_multi_move_table()` - Multi-piece move table generation
-- `array_to_index()` / `index_to_array()` - State encoding/decoding
-
-**Memory Monitoring**:
-- `get_rss_kb()` - Read RSS from /proc/self/status (Linux only)
-
-**Public API**:
-- `get_xxcross_scramble()` - Generate random scramble
-- `start_search()` - Solve from given scramble (if implemented)
-
----
-
-### Key Classes and Structs
-
-**SlidingDepthSets** (Lines 350-550):
-- **Purpose**: BFS engine with sliding window and rehash protection
-- **Key Methods**:
-  - `encounter_and_mark_next()` - Insert with deduplication
-  - `will_rehash_on_next_insert()` - Predict rehash
-  - `attach_element_vector()` - Zero-copy recording
-  - `advance_depth()` - Memory-efficient set rotation
-
-**LocalExpansionConfig** (Lines 800-890):
-- **Purpose**: Configuration container for local expansion
-- **Fields**: bucket sizes, expected nodes, expansion flags
-- **Usage**: Returned by `determine_bucket_sizes()`
-
-**ExpansionParams** (Lines 550-650):
-- **Purpose**: Store empirical parameters for (depth, bucket_size)
-- **Fields**:
-  - `effective_load_factor` - Random expansion load
-  - `backtrace_load_factor` - Backtrace expansion load
-  - `measured_memory_factor` - RSS / theoretical memory ratio
-- **Usage**: Retrieved from `g_expansion_params` global database
-
-**ExpansionParamsDatabase** (Lines 650-800):
-- **Purpose**: Global parameter lookup table
-- **Usage**: `auto params = g_expansion_params.get(depth, bucket_size);`
-- **Contents**: Empirically measured parameters from 47-point campaign
-
----
-
-## Future Optimizations
-
-### Potential Improvements
-
-1. **Custom Allocator**: Reduce fixed 62 MB overhead
-2. **Compressed State Encoding**: Reduce bytes/node from 32 to ~20
-3. **Parallel BFS**: Multi-threaded expansion for depths 7-9
-4. **Persistent Database**: Save/load pre-built database to skip construction
-5. **Pruning Tables**: More aggressive heuristics for IDA*
-
-### Trade-offs
-
-| Optimization | Speed Gain | Memory Change | Complexity |
-|--------------|------------|---------------|------------|
-| Custom allocator | - | -20% | High |
-| Compressed states | - | -30% | High |
-| Parallel BFS | +2× | - | Medium |
-| Persistent DB | +100× | Disk I/O | Low |
-| Better pruning | +20% | - | Medium |
+**Performance**:
+- Depth 8 scramble: ~0.01-0.1 seconds
+- Depth 10 scramble: ~1-5 seconds (depends on database size)
 
 ---
 
 ## Summary
 
-**Key Implementation Features**:
-- **Two-Phase BFS**: Complete depth 0-6, local 7-9
-- **Memory-Adaptive**: 7 configurations from 300 MB to 2 GB
-- **Move Tables**: O(1) state transitions
-- **IDA* Search**: Optimal scramble generation
-- **Production-Ready**: Stable, tested, documented
+**Key Implementation Features (stable_20260103)**:
+
+1. **5-Phase Construction**: Depths 0-6 (complete), 7-9 (face-diverse), 9-10 (random sampling)
+2. **Memory Spike Elimination**: Pre-reserve pattern eliminates 50-100 MB transient spikes
+3. **Depth 10 Support**: Random sampling fills bucket to 90% capacity
+4. **WASM/Native Dual Support**: Platform-specific code paths with unified API
+5. **Malloc Trim Management**: Configurable allocator cache clearing
+6. **Developer Options**: Environment variables for research configurations
+7. **Random Sampling**: Ensures diversity and depth accuracy for depth 10
 
 **Memory Behavior**:
-- Deterministic peak based on configuration
-- <0.03% variation (extremely stable)
-- No transient spikes for large buckets
+- Deterministic peak based on bucket configuration
+- <1% variation across runs (extremely stable)
+- No transient spikes (all eliminated via pre-reserve)
 
 **Performance**:
-- ~150 seconds database build
-- Scales with bucket size but **not** speed
-- Configuration-independent solving time
+- Database construction: ~165-180 seconds (5-phase construction up to depth 10)
+  - Phase 1 (BFS 0-6): ~30s
+  - Phase 2 (Depth 7): ~10s
+  - Phase 3 (Depth 8): ~40s
+  - Phase 4 (Depth 9): ~70s
+  - Phase 5 (Depth 10 random sampling): ~15-20s
+- Scramble generation: <0.1 seconds (depth 8), ~2 seconds (depth 10)
 
-For further reading:
-- [MEMORY_MONITORING.md](MEMORY_MONITORING.md) - RSS tracking techniques
-- [EXPERIMENT_SCRIPTS.md](EXPERIMENT_SCRIPTS.md) - Testing methodology
-- [Experiences/MEMORY_THEORY_ANALYSIS.md](Experiences/MEMORY_THEORY_ANALYSIS.md) - Theoretical understanding
+**Recommended Reading**:
+1. [API_REFERENCE.md](API_REFERENCE.md) - Function signatures and usage
+2. [WASM_INTEGRATION_GUIDE.md](WASM_INTEGRATION_GUIDE.md) - WASM deployment
+3. [Experiences/depth_10_memory_spike_investigation.md](Experiences/depth_10_memory_spike_investigation.md) - Spike analysis
+4. [Experiences/depth_10_implementation_results.md](Experiences/depth_10_implementation_results.md) - Phase 5 results
+5. [Experiences/wasm_heap_measurement_data.md](Experiences/wasm_heap_measurement_data.md) - WASM measurements
 
 ---
 
-**Document Version**: 1.0  
-**Corresponds to**: solver_dev.cpp stable-20251230
+**Document Version**: 2.1  
+**Last Updated**: 2026-01-03  
+**Status**: Current (stable_20260103)
+
+**Recent Updates**:
+- Fixed `get_xxcross_scramble()` return value (tmp assignment)
+- Added custom bucket constructor (5-parameter: adj, b7_mb, b8_mb, b9_mb, b10_mb)
+- Added Final Statistics output in constructor (#ifdef __EMSCRIPTEN__)
+- Documented delegating constructor pattern for custom buckets
+- Updated WASM integration notes (embind exports, statistics parsing)
+
+**Corresponds to**: solver_dev.cpp stable_20260103 (4723 lines)  
+**Previous Version**: stable-20251230 (archived: backups/SOLVER_IMPLEMENTATION_20251230.md)

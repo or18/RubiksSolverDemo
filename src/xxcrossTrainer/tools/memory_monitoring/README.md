@@ -26,7 +26,8 @@ python3 monitor_memory.py <PID> [output.csv]
 **Example**:
 ```bash
 # Terminal 1: Start solver
-cd /home/ryo/RubiksSolverDemo/src/xxcrossTrainer
+# From workspace root
+cd src/xxcrossTrainer
 BUCKET_MODEL=8M/8M/8M ENABLE_CUSTOM_BUCKETS=1 ./solver_dev &
 SOLVER_PID=$!
 
@@ -69,7 +70,8 @@ python3 tools/memory_monitoring/analyze_spikes.py results/8m_rss.csv
 
 **Usage**:
 ```bash
-cd /home/ryo/RubiksSolverDemo/src/xxcrossTrainer
+# From workspace root
+cd src/xxcrossTrainer
 ./tools/memory_monitoring/run_spike_detection.sh
 ```
 

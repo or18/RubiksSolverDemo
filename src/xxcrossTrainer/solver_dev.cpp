@@ -3857,9 +3857,38 @@ struct xxcross_search
 	std::vector<int> F2L_slots_edges_goal_tmp;
 	std::vector<int> F2L_slots_corners_goal_tmp;
 	
-	// New: Configuration storage
+	// Configuration storage
 	BucketConfig bucket_config_;
 	ResearchConfig research_config_;
+	
+	// Helper functions for custom bucket configuration
+	static BucketConfig create_custom_bucket_config(int b7_mb, int b8_mb, int b9_mb, int b10_mb) {
+		BucketConfig config;
+		config.model = BucketModel::CUSTOM;
+		config.custom_bucket_7 = static_cast<size_t>(b7_mb) * 1024 * 1024;
+		config.custom_bucket_8 = static_cast<size_t>(b8_mb) * 1024 * 1024;
+		config.custom_bucket_9 = static_cast<size_t>(b9_mb) * 1024 * 1024;
+		config.custom_bucket_10 = static_cast<size_t>(b10_mb) * 1024 * 1024;
+		return config;
+	}
+	
+	static ResearchConfig create_custom_research_config() {
+		ResearchConfig config;
+		config.enable_custom_buckets = true;
+		config.skip_search = true;  // Only build database, no search
+		// high_memory_wasm_mode defaults to true in WASM (set in bucket_config.h)
+		return config;
+	}
+
+	// Custom bucket constructor (for WASM tier selection)
+	// Receives bucket sizes in MB, automatically sets up custom bucket config
+	xxcross_search(bool adj, int bucket_7_mb, int bucket_8_mb, int bucket_9_mb, int bucket_10_mb)
+		: xxcross_search(adj, 6, bucket_7_mb + bucket_8_mb + bucket_9_mb + bucket_10_mb + 300, true,
+		                create_custom_bucket_config(bucket_7_mb, bucket_8_mb, bucket_9_mb, bucket_10_mb),
+		                create_custom_research_config())
+	{
+		// Delegating constructor - all work done by main constructor
+	}
 
 	xxcross_search(bool adj = true, int BFS_DEPTH = 6, int MEMORY_LIMIT_MB = 1600, bool verbose = true,
 	               const BucketConfig& bucket_config = BucketConfig(),
@@ -4209,6 +4238,29 @@ struct xxcross_search
 		{
 			std::cout << "==================================" << std::endl;
 		}
+
+		// Output final statistics for WASM parser
+#ifdef __EMSCRIPTEN__
+		size_t final_heap = emscripten_get_heap_size();
+		std::cout << "\n=== Final Statistics ===" << std::endl;
+		std::cout << "Final heap: " << (final_heap / 1024.0 / 1024.0) << " MB" << std::endl;
+		std::cout << "Peak heap: " << (final_heap / 1024.0 / 1024.0) << " MB" << std::endl;
+		
+		// Output bucket sizes for depths 7-10
+		// Note: index_pairs is vector<uint64_t>, load factor ~0.88 is typical for robin_set during BFS
+		for (int d = 7; d <= 10; ++d) {
+			if (d < (int)index_pairs.size()) {
+				size_t nodes = index_pairs[d].size();
+				size_t bytes = nodes * sizeof(uint64_t);
+				double estimated_load_factor = 0.88;  // Typical for robin_set after rehashing
+				
+				std::cout << "Load factor (d" << d << "): " << estimated_load_factor << std::endl;
+				std::cout << "Bucket size (d" << d << "): " << (bytes / 1024.0 / 1024.0) << " MB" << std::endl;
+			}
+		}
+		std::cout << "=========================" << std::endl;
+#endif
+
 		ma = create_ma_table();
 		std::random_device rd;
 		generator.seed(rd());
@@ -4276,6 +4328,7 @@ struct xxcross_search
 			}
 		}
 		std::cout << "XXCross Solution from get_xxcross_scramble: " << AlgToString(sol) << std::endl;
+		tmp = AlgToString(sol);  // Store scramble in tmp before returning
 		return tmp;
 	}
 
@@ -4322,6 +4375,17 @@ struct xxcross_search
 	{
 		std::string ret = arg_scramble + start_search(arg_scramble) + "," + get_xxcross_scramble(arg_length);
 		return ret;
+	}
+	
+	// Helper function: Calculate scramble length (number of moves)
+	// Avoids passing vectors between JS and C++ (which can be problematic)
+	int get_scramble_length(std::string scramble_str)
+	{
+		if (scramble_str.empty()) {
+			return 0;
+		}
+		std::vector<int> moves = StringToAlg(scramble_str);
+		return static_cast<int>(moves.size());
 	}
 };
 
@@ -4689,35 +4753,16 @@ SolverStatistics get_solver_statistics() {
 
 EMSCRIPTEN_BINDINGS(my_module)
 {
+	// Simplified binding for Worker usage (like xcrossTrainer/solver.cpp)
+	// Constructor and func() only - no extra functions
 	emscripten::class_<xxcross_search>("xxcross_search")
 		.constructor<>()					 // Default: adj=true, BFS_DEPTH=6, MEMORY_LIMIT_MB=1600, verbose=true (auto-adjusted to 700 in WASM)
 		.constructor<bool>()				 // adj
 		.constructor<bool, int>()			 // adj, BFS_DEPTH
 		.constructor<bool, int, int>()		 // adj, BFS_DEPTH, MEMORY_LIMIT_MB
 		.constructor<bool, int, int, bool>() // adj, BFS_DEPTH, MEMORY_LIMIT_MB, verbose
-		.function("func", &xxcross_search::func);
-	
-	// Statistics structure
-	emscripten::class_<SolverStatistics>("SolverStatistics")
-		.constructor<>()
-		.property("node_counts", &SolverStatistics::node_counts)
-		.property("load_factors", &SolverStatistics::load_factors)
-		.property("avg_children_per_parent", &SolverStatistics::avg_children_per_parent)
-		.property("max_children_per_parent", &SolverStatistics::max_children_per_parent)
-		.property("final_heap_mb", &SolverStatistics::final_heap_mb)
-		.property("peak_heap_mb", &SolverStatistics::peak_heap_mb)
-		.property("sample_scrambles", &SolverStatistics::sample_scrambles)
-		.property("scramble_lengths", &SolverStatistics::scramble_lengths)
-		.property("success", &SolverStatistics::success)
-		.property("error_message", &SolverStatistics::error_message);
-	
-	// Functions
-	emscripten::function("solve_with_custom_buckets", &solve_with_custom_buckets);
-	emscripten::function("get_solver_statistics", &get_solver_statistics);
-	
-	// Vector types
-	emscripten::register_vector<int>("VectorInt");
-	emscripten::register_vector<double>("VectorDouble");
-	emscripten::register_vector<std::string>("VectorString");
+		.constructor<bool, int, int, int, int>() // adj, bucket_7_mb, bucket_8_mb, bucket_9_mb, bucket_10_mb (CUSTOM BUCKETS)
+		.function("func", &xxcross_search::func)
+		.function("get_scramble_length", &xxcross_search::get_scramble_length); // Helper: Calculate move count
 }
 #endif

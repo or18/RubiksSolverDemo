@@ -1,23 +1,23 @@
 # XXCross Trainer Solver - Developer Documentation
 
-**Version**: stable-20251230  
-**Last Updated**: 2025-12-30
+**Version**: stable_20260103  
+**Last Updated**: 2026-01-03
 
-> **Navigation**: [User Guide](USER_GUIDE.md) | [Memory Configuration](MEMORY_CONFIGURATION_GUIDE.md) | Developer Docs (You are here)
+> **Navigation**: [User Guide](USER_GUIDE.md) | Developer Docs (You are here)
 
 ---
 
 ## Overview
 
-This is a high-performance Rubik's Cube XXCross (double cross) solver designed for both native C++ and WebAssembly environments. The solver uses a **Two-Phase BFS approach** with **memory-adaptive bucket allocation** to efficiently solve F2L (First Two Layers) configurations.
+This is a high-performance Rubik's Cube XXCross (double cross) solver designed for both native C++ and WebAssembly environments. The solver uses a **5-Phase BFS approach** with **configurable bucket models** to efficiently solve F2L (First Two Layers) configurations.
 
 ### Key Features
 
-- **Two-Phase Optimal Solving**: Depth 0-6 full BFS + Depth 7-9 local BFS
-- **Memory-Adaptive Buckets**: Automatically adjusts hash table sizes based on available memory (300 MB - 2000+ MB)
-- **WebAssembly Support**: Compiles to WASM for browser-based solving
-- **Production-Ready**: Extensively tested with empirical memory measurements (47-point campaign)
-- **Stable Performance**: Peak memory variation <0.03% within same configuration
+- **5-Phase Construction**: Depth 0-6 full BFS + Depth 7-10 local expansion (depth 10 via random sampling)
+- **Memory-Optimized**: Eliminates transient spikes via pre-reserve pattern
+- **Multi-Tier WASM Support**: 6 bucket models (Mobile: LOW/MIDDLE/HIGH, Desktop: STD/HIGH/ULTRA)
+- **Production-Ready**: Comprehensive heap measurements (13-configuration WASM campaign)
+- **Dual Platform**: Native C++ and WebAssembly with unified API
 
 ---
 
@@ -34,7 +34,8 @@ See **[USER_GUIDE.md](USER_GUIDE.md)** for:
 
 1. **Build the solver**:
    ```bash
-   cd RubiksSolverDemo/src/xxcrossTrainer
+   # From workspace root
+   cd src/xxcrossTrainer
    g++ -std=c++17 -O3 -march=native solver_dev.cpp -o solver_dev
    ```
 
@@ -51,8 +52,7 @@ See **[USER_GUIDE.md](USER_GUIDE.md)** for:
 ## Documentation Structure
 
 ### User Documentation
-- **[USER_GUIDE.md](USER_GUIDE.md)** - End-user guide with deployment examples
-- **[MEMORY_CONFIGURATION_GUIDE.md](MEMORY_CONFIGURATION_GUIDE.md)** - Production memory configuration reference
+- **[USER_GUIDE.md](USER_GUIDE.md)** - End-user guide with deployment examples (includes Advanced Configuration section)
 
 ### Developer Documentation (`developer/`)
 
@@ -60,77 +60,182 @@ See **[USER_GUIDE.md](USER_GUIDE.md)** for:
 - **[SOLVER_IMPLEMENTATION.md](developer/SOLVER_IMPLEMENTATION.md)** - Detailed code logic (database construction, IDA*, etc.)
 - **[WASM_BUILD_GUIDE.md](developer/WASM_BUILD_GUIDE.md)** - WebAssembly compilation and testing
 
-#### Memory Analysis & Experiments
-- **[MEMORY_MONITORING.md](developer/MEMORY_MONITORING.md)** - `/proc`-based memory monitoring system
-- **[EXPERIMENT_SCRIPTS.md](developer/EXPERIMENT_SCRIPTS.md)** - Shell script samples for memory testing
-- **[WASM_EXPERIMENT_SCRIPTS.md](developer/WASM_EXPERIMENT_SCRIPTS.md)** - WASM testing script examples
+#### Integration & Deployment
+- **[WASM_INTEGRATION_GUIDE.md](developer/WASM_INTEGRATION_GUIDE.md)** - Complete WASM integration for trainers (advanced, practical)
+- **[WASM_BUILD_GUIDE.md](developer/WASM_BUILD_GUIDE.md)** - Emscripten build process (beginner-friendly)
+- **[WASM_EXPERIMENT_SCRIPTS.md](developer/WASM_EXPERIMENT_SCRIPTS.md)** - JavaScript test scripts and examples (Node.js, browser)
+- **[WASM_MEASUREMENT_README.md](developer/WASM_MEASUREMENT_README.md)** - Heap measurement methodology (deprecated, see WASM_INTEGRATION_GUIDE)
+- **[API_REFERENCE.md](developer/API_REFERENCE.md)** - Complete function reference
 
-#### Experimental Findings (`developer/Experiences/`)
-- **[MEASUREMENT_RESULTS_20251230.md](developer/Experiences/MEASUREMENT_RESULTS_20251230.md)** - Comprehensive 47-point measurement analysis
-- **[MEMORY_THEORY_ANALYSIS.md](developer/Experiences/MEMORY_THEORY_ANALYSIS.md)** - Theoretical understanding of memory behavior
-- **[THEORETICAL_MODEL_REVISION.md](developer/Experiences/THEORETICAL_MODEL_REVISION.md)** - Model evolution and limitations
-- **[MEASUREMENT_SUMMARY.md](developer/Experiences/MEASUREMENT_SUMMARY.md)** - Executive summary of findings
+#### Memory Analysis
+- **[MEMORY_MONITORING.md](developer/MEMORY_MONITORING.md)** - Memory tracking tools
+- **[IMPLEMENTATION_PROGRESS.md](developer/IMPLEMENTATION_PROGRESS.md)** - Development tracker
+
+#### Experimental Results (`developer/Experiences/`)
+- **[wasm_heap_measurement_results.md](developer/Experiences/wasm_heap_measurement_results.md)** - 6-tier bucket model
+- **[wasm_heap_measurement_data.md](developer/Experiences/wasm_heap_measurement_data.md)** - 13-configuration raw data
+- **[depth_10_memory_spike_investigation.md](developer/Experiences/depth_10_memory_spike_investigation.md)** - Spike elimination
+- **[depth_10_implementation_results.md](developer/Experiences/depth_10_implementation_results.md)** - Phase 5 results
 
 ---
 
 ## Memory Configuration (Quick Reference)
 
-The solver **automatically selects** bucket configuration based on memory limit:
+### WASM 6-Tier Model (Dual-Solver Architecture)
 
-| Memory Limit | Configuration | Peak Usage | Safety Margin |
-|--------------|---------------|------------|---------------|
-| 300-568 MB | 2M/2M/2M | 293 MB | +23 MB |
-| 569-612 MB | 2M/4M/2M | 404 MB | +165 MB |
-| 613-920 MB | 4M/4M/4M | 434 MB | +179 MB |
-| 921-999 MB | 4M/8M/4M | 655 MB | +266 MB |
-| **1000-1536 MB** | **8M/8M/8M** | **748 MB** | **+252 MB** ✅ |
-| 1537-1701 MB | 8M/16M/8M | 1189 MB | +348 MB |
-| 1702+ MB | 16M/16M/16M | 1375 MB | +327 MB |
+| Tier | Dual Heap | Bucket Config | Total Nodes | Target Devices |
+|------|-----------|---------------|-------------|----------------|
+| **Mobile LOW** | **618 MB** | 1M/1M/2M/4M | 12.1M | Low-end phones |
+| **Mobile MIDDLE** | **896 MB** | 2M/4M/4M/4M | 17.8M | Mid-range phones |
+| **Mobile HIGH** | **1070 MB** | 4M/4M/4M/4M | 19.7M | High-end phones |
+| **Desktop STD** | **1512 MB** | 8M/8M/8M/8M | 34.7M | ✅ **Recommended** |
+| **Desktop HIGH** | **2786 MB** | 8M/16M/16M/16M | 57.4M | High-memory PC |
+| **Desktop ULTRA** | **2884 MB** | 16M/16M/16M/16M | 65.0M | 4GB limit |
 
-**Recommended**: `1005 MB` limit (8M/8M/8M with 10% safety margin)
-
-For detailed configuration strategies, see [MEMORY_CONFIGURATION_GUIDE.md](MEMORY_CONFIGURATION_GUIDE.md).
+For detailed tier selection and integration, see:
+- [WASM Integration Guide](developer/WASM_INTEGRATION_GUIDE.md)
+- [WASM Measurement Results](developer/Experiences/wasm_heap_measurement_results.md)
 
 ---
 
 ## Key Implementation Details
 
-### Bucket Allocation Logic
+### Bucket Configuration Model
 
-The solver uses **calculation-based bucket allocation** that determines bucket sizes dynamically:
+The solver uses **explicit bucket specification** for depths 7-10:
 
 ```cpp
-// From solver_dev.cpp (determine_bucket_sizes)
-// Key calculation components:
-// 1. Remaining memory after Phase 1 BFS (depth 0-6)
-// 2. Safety margin (20-25% for WASM compatibility)
-// 3. Memory per slot (33 bytes empirically measured)
-// 4. Target allocation ratios (e.g., 2:2:2 or 1:2 for n+1:n+2)
+// Current implementation: Explicit bucket sizes (stable_20260103)
+// Bucket configuration specified via:
+// 1. Pre-defined WASM tiers (bucket_config.h: WASM_MOBILE_LOW/MIDDLE/HIGH, WASM_DESKTOP_STD/HIGH/ULTRA)
+// 2. Environment variables (BUCKET_D7, BUCKET_D8, BUCKET_D9, BUCKET_D10)
 
-// Example: For 1000 MB limit
-usable_memory = remaining_memory * 0.80;  // 20% safety margin
-target_d9 = usable_memory / (6 * 33);     // 6*d9 for 2:2:2 ratio
-bucket_7 = round_to_power_of_2(target_d9 * 2, 2M, 32M);
-bucket_8 = round_to_power_of_2(target_d9 * 2, 2M, 32M);
-bucket_9 = round_to_power_of_2(target_d9 * 2, 2M, 32M);
-// Result: typically 8M/8M/8M for 1000 MB
+// Example: Desktop STD tier (8M/8M/8M/8M)
+BUCKET_D7=8   // 8M slots for depth 7
+BUCKET_D8=8   // 8M slots for depth 8
+BUCKET_D9=8   // 8M slots for depth 9
+BUCKET_D10=8  // 8M slots for depth 10
 
-// Then flexible upgrade if budget allows
-if (remaining_budget >= bucket_8 * 33) {
-    bucket_8 *= 2;  // Upgrade to 16M if possible
-}
+// WASM heap usage: 756 MB (single solver), 1512 MB (dual-solver)
 ```
+
+**Bucket Configuration Sources**:
+1. **WASM Pre-defined Tiers** (6 tiers from Mobile LOW to Desktop ULTRA)
+2. **Environment Variables** (developer mode, custom configurations)
+3. **Legacy** (deprecated): ~~Memory limit-based automatic selection~~
 
 ### Memory Behavior
 
 Key characteristics:
-- **Dynamic Calculation**: Bucket sizes determined by runtime logic, not lookup tables
-- **Safety Margins**: 20-25% buffer for WASM compatibility and rehash protection
-- **Baseline Memory**: `bucket_slots × 33 bytes/slot` (empirically measured overhead)
-- **Load Factor**: Varies 0.65-0.90 (large buckets maintain higher load for efficiency)
-- **Stable Parameters**: While calculation-based, empirically-tuned constants are now fixed and stable
+- **Explicit Specification**: Bucket sizes are directly specified (not calculated from memory limits)
+- **Measured WASM Heaps**: Each tier has empirically measured heap usage (13-configuration campaign)
+- **Baseline Memory**: `bucket_slots × ~21-27 bytes/slot` (varies by configuration)
+- **Load Factor**: ~0.88-0.93 (tsl::robin_set after rehashing)
+- **Dual-Solver Architecture**: Total heap = 2× single solver (adjacent + opposite F2L slots)
 
-For theoretical analysis, see [developer/Experiences/MEMORY_THEORY_ANALYSIS.md](developer/Experiences/MEMORY_THEORY_ANALYSIS.md).
+For measurement data and tier selection, see [developer/Experiences/wasm_heap_measurement_results.md](developer/Experiences/wasm_heap_measurement_results.md).
+
+---
+
+## Advanced Topics
+
+### Developer Mode (Custom Bucket Sizes)
+
+For advanced users who need direct control over bucket configurations, you can specify exact bucket sizes using environment variables.
+
+**Enable Custom Buckets**:
+```bash
+export ENABLE_CUSTOM_BUCKETS=1
+export BUCKET_D7=8   # Hash table size for depth 7 (millions of slots)
+export BUCKET_D8=8   # Hash table size for depth 8
+export BUCKET_D9=8   # Hash table size for depth 9
+export BUCKET_D10=8  # Hash table size for depth 10 (Phase 5 random sampling)
+
+# Optional: Disable malloc trim (advanced use only)
+export DISABLE_MALLOC_TRIM=1
+
+# Run solver
+./solver_dev
+```
+
+**Example Configurations**:
+
+```bash
+# Mobile LOW (618 MB dual-solver WASM)
+export ENABLE_CUSTOM_BUCKETS=1
+export BUCKET_D7=1 BUCKET_D8=1 BUCKET_D9=2 BUCKET_D10=4
+
+# Desktop STD (1512 MB dual-solver WASM) - Recommended
+export BUCKET_D7=8 BUCKET_D8=8 BUCKET_D9=8 BUCKET_D10=8
+
+# Desktop ULTRA (2884 MB dual-solver WASM) - Maximum
+export BUCKET_D7=16 BUCKET_D8=16 BUCKET_D9=16 BUCKET_D10=16
+```
+
+**Memory Estimation**:
+- Each 1M slots ≈ 60-80 MB WASM heap (including overhead)
+- Total heap ≈ (D7 + D8 + D9 + D10) × 70 MB (approximate)
+- Native C++ RSS ≈ WASM heap / 2.2 (typical overhead factor)
+- Always validate with actual measurements (see WASM_INTEGRATION_GUIDE)
+
+**Use Cases**:
+- Testing new bucket combinations
+- Platform-specific optimization
+- Research and experimentation
+- Custom trainer requirements
+
+### Creating New Bucket Models
+
+To create and register new WASM memory configurations:
+
+1. **Measure WASM Heap Usage**:
+   ```bash
+   # From workspace root
+   cd src/xxcrossTrainer
+   
+   # Build current production WASM
+   source ~/emsdk/emsdk_env.sh
+   em++ solver_dev.cpp -o solver_dev.js -std=c++17 -O3 -I../.. \
+     -s WASM=1 -s ALLOW_MEMORY_GROWTH=1 -s MAXIMUM_MEMORY=4GB \
+     -s EXPORTED_RUNTIME_METHODS='["cwrap"]' -s MODULARIZE=1 \
+     -s EXPORT_NAME="createModule" --bind -s INITIAL_MEMORY=64MB
+   
+   # Test with browser
+   python3 -m http.server 8000
+   # Open http://localhost:8000/test_wasm_browser.html
+   # Test custom bucket combinations
+   # Record peak heap sizes
+   
+   # Note: build_wasm_unified.sh exists for legacy measurement workflows only
+   # (builds solver_heap_measurement.{js,wasm} for archived tools)
+   ```
+
+2. **Update bucket_config.h**:
+   ```cpp
+   // Add new enum value
+   enum class BucketConfigModel {
+       // ... existing models ...
+       WASM_CUSTOM_NEW,
+   };
+   
+   // Add configuration entry to BUCKET_CONFIGS map
+   {BucketConfigModel::WASM_CUSTOM_NEW, {
+       {7, 12000000}, {8, 12000000}, {9, 12000000}, {10, 12000000},
+       2100,           // Measured WASM heap (MB)
+       42.5,           // Total nodes (millions)
+       0.85,           // Average load factor
+       "WASM_CUSTOM_NEW"
+   }},
+   ```
+
+3. **Document Results**:
+   - Add measurement data to [developer/Experiences/wasm_heap_measurement_results.md](developer/Experiences/wasm_heap_measurement_results.md)
+   - Update tier recommendations if creating new production tier
+
+**Complete Workflow**:
+- Measurement methodology: [developer/WASM_MEASUREMENT_README.md](developer/WASM_MEASUREMENT_README.md)
+- Integration patterns: [developer/WASM_INTEGRATION_GUIDE.md](developer/WASM_INTEGRATION_GUIDE.md)
+- Build instructions: [developer/WASM_BUILD_GUIDE.md](developer/WASM_BUILD_GUIDE.md)
 
 ---
 
@@ -170,9 +275,94 @@ See **[developer/WASM_BUILD_GUIDE.md](developer/WASM_BUILD_GUIDE.md)** for compl
 
 ---
 
+## Experimental Results Overview
+
+The `developer/Experiences/` directory contains empirical findings from comprehensive measurement campaigns. These documents provide the foundation for production configurations and guide future optimization.
+
+### Current Experiments (2026-01-03)
+
+#### WASM Heap Measurements
+- **[wasm_heap_measurement_results.md](developer/Experiences/wasm_heap_measurement_results.md)** - Final 6-tier model recommendation
+  - 13 configurations measured (1M/1M/2M/4M through 16M/16M/16M/16M)
+  - Dual-solver architecture validated (adjacent + opposite orientations)
+  - Mobile/Desktop tier classification
+  - Complete with load factors and node counts
+
+- **[wasm_heap_measurement_data.md](developer/Experiences/wasm_heap_measurement_data.md)** - Raw measurement data
+  - Per-configuration heap sizes
+  - CSV extraction scripts
+  - Measurement methodology validation
+
+#### Depth 10 Implementation
+- **[depth_10_implementation_results.md](developer/Experiences/depth_10_implementation_results.md)** - Phase 5 expansion proof-of-concept
+  - Coverage improvement: 30% → ~85% (+185% relative increase)
+  - 1.89M nodes at depth 10 (4M/4M/4M/2M config)
+  - Critical bug fixes documented (segfault, rehash, element vector timing)
+  
+- **[depth_10_expansion_design.md](developer/Experiences/depth_10_expansion_design.md)** - Strategic design rationale
+  - Analysis of depth 10 as volume peak (60-70% of all xxcross solutions)
+  - 3 implementation options evaluated
+  - Random sampling approach selected
+
+- **[depth_10_peak_rss_validation.md](developer/Experiences/depth_10_peak_rss_validation.md)** - 10ms monitoring validation
+  - Actual peak RSS: 442 MB (not 378 MB from C++ checkpoints)
+  - Gap analysis: +64 MB transient allocations
+  - WASM deployment implications
+
+- **[depth_10_memory_spike_investigation.md](developer/Experiences/depth_10_memory_spike_investigation.md)** - Spike elimination
+  - Pre-reserve pattern implementation
+  - Before/after RSS traces
+  - Production readiness validation
+
+#### Memory Optimization
+- **[peak_rss_optimization.md](developer/Experiences/peak_rss_optimization.md)** - Optimization strategies
+  - depth8_vec elimination: -58 MB peak RSS reduction
+  - Malloc_trim integration analysis
+  - Face-diverse scramble generation
+
+- **[bucket_model_rss_measurement.md](developer/Experiences/bucket_model_rss_measurement.md)** - Native C++ measurements
+  - 7 bucket configurations (2M/2M/2M through 16M/16M/16M)
+  - Allocator cache behavior (malloc_trim analysis)
+  - Platform consistency validation
+
+### Archived Experiments
+
+Historical measurement campaigns and deprecated analyses are preserved in `developer/_archive/Experiences_old/`:
+- MEASUREMENT_RESULTS_20251230.md - 47-point memory campaign (stable-20251230)
+- MEASUREMENT_SUMMARY.md - Executive summary
+- MEMORY_THEORY_ANALYSIS.md - Theoretical deep-dive
+- THEORETICAL_MODEL_REVISION.md - Model evolution
+
+### Using Experimental Data
+
+**For Production Deployment**:
+1. Start with [wasm_heap_measurement_results.md](developer/Experiences/wasm_heap_measurement_results.md) for tier selection
+2. Reference bucket_model_rss_measurement.md for native C++ configurations
+3. Consult depth_10_implementation_results.md for Phase 5 behavior
+
+**For Research/Optimization**:
+1. Review measurement methodologies in wasm_heap_measurement_data.md
+2. Study spike elimination techniques in depth_10_memory_spike_investigation.md
+3. Analyze optimization strategies in peak_rss_optimization.md
+
+**For Understanding Memory Behavior**:
+1. Read depth_10_peak_rss_validation.md for 10ms monitoring insights
+2. Study bucket_model_rss_measurement.md for allocator behavior
+3. Consult archived documents for historical context
+
+---
+
 ## Project History
 
 ### Recent Major Updates
+
+**2026-01-03** (stable_20260103):
+- ✅ Added depth 10 support (random sampling, Phase 5)
+- ✅ Eliminated all memory spikes (pre-reserve pattern)
+- ✅ Created 6-tier WASM bucket model (Mobile/Desktop)
+- ✅ Complete WASM heap measurement (13 configurations)
+- ✅ Comprehensive documentation rewrite (API_REFERENCE, SOLVER_IMPLEMENTATION)
+- ✅ Malloc trim management (ENV configurable)
 
 **2025-12-30** (stable-20251230):
 - ✅ Completed 47-point memory measurement campaign (300-2000 MB)
@@ -180,11 +370,6 @@ See **[developer/WASM_BUILD_GUIDE.md](developer/WASM_BUILD_GUIDE.md)** for compl
 - ✅ Documented theoretical model limitations and empirical findings
 - ✅ Created production-ready configuration guide with safety margins
 - ✅ Declared stable version with comprehensive documentation
-
-**2025-12-29**:
-- Fixed memory threshold calculation bugs
-- Improved bucket allocation flexibility
-- Added RSS monitoring system
 
 For detailed history, see `developer/Experiences/` documentation.
 
@@ -194,12 +379,13 @@ For detailed history, see `developer/Experiences/` documentation.
 
 ### Solving Speed
 
-- **Average solving time**: ~150 seconds (for typical scrambles)
+- **Average solving time**: ~165-180 seconds (for typical scrambles, including depth 10)
 - **Phases**:
   - Phase 1 (BFS 0-6): ~30s
-  - Phase 2 (Partial expansion): ~10s
+  - Phase 2 (Partial expansion depth 7): ~10s
   - Phase 3 (Local BFS 7→8): ~40s
   - Phase 4 (Local BFS 8→9): ~70s
+  - Phase 5 (Depth 10 random sampling): ~15-20s
 
 ### Memory Stability
 
@@ -257,7 +443,7 @@ For more troubleshooting, see [USER_GUIDE.md](USER_GUIDE.md#troubleshooting).
 For questions about:
 - **Usage**: See [USER_GUIDE.md](USER_GUIDE.md)
 - **Development**: Review `docs/developer/` documentation
-- **Memory behavior**: See [MEMORY_CONFIGURATION_GUIDE.md](MEMORY_CONFIGURATION_GUIDE.md)
+- **Memory configuration**: See [USER_GUIDE.md - Advanced Configuration](USER_GUIDE.md#advanced-configuration)
 
 ---
 

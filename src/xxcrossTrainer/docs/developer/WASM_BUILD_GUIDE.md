@@ -1,11 +1,25 @@
 # WebAssembly Build and Development Guide
 
-> **Navigation**: [← Back to Developer Docs](../README.md) | [User Guide](../USER_GUIDE.md) | [Memory Config](../MEMORY_CONFIGURATION_GUIDE.md)
+> **Audience**: Beginner to intermediate developers starting with WASM compilation  
+> **Related**: For production integration and heap measurement, see [WASM_INTEGRATION_GUIDE.md](WASM_INTEGRATION_GUIDE.md)
+
+> **Navigation**: [← Back to Developer Docs](../README.md) | [User Guide](../USER_GUIDE.md)
 >
-> **Related**: [Implementation](SOLVER_IMPLEMENTATION.md) | [WASM Test Scripts](WASM_EXPERIMENT_SCRIPTS.md) | [Memory Monitoring](MEMORY_MONITORING.md)
+> **Related**: [Implementation](SOLVER_IMPLEMENTATION.md) | [WASM Integration](WASM_INTEGRATION_GUIDE.md) | [Memory Monitoring](MEMORY_MONITORING.md)
 
 ## Overview
-The xxcrossTrainer solver has been successfully compiled to WebAssembly with Emscripten, enabling it to run in browsers and Node.js environments. This guide covers compilation, testing, debugging, and source code management.
+
+This guide covers **basic WASM compilation, testing, and debugging** for the xxcrossTrainer solver. It focuses on:
+- Setting up Emscripten environment
+- Compiling C++ to WASM
+- Basic testing in Node.js and browsers
+- Debugging common build issues
+
+**For production use**, see [WASM_INTEGRATION_GUIDE.md](WASM_INTEGRATION_GUIDE.md) which covers:
+- Heap measurement methodology
+- Production trainer integration
+- Memory tier selection and auto-detection
+- Advanced configuration patterns
 
 ---
 
@@ -23,16 +37,18 @@ The xxcrossTrainer solver has been successfully compiled to WebAssembly with Ems
 
 ## Source Code Versions
 
-This directory contains two versions of the XXCross solver source code:
+**Current Source**: `solver_dev.cpp`
 
-### Development Version (`solver_dev.cpp`)
+### solver_dev.cpp
 
-**Purpose**: Development, debugging, and performance analysis
+**Purpose**: Development, debugging, and WASM production builds
 
 **Characteristics**:
 - ✅ **All debug prints enabled** (321 std::cout statements)
 - ✅ **Verbose output** for memory tracking, phase transitions, and internal state
 - ✅ **English comments** throughout
+- ✅ **WASM-compatible** (compiles with Emscripten)
+- ✅ **Used for both**: Native C++ debugging AND WASM production
 - ✅ **Detailed logging** for:
   - Memory allocations and RSS measurements
   - Bucket calculations and load factors
@@ -46,39 +62,31 @@ This directory contains two versions of the XXCross solver source code:
 - Performance profiling and optimization
 - Understanding algorithm behavior
 - Development and testing new features
+- **Production WASM builds** (debug output visible in browser console)
 
-**Compilation**:
+**Native Compilation**:
 ```bash
 g++ -std=c++17 -O3 -march=native -fdiagnostics-color=always -g solver_dev.cpp -o solver_dev
 ```
 
-### Production Version (`solver.cpp`)
+**WASM Compilation** (Production):
+```bash
+source ~/emsdk/emsdk_env.sh
+em++ solver_dev.cpp -o solver_dev.js -std=c++17 -O3 -I../.. \
+  -s WASM=1 -s ALLOW_MEMORY_GROWTH=1 -s MAXIMUM_MEMORY=4GB \
+  -s EXPORTED_RUNTIME_METHODS='["cwrap"]' -s MODULARIZE=1 \
+  -s EXPORT_NAME="createModule" --bind -s INITIAL_MEMORY=64MB
+```
 
-**Purpose**: Emscripten compilation for WebAssembly deployment
+### Historical Note: solver.cpp
 
-**Characteristics**:
-- ✅ **Minimal debug prints** (essential only)
-- ✅ **English comments** throughout
-- ✅ **Commented out verbose logging** (14 commented std::cout lines)
-- ✅ **Kept essential prints**:
-  - Critical errors (UNEXPECTED REHASH, warnings)
-  - User-facing messages (solutions, results)
-  - High-level phase completion
-  - Memory budget summary
-  - Database construction status
+**⚠️ Note**: There is **NO separate "solver.cpp" production file** in the current codebase.
 
-**Use Cases**:
-- WebAssembly compilation with Emscripten
-- Production deployment
-- Browser-based solver
-- Minimal console output
+The same `solver_dev.cpp` is used for both:
+1. **Native C++ builds** (with verbose debug output for development)
+2. **WASM production builds** (debug output is visible in browser console during development)
 
-### Key Differences
-
-| Aspect | Development (`solver_dev.cpp`) | Production (`solver.cpp`) |
-|--------|-------------------------------|---------------------------|
-| **Debug Prints** | All enabled (321 lines) | Minimal (14 commented out) |
-| **Verbose Blocks** | Active | Mostly commented |
+This simplifies maintenance - one source file for all use cases.
 | **RSS Tracking** | Detailed | High-level only |
 | **Load Factor Logs** | Every phase | Summary only |
 | **Bucket Calculations** | Step-by-step | Final result only |
@@ -102,6 +110,7 @@ Parameter table for depth/bucket size optimization. Contains:
 
 ### Compilation Command
 ```bash
+# From workspace root
 cd src/xxcrossTrainer
 source ~/emsdk/emsdk_env.sh
 em++ -I.. solver.cpp -o solver.js -O3 -msimd128 -flto \
@@ -196,6 +205,7 @@ The xxcrossTrainer includes comprehensive test scripts to validate WASM compilat
 ### Basic Testing Workflow
 
 ```bash
+# From workspace root
 cd src/xxcrossTrainer
 
 # 1. Build WASM first
@@ -572,14 +582,24 @@ Module.onRuntimeInitialized = () => {
 ## Performance
 
 ### Database Construction
-- **Memory Limit 700MB**: ~55 seconds (depth 9, ~38M nodes)
-- **Memory Limit 500MB**: ~25 seconds (depth 9, ~19M nodes)
-- **Memory Limit <500MB**: May fail or have reduced depth
+
+**Typical timings** (5-phase construction up to depth 10):
+- **Phase 1** (BFS 0-6): ~30s
+- **Phase 2** (Depth 7): ~10s
+- **Phase 3** (Depth 8): ~40s
+- **Phase 4** (Depth 9): ~70s
+- **Phase 5** (Depth 10 random sampling): ~15-20s
+- **Total**: ~165-180 seconds
+
+**WASM tier performance** (Desktop STD: 8M/8M/8M/8M):
+- 34.7M total nodes across all depths
+- WASM heap: 756 MB (single solver)
 
 ### Solving (after database built)
 - **Depth 7**: ~0.5-0.6 seconds
 - **Depth 8**: ~0.5-0.6 seconds
 - **Depth 9**: ~0.6-0.8 seconds
+- **Depth 10**: ~0.8-1.0 seconds
 
 Note: Database is built once per instance. Reusing the same instance makes subsequent solves very fast.
 

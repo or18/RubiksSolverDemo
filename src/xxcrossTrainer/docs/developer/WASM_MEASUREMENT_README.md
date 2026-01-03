@@ -1,3 +1,45 @@
+# DEPRECATED - See WASM_INTEGRATION_GUIDE.md
+
+**⚠️ This file has been superseded and describes LEGACY workflows.**
+
+**Current Documentation**: [WASM_INTEGRATION_GUIDE.md](WASM_INTEGRATION_GUIDE.md)
+
+---
+
+## ⚠️ Deprecation Notice (Updated 2026-01-03)
+
+**This document describes the LEGACY heap measurement workflow** using:
+- `build_wasm_unified.sh` → `solver_heap_measurement.{js,wasm}` → `wasm_heap_advanced.html`
+- These files are now **archived** in `backups/`
+
+**Current Production Approach** (stable_20260103):
+- **Build**: `em++ solver_dev.cpp -o solver_dev.js` (direct compilation, no build script)
+- **Output**: `solver_dev.{js,wasm}`
+- **Test page**: `test_wasm_browser.html`
+- **Worker**: `worker_test_wasm_browser.js`
+
+**Why This Document Is Preserved**:
+1. Understanding the methodology used to derive the 6-tier WASM bucket model
+2. Historical reference for the measurement campaign (Dec 2025 - Jan 2026)
+3. Reproducing measurements if needed for validation
+
+**For Current Development**, see:
+- [WASM_BUILD_GUIDE.md](WASM_BUILD_GUIDE.md) - Current build instructions
+- [WASM_INTEGRATION_GUIDE.md](WASM_INTEGRATION_GUIDE.md) - Production patterns
+- [test_wasm_browser.html](../../test_wasm_browser.html) - Current test page
+
+The new guide consolidates:
+- Solver integration methodology (C++ to WASM compilation)
+- HTML structure and trainer configuration
+- Memory tier selection and auto-detection
+- Measurement analysis and validation
+- Troubleshooting and best practices
+- Complete code samples for production use
+
+---
+
+## Original Content (For Historical Reference)
+
 # WASM Heap Measurement Guide (Unified Build)
 
 **Updated**: 2026-01-03  
@@ -10,7 +52,8 @@ This directory contains tools for measuring actual WASM heap usage across differ
 ### 1. Build Unified WASM (~5-10 minutes)
 
 ```bash
-cd /home/ryo/RubiksSolverDemo/src/xxcrossTrainer
+# From workspace root
+cd src/xxcrossTrainer
 ./build_wasm_unified.sh
 ```
 
@@ -130,7 +173,8 @@ emcc --version  # Verify
 **Error: `solver_dev.cpp: No such file`**
 ```bash
 # Ensure you're in correct directory
-cd /home/ryo/RubiksSolverDemo/src/xxcrossTrainer
+# From workspace root
+cd src/xxcrossTrainer
 pwd  # Should end with /xxcrossTrainer
 ```
 

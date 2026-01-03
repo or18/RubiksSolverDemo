@@ -23,6 +23,14 @@ enum class BucketModel {
     HIGH,              // 16M/32M/32M (~980 MB)
     ULTRA_HIGH,        // WASM: 32M/32M/32M (~1100 MB), Native: 32M/64M/64M (~1850 MB)
     
+    // WASM-specific tier models (name-based selection for HTML UI)
+    WASM_MOBILE_LOW,      // 1M/1M/2M/4M (618 MB dual-heap)
+    WASM_MOBILE_MIDDLE,   // 2M/4M/4M/4M (896 MB dual-heap)
+    WASM_MOBILE_HIGH,     // 4M/4M/4M/4M (1070 MB dual-heap)
+    WASM_DESKTOP_STD,     // 8M/8M/8M/8M (1512 MB dual-heap)
+    WASM_DESKTOP_HIGH,    // 8M/16M/16M/16M (2786 MB dual-heap)
+    WASM_DESKTOP_ULTRA,   // 16M/16M/16M/16M (2884 MB dual-heap, 4GB limit)
+    
     CUSTOM,            // User-specified (requires enable_custom_buckets=true)
     FULL_BFS           // Research mode: no local expansion
 };
@@ -74,7 +82,11 @@ struct ResearchConfig {
     
     // Custom bucket controls (safety gates)
     bool enable_custom_buckets = false;       // true = allow CUSTOM bucket model
-    bool high_memory_wasm_mode = false;       // true = allow >1200MB in WASM, allow custom buckets in WASM
+    #ifdef __EMSCRIPTEN__
+    bool high_memory_wasm_mode = true;        // WASM: Always true (allow >1200MB, custom buckets)
+    #else
+    bool high_memory_wasm_mode = false;       // Native: false by default
+    #endif
     
     // Developer memory limit (early theoretical check)
     size_t developer_memory_limit_mb = 2048;  // Warn/block if estimated RSS exceeds (0 = no limit)
@@ -110,6 +122,15 @@ inline const std::unordered_map<BucketModel, ModelData>& get_measured_data() {
         {BucketModel::MEDIUM,     ModelData(8<<20, 8<<20, 8<<20,   0, 0, 0.0, 0.0, 0.0)},
         {BucketModel::STANDARD,   ModelData(8<<20, 16<<20, 16<<20, 0, 0, 0.0, 0.0, 0.0)},
         {BucketModel::HIGH,       ModelData(16<<20, 32<<20, 32<<20, 0, 0, 0.0, 0.0, 0.0)},
+        
+        // WASM Tier Models (depth 10 enabled, measured 2026-01-03)
+        // Format: d7/d8/d9/d10, single_heap_mb, dual_heap_mb (2x), total_nodes
+        {BucketModel::WASM_MOBILE_LOW,    ModelData(1<<20, 1<<20, 2<<20,   309, 12, 0.90, 0.90, 0.90)},
+        {BucketModel::WASM_MOBILE_MIDDLE, ModelData(2<<20, 4<<20, 4<<20,   448, 18, 0.90, 0.90, 0.90)},
+        {BucketModel::WASM_MOBILE_HIGH,   ModelData(4<<20, 4<<20, 4<<20,   535, 20, 0.90, 0.90, 0.90)},
+        {BucketModel::WASM_DESKTOP_STD,   ModelData(8<<20, 8<<20, 8<<20,   756, 35, 0.90, 0.90, 0.90)},
+        {BucketModel::WASM_DESKTOP_HIGH,  ModelData(8<<20, 16<<20, 16<<20, 1393, 57, 0.90, 0.90, 0.90)},
+        {BucketModel::WASM_DESKTOP_ULTRA, ModelData(16<<20, 16<<20, 16<<20, 1442, 65, 0.90, 0.90, 0.90)},
         
         // ULTRA_HIGH: Different for WASM vs Native (handled by get_ultra_high_config)
     };

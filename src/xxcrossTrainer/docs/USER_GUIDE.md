@@ -1,9 +1,9 @@
 # XXCross Solver - User Guide
 
-**Version**: stable-20251230  
-**Last Updated**: 2025-12-30
+**Version**: stable_20260103  
+**Last Updated**: 2026-01-03
 
-> **Navigation**: User Guide (You are here) | [Memory Configuration](MEMORY_CONFIGURATION_GUIDE.md) | [Developer Documentation](README.md)
+> **Navigation**: User Guide (You are here) | [Developer Documentation](README.md)
 
 ---
 
@@ -15,152 +15,114 @@ The XXCross Solver is a high-performance Rubik's Cube F2L (First Two Layers) sol
 
 ## Quick Start
 
-### Basic Usage (Command Line)
+### Web Browser (WASM - Recommended)
+
+For most users, the WASM version running in a web browser is the easiest option:
+
+1. Open a trainer page (e.g., `xcross_trainer.html`)
+2. Select memory tier based on your device:
+   - **Mobile phones**: Mobile LOW/MIDDLE (618-896 MB)
+   - **Desktop/Laptop**: Desktop STD (1512 MB) ✅ Recommended
+3. Start solving!
+
+**WASM tiers** are pre-configured and automatically manage memory.
+
+### Command Line (Native C++)
 
 ```bash
 # Download or compile the solver
 g++ -std=c++17 -O3 -march=native solver_dev.cpp -o solver_dev
 
-# Run with recommended memory limit (1005 MB)
-./solver_dev 1005
+# Run with custom bucket configuration (developer mode)
+export ENABLE_CUSTOM_BUCKETS=1
+export BUCKET_D7=8 BUCKET_D8=8 BUCKET_D9=8 BUCKET_D10=8
+./solver_dev
 ```
 
 The solver will:
-1. Build the search database (~150 seconds)
+1. Build the search database (~165-180 seconds, 5 phases up to depth 10)
 2. Wait for input or provide a scramble
 3. Find the optimal XXCross solution
 
-### Recommended Configuration
-
-**For most users**: `1005 MB` memory limit
-- Configuration: 8M/8M/8M buckets
-- Peak memory: ~748 MB
-- Safety margin: +257 MB (34%)
-- **Best balance** of speed and memory efficiency
+**Note**: For custom bucket sizes and native builds, see [Developer Documentation](README.md).
 
 ---
 
 ## Memory Configuration Guide
 
-### How Memory Limits Work
+### How WASM Tiers Work
 
-The solver **automatically selects** the best bucket configuration based on your specified memory limit. Higher limits allow larger hash tables, but memory usage is **deterministic** regardless of the limit value within the same configuration range.
+The solver uses **pre-configured WASM memory tiers** with specific bucket sizes for each tier. Each tier is optimized for different device capabilities:
 
-### Configuration Table
+- **Bucket sizes** (d7/d8/d9/d10) determine memory usage and node capacity
+- **Dual-heap values** account for two solvers (adjacent + opposite F2L slots)
+- Choose a tier based on your **target device's available memory**
 
-| Memory Limit | Bucket Config | Actual Peak | Buffer | Recommended For |
-|--------------|---------------|-------------|--------|-----------------|
-| 300-568 MB | 2M/2M/2M | 293 MB | 7-275 MB | **Embedded systems** |
-| 569-612 MB | 2M/4M/2M | 404 MB | 165-208 MB | Mobile devices |
-| 613-920 MB | 4M/4M/4M | 434 MB | 179-486 MB | Standard servers |
-| 921-999 MB | 4M/8M/4M | 655 MB | 266-344 MB | - |
-| **1000-1536 MB** | **8M/8M/8M** | **748 MB** | **252-788 MB** | **Production (recommended)** ✅ |
-| 1537-1701 MB | 8M/16M/8M | 1189 MB | 348-512 MB | High-memory systems |
-| 1702+ MB | 16M/16M/16M | 1375 MB | 327+ MB | Performance-critical |
+### WASM Memory Tiers (Recommended)
 
-### Choosing Your Configuration
+| Tier | Dual Heap | Bucket Config (d7/d8/d9/d10) | Total Nodes | Recommended For |
+|------|-----------|------------------------------|-------------|------------------|
+| **Mobile LOW** | **618 MB** | 1M/1M/2M/4M | 12.1M | Budget phones (2GB RAM) |
+| **Mobile MIDDLE** | **896 MB** | 2M/4M/4M/4M | 17.8M | Mid-range phones (4GB RAM) |
+| **Mobile HIGH** | **1070 MB** | 4M/4M/4M/4M | 19.7M | Flagship phones (6GB+ RAM) |
+| **Desktop STD** | **1512 MB** | 8M/8M/8M/8M | 34.7M | ✅ **Standard desktops** |
+| **Desktop HIGH** | **2786 MB** | 8M/16M/16M/16M | 57.4M | High-memory PC (16GB+ RAM) |
+| **Desktop ULTRA** | **2884 MB** | 16M/16M/16M/16M | 65.0M | Max performance (4GB browser limit) |
 
-**Conservative (Recommended)**: Use `1005 MB` or `1513 MB` limits
-- +10% or +15% safety margin
-- Protects against platform variations
-- Ideal for production deployments
-
-**Aggressive**: Use `748 MB` or `823 MB` limits
-- +0% or +5% safety margin
-- Requires exact binary match and platform
-- Best for controlled environments
-
-**More Aggressive**: Exact peak values (e.g., `748 MB`)
-- No safety margin
-- Only for testing/research
-- Risk of OOM on different platforms
+**Note**: Dual heap values account for two solvers (adjacent + opposite F2L slots)
 
 ---
 
 ## Deployment Examples
 
-### Docker
+### Web Hosting (WASM)
+
+**Recommended deployment method** for most users:
+
+```bash
+# Build production WASM module
+source ~/emsdk/emsdk_env.sh
+em++ solver_dev.cpp -o solver_dev.js -std=c++17 -O3 -I../.. \
+  -s WASM=1 -s ALLOW_MEMORY_GROWTH=1 -s MAXIMUM_MEMORY=4GB \
+  -s EXPORTED_RUNTIME_METHODS='["cwrap"]' -s MODULARIZE=1 \
+  -s EXPORT_NAME="createModule" --bind -s INITIAL_MEMORY=64MB
+
+# Deploy to web server
+cp solver_dev.{js,wasm} /var/www/html/trainer/
+cp test_wasm_browser.html /var/www/html/trainer/
+cp worker_test_wasm_browser.js /var/www/html/trainer/
+
+# Note: build_wasm_unified.sh builds solver_heap_measurement.{js,wasm}
+# for legacy heap measurement workflows (archived in backups/)
+```
+
+**CDN deployment**:
+```html
+<!-- In your HTML -->
+<script src="https://cdn.example.com/solver_dev.js"></script>
+```
+
+### Docker (for development/testing)
 
 ```dockerfile
-FROM ubuntu:22.04
+FROM nginx:alpine
 
-# Install dependencies
-RUN apt-get update && apt-get install -y g++
+# Copy WASM files and trainer HTML
+COPY solver_heap_measurement.* /usr/share/nginx/html/
+COPY *_trainer.html /usr/share/nginx/html/
 
-# Copy solver
-COPY solver_dev.cpp /app/
-WORKDIR /app
-
-# Build
-RUN g++ -std=c++17 -O3 -march=native solver_dev.cpp -o solver_dev
-
-# Run with 1005 MB limit (8M/8M/8M config)
-CMD ["./solver_dev", "1005"]
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]
 ```
 
-**Memory limit in Docker**:
+**Build and run**:
 ```bash
-docker run -m 1200M my-solver  # Container limit > solver limit
+docker build -t xxcross-trainer .
+docker run -p 8080:80 xxcross-trainer
+# Access at http://localhost:8080
 ```
 
-### Kubernetes
-
-```yaml
-apiVersion: v1
-kind: Pod
-metadata:
-  name: xxcross-solver
-spec:
-  containers:
-  - name: solver
-    image: xxcross-solver:stable-20251230
-    args: ["1005"]  # Solver memory limit
-    resources:
-      requests:
-        memory: "1000Mi"  # Kubernetes request
-      limits:
-        memory: "1200Mi"  # Kubernetes hard limit (add 200 MB buffer)
-```
-
-**Why the extra buffer?**
-- Kubernetes measures total pod memory (includes OS, sidecar containers)
-- Solver peak is 748 MB, but pod may use ~900-1000 MB total
-- 1200 MB limit provides safe headroom
-
-### Systemd Service
-
-```ini
-[Unit]
-Description=XXCross Solver Service
-After=network.target
-
-[Service]
-Type=simple
-User=solver
-WorkingDirectory=/opt/xxcross
-ExecStart=/opt/xxcross/solver_dev 1005
-Restart=on-failure
-
-# Memory limit (1.2 GB)
-MemoryMax=1200M
-MemoryHigh=1100M
-
-[Install]
-WantedBy=multi-user.target
-```
-
-### Command Line (Direct)
-
-```bash
-# Standard usage
-./solver_dev 1005
-
-# Low-memory system (300 MB available)
-./solver_dev 323  # 2M/2M/2M config with 10% margin
-
-# High-performance system (2 GB available)
-./solver_dev 1513  # 16M/16M/16M config with 10% margin
-```
+For advanced deployment and build instructions, see [Developer Documentation](README.md).
 
 ---
 
@@ -172,33 +134,36 @@ WantedBy=multi-user.target
 
 ### What Determines Memory Usage?
 
-Memory usage depends **only** on the bucket configuration, not the specified limit:
+Memory usage depends **entirely** on the bucket configuration (not a memory limit):
 
 ```
-Memory Limit → Bucket Selection → Fixed Peak Memory
-    1005 MB  →    8M/8M/8M      →      748 MB
-    1200 MB  →    8M/8M/8M      →      748 MB (same!)
-    1600 MB  →    8M/16M/8M     →     1189 MB (different config)
+Bucket Config (d7/d8/d9/d10) → Memory Usage
+    1M/1M/2M/4M             →   309 MB (single solver)
+    8M/8M/8M/8M             →   756 MB (single solver)
+   16M/16M/16M/16M          →  1442 MB (single solver)
 ```
 
-**Key Insight**: Within a configuration range (e.g., 1000-1536 MB), increasing the limit does **not** increase memory usage—it only increases the safety margin.
+**Key Insight**: WASM tiers explicitly specify bucket sizes, and memory usage is measured empirically for each configuration. There is no "automatic selection" - you choose the tier, and the solver uses those exact bucket sizes.
 
 ### Memory Composition
 
-For 8M/8M/8M configuration (typical):
+For 8M/8M/8M/8M configuration (Desktop STD tier):
 
 ```
-Total Peak: 748 MB
-├─ Fixed Overhead: 62 MB
-│  ├─ C++ runtime: ~15 MB
-│  ├─ Program text/data: ~10 MB
-│  ├─ OS allocator: ~10 MB
-│  ├─ Phase 1 remnants: ~20 MB
-│  └─ Misc: ~7 MB
-└─ Bucket Memory: 686 MB
-   ├─ Hash table buckets: 24M slots × 8 bytes = 192 MB
-   └─ Node storage: ~20M nodes × ~25 bytes = ~494 MB
+WASM Heap: 756 MB (measured)
+├─ Fixed Overhead: ~70 MB
+│  ├─ WASM runtime: ~20 MB
+│  ├─ JavaScript engine: ~15 MB
+│  ├─ Phase 1-4 data: ~25 MB
+│  └─ Misc: ~10 MB
+└─ Hash Tables (d7-d10): ~686 MB
+   ├─ Depth 7 bucket: 8M slots
+   ├─ Depth 8 bucket: 8M slots
+   ├─ Depth 9 bucket: 8M slots
+   └─ Depth 10 bucket: 8M slots (Phase 5 random sampling)
 ```
+
+**Total nodes**: 34.7M across all depths (0-10)
 
 ### Memory Stability
 
@@ -213,25 +178,25 @@ Based on 660,000+ measurements across 47 test points.
 
 ## Performance Characteristics
 
-### Solving Time
+### Database Construction Time
 
-Typical scramble (on modern CPU):
+Typical construction time (on modern CPU):
 - **Phase 1** (BFS depth 0-6): ~30 seconds
-- **Phase 2** (Partial expansion): ~10 seconds
-- **Phase 3** (Local BFS 7→8): ~40 seconds
-- **Phase 4** (Local BFS 8→9): ~70 seconds
-- **Total**: ~150 seconds
+- **Phase 2** (Depth 7 expansion): ~10 seconds
+- **Phase 3** (Depth 8 expansion): ~40 seconds
+- **Phase 4** (Depth 9 expansion): ~70 seconds
+- **Phase 5** (Depth 10 random sampling): ~15-20 seconds
+- **Total**: ~165-180 seconds
 
-### Memory vs Speed Trade-off
+### Memory vs Performance
 
-| Configuration | Peak Memory | Relative Speed |
-|---------------|-------------|----------------|
-| 2M/2M/2M | 293 MB | 1.0× (baseline) |
-| 4M/4M/4M | 434 MB | ~1.0× (same) |
-| 8M/8M/8M | 748 MB | ~1.0× (same) |
-| 16M/16M/16M | 1375 MB | ~1.0× (same) |
+| Tier | Bucket Config | WASM Heap | Total Nodes | Construction Time |
+|------|---------------|-----------|-------------|--------------------|
+| Mobile LOW | 1M/1M/2M/4M | 309 MB | 12.1M | ~120s |
+| Desktop STD | 8M/8M/8M/8M | 756 MB | 34.7M | ~165s |
+| Desktop ULTRA | 16M/16M/16M/16M | 1442 MB | 65.0M | ~180s |
 
-**Insight**: Speed is **independent** of bucket size. Choose configuration based purely on available memory.
+**Insight**: Larger buckets store more nodes (better depth 10 coverage) but construction time increases slightly.
 
 ---
 
@@ -239,180 +204,112 @@ Typical scramble (on modern CPU):
 
 ### Web Application (WASM)
 
-```javascript
-// Load solver (built with emscripten)
-const solver = await createModule();
+**Recommended**: Use pre-configured WASM tiers
 
-// Configure for browser (typically 256-512 MB available)
-// WASM will use 4M/4M/4M or 8M/8M/8M depending on browser limits
+```javascript
+// Tier selection based on device
+const tier = detectDeviceTier();  // Returns 'MOBILE_LOW', 'DESKTOP_STD', etc.
+
+// Load solver with tier configuration
+const solver = await loadSolverWithTier(tier);
 ```
 
-See [developer/WASM_BUILD_GUIDE.md](developer/WASM_BUILD_GUIDE.md) for build instructions.
+**Tier selection guidelines**:
+- **Mobile phones (2-4GB RAM)**: Mobile LOW or MIDDLE
+- **Desktop browsers**: Desktop STD (best balance)
+- **High-memory systems**: Desktop HIGH or ULTRA
+
+**For WASM deployment**, see [Developer Documentation](README.md) for build instructions.
 
 ### Mobile Application
 
-Recommended: `434 MB` (4M/4M/4M configuration)
-- Safe for most modern phones (2+ GB RAM)
-- Limit: `478 MB` (with 10% margin)
-
-```bash
-./solver_dev 478
-```
+Recommended: **Mobile MIDDLE tier** (2M/4M/4M/4M, 448 MB single / 896 MB dual)
+- Safe for modern phones (4+ GB RAM)
+- Good balance of memory and node coverage
 
 ### Desktop Application
 
-Recommended: `748 MB` (8M/8M/8M configuration)
+Recommended: **Desktop STD tier** (8M/8M/8M/8M, 756 MB single / 1512 MB dual)
 - Optimal for desktops with 4+ GB RAM
-- Limit: `823 MB` or `1005 MB` (with margin)
-
-```bash
-./solver_dev 1005
-```
+- 34.7M total nodes, excellent depth 10 coverage
 
 ### Server / Cloud
 
-Recommended: `1189 MB` or `1375 MB` (8M/16M/8M or 16M/16M/16M)
-- Best for servers with dedicated memory
-- Limit: `1308 MB` or `1513 MB` (with margin)
-
-```bash
-./solver_dev 1308  # 8M/16M/8M
-# or
-./solver_dev 1513  # 16M/16M/16M
-```
+Recommended: **Desktop HIGH or ULTRA tier**
+- HIGH: 8M/16M/16M/16M (1393 MB single / 2786 MB dual)
+- ULTRA: 16M/16M/16M/16M (1442 MB single / 2884 MB dual)
+- Best node coverage, ideal for server environments
 
 ---
 
 ## Troubleshooting
 
-### Problem: Solver crashes immediately
-
-**Symptoms**: Process exits with error or no output
-
-**Diagnosis**:
-```bash
-# Check available memory
-free -h
-
-# Check if limit is too low
-./solver_dev 500  # Might crash if selects 4M/4M/4M (needs 434 MB)
-```
-
-**Solution**: Increase memory limit to at least `323 MB` (minimum for 2M/2M/2M)
-
----
-
-### Problem: Out of memory during execution
-
-**Symptoms**: "Cannot allocate memory" error during phase 3 or 4
-
-**Diagnosis**: Memory limit is between thresholds (e.g., 570 MB)
-```
-569 MB → Selects 2M/4M/2M (needs 404 MB) ✓
-570 MB → Still 2M/4M/2M ✓
-...
-612 MB → Still 2M/4M/2M ✓
-613 MB → Selects 4M/4M/4M (needs 434 MB) ✓
-```
-
-**Solution**: Use recommended limits with safety margins (avoid bare threshold values)
-
----
-
-### Problem: WASM runs out of memory
+### Problem: Browser/WASM runs out of memory
 
 **Symptoms**: Browser tab crashes or "out of memory" error
 
-**Diagnosis**: WASM initial memory too low
-
-**Solution**: Build with sufficient initial memory:
-```bash
-emcc -O3 solver_dev.cpp -o solver.js \
-  -s INITIAL_MEMORY=268435456  # 256 MB minimum
-  -s ALLOW_MEMORY_GROWTH=1
-```
+**Solution**: Switch to a smaller tier:
+1. Try **Mobile LOW** (618 MB) - works on most devices
+2. Close other browser tabs to free memory
+3. Use a 64-bit browser if available
 
 ---
 
-### Problem: Performance slower than expected
+### Problem: Slow database construction
 
-**Symptoms**: Solving takes >200 seconds
+**Symptoms**: Construction takes >200 seconds
 
 **Diagnosis**:
-1. Check CPU (requires modern x86_64 with AVX2)
-2. Check compilation flags (`-O3 -march=native`)
-3. Verify not running in virtual machine with limited resources
+1. Check CPU performance (requires modern processor)
+2. Verify browser is using hardware acceleration
+3. Check if other processes are consuming CPU
 
 **Solution**:
-```bash
-# Rebuild with proper flags
-g++ -std=c++17 -O3 -march=native solver_dev.cpp -o solver_dev
-
-# Check CPU features
-lscpu | grep avx2
-```
+- Close unnecessary applications
+- Try Desktop STD tier (best balance of speed and memory)
+- For native builds: Compile with `-O3 -march=native`
 
 ---
 
-### Problem: Different peak memory than documented
+### Problem: Different memory usage than documented
 
-**Symptoms**: Monitoring shows peak of 755 MB instead of 748 MB
+**Symptoms**: Browser shows different heap size
 
-**Diagnosis**: Platform/compiler differences
-- Different libc version
-- Different STL implementation
-- Compiler optimizations
+**Diagnosis**: Browser overhead, extensions, or platform differences
 
-**Solution**: This is normal! Variations of ±5-10 MB are expected across platforms. Use safety margins:
-- Documented: 748 MB
-- Safe limit: 823 MB (+10%)
-- Conservative limit: 861 MB (+15%)
+**Solution**: This is normal! Variations of ±50 MB are expected:
+- Different browsers have different JS engine overhead
+- Browser extensions consume additional memory
+- Use documented tier as guideline, adjust if needed
 
 ---
 
 ## Monitoring Memory Usage
 
-### Linux (Command Line)
+### Browser (WASM)
+
+Most modern browsers provide memory profiling tools:
+
+**Chrome/Edge**:
+1. Open DevTools (F12)
+2. Go to "Performance" or "Memory" tab
+3. Take heap snapshot or record performance profile
+
+**Firefox**:
+1. Open DevTools (F12)
+2. Go to "Memory" tab
+3. Take snapshot
+
+### Native C++ (Linux)
+
+For developers working with native builds:
 
 ```bash
 # Real-time monitoring
 watch -n 1 'grep VmRSS /proc/$(pidof solver_dev)/status'
-
-# Single check
-grep VmRSS /proc/$(pidof solver_dev)/status
 ```
 
-### Programmatic Monitoring (Python)
-
-```python
-#!/usr/bin/env python3
-import time
-import sys
-
-def get_rss_kb(pid):
-    """Get RSS in KB from /proc"""
-    with open(f'/proc/{pid}/status') as f:
-        for line in f:
-            if line.startswith('VmRSS:'):
-                return int(line.split()[1])
-    return None
-
-pid = int(sys.argv[1])
-while True:
-    rss = get_rss_kb(pid)
-    if rss is None:
-        print("Process terminated")
-        break
-    print(f"RSS: {rss / 1024:.1f} MB")
-    time.sleep(1)
-```
-
-Usage:
-```bash
-python3 monitor.py $(pidof solver_dev)
-```
-
-For detailed monitoring techniques, see [developer/MEMORY_MONITORING.md](developer/MEMORY_MONITORING.md).
+For detailed monitoring techniques, see [Developer Documentation](README.md).
 
 ---
 
@@ -420,59 +317,68 @@ For detailed monitoring techniques, see [developer/MEMORY_MONITORING.md](develop
 
 ### Q: Why does the solver need so much memory?
 
-**A**: The solver builds a complete search database of **all reachable XXCross states** (up to depth 9), storing tens of millions of nodes. This enables:
+**A**: The solver builds a complete search database of **all reachable XXCross states** (up to depth 10), storing tens of millions of nodes using a 5-Phase BFS construction. This enables:
 - Optimal solution finding
 - Fast lookups during search
 - Scramble generation for training
 
-### Q: Can I reduce memory usage?
+### Q: Which WASM tier should I choose?
 
-**A**: Yes, use smaller bucket configurations:
-- `323 MB`: 2M/2M/2M (minimum viable)
-- `478 MB`: 4M/4M/4M (recommended minimum for production)
-
-Lower configurations have **same speed** but limited safety margin.
+**A**: Recommended tiers by device:
+- **Mobile phones (2-4GB RAM)**: Mobile LOW or MIDDLE (618-896 MB)
+- **High-end phones (6GB+ RAM)**: Mobile HIGH (1070 MB)
+- **Desktop/Laptop**: Desktop STD (1512 MB) ✅ Best balance
+- **High-memory systems**: Desktop HIGH or ULTRA (2786-2884 MB)
 
 ### Q: Does higher memory improve performance?
 
-**A**: No. Within a configuration (e.g., 1000-1536 MB all use 8M/8M/8M), speed is identical. Higher limits only increase the safety buffer.
+**A**: No. Performance depends on bucket sizes, not memory limits. Desktop STD (8M/8M/8M/8M) is already very fast and recommended for most users.
 
-### Q: How accurate are the documented peak values?
+### Q: Can I use this in a web browser?
 
-**A**: Very accurate (±0.5 MB) for the exact binary tested. Across platforms, expect ±5-10 MB variation. Always use safety margins (+10% recommended).
+**A**: Yes! The solver compiles to WebAssembly. Use the appropriate WASM tier for your target devices:
+- Mobile browsers: Use Mobile tiers (LOW/MIDDLE/HIGH)
+- Desktop browsers: Use Desktop STD (1512 MB dual-heap)
+- See [Developer Documentation](README.md) for integration guide
 
-### Q: What if my system has limited memory?
+### Q: What if my browser runs out of memory?
 
-**A**: The solver works down to 323 MB (2M/2M/2M configuration). For embedded systems or browsers, use the smallest viable configuration.
-
-### Q: Can I run multiple solvers in parallel?
-
-**A**: Yes, each instance uses independent memory. For 4 parallel solvers with 8M/8M/8M:
-```
-Total memory = 4 × 823 MB = 3292 MB (~3.3 GB with margin)
-```
+**A**: Switch to a smaller tier:
+- Mobile LOW (618 MB) works on most devices
+- Each tier is carefully measured for stability
+- Contact issues if problems persist with Mobile LOW
 
 ---
 
-## Implementation Details (Brief)
+## How It Works (Brief)
 
 For users who want to understand the basics:
 
-### Two-Phase Algorithm
+### 5-Phase Construction
+
+The solver builds the search database in 5 phases:
 
 1. **Phase 1** (Depth 0-6): Full BFS expansion of all reachable states
-2. **Phase 2** (Depth 7-9): Local BFS expansion using parent-child relationships
+2. **Phase 2** (Depth 7): Local BFS expansion using hash table
+3. **Phase 3** (Depth 8): Continued local expansion
+4. **Phase 4** (Depth 9): Further expansion
+5. **Phase 5** (Depth 10): Random sampling for coverage
 
-### Bucket System
+### WASM Memory Tiers
 
-The solver uses three hash tables (buckets) for depths 7, 8, 9:
-- Automatically sized based on memory limit
-- Typical sizes: 2M, 4M, 8M, or 16M slots per bucket
-- Each bucket stores states at a specific depth
+Each tier specifies hash table sizes for depths 7, 8, 9, 10:
+- **Mobile LOW**: 1M/1M/2M/4M slots (smallest, most compatible)
+- **Desktop STD**: 8M/8M/8M/8M slots (recommended)
+- **Desktop ULTRA**: 16M/16M/16M/16M slots (maximum performance)
 
-### Why Three Buckets?
+Larger hash tables = more nodes stored = better solution coverage.
 
-Depths 0-6 are fully expanded and stored in a compact format. Depths 7-9 are partially expanded on-demand, requiring hash table lookups for efficient access.
+### Why Multiple Tiers?
+
+Different devices have different memory limits:
+- Mobile browsers: typically 512 MB - 2 GB available
+- Desktop browsers: up to 4 GB (browser limit)
+- Each tier is optimized for specific hardware constraints
 
 ---
 
@@ -481,20 +387,31 @@ Depths 0-6 are fully expanded and stored in a compact format. Depths 7-9 are par
 ### For Usage Questions
 
 1. Check this guide's troubleshooting section
-2. Review [MEMORY_CONFIGURATION_GUIDE.md](MEMORY_CONFIGURATION_GUIDE.md) for detailed configuration info
-3. Verify your memory limit matches a recommended value
+2. Review the WASM Memory Tiers table for tier selection
+3. Try a smaller tier if you encounter memory issues
 
 ### For Development/Technical Questions
 
-1. See [README.md](README.md) for developer documentation links
-2. Review [developer/SOLVER_IMPLEMENTATION.md](developer/SOLVER_IMPLEMENTATION.md) for code details
-3. Check [developer/Experiences/](developer/Experiences/) for experimental findings
+See [Developer Documentation](README.md) for:
+- Advanced configuration and custom bucket sizes
+- WASM build and integration guides
+- Memory measurement methodology
+- Implementation details and API reference
 
 ---
 
 ## Version History
 
-### stable-20251230 (Current)
+### stable_20260103 (Current)
+
+- ✅ Depth 10 support via random sampling (Phase 5)
+- ✅ Memory spike elimination (pre-reserve pattern)
+- ✅ 6-tier WASM bucket model (618-2884 MB dual-solver)
+- ✅ Complete WASM heap measurement (13 configurations)
+- ✅ Comprehensive API and implementation documentation
+- ✅ Malloc trim management (ENV configurable)
+
+### stable-20251230 (Previous)
 
 - ✅ Empirically validated memory configurations (47-point measurement campaign)
 - ✅ Documented all 7 bucket configurations with safety margins
@@ -503,21 +420,21 @@ Depths 0-6 are fully expanded and stored in a compact format. Depths 7-9 are par
 
 ### Previous Versions
 
-See [developer/Experiences/](developer/Experiences/) for detailed history.
+For detailed version history, see [Developer Documentation](README.md).
 
 ---
 
 ## Summary
 
-**Recommended for most users**:
-```bash
-./solver_dev 1005  # 8M/8M/8M configuration, 748 MB peak, 257 MB buffer
-```
+**Recommended Configuration**:
+- **Web/WASM users**: Desktop STD tier (1512 MB dual-heap)
+- **Native C++ users**: Custom bucket sizes via environment variables
+- **Mobile users**: Mobile LOW/MIDDLE tier (618-896 MB)
 
-**Key Takeaways**:
-- Memory usage is deterministic and extremely stable
-- Choose configuration based on available memory
-- Use +10% safety margin for production deployments
-- Speed is independent of bucket size
+**Key Points**:
+- Choose WASM tier based on target device memory
+- All tiers provide optimal solutions
+- Larger tiers = better depth 10 coverage
+- See [Developer Documentation](README.md) for advanced usage
 
 **Happy Solving!** 🎲

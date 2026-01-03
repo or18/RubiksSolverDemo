@@ -1,23 +1,46 @@
 # Experimental Findings Archive
 
-**Version**: stable-20260102  
-**Last Updated**: 2026-01-02
+**Version**: stable_20260103  
+**Last Updated**: 2026-01-03
 
-> **Navigation**: [← Back to Developer Docs](../../README.md) | [User Guide](../../USER_GUIDE.md) | [Memory Config](../../MEMORY_CONFIGURATION_GUIDE.md)
+> **Navigation**: [← Back to Developer Docs](../README.md) | [User Guide](../../USER_GUIDE.md)
 >
-> **Related**: [Implementation](../SOLVER_IMPLEMENTATION.md) | [Memory Monitoring](../MEMORY_MONITORING.md) | [Experiment Scripts](../EXPERIMENT_SCRIPTS.md)
+> **Related**: [Implementation](../SOLVER_IMPLEMENTATION.md) | [Memory Monitoring](../MEMORY_MONITORING.md)
 
 ---
 
 ## Purpose
 
-This directory contains **current experimental findings** from memory behavior investigations. Older comprehensive measurement campaigns have been archived to `docs/developer/_archive/Experiences_old/`.
+This directory contains **current experimental findings** from memory behavior investigations and WASM deployment measurements. Older comprehensive measurement campaigns have been archived to `docs/developer/_archive/Experiences_old/`.
 
 ---
 
 ## Current Documents
 
-### � Depth 10 Implementation Results (2026-01-02) - LATEST
+### 🌐 WASM Heap Measurement Campaign (2026-01-03) - LATEST ✅
+
+**[wasm_heap_measurement_results.md](wasm_heap_measurement_results.md)** - **6-Tier WASM Bucket Model (Production-Ready)**
+- **13 bucket configurations measured** (1M/1M/2M/4M to 16M/16M/16M/16M)
+- **Platform-independent validation**: Mobile and Desktop browsers show identical heap usage
+- **Final 6-tier model**: Mobile LOW/MIDDLE/HIGH, Desktop STD/HIGH/ULTRA
+- **Key efficiency finding**: 8M/8M/8M/8M achieves 45,967 nodes/MB (best in class)
+- **Heap anomaly explained**: Larger buckets reduce rehashing overhead (756 MB < 811 MB)
+- **Dual-solver architecture**: Total heap = 2× single solver (adjacent + opposite F2L slots)
+- **Deployment recommendations**: Desktop STD (1512 MB) for standard use, Mobile LOW (618 MB) for budget phones
+- **Implementation complete**: bucket_config.h updated with WASM_MOBILE_LOW/MIDDLE/HIGH, WASM_DESKTOP_STD/HIGH/ULTRA
+
+**[wasm_heap_measurement_data.md](wasm_heap_measurement_data.md)** - **Raw Data and Detailed Observations**
+- Complete 13-configuration measurement table
+- Per-configuration statistics (nodes, heap, efficiency)
+- Measurement extraction scripts
+- Detailed observation notes
+- Data backup locations
+
+**Production Status**: ✅ Complete - Ready for trainer integration (Phase 7.5)
+
+---
+
+### 🔧 Depth 10 Implementation Results (2026-01-02)
 
 **[depth_10_implementation_results.md](depth_10_implementation_results.md)** - **Phase 5 depth expansion proof-of-concept**
 - Successful implementation of depth 9→10 local expansion
@@ -31,7 +54,7 @@ This directory contains **current experimental findings** from memory behavior i
 - Performance metrics: ~15-20 seconds for Phase 5 expansion
 - **Recommended for understanding depth 10 implementation**
 
-**[depth_10_peak_rss_validation.md](depth_10_peak_rss_validation.md)** - **10ms monitoring validation** ⚠️ NEW
+**[depth_10_peak_rss_validation.md](depth_10_peak_rss_validation.md)** - **10ms monitoring validation**
 - **Critical finding**: Actual peak RSS **442 MB** (not 378 MB from C++ checkpoints)
 - Gap analysis: +64 MB (+17%) from transient allocations
 - 10ms integrated monitoring captures spikes between checkpoints
@@ -39,7 +62,20 @@ This directory contains **current experimental findings** from memory behavior i
 - Emscripten heap monitoring plan to measure actual WASM overhead
 - **Required reading for production deployment planning**
 
-**Key Achievement**: Mobile-compatible depth 10 support ~~(265 MB WASM estimate)~~ ⚠️ **requires validation with 2M/2M/2M/1M config**
+**[depth_10_memory_spike_investigation.md](depth_10_memory_spike_investigation.md)** - **Memory spike elimination investigation** ✅
+- **Comprehensive optimization attempts**: 5 techniques tested
+  - Phase 4 vector pre-allocation (moved outside loop)
+  - Phase 5 depth9_set direct insertion (eliminated 30 MB vector copy)
+  - Bulk insert optimization
+  - malloc_trim after Phase 4
+  - Enhanced C++ checkpoints (periodic RSS during expansion loops)
+- **Root cause discovery**: Phase 4 is actual theoretical peak (414 MB), not Phase 5
+- **Resolution**: 64 MB "spike" was measurement artifact (Phase 5 checkpoint vs global 10ms peak)
+- **Actual spike**: 28 MB system overhead (unavoidable kernel/allocator level)
+- **WASM margin calculation**: Now accurate based on 414 MB theoretical peak
+- **Pre-reserve pattern**: Eliminates all transient spikes for production deployment
+
+**Key Achievement**: Depth 10 support validated across WASM tiers (Mobile LOW to Desktop ULTRA)
 
 ---
 
@@ -223,17 +259,16 @@ BUCKET_MODEL=8M/8M/8M ENABLE_CUSTOM_BUCKETS=1 ./solver_dev
 
 ### 📊 Comprehensive Measurement Campaign (2025-12-30) - ARCHIVED
 
-Older comprehensive measurement documents have been moved to:
-**[../_archive/Experiences_old/](../_archive/Experiences_old/)**
+Older comprehensive measurement documents have been archived locally (not in git).
 
-Archived documents include:
+Historical documents from December 2025 measurement campaign:
 - `MEASUREMENT_RESULTS_20251230.md` - 47-point comprehensive results
 - `MEASUREMENT_SUMMARY.md` - Executive summary
 - `MEMORY_THEORY_ANALYSIS.md` - Theoretical deep-dive
 - `THEORETICAL_MODEL_REVISION.md` - Model evolution
 - `bucket_model_rss_measurement_old.md` - Earlier bucket measurements
 
-These documents remain available for historical reference but are superseded by the current documents above.
+These archived documents are available for historical reference but are superseded by the current documents above.
 
 ---
 
@@ -241,7 +276,7 @@ These documents remain available for historical reference but are superseded by 
 
 ```
 Production Deployment
-├─ ../../MEMORY_CONFIGURATION_GUIDE.md (Use this for deployment)
+├─ ../../USER_GUIDE.md (Use this for deployment + Advanced Configuration)
 │
 Current Findings (2026-01-02)
 ├─ bucket_model_rss_measurement.md (Face-diverse expansion, malloc_trim analysis)
@@ -261,7 +296,7 @@ Archived Findings (2025-12-30)
 ## Reading Guide
 
 ### For Production Deployment
-1. **[../../MEMORY_CONFIGURATION_GUIDE.md](../../MEMORY_CONFIGURATION_GUIDE.md)** - Complete production guide
+1. **[../../USER_GUIDE.md](../../USER_GUIDE.md)** - Complete production guide with WASM tiers
 2. **[bucket_model_rss_measurement.md](bucket_model_rss_measurement.md)** - Current implementation details
 
 ### For Understanding Memory Behavior
@@ -270,8 +305,8 @@ Archived Findings (2025-12-30)
 3. **[../MEMORY_MONITORING.md](../MEMORY_MONITORING.md)** - Monitoring methodology
 
 ### For Historical Context
-1. **[../_archive/Experiences_old/MEMORY_THEORY_ANALYSIS.md](../_archive/Experiences_old/)** - Earlier theoretical models
-2. **[../_archive/Experiences_old/MEASUREMENT_RESULTS_20251230.md](../_archive/Experiences_old/)** - Comprehensive 47-point campaign
+
+Earlier theoretical models and comprehensive measurement campaigns are available in local archives (not in git). Contact maintainers for access to historical documents if needed.
 
 ---
 
@@ -329,11 +364,10 @@ src/xxcrossTrainer/backups/logs/
 
 ### In Root docs/
 - **[../../README.md](../../README.md)** - Developer entry point
-- **[../../USER_GUIDE.md](../../USER_GUIDE.md)** - End-user guide
-- **[../../MEMORY_CONFIGURATION_GUIDE.md](../../MEMORY_CONFIGURATION_GUIDE.md)** - Production deployment
+- **[../../USER_GUIDE.md](../../USER_GUIDE.md)** - End-user guide and production deployment
 
 ---
 
-**Document Purpose**: This README serves as a navigation guide to current experimental findings. Historical documents are preserved in `_archive/` for reference.
+**Document Purpose**: This README serves as a navigation guide to current experimental findings. Historical documents are preserved in local archives (not in git) for reference.
 
-**Status**: Current findings documented (2026-01-02), older documents archived.
+**Status**: Current findings documented (2026-01-02), older documents archived locally.
