@@ -18,6 +18,7 @@ This is a high-performance Rubik's Cube XXCross (double cross) solver designed f
 - **Multi-Tier WASM Support**: 6 bucket models (Mobile: LOW/MIDDLE/HIGH, Desktop: STD/HIGH/ULTRA)
 - **Production-Ready**: Comprehensive heap measurements (13-configuration WASM campaign)
 - **Dual Platform**: Native C++ and WebAssembly with unified API
+- **Guaranteed Depth Scrambles**: Depth guarantee algorithm ensures exact scramble depth even with sparse coverage (2026-01-04)
 
 ---
 
