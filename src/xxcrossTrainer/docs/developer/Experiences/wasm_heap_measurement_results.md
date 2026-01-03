@@ -164,6 +164,7 @@ struct WasmBucketModel {
     const char* tier_name;
 };
 
+{% raw %}
 const WasmBucketModel WASM_MODELS[] = {
     {{1, 1, 2, 4}, 309, 618, 12100507, "MOBILE_LOW"},
     {{2, 4, 4, 4}, 448, 896, 17762816, "MOBILE_MIDDLE"},
@@ -172,6 +173,7 @@ const WasmBucketModel WASM_MODELS[] = {
     {{8, 16, 16, 16}, 1393, 2786, 57398991, "DESKTOP_HIGH"},
     {{16, 16, 16, 16}, 1442, 2884, 64948737, "DESKTOP_ULTRA"}  // Practical upper limit under 4GB restriction
 };
+{% endraw %}
 ```
 
 ### 6.2 JavaScript Selection Logic
