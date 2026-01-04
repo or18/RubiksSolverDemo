@@ -974,7 +974,7 @@ Completed experiment cleanup:
   - EXPERIMENT_SCRIPTS.md, WASM_EXPERIMENT_SCRIPTS.md (development phase)
   - wasm_heap_measurement_plan.md (completed)
 - **Restored critical analysis** ← `_archive/Experiences_old/` (from local archive)
-  - depth_10_memory_spike_investigation.md (重要な分析、Experiences/に復元)
+  - depth_10_memory_spike_investigation.md (Important analysis, restored to Experiences/)
 
 ### WASM Heap Measurement Complete ✅
 Measured 13 bucket configurations across 12M-65M node range:
