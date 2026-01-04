@@ -3,13 +3,42 @@
 **Project**: xxcross Solver Memory Budget System  
 **Start Date**: 2026-01-01  
 **Last Updated**: 2026-01-04  
-**Status**: Phase 7.7 Complete (Scramble Depth Guarantee - Production Ready)
+**Status**: Phase 7 Complete | Phase 8 Started (Production Module)
 
 ---
 
 ## Recent Updates (2026-01-04)
 
-### Depth Guarantee Algorithm Documentation ✅ (Latest - 00:30)
+### Production Module Planning ✅ (Latest - 01:00)
+**Production WASM Module Setup**: Created production directory and implementation plan
+
+**Directory Structure**:
+```
+src/xxcrossTrainer/production/
+├── solver_prod_stable_20260103.cpp  ✅ Copied from solver_dev.cpp
+├── bucket_config.h                  ✅ Copied
+├── expansion_parameters.h           ✅ Copied
+├── memory_calculator.h              ✅ Copied
+├── tsl/                             ✅ Copied (robin_hash headers)
+└── worker.js                        ✅ Copied from xcrossTrainer/worker.js
+```
+
+**Implementation Plan Created**: [Production_Implementation.md](Production_Implementation.md)
+
+**Key Features for Production**:
+1. **Dual Solver Support**: Separate instances for adjacent and opposite pairs
+2. **Direct Bucket Model Selection**: Constructor accepts model name (no env vars needed)
+3. **Minimal API**: Only constructor and `func()` exported
+4. **Lazy Initialization**: Database built on first use per pair type
+5. **Depth Guarantee**: Already integrated from Phase 7.7
+
+**Next Steps**: See [Production_Implementation.md](Production_Implementation.md) for detailed checklist
+
+**Status**: ✅ Planning complete, ready for implementation
+
+---
+
+### Depth Guarantee Algorithm Documentation ✅ (00:30)
 **Cross-Document Integration**: Updated all documentation with depth guarantee implementation
 
 **Documentation Updated**:
@@ -4620,42 +4649,157 @@ Generated: U2 R' U' R' B' U L' R' B2 D' (10 moves)
 - ✅ Works reliably even at worst-case depth (10) with 0.008% coverage
 - ✅ Diagnostic logging provides visibility into retry behavior
 - ✅ Graceful fallback if max_attempts exceeded (100 retries)
+- ✅ Ready for production WASM module integration (Phase 8.1)
 
 **Status**: ✅ **FULLY TESTED & PRODUCTION READY** - Depth guarantee implementation validated successfully
 
 ---
 
+## Phase 8: Production WASM Module ✅ COMPLETE (2026-01-04)
+
+**Status**: All phases completed - Production ready with comprehensive performance testing
+
+**Objective**: Create production-ready WASM module for xxcross_trainer.html with dual solver support
+
+**Project Document**: [Production_Implementation.md](Production_Implementation.md)
+
+### 8.1: Production Module Setup ✅ COMPLETED (2026-01-04)
+
+**Completed Tasks**:
+- [x] Created production directory (`src/xxcrossTrainer/production/`)
+- [x] Copied `solver_dev.cpp` → `solver_prod_stable_20260103.cpp`
+- [x] Copied header files (`bucket_config.h`, `expansion_parameters.h`, `memory_calculator.h`)
+- [x] Copied `tsl/` directory (robin_hash headers)
+- [x] Copied `worker.js` template from xcrossTrainer
+- [x] Created implementation plan document (Production_Implementation.md)
+
+**Directory Structure**:
+```
+production/
+├── solver_prod_stable_20260103.cpp  ✅
+├── bucket_config.h                  ✅
+├── expansion_parameters.h           ✅
+├── memory_calculator.h              ✅
+├── tsl/                             ✅
+└── worker.js                        ✅ (needs modification)
+```
+
+---
+
+### 8.2: C++ Production Module ✅ COMPLETED
+
+**Implemented**:
+- [x] Production constructor with bucket model string parameter (`"MOBILE_LOW"`, `"DESKTOP_STD"`, etc.)
+- [x] Simplified Emscripten bindings (constructor + func only, MODULARIZE=1)
+- [x] Removed verbose logging in production mode
+- [x] Verified func() signature compatibility with depth guarantee
+
+**Key Achievement**: Production constructor allows direct bucket model selection without environment variables.
+
+```cpp
+#ifdef __EMSCRIPTEN__
+xxcross_search(bool adj, const std::string& bucket_model) {
+    BucketConfig config = parseBucketModel(bucket_model);
+    bool verbose = false;  // Production: minimal logging
+    // ...
+}
+#endif
+```
+
+---
+
+### 8.3: Worker.js Dual Instance Support ✅ COMPLETED
+
+**Implemented**:
+- [x] Dual instance variables (adjacent, opposite solvers)
+- [x] Lazy initialization with MODULARIZE=1 compatibility (`createModule()`)
+- [x] Message handler with pair type routing
+- [x] Error handling and logging
+
+**Critical Fix**: MODULARIZE=1 requires `Module = await self.createModule()` instead of global `Module`.
+
+---
+
+### 8.4: Build & Testing ✅ COMPLETED
+
+**Build System**:
+- [x] `build_production.sh` created (release/debug modes)
+- [x] Release build: `-O3 -msimd128 -flto` (95KB JS, 302KB WASM)
+- [x] Debug build: `-O2 -sASSERTIONS=1` (124KB JS, 279KB WASM)
+
+**Testing**:
+- [x] Browser test (`test_worker.html`) - All 12 configurations verified
+- [x] Performance testing - 100 trials × 5 depths × 12 configs = 6,000 measurements
+- [x] Statistical analysis (mean, median, std dev, retry count)
+
+**Performance Results Summary**:
+- ✅ All models achieve <20ms mean depth 10 generation
+- ✅ Initialization time: 10-96s (scales with database size)
+- ✅ DESKTOP_STD recommended for best performance/time balance (35s init, 12ms depth 10)
+- ✅ MOBILE_LOW recommended for mobile devices (12s init, 12-14ms depth 10)
+
+**Detailed Results**: [performance_results.md](performance_results.md)
+
+---
+
+### 8.5: Documentation & Archive Organization ✅ COMPLETED
+
+**Documentation**:
+- [x] [Production_Implementation.md](Production_Implementation.md) - Implementation plan with final results
+- [x] [performance_results.md](performance_results.md) - Performance summary and recommendations
+- [x] [production/README.md](../../production/README.md) - Production directory guide
+
+**Archive Structure**:
+```
+production/
+├── tools/              ✅ Test scripts (measurement, extraction, merging)
+├── _archive/
+│   ├── logs/          ✅ Test execution logs (~44,000 lines)
+│   ├── docs/          ✅ Detailed experimental reports
+│   └── results/       ✅ Intermediate JSON results
+```
+
+**Core Implementation Success**: 
+- Production constructor successfully implemented with bucket model string API
+- No issues with core solver logic - all depth guarantee tests passed
+- MODULARIZE=1 integration successful after worker.js pattern fix
+
+---
+
+### 8.6: Trainer HTML Integration ⬜ PENDING
+
+**Remaining Tasks**:
+1. Create xxcross_trainer.html (currently in .gitignore)
+2. Implement bucket model selection UI
+3. Implement pair type selection UI (adjacent/opposite)
+4. Test on mobile and desktop devices
+
+---
+
 ## Next Steps
 
-**Immediate (Phase 7.8)** - DOCUMENTATION COMPLETE ✅:
-1. ✅ ~~Rebuild WASM module with scramble depth fix~~ - COMPLETED (Phase 7.7)
-2. ✅ ~~Test scramble generation across all depths (1-10)~~ - VALIDATED (Depth 10 tested, 9 attempts, <2ms)
-3. ✅ ~~Verify depth consistency in test_wasm_browser.html~~ - CONFIRMED (exact depth guarantee working)
-4. ✅ ~~Update documentation across all files~~ - COMPLETED (API_REFERENCE, SOLVER_IMPLEMENTATION, README, USER_GUIDE)
-5. Remove debug logging from `get_xxcross_scramble()` for production build (optional)
-6. Update production compile command in compile.txt (optional)
+**Immediate (Phase 8.6)** - TRAINER HTML INTEGRATION:
+1. Create xxcross_trainer.html (currently in .gitignore)
+2. Implement bucket model selection UI
+3. Implement pair type selection UI (adjacent/opposite)
+4. Test on mobile and desktop devices
 
-**Short-term (Phase 7.9)** - TRAINER INTEGRATION:
-1. Implement JavaScript tier selection logic
-2. Update trainer HTML files with WASM integration
-3. Test on mobile and desktop devices
-4. Verify scramble depth accuracy in production environment
+**Short-term (Phase 8.7)** - DEPLOYMENT:
+1. Deploy production module to web server
+2. Monitor real-world performance
+3. Collect user feedback
 
-**Medium-term (Phase 7.10)** - MONITORING & OPTIMIZATION:
-1. Establish performance baselines for scramble generation
-2. Monitor retry rate distribution across depths 1-10
-3. Document production deployment workflow
-4. Consider increasing bucket sizes for depth 9-10 if retry rate too high
-
-**Long-term** - PRODUCTION DEPLOYMENT:
-1. Deploy to production environment
-2. Monitor real-world performance and retry statistics
-3. Iterate based on user feedback and production data
-4. Consider optimizations (cached nodes, pre-filtered arrays)
+**Medium-term** - OPTIMIZATION (Future):
+1. Scramble caching (reduce retry overhead)
+2. Pre-filtered index_pairs
+3. Progressive loading
+4. IndexedDB persistence
 
 ---
 
 ## Navigation
 
 - [← Back to Developer Docs](../README.md)
+- [Production Implementation](Production_Implementation.md)
+- [Performance Results](performance_results.md)
 - [MEMORY_BUDGET_DESIGN.md (Archived)](_archive/MEMORY_BUDGET_DESIGN_archived_20260103.md)

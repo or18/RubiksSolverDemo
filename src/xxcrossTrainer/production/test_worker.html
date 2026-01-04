@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XXcross Solver - Worker Test</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        h1 {
+            color: #333;
+            border-bottom: 3px solid #4CAF50;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #555;
+            margin-top: 30px;
+            border-left: 4px solid #2196F3;
+            padding-left: 10px;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .controls {
+            margin: 15px 0;
+        }
+        label {
+            display: inline-block;
+            width: 150px;
+            font-weight: bold;
+            color: #555;
+        }
+        select, input {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 5px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .danger {
+            background: #f44336;
+        }
+        .danger:hover {
+            background: #da190b;
+        }
+        #output {
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 15px;
+            margin-top: 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            max-height: 500px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        .success {
+            color: #4CAF50;
+            font-weight: bold;
+        }
+        .error {
+            color: #f44336;
+            font-weight: bold;
+        }
+        .info {
+            color: #2196F3;
+        }
+        .warning {
+            color: #ff9800;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧊 XXcross Solver - Production Worker Test</h1>
+    
+    <div class="test-section">
+        <h2>📋 Test Configuration</h2>
+        <div class="controls">
+            <label>Bucket Model:</label>
+            <select id="bucketModel">
+                <option value="MOBILE_LOW">MOBILE_LOW (1/1/2/4 MB)</option>
+                <option value="MOBILE_MIDDLE">MOBILE_MIDDLE (2/4/4/4 MB)</option>
+                <option value="MOBILE_HIGH">MOBILE_HIGH (4/4/4/4 MB)</option>
+                <option value="DESKTOP_STD" selected>DESKTOP_STD (8/8/8/8 MB)</option>
+                <option value="DESKTOP_HIGH">DESKTOP_HIGH (8/16/16/16 MB)</option>
+                <option value="DESKTOP_ULTRA">DESKTOP_ULTRA (16/16/16/16 MB)</option>
+            </select>
+        </div>
+        <div class="controls">
+            <label>Scramble Depth:</label>
+            <input type="number" id="scrambleDepth" value="8" min="1" max="10">
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>🔧 Worker Instance Control</h2>
+        <div class="controls">
+            <button id="initAdjacent">Initialize Adjacent Solver</button>
+            <button id="terminateAdjacent" class="danger" disabled>Terminate Adjacent</button>
+            <span id="adjacentStatus" class="info">Not initialized</span>
+        </div>
+        <div class="controls">
+            <button id="initOpposite">Initialize Opposite Solver</button>
+            <button id="terminateOpposite" class="danger" disabled>Terminate Opposite</button>
+            <span id="oppositeStatus" class="info">Not initialized</span>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>🎲 Scramble Generation Test</h2>
+        <div class="controls">
+            <button id="testAdjacentScramble" disabled>Test Adjacent Scramble</button>
+            <button id="testOppositeScramble" disabled>Test Opposite Scramble</button>
+            <button id="testBothScrambles" disabled>Test Both (Sequential)</button>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>📊 Output Log</h2>
+        <button id="clearLog">Clear Log</button>
+        <div id="output"></div>
+    </div>
+
+    <script>
+        // Global worker instances
+        let worker_adjacent = null;
+        let worker_opposite = null;
+
+        const output = document.getElementById('output');
+
+        function log(message, className = '') {
+            const timestamp = new Date().toLocaleTimeString('ja-JP');
+            const line = document.createElement('div');
+            line.className = className;
+            line.textContent = `[${timestamp}] ${message}`;
+            output.appendChild(line);
+            output.scrollTop = output.scrollHeight;
+            console.log(message);
+        }
+
+        function updateUI() {
+            const bucketModel = document.getElementById('bucketModel').value;
+            
+            // Adjacent controls
+            const adjInitialized = worker_adjacent !== null;
+            document.getElementById('initAdjacent').disabled = adjInitialized;
+            document.getElementById('terminateAdjacent').disabled = !adjInitialized;
+            document.getElementById('adjacentStatus').textContent = adjInitialized 
+                ? `✅ Initialized (${bucketModel})` 
+                : 'Not initialized';
+            document.getElementById('adjacentStatus').className = adjInitialized ? 'success' : 'info';
+            
+            // Opposite controls
+            const oppInitialized = worker_opposite !== null;
+            document.getElementById('initOpposite').disabled = oppInitialized;
+            document.getElementById('terminateOpposite').disabled = !oppInitialized;
+            document.getElementById('oppositeStatus').textContent = oppInitialized 
+                ? `✅ Initialized (${bucketModel})` 
+                : 'Not initialized';
+            document.getElementById('oppositeStatus').className = oppInitialized ? 'success' : 'info';
+            
+            // Scramble test controls
+            document.getElementById('testAdjacentScramble').disabled = !adjInitialized;
+            document.getElementById('testOppositeScramble').disabled = !oppInitialized;
+            document.getElementById('testBothScrambles').disabled = !adjInitialized || !oppInitialized;
+        }
+
+        // Initialize Adjacent Worker
+        document.getElementById('initAdjacent').addEventListener('click', () => {
+            const bucketModel = document.getElementById('bucketModel').value;
+            log(`🚀 Initializing Adjacent solver with ${bucketModel}...`, 'info');
+            
+            worker_adjacent = new Worker('worker.js');
+            
+            worker_adjacent.onmessage = (event) => {
+                // Handle log messages from worker
+                if (event.data.log) {
+                    const logClass = event.data.logType || 'info';
+                    log(event.data.log, logClass);
+                    return;
+                }
+                
+                // Handle error messages
+                if (event.data.error) {
+                    log(`❌ Adjacent Worker Error: ${event.data.error}`, 'error');
+                } else if (event.data.result) {
+                    log(`✅ Adjacent Result: ${event.data.result}`, 'success');
+                }
+            };
+            
+            worker_adjacent.onerror = (error) => {
+                log(`❌ Adjacent Worker Error: ${error.message}`, 'error');
+            };
+            
+            // Send initialization message (empty scramble will trigger instance creation)
+            const scr = "";
+            const len = "1";
+            const pairType = "adj";
+            worker_adjacent.postMessage({ scr, len, pairType, bucketModel });
+            
+            log(`✅ Adjacent worker created, message sent`, 'success');
+            updateUI();
+        });
+
+        // Terminate Adjacent Worker
+        document.getElementById('terminateAdjacent').addEventListener('click', () => {
+            if (worker_adjacent) {
+                worker_adjacent.terminate();
+                worker_adjacent = null;
+                log('🛑 Adjacent worker terminated', 'warning');
+                updateUI();
+            }
+        });
+
+        // Initialize Opposite Worker
+        document.getElementById('initOpposite').addEventListener('click', () => {
+            const bucketModel = document.getElementById('bucketModel').value;
+            log(`🚀 Initializing Opposite solver with ${bucketModel}...`, 'info');
+            
+            worker_opposite = new Worker('worker.js');
+            
+            worker_opposite.onmessage = (event) => {
+                // Handle log messages from worker
+                if (event.data.log) {
+                    const logClass = event.data.logType || 'info';
+                    log(event.data.log, logClass);
+                    return;
+                }
+                
+                // Handle error messages
+                if (event.data.error) {
+                    log(`❌ Opposite Worker Error: ${event.data.error}`, 'error');
+                } else if (event.data.result) {
+                    log(`✅ Opposite Result: ${event.data.result}`, 'success');
+                }
+            };
+            
+            worker_opposite.onerror = (error) => {
+                log(`❌ Opposite Worker Error: ${error.message}`, 'error');
+            };
+            
+            // Send initialization message
+            const scr = "";
+            const len = "1";
+            const pairType = "opp";
+            worker_opposite.postMessage({ scr, len, pairType, bucketModel });
+            
+            log(`✅ Opposite worker created, message sent`, 'success');
+            updateUI();
+        });
+
+        // Terminate Opposite Worker
+        document.getElementById('terminateOpposite').addEventListener('click', () => {
+            if (worker_opposite) {
+                worker_opposite.terminate();
+                worker_opposite = null;
+                log('🛑 Opposite worker terminated', 'warning');
+                updateUI();
+            }
+        });
+
+        // Test Adjacent Scramble
+        document.getElementById('testAdjacentScramble').addEventListener('click', () => {
+            const depth = document.getElementById('scrambleDepth').value;
+            const bucketModel = document.getElementById('bucketModel').value;
+            log(`🎲 Requesting Adjacent scramble (depth ${depth}, model ${bucketModel})...`, 'info');
+            
+            const startTime = performance.now();
+            worker_adjacent.onmessage = (event) => {
+                const elapsed = (performance.now() - startTime).toFixed(2);
+                if (event.data.error) {
+                    log(`❌ Adjacent Error: ${event.data.error}`, 'error');
+                } else if (event.data.result) {
+                    const parts = event.data.result.split(',');
+                    const scramble = parts[1] || parts[0];
+                    log(`✅ Adjacent Scramble (${elapsed}ms): ${scramble}`, 'success');
+                }
+            };
+            
+            worker_adjacent.postMessage({ 
+                scr: "", 
+                len: depth, 
+                pairType: "adj", 
+                bucketModel: bucketModel 
+            });
+        });
+
+        // Test Opposite Scramble
+        document.getElementById('testOppositeScramble').addEventListener('click', () => {
+            const depth = document.getElementById('scrambleDepth').value;
+            const bucketModel = document.getElementById('bucketModel').value;
+            log(`🎲 Requesting Opposite scramble (depth ${depth}, model ${bucketModel})...`, 'info');
+            
+            const startTime = performance.now();
+            worker_opposite.onmessage = (event) => {
+                const elapsed = (performance.now() - startTime).toFixed(2);
+                if (event.data.error) {
+                    log(`❌ Opposite Error: ${event.data.error}`, 'error');
+                } else if (event.data.result) {
+                    const parts = event.data.result.split(',');
+                    const scramble = parts[1] || parts[0];
+                    log(`✅ Opposite Scramble (${elapsed}ms): ${scramble}`, 'success');
+                }
+            };
+            
+            worker_opposite.postMessage({ 
+                scr: "", 
+                len: depth, 
+                pairType: "opp", 
+                bucketModel: bucketModel 
+            });
+        });
+
+        // Test Both Scrambles
+        document.getElementById('testBothScrambles').addEventListener('click', async () => {
+            const depth = document.getElementById('scrambleDepth').value;
+            const bucketModel = document.getElementById('bucketModel').value;
+            log(`🎲 Testing both solvers (depth ${depth}, model ${bucketModel})...`, 'info');
+            
+            // Test Adjacent
+            const adjStart = performance.now();
+            const adjPromise = new Promise((resolve) => {
+                worker_adjacent.onmessage = (event) => {
+                    const elapsed = (performance.now() - adjStart).toFixed(2);
+                    if (event.data.result) {
+                        const parts = event.data.result.split(',');
+                        const scramble = parts[1] || parts[0];
+                        log(`✅ Adjacent (${elapsed}ms): ${scramble}`, 'success');
+                        resolve();
+                    }
+                };
+            });
+            worker_adjacent.postMessage({ scr: "", len: depth, pairType: "adj", bucketModel });
+            await adjPromise;
+            
+            // Test Opposite
+            const oppStart = performance.now();
+            const oppPromise = new Promise((resolve) => {
+                worker_opposite.onmessage = (event) => {
+                    const elapsed = (performance.now() - oppStart).toFixed(2);
+                    if (event.data.result) {
+                        const parts = event.data.result.split(',');
+                        const scramble = parts[1] || parts[0];
+                        log(`✅ Opposite (${elapsed}ms): ${scramble}`, 'success');
+                        resolve();
+                    }
+                };
+            });
+            worker_opposite.postMessage({ scr: "", len: depth, pairType: "opp", bucketModel });
+            await oppPromise;
+            
+            log('✅ Both solvers tested successfully', 'success');
+        });
+
+        // Clear Log
+        document.getElementById('clearLog').addEventListener('click', () => {
+            output.innerHTML = '';
+            log('Log cleared', 'info');
+        });
+
+        // Initialize UI
+        updateUI();
+        log('🚀 XXcross Solver Test Interface Ready', 'info');
+        log('ℹ️  Select a bucket model and initialize workers to begin testing', 'info');
+    </script>
+</body>
+</html>

@@ -178,25 +178,52 @@ Based on 660,000+ measurements across 47 test points.
 
 ## Performance Characteristics
 
-### Database Construction Time
+**Based on comprehensive testing** (January 2026, 6,000 trials across 12 configurations)
 
-Typical construction time (on modern CPU):
-- **Phase 1** (BFS depth 0-6): ~30 seconds
-- **Phase 2** (Depth 7 expansion): ~10 seconds
-- **Phase 3** (Depth 8 expansion): ~40 seconds
-- **Phase 4** (Depth 9 expansion): ~70 seconds
-- **Phase 5** (Depth 10 random sampling): ~15-20 seconds
-- **Total**: ~165-180 seconds
+### Database Construction Time (Initialization)
 
-### Memory vs Performance
+Production WASM module initialization times (measured in browser):
 
-| Tier | Bucket Config | WASM Heap | Total Nodes | Construction Time |
-|------|---------------|-----------|-------------|--------------------|
-| Mobile LOW | 1M/1M/2M/4M | 309 MB | 12.1M | ~120s |
-| Desktop STD | 8M/8M/8M/8M | 756 MB | 34.7M | ~165s |
-| Desktop ULTRA | 16M/16M/16M/16M | 1442 MB | 65.0M | ~180s |
+| Tier | Adjacent | Opposite | Average | Notes |
+|------|----------|----------|---------|-------|
+| **Mobile LOW** | 12.0s | 10.2s | **11.1s** | Best for quick startup |
+| **Mobile MIDDLE** | 18.2s | 16.6s | **17.4s** | Balanced mobile option |
+| **Mobile HIGH** | 19.2s | 18.7s | **19.0s** | Premium mobile experience |
+| **Desktop STD** | 33.5s | 36.8s | **35.2s** | ✅ Recommended standard |
+| **Desktop HIGH** | 73.4s | 75.0s | **74.2s** | High-memory systems |
+| **Desktop ULTRA** | 81.7s | 96.1s | **88.9s** | Maximum quality |
 
-**Insight**: Larger buckets store more nodes (better depth 10 coverage) but construction time increases slightly.
+**Key Insight**: Initialization is a one-time cost. Users wait once per session, then enjoy fast scramble generation.
+
+### Scramble Generation Performance
+
+**Depth 10 scrambles** (most demanding, 100-trial average):
+
+| Tier | Adjacent | Opposite | Average | Best For |
+|------|----------|----------|---------|----------|
+| **Mobile LOW** | 11.7ms | 14.2ms | **12.9ms** | 💡 Budget phones |
+| **Mobile MIDDLE** | 11.9ms | 13.8ms | **12.9ms** | Mid-range phones |
+| **Mobile HIGH** | 10.5ms | 16.2ms | **13.3ms** | Flagship phones |
+| **Desktop STD** | 11.6ms | 12.5ms | **12.1ms** | ⭐ Best balance |
+| **Desktop HIGH** | 14.6ms | 13.4ms | **14.0ms** | High-spec desktops |
+| **Desktop ULTRA** | 12.8ms | 18.0ms | **15.4ms** | Maximum node count |
+
+**All configurations meet production requirements (<20ms)**
+
+### Depth Guarantee Algorithm Performance
+
+Each scramble is guaranteed to have exact optimal depth through retry logic:
+
+| Tier | Avg Retries | Generation Time | Notes |
+|------|-------------|-----------------|-------|
+| **Mobile LOW** | 11.4x | 12.9ms | Sparse coverage requires more retries |
+| **Mobile MIDDLE** | 7.7x | 12.9ms | ⭐ Most efficient retry ratio |
+| **Mobile HIGH** | 11.3x | 13.3ms | Similar to LOW despite larger buckets |
+| **Desktop STD** | 11.2x | 12.1ms | Best overall performance |
+| **Desktop HIGH** | 8.4x | 14.0ms | Improved coverage reduces retries |
+| **Desktop ULTRA** | 11.8x | 15.4ms | Opposite configuration less efficient |
+
+**Insight**: More nodes ≠ always fewer retries. Database structure and randomness affect retry behavior.
 
 ---
 
@@ -218,13 +245,30 @@ The solver uses a **depth guarantee algorithm** to ensure scrambles have exact o
 - Example: Depth 10 has ~50B nodes, we store ~4M (0.008%)
 - High probability random node has shorter optimal solution
 
-**Performance** (Tested 2026-01-03):
-- **Depth 1-6**: Instant (1 attempt, full BFS guarantees depth)
-- **Depth 7-8**: <0.1 seconds (~2-10 attempts)
-- **Depth 9-10**: <2 seconds (~5-20 attempts, <0.2ms per attempt)
-- **Minimal config test**: Depth 10 succeeded in 9 attempts, <2ms total
+**Production Performance** (Comprehensive testing, Jan 2026):
+- **Depth 6-8**: <1ms average (<2 retries typically)
+- **Depth 9**: ~2ms average (3-5 retries)
+- **Depth 10**: 12-15ms average (8-12 retries, depending on model)
+- **100% success rate** across 6,000 trials (all models, all depths)
 
 **Result**: Every scramble is guaranteed to have optimal solution at exact requested depth, even on minimal memory configuration (Mobile LOW: 1M/1M/2M/4M).
+
+### Model Selection Guidelines
+
+**For mobile devices (phones/tablets)**:
+- **Budget devices (2-3GB RAM)**: Mobile LOW (11s init, 13ms depth 10)
+- **Mid-range devices (4-6GB RAM)**: Mobile MIDDLE (17s init, 13ms depth 10) ⭐ Best mobile balance
+- **Flagship devices (8GB+ RAM)**: Mobile HIGH (19s init, 13ms depth 10)
+
+**For desktop/laptop browsers**:
+- **Standard use**: Desktop STD (35s init, 12ms depth 10) ✅ Recommended for most users
+- **High-memory systems**: Desktop HIGH (74s init, 14ms depth 10)
+- **Maximum quality**: Desktop ULTRA (89s init, 15ms depth 10)
+
+**Key tradeoffs**:
+- **Initialization time**: One-time cost per session (users typically solve 10-50+ scrambles)
+- **Generation speed**: All models <20ms (imperceptible to users)
+- **Memory usage**: Choose based on target device RAM availability
 
 ---
 

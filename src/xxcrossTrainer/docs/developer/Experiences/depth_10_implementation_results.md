@@ -106,7 +106,7 @@ num_list[10] = depth_10_final_size; // Use saved value
 **Root Cause Discovery**: Pattern inconsistency with Phase 3 and 4
 - **Phase 3, 4 pattern**: `attach_element_vector()` → insert nodes → `detach_element_vector()`
 - **Phase 5 original pattern**: insert nodes → **attach_element_vector() after expansion** → `detach_element_vector()`
-- **Key insight from user**: "depth 9→10への展開は基本的にdepth 8→9と全く同じです"
+- **Key insight**: "depth 9→10 expansion is essentially identical to depth 8→9 expansion"
 - **Critical difference**: Phase 5 was attaching **after** expansion, so data stayed in robin_set
 
 **Correct Fix**: Move attach **before** expansion (match Phase 3, 4 pattern)

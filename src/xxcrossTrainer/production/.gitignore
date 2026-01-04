@@ -1,0 +1,15 @@
+# Archive directory (test results, logs, experimental reports)
+_archive/
+
+# Temporary files
+*.log
+*.tmp
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+*.swp
+*.swo
+*~

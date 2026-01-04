@@ -16,9 +16,25 @@ This is a high-performance Rubik's Cube XXCross (double cross) solver designed f
 - **5-Phase Construction**: Depth 0-6 full BFS + Depth 7-10 local expansion (depth 10 via random sampling)
 - **Memory-Optimized**: Eliminates transient spikes via pre-reserve pattern
 - **Multi-Tier WASM Support**: 6 bucket models (Mobile: LOW/MIDDLE/HIGH, Desktop: STD/HIGH/ULTRA)
-- **Production-Ready**: Comprehensive heap measurements (13-configuration WASM campaign)
+- **Production-Ready**: Comprehensive heap measurements (13-configuration WASM campaign) + 6,000-trial performance validation (Jan 2026)
 - **Dual Platform**: Native C++ and WebAssembly with unified API
 - **Guaranteed Depth Scrambles**: Depth guarantee algorithm ensures exact scramble depth even with sparse coverage (2026-01-04)
+
+### Production Status (January 2026)
+
+**Comprehensive testing completed**: 6,000 trials across 12 configurations (6 models × 2 pair types × 5 depths × 100 trials each)
+
+**Performance Highlights**:
+- ✅ **100% depth guarantee accuracy** - All 6,000 trials generated exact depth scrambles
+- ✅ **<20ms depth 10 generation** - All models meet production requirements
+- ✅ **10-96s initialization** - Scales predictably with database size
+- ✅ **Production ready** - Comprehensive testing validates WASM module stability
+
+**Recommended configurations**:
+- **Mobile devices**: Mobile MIDDLE (17s init, 13ms depth 10 avg)
+- **Desktop browsers**: Desktop STD (35s init, 12ms depth 10 avg) ⭐ Best overall balance
+
+For detailed performance data, see [developer/performance_results.md](developer/performance_results.md)
 
 ---
 
