@@ -731,7 +731,7 @@ function monitorHeapGrowth() {
 ## References
 
 ### Documentation
-- [WASM Measurement Results](Experiences/wasm_heap_measurement_results.md) - Tier definitions
+- [WASM Measurement Results](Experiments/wasm_heap_measurement_results.md) - Tier definitions
 - [Implementation Progress](IMPLEMENTATION_PROGRESS.md) - Development tracker
 - [Memory Budget Design (Archived)](_archive/MEMORY_BUDGET_DESIGN_archived_20260103.md) - System architecture (implementation complete)
 

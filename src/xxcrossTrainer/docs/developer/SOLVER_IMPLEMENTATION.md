@@ -6,7 +6,7 @@
 
 > **Navigation**: [← Back to Developer Docs](../README.md) | [User Guide](../USER_GUIDE.md)
 >
-> **Related**: [API Reference](API_REFERENCE.md) | [WASM Integration](WASM_INTEGRATION_GUIDE.md) | [Memory Monitoring](MEMORY_MONITORING.md) | [Experiments](Experiences/README.md)
+> **Related**: [API Reference](API_REFERENCE.md) | [WASM Integration](WASM_INTEGRATION_GUIDE.md) | [Memory Monitoring](MEMORY_MONITORING.md) | [Experiments](Experiments/README.md)
 
 ---
 
@@ -273,7 +273,7 @@ for (int face = 0; face < 6; ++face) {
 - Diversity: Explores all directions equally
 - Memory safety: Fixed 6 moves per parent (predictable growth)
 
-**Experiment Reference**: See [Experiences/depth_10_memory_spike_investigation.md](Experiences/depth_10_memory_spike_investigation.md) for spike analysis.
+**Experiment Reference**: See [Experiments/depth_10_memory_spike_investigation.md](Experiments/depth_10_memory_spike_investigation.md) for spike analysis.
 
 ---
 
@@ -397,7 +397,7 @@ if (!research_config_.disable_malloc_trim) {
 
 **Typical Savings**: 50-80 MB
 
-**Experiment Reference**: See [Experiences/wasm_heap_measurement_data.md](Experiences/wasm_heap_measurement_data.md) - Phase 4 peak measurements.
+**Experiment Reference**: See [Experiments/wasm_heap_measurement_data.md](Experiments/wasm_heap_measurement_data.md) - Phase 4 peak measurements.
 
 ---
 
@@ -504,7 +504,7 @@ if (rejection_rate < 0.3) {
 - Rejection rate: ~60-70% (depth 9 duplicates + depth 10 duplicates)
 - Processed parents: ~40-50K
 
-**Experiment Reference**: See [Experiences/depth_10_implementation_results.md](Experiences/depth_10_implementation_results.md) for performance analysis.
+**Experiment Reference**: See [Experiments/depth_10_implementation_results.md](Experiments/depth_10_implementation_results.md) for performance analysis.
 
 ---
 
@@ -528,7 +528,7 @@ robin_set.attach_element_vector(&vector);  // No reallocation needed
 
 **Impact**: Eliminates ~50-100 MB transient spikes
 
-**Experiment**: [Experiences/depth_10_memory_spike_investigation.md](Experiences/depth_10_memory_spike_investigation.md)
+**Experiment**: [Experiments/depth_10_memory_spike_investigation.md](Experiments/depth_10_memory_spike_investigation.md)
 
 ### 2. Bulk Insert for Hash Sets
 
@@ -794,7 +794,7 @@ DISABLE_MALLOC_TRIM=1 ./solver_dev 308
 
 **Delta**: ~50 MB difference (allocator cache)
 
-**Experiment**: [Experiences/wasm_heap_measurement_data.md](Experiences/wasm_heap_measurement_data.md) - "Final Cleanup Complete" measurements.
+**Experiment**: [Experiments/wasm_heap_measurement_data.md](Experiments/wasm_heap_measurement_data.md) - "Final Cleanup Complete" measurements.
 
 ---
 
@@ -1167,9 +1167,9 @@ if (estimated_depth <= remaining_depth) {
 **Recommended Reading**:
 1. [API_REFERENCE.md](API_REFERENCE.md) - Function signatures and usage
 2. [WASM_INTEGRATION_GUIDE.md](WASM_INTEGRATION_GUIDE.md) - WASM deployment
-3. [Experiences/depth_10_memory_spike_investigation.md](Experiences/depth_10_memory_spike_investigation.md) - Spike analysis
-4. [Experiences/depth_10_implementation_results.md](Experiences/depth_10_implementation_results.md) - Phase 5 results
-5. [Experiences/wasm_heap_measurement_data.md](Experiences/wasm_heap_measurement_data.md) - WASM measurements
+3. [Experiments/depth_10_memory_spike_investigation.md](Experiments/depth_10_memory_spike_investigation.md) - Spike analysis
+4. [Experiments/depth_10_implementation_results.md](Experiments/depth_10_implementation_results.md) - Phase 5 results
+5. [Experiments/wasm_heap_measurement_data.md](Experiments/wasm_heap_measurement_data.md) - WASM measurements
 
 ---
 

@@ -140,7 +140,7 @@ results/spike_detection/
 
 1. Review analysis reports in `results/spike_detection/run_*/`
 2. Compare transient peaks vs checkpoint peaks
-3. Update [peak_rss_optimization.md](../../docs/developer/Experiences/peak_rss_optimization.md) spike investigation section
+3. Update [peak_rss_optimization.md](../../docs/developer/Experiments/peak_rss_optimization.md) spike investigation section
 4. Update [IMPLEMENTATION_PROGRESS.md](../../docs/developer/IMPLEMENTATION_PROGRESS.md)
 
 **Documentation workflow**:
@@ -152,5 +152,5 @@ results/spike_detection/
 ## Reference
 
 - **Methodology**: [MEMORY_MONITORING.md](../../docs/developer/MEMORY_MONITORING.md)
-- **Spike investigation results**: [peak_rss_optimization.md](../../docs/developer/Experiences/peak_rss_optimization.md#spike-investigation-results-2026-01-02)
+- **Spike investigation results**: [peak_rss_optimization.md](../../docs/developer/Experiments/peak_rss_optimization.md#spike-investigation-results-2026-01-02)
 - **Implementation progress**: [IMPLEMENTATION_PROGRESS.md](../../docs/developer/IMPLEMENTATION_PROGRESS.md)

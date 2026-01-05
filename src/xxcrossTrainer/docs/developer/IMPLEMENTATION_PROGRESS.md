@@ -964,17 +964,17 @@ Final 6-tier bucket model created:
 - **4GB Limit**: Desktop ULTRA (16M/16M/16M/16M, 2884 MB) respects browser 4GB constraint
 - **Implementation**: Added WASM_MOBILE_LOW/MIDDLE/HIGH, WASM_DESKTOP_STD/HIGH/ULTRA to bucket_config.h
 
-Full results: [wasm_heap_measurement_results.md](Experiences/wasm_heap_measurement_results.md)
+Full results: [wasm_heap_measurement_results.md](Experiments/wasm_heap_measurement_results.md)
 
 ### Documentation Archive Reorganization ✅
 Completed experiment cleanup:
-- **Deprecated experiments** → `_archive/Experiences_deprecated_2026/` (local archive, not in git)
+- **Deprecated experiments** → `_archive/Experiments_deprecated_2026/` (local archive, not in git)
   - malloc_trim investigations (completed)
 - **Experiment scripts** → `_archive/` (local archive, not in git)
   - EXPERIMENT_SCRIPTS.md, WASM_EXPERIMENT_SCRIPTS.md (development phase)
   - wasm_heap_measurement_plan.md (completed)
-- **Restored critical analysis** ← `_archive/Experiences_old/` (from local archive)
-  - depth_10_memory_spike_investigation.md (Important analysis, restored to Experiences/)
+- **Restored critical analysis** ← `_archive/Experiments_old/` (from local archive)
+  - depth_10_memory_spike_investigation.md (Important analysis, restored to Experiments/)
 
 ### WASM Heap Measurement Complete ✅
 Measured 13 bucket configurations across 12M-65M node range:
@@ -1002,7 +1002,7 @@ Workspace cleanup performed:
 - **Old documentation** → `docs/developer/_archive/` (local archive, not in git)
 	- `CHANGELOG_20260102.md`
 	- `WORK_SUMMARY_20260102.md`
-	- Historical experiments from Experiences_old/
+	- Historical experiments from Experiments_old/
 
 **Files currently in use** (left in main directory):
 - `solver_dev.cpp` - main development source
@@ -1976,7 +1976,7 @@ size_t duplicates_from_depth8_d9 = 0;
 - Peak RSS: 599 MB (down from 657 MB)
 - Safety margin for 1600 MB limit: 1001 MB (62.6%)
 
-**Documentation**: Detailed analysis in [peak_rss_optimization.md](Experiences/peak_rss_optimization.md)
+**Documentation**: Detailed analysis in [peak_rss_optimization.md](Experiments/peak_rss_optimization.md)
 
 ---
 
@@ -2032,7 +2032,7 @@ size_t duplicates_from_depth8_d9 = 0;
 4. **Emergency mechanisms NOT NEEDED** - current implementation well-behaved
 5. **8M/8M/8M safe for production** with 59% headroom
 
-**Detailed Analysis**: See [peak_rss_optimization.md](Experiences/peak_rss_optimization.md)
+**Detailed Analysis**: See [peak_rss_optimization.md](Experiments/peak_rss_optimization.md)
 
 **Status**: ✅ Complete - All spikes predictable, system validated stable
 
@@ -2088,7 +2088,7 @@ def detect_spikes(csv_file, threshold_mb_s=10.0):
 - [ ] Run 10ms monitoring for 8M/8M/8M model
 - [x] Analyze spike patterns across all models
 - [x] Compare transient peaks vs checkpoint peaks  
-- [x] Document findings in [peak_rss_optimization.md](Experiences/peak_rss_optimization.md#spike-investigation-results-2026-01-02)
+- [x] Document findings in [peak_rss_optimization.md](Experiments/peak_rss_optimization.md#spike-investigation-results-2026-01-02)
 - [x] Update production safety margins ✅ **Validated stable - 59% headroom**
 
 **Expected Outcomes**:
@@ -2205,7 +2205,7 @@ t=61.11s: 656.7 MB ← Final peak (matches checkpoint 657 MB)
 
 **Documentation**:
 - `MEMORY_MONITORING.md` - Added integrated monitoring section
-- `Experiences/peak_rss_optimization.md` - Added spike investigation results
+- `Experiments/peak_rss_optimization.md` - Added spike investigation results
 - `backups/logs/memory_monitoring_20260102/10MS_SPIKE_INVESTIGATION.md` - Detailed report
    - Error margin: <0.2% (negligible)
    - All major memory events captured at checkpoint boundaries
@@ -2237,7 +2237,7 @@ t=61.11s: 656.7 MB ← Final peak (matches checkpoint 657 MB)
 - `results/spike_detection/run_*/` - 10ms monitoring attempts (incomplete)
 - `results/spike_analysis_verbose/run_20260102_154611/` - VERBOSE validation (complete)
 
-**Detailed Analysis**: [peak_rss_optimization.md](Experiences/peak_rss_optimization.md#spike-investigation-results-2026-01-02)
+**Detailed Analysis**: [peak_rss_optimization.md](Experiments/peak_rss_optimization.md#spike-investigation-results-2026-01-02)
 
 **Status**: ✅ Complete - Checkpoint methodology validated, no transient spikes detected
 
@@ -2316,7 +2316,7 @@ Test 3: Multiple Allocation Cycles
 - `test_malloc_trim_wasm.js`, `test_malloc_trim_wasm.wasm` - WASM artifacts
 
 **Documentation**:
-- Updated: `docs/developer/Experiences/malloc_trim_wasm_verification.md`
+- Updated: `docs/developer/Experiments/malloc_trim_wasm_verification.md`
 - Added WASM test results and build instructions
 - Confirmed production deployment strategy
 
@@ -2417,8 +2417,8 @@ BUCKET_MODEL=8M/8M/8M ENABLE_CUSTOM_BUCKETS=1 ./solver_dev
 - Measuring native-specific bucket models
 
 **Documentation Updated**:
-- `docs/developer/Experiences/malloc_trim_wasm_verification.md` - Added disable_malloc_trim section
-- `docs/developer/Experiences/disable_malloc_trim_usage.md` - Complete usage guide (NEW)
+- `docs/developer/Experiments/malloc_trim_wasm_verification.md` - Added disable_malloc_trim section
+- `docs/developer/Experiments/disable_malloc_trim_usage.md` - Complete usage guide (NEW)
 - Test results and usage guidelines documented
 
 **Files Modified**:
@@ -2481,7 +2481,7 @@ struct ResearchConfig {
 - Measuring native-specific bucket models
 
 **Documentation Updated**:
-- `docs/developer/Experiences/malloc_trim_wasm_verification.md` - Added disable_malloc_trim section
+- `docs/developer/Experiments/malloc_trim_wasm_verification.md` - Added disable_malloc_trim section
 - Test results and usage guidelines documented
 
 **Files Modified**:
@@ -2552,13 +2552,13 @@ struct ResearchConfig {
 - Current implementation: depth 0-9 only (~30% coverage)
 - **Missing the most important depth!**
 
-**Design Document**: [depth_10_expansion_design.md](Experiences/depth_10_expansion_design.md)
+**Design Document**: [depth_10_expansion_design.md](Experiments/depth_10_expansion_design.md)
 
 ---
 
 ### 7.1: Design and Analysis ✅ COMPLETED (2026-01-02)
 
-**Design Document Created**: `docs/developer/Experiences/depth_10_expansion_design.md`
+**Design Document Created**: `docs/developer/Experiments/depth_10_expansion_design.md`
 
 **Key Findings**:
 
@@ -2849,7 +2849,7 @@ Per-Depth Breakdown:
 - **Conclusion**: Not suitable for mobile (512 MB WASM limit)
 - **Recommendation**: Use 2M/2M/2M/1M for mobile deployment
 
-**Documentation**: [depth_10_peak_rss_validation.md](Experiences/depth_10_peak_rss_validation.md)
+**Documentation**: [depth_10_peak_rss_validation.md](Experiments/depth_10_peak_rss_validation.md)
 
 **Tasks**:
 - [x] Run 10ms monitoring for 4M/4M/4M/2M
@@ -3054,8 +3054,8 @@ Phase 5 complete:                   313 MB
 
 **Documentation**: 
 - wasm_heap_measurement_plan.md (local archive only, not in git) - Measurement methodology
-- [Experiences/wasm_heap_measurement_results.md](Experiences/wasm_heap_measurement_results.md) - Final analysis and recommendations
-- [Experiences/wasm_heap_measurement_data.md](Experiences/wasm_heap_measurement_data.md) - Raw data and detailed observations
+- [Experiments/wasm_heap_measurement_results.md](Experiments/wasm_heap_measurement_results.md) - Final analysis and recommendations
+- [Experiments/wasm_heap_measurement_data.md](Experiments/wasm_heap_measurement_data.md) - Raw data and detailed observations
 - [WASM_INTEGRATION_GUIDE.md](WASM_INTEGRATION_GUIDE.md) - Complete integration guide for trainer development
 
 **Status**: ✅ Complete - 13 configurations measured, 6-tier bucket model finalized
@@ -3166,7 +3166,7 @@ Phase 5 complete:                   313 MB
   - Pattern compatible with existing [xcrossTrainer/worker.js](../../../xcrossTrainer/worker.js)
   - Documented as fundamental production pattern in WASM_EXPERIMENT_SCRIPTS.md
 - [x] Verified experiment documentation organization:
-  - Active experiments: docs/developer/Experiences/ (WASM measurements, depth 10)
+  - Active experiments: docs/developer/Experiments/ (WASM measurements, depth 10)
   - Archive: docs/developer/_archive/ (old scripts, plans, deprecated experiments)
 - `src/xxcrossTrainer/wasm_tier_selector.js` - Tier selection logic (pending)
 - `*.html` - Integration into trainer pages (pending)
@@ -4250,9 +4250,9 @@ Merged both functionalities into single test_wasm_browser.html:
 | `start_search()` | ✅ Correct | Already correct |
 
 **Related Experiments**:
-- [Experiences/depth_10_memory_spike_investigation.md](Experiences/depth_10_memory_spike_investigation.md)
-- [Experiences/depth_10_implementation_results.md](Experiences/depth_10_implementation_results.md)
-- [Experiences/wasm_heap_measurement_data.md](Experiences/wasm_heap_measurement_data.md)
+- [Experiments/depth_10_memory_spike_investigation.md](Experiments/depth_10_memory_spike_investigation.md)
+- [Experiments/depth_10_implementation_results.md](Experiments/depth_10_implementation_results.md)
+- [Experiments/wasm_heap_measurement_data.md](Experiments/wasm_heap_measurement_data.md)
 
 **Status**: ✅ Complete (2026-01-03) - All functions verified, comprehensive rewrite
 
@@ -4343,13 +4343,13 @@ Merged both functionalities into single test_wasm_browser.html:
 - [x] Fix docs/README.md bucket allocation logic (dynamic calculation → explicit specification)
 - [x] Standardize directory navigation commands across all documentation ("# From workspace root\ncd src/xxcrossTrainer")
 - [x] Update WASM_EXPERIMENT_SCRIPTS.md to stable_20260103 (copy from _archive/, update for 5-Phase, embind, heap measurement)
-- [x] Update Experiences/README.md with WASM heap measurement campaign results and depth_10_memory_spike_investigation.md
+- [x] Update Experiments/README.md with WASM heap measurement campaign results and depth_10_memory_spike_investigation.md
 - [x] Update README.md Performance Characteristics (add Phase 5, update timing to ~165-180s)
 - [x] Update WASM_BUILD_GUIDE.md Performance section (remove "Memory Limit" paradigm, add depth 10)
 - [x] Update SOLVER_IMPLEMENTATION.md Performance section (add 5-phase breakdown, ~165-180s)
 - [x] Update README.md with stable_20260103 features (5-Phase Construction, depth 10)
 - [x] Archive MEMORY_CONFIGURATION_GUIDE.md (replaced by USER_GUIDE simplified content)
-- [x] Reorganize documentation structure (heap results → Experiences/, design docs → _archive)
+- [x] Reorganize documentation structure (heap results → Experiments/, design docs → _archive)
 - [x] Fix broken references to moved/archived files (24 references updated)
 - [x] Add Worker pattern verification to WASM_INTEGRATION_GUIDE.md
 - [x] Archive MEMORY_BUDGET_DESIGN.md (implementation complete)
@@ -4357,7 +4357,7 @@ Merged both functionalities into single test_wasm_browser.html:
 - [x] Move WASM_MEASUREMENT_README.md to developer/ directory
 - [x] Remove Advanced Configuration from USER_GUIDE.md (moved to docs/README.md)
 - [x] Add comprehensive "Advanced Topics" section to docs/README.md (developer mode, custom buckets)
-- [x] Add "Experimental Results Overview" to docs/README.md (complete Experiences/ summary)
+- [x] Add "Experimental Results Overview" to docs/README.md (complete Experiments/ summary)
 - [x] Clarify WASM_BUILD_GUIDE vs WASM_INTEGRATION_GUIDE relationship (beginner vs advanced)
 - [x] Update all documentation references (remove MEMORY_CONFIGURATION_GUIDE links)
 - [x] Update Phase 7.3 status to COMPLETED (2026-01-03)
@@ -4386,7 +4386,7 @@ Enhanced:
 - USER_GUIDE.md: Simplified for end-users (WASM tier selection, basic FAQ, removed developer content)
 - docs/README.md: 
   - Added comprehensive "Advanced Topics" (developer mode, custom buckets, memory estimation)
-  - Added "Experimental Results Overview" (complete summary of Experiences/ directory)
+  - Added "Experimental Results Overview" (complete summary of Experiments/ directory)
   - Serves as gateway to all developer documentation
 - WASM_BUILD_GUIDE.md: Clarified as beginner-friendly build guide
 - WASM_INTEGRATION_GUIDE.md: Clarified as advanced production integration guide

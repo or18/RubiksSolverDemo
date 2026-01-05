@@ -11,7 +11,7 @@
 
 ## Purpose
 
-This directory contains **current experimental findings** from memory behavior investigations and WASM deployment measurements. Older comprehensive measurement campaigns have been archived to `docs/developer/_archive/Experiences_old/`.
+This directory contains **current experimental findings** from memory behavior investigations and WASM deployment measurements. Older comprehensive measurement campaigns have been archived to `docs/developer/_archive/Experiments_old/`.
 
 ---
 
@@ -284,7 +284,7 @@ Current Findings (2026-01-02)
 └─ ../MEMORY_MONITORING.md (Monitoring infrastructure)
 
 Archived Findings (2025-12-30)
-└─ ../_archive/Experiences_old/
+└─ ../_archive/Experiments_old/
    ├─ MEASUREMENT_RESULTS_20251230.md
    ├─ MEASUREMENT_SUMMARY.md
    ├─ MEMORY_THEORY_ANALYSIS.md

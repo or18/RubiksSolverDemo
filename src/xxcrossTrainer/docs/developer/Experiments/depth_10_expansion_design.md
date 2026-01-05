@@ -481,7 +481,7 @@ for (auto& node10 : depth_10_candidates) {
 - [ ] Create depth_10_measurement_results.md
 - [ ] Update bucket_model_rss_measurement.md
 - [ ] Update USER_GUIDE.md with depth 10 options
-- [ ] Add depth 10 to Experiences/README.md
+- [ ] Add depth 10 to Experiments/README.md
 
 ---
 

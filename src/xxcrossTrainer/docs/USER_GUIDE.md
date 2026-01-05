@@ -136,7 +136,7 @@ For advanced deployment and build instructions, see [Developer Documentation](RE
 
 > **For deeper technical understanding**, see [Developer Documentation](README.md):
 > - [Implementation Details](README.md#developer-documentation-developer) - How bucket allocation works
-> - [Memory Theory Analysis](README.md#experimental-findings-developerexperiences) - Why memory behaves this way
+> - [Memory Theory Analysis](README.md#experimental-findings-developerExperiments) - Why memory behaves this way
 
 ### What Determines Memory Usage?
 

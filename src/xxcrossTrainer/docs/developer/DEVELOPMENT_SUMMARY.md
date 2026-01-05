@@ -38,7 +38,7 @@
   - Measurement plans (completed)
   - Deprecated experiments (malloc_trim investigations, older analyses)
   
-- **Active Experiments** (Experiences/):
+- **Active Experiments** (Experiments/):
   - `wasm_heap_measurement_results.md` - Final WASM analysis and recommendations
   - `wasm_heap_measurement_data.md` - Raw WASM data
   - `bucket_model_rss_measurement.md` - Native C++ measurements
@@ -170,10 +170,10 @@
 
 - **Main Progress**: [IMPLEMENTATION_PROGRESS.md](IMPLEMENTATION_PROGRESS.md)
 - **Design Document**: [_archive/MEMORY_BUDGET_DESIGN_archived_20260103.md](_archive/MEMORY_BUDGET_DESIGN_archived_20260103.md) (Archived - Implementation complete)
-- **WASM Results**: [Experiences/wasm_heap_measurement_results.md](Experiences/wasm_heap_measurement_results.md)
+- **WASM Results**: [Experiments/wasm_heap_measurement_results.md](Experiments/wasm_heap_measurement_results.md)
 - **WASM Integration**: [WASM_INTEGRATION_GUIDE.md](WASM_INTEGRATION_GUIDE.md)
 - **Build Guide**: [WASM_BUILD_GUIDE.md](WASM_BUILD_GUIDE.md)
-- **Experiments**: [Experiences/](Experiences/)
+- **Experiments**: [Experiments/](Experiments/)
 - **Archives**: Local _archive/ directory (not in git)
 
 ---

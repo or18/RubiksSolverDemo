@@ -5,7 +5,7 @@
 
 > **Navigation**: [← Back to Developer Docs](../README.md) | [User Guide](../USER_GUIDE.md)
 >
-> **Related**: [Implementation](SOLVER_IMPLEMENTATION.md) | [Experiment Scripts](EXPERIMENT_SCRIPTS.md) | [Measurement Results](Experiences/peak_rss_optimization.md)
+> **Related**: [Implementation](SOLVER_IMPLEMENTATION.md) | [Experiment Scripts](EXPERIMENT_SCRIPTS.md) | [Measurement Results](Experiments/peak_rss_optimization.md)
 
 ---
 
@@ -525,8 +525,8 @@ mv rss_*.csv results/$(date +%Y%m%d_%H%M%S)/
 ## Related Documentation
 
 - [EXPERIMENT_SCRIPTS.md](EXPERIMENT_SCRIPTS.md) - Automated testing scripts
-- [Experiences/peak_rss_optimization.md](Experiences/peak_rss_optimization.md) - Optimization experiments and spike investigation
-- [Experiences/MEMORY_THEORY_ANALYSIS.md](Experiences/MEMORY_THEORY_ANALYSIS.md) - Theoretical analysis
+- [Experiments/peak_rss_optimization.md](Experiments/peak_rss_optimization.md) - Optimization experiments and spike investigation
+- [Experiments/MEMORY_THEORY_ANALYSIS.md](Experiments/MEMORY_THEORY_ANALYSIS.md) - Theoretical analysis
 
 ---
 
@@ -681,7 +681,7 @@ Time (s)     RSS (MB)     Increase (MB)   Duration (ms)   Rate (MB/s)
 3. ✅ 11 allocation spikes detected (>20 MB/s) - all normal rehashing behavior
 4. ✅ Peak RSS confirmed: **657 MB** for 8M/8M/8M model
 
-**Detailed Report**: See [peak_rss_optimization.md](Experiences/peak_rss_optimization.md#spike-investigation-results-2026-01-02)
+**Detailed Report**: See [peak_rss_optimization.md](Experiments/peak_rss_optimization.md#spike-investigation-results-2026-01-02)
 
 ---
 

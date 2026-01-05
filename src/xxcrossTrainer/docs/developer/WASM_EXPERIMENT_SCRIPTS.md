@@ -1577,7 +1577,7 @@ Module.solve_with_custom_buckets(8, 8, 8, 8, true);  // verbose=true
 - [WASM_INTEGRATION_GUIDE.md](WASM_INTEGRATION_GUIDE.md) - Production integration guide
 - [SOLVER_IMPLEMENTATION.md](SOLVER_IMPLEMENTATION.md) - Code implementation details (stable_20260103)
 - [API_REFERENCE.md](API_REFERENCE.md) - Complete function reference
-- [Experiences/wasm_heap_measurement_results.md](Experiences/wasm_heap_measurement_results.md) - 6-tier WASM bucket model
+- [Experiments/wasm_heap_measurement_results.md](Experiments/wasm_heap_measurement_results.md) - 6-tier WASM bucket model
 - [../USER_GUIDE.md](../USER_GUIDE.md) - End-user deployment guide
 
 ---

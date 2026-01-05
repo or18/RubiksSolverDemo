@@ -92,11 +92,11 @@ See **[USER_GUIDE.md](USER_GUIDE.md)** for:
 - **[MEMORY_MONITORING.md](developer/MEMORY_MONITORING.md)** - Memory tracking tools
 - **[IMPLEMENTATION_PROGRESS.md](developer/IMPLEMENTATION_PROGRESS.md)** - Development tracker
 
-#### Experimental Results (`developer/Experiences/`)
-- **[wasm_heap_measurement_results.md](developer/Experiences/wasm_heap_measurement_results.md)** - 6-tier bucket model
-- **[wasm_heap_measurement_data.md](developer/Experiences/wasm_heap_measurement_data.md)** - 13-configuration raw data
-- **[depth_10_memory_spike_investigation.md](developer/Experiences/depth_10_memory_spike_investigation.md)** - Spike elimination
-- **[depth_10_implementation_results.md](developer/Experiences/depth_10_implementation_results.md)** - Phase 5 results
+#### Experimental Results (`developer/Experiments/`)
+- **[wasm_heap_measurement_results.md](developer/Experiments/wasm_heap_measurement_results.md)** - 6-tier bucket model
+- **[wasm_heap_measurement_data.md](developer/Experiments/wasm_heap_measurement_data.md)** - 13-configuration raw data
+- **[depth_10_memory_spike_investigation.md](developer/Experiments/depth_10_memory_spike_investigation.md)** - Spike elimination
+- **[depth_10_implementation_results.md](developer/Experiments/depth_10_implementation_results.md)** - Phase 5 results
 
 ---
 
@@ -115,7 +115,7 @@ See **[USER_GUIDE.md](USER_GUIDE.md)** for:
 
 For detailed tier selection and integration, see:
 - [WASM Integration Guide](developer/WASM_INTEGRATION_GUIDE.md)
-- [WASM Measurement Results](developer/Experiences/wasm_heap_measurement_results.md)
+- [WASM Measurement Results](developer/Experiments/wasm_heap_measurement_results.md)
 
 ---
 
@@ -154,7 +154,7 @@ Key characteristics:
 - **Load Factor**: ~0.88-0.93 (tsl::robin_set after rehashing)
 - **Dual-Solver Architecture**: Total heap = 2× single solver (adjacent + opposite F2L slots)
 
-For measurement data and tier selection, see [developer/Experiences/wasm_heap_measurement_results.md](developer/Experiences/wasm_heap_measurement_results.md).
+For measurement data and tier selection, see [developer/Experiments/wasm_heap_measurement_results.md](developer/Experiments/wasm_heap_measurement_results.md).
 
 ---
 
@@ -250,7 +250,7 @@ To create and register new WASM memory configurations:
    ```
 
 3. **Document Results**:
-   - Add measurement data to [developer/Experiences/wasm_heap_measurement_results.md](developer/Experiences/wasm_heap_measurement_results.md)
+   - Add measurement data to [developer/Experiments/wasm_heap_measurement_results.md](developer/Experiments/wasm_heap_measurement_results.md)
    - Update tier recommendations if creating new production tier
 
 **Complete Workflow**:
@@ -298,57 +298,57 @@ See **[developer/WASM_BUILD_GUIDE.md](developer/WASM_BUILD_GUIDE.md)** for compl
 
 ## Experimental Results Overview
 
-The `developer/Experiences/` directory contains empirical findings from comprehensive measurement campaigns. These documents provide the foundation for production configurations and guide future optimization.
+The `developer/Experiments/` directory contains empirical findings from comprehensive measurement campaigns. These documents provide the foundation for production configurations and guide future optimization.
 
 ### Current Experiments (2026-01-03)
 
 #### WASM Heap Measurements
-- **[wasm_heap_measurement_results.md](developer/Experiences/wasm_heap_measurement_results.md)** - Final 6-tier model recommendation
+- **[wasm_heap_measurement_results.md](developer/Experiments/wasm_heap_measurement_results.md)** - Final 6-tier model recommendation
   - 13 configurations measured (1M/1M/2M/4M through 16M/16M/16M/16M)
   - Dual-solver architecture validated (adjacent + opposite orientations)
   - Mobile/Desktop tier classification
   - Complete with load factors and node counts
 
-- **[wasm_heap_measurement_data.md](developer/Experiences/wasm_heap_measurement_data.md)** - Raw measurement data
+- **[wasm_heap_measurement_data.md](developer/Experiments/wasm_heap_measurement_data.md)** - Raw measurement data
   - Per-configuration heap sizes
   - CSV extraction scripts
   - Measurement methodology validation
 
 #### Depth 10 Implementation
-- **[depth_10_implementation_results.md](developer/Experiences/depth_10_implementation_results.md)** - Phase 5 expansion proof-of-concept
+- **[depth_10_implementation_results.md](developer/Experiments/depth_10_implementation_results.md)** - Phase 5 expansion proof-of-concept
   - Coverage improvement: 30% → ~85% (+185% relative increase)
   - 1.89M nodes at depth 10 (4M/4M/4M/2M config)
   - Critical bug fixes documented (segfault, rehash, element vector timing)
   
-- **[depth_10_expansion_design.md](developer/Experiences/depth_10_expansion_design.md)** - Strategic design rationale
+- **[depth_10_expansion_design.md](developer/Experiments/depth_10_expansion_design.md)** - Strategic design rationale
   - Analysis of depth 10 as volume peak (60-70% of all xxcross solutions)
   - 3 implementation options evaluated
   - Random sampling approach selected
 
-- **[depth_10_peak_rss_validation.md](developer/Experiences/depth_10_peak_rss_validation.md)** - 10ms monitoring validation
+- **[depth_10_peak_rss_validation.md](developer/Experiments/depth_10_peak_rss_validation.md)** - 10ms monitoring validation
   - Actual peak RSS: 442 MB (not 378 MB from C++ checkpoints)
   - Gap analysis: +64 MB transient allocations
   - WASM deployment implications
 
-- **[depth_10_memory_spike_investigation.md](developer/Experiences/depth_10_memory_spike_investigation.md)** - Spike elimination
+- **[depth_10_memory_spike_investigation.md](developer/Experiments/depth_10_memory_spike_investigation.md)** - Spike elimination
   - Pre-reserve pattern implementation
   - Before/after RSS traces
   - Production readiness validation
 
 #### Memory Optimization
-- **[peak_rss_optimization.md](developer/Experiences/peak_rss_optimization.md)** - Optimization strategies
+- **[peak_rss_optimization.md](developer/Experiments/peak_rss_optimization.md)** - Optimization strategies
   - depth8_vec elimination: -58 MB peak RSS reduction
   - Malloc_trim integration analysis
   - Face-diverse scramble generation
 
-- **[bucket_model_rss_measurement.md](developer/Experiences/bucket_model_rss_measurement.md)** - Native C++ measurements
+- **[bucket_model_rss_measurement.md](developer/Experiments/bucket_model_rss_measurement.md)** - Native C++ measurements
   - 7 bucket configurations (2M/2M/2M through 16M/16M/16M)
   - Allocator cache behavior (malloc_trim analysis)
   - Platform consistency validation
 
 ### Archived Experiments
 
-Historical measurement campaigns and deprecated analyses are preserved in `developer/_archive/Experiences_old/`:
+Historical measurement campaigns and deprecated analyses are preserved in `developer/_archive/Experiments_old/`:
 - MEASUREMENT_RESULTS_20251230.md - 47-point memory campaign (stable-20251230)
 - MEASUREMENT_SUMMARY.md - Executive summary
 - MEMORY_THEORY_ANALYSIS.md - Theoretical deep-dive
@@ -357,7 +357,7 @@ Historical measurement campaigns and deprecated analyses are preserved in `devel
 ### Using Experimental Data
 
 **For Production Deployment**:
-1. Start with [wasm_heap_measurement_results.md](developer/Experiences/wasm_heap_measurement_results.md) for tier selection
+1. Start with [wasm_heap_measurement_results.md](developer/Experiments/wasm_heap_measurement_results.md) for tier selection
 2. Reference bucket_model_rss_measurement.md for native C++ configurations
 3. Consult depth_10_implementation_results.md for Phase 5 behavior
 
@@ -392,7 +392,7 @@ Historical measurement campaigns and deprecated analyses are preserved in `devel
 - ✅ Created production-ready configuration guide with safety margins
 - ✅ Declared stable version with comprehensive documentation
 
-For detailed history, see `developer/Experiences/` documentation.
+For detailed history, see `developer/Experiments/` documentation.
 
 ---
 
@@ -428,7 +428,7 @@ Based on 660,000+ RSS samples:
 
 - **User-facing docs**: Keep in `docs/` root (README.md, USER_GUIDE.md)
 - **Developer docs**: Place in `docs/developer/`
-- **Experimental findings**: Archive in `docs/developer/Experiences/`
+- **Experimental findings**: Archive in `docs/developer/Experiments/`
 - **Code samples**: Embed directly in docs (not as script file references)
 
 ---
@@ -472,7 +472,7 @@ For questions about:
 
 1. Read [USER_GUIDE.md](USER_GUIDE.md) to understand basic usage
 2. Review [developer/SOLVER_IMPLEMENTATION.md](developer/SOLVER_IMPLEMENTATION.md) for code structure
-3. Explore [developer/Experiences/](developer/Experiences/) for empirical insights
+3. Explore [developer/Experiments/](developer/Experiments/) for empirical insights
 4. Try building and running the solver locally
 5. Experiment with different memory configurations
 
