@@ -196,7 +196,7 @@
             const bucketModel = document.getElementById('bucketModel').value;
             log(`🚀 Initializing Adjacent solver with ${bucketModel}...`, 'info');
             
-            worker_adjacent = new Worker('worker.js');
+            worker_adjacent = new Worker('test_worker.js');
             
             worker_adjacent.onmessage = (event) => {
                 // Handle log messages from worker
@@ -243,7 +243,7 @@
             const bucketModel = document.getElementById('bucketModel').value;
             log(`🚀 Initializing Opposite solver with ${bucketModel}...`, 'info');
             
-            worker_opposite = new Worker('worker.js');
+            worker_opposite = new Worker('test_worker.js');
             
             worker_opposite.onmessage = (event) => {
                 // Handle log messages from worker
