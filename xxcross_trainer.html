@@ -292,6 +292,7 @@
 				<span style="font-weight:bold;margin-top:12px;display:block;color:#fff;">Trainers:</span>
 				<a href="cross_trainer.html" rel="noopener noreferrer" translate="no">Cross</a>
 				<a href="xcross_trainer.html" rel="noopener noreferrer" translate="no">XCross</a>
+                <a href="xxcross_trainer.html" rel="noopener noreferrer" translate="no">XXCross</a>
 				<a href="pairing_trainer.html" rel="noopener noreferrer" translate="no">Free Pair</a>
 				<a href="pseudo_xcross_trainer.html" rel="noopener noreferrer" translate="no">Pseudo XCross</a>
 				<a href="pseudo_pairing_trainer.html" rel="noopener noreferrer" translate="no">Pseudo Free Pair</a>
@@ -754,14 +755,14 @@
 				const center_offset = get_center(premove);
 				const slot = document.getElementById("slot").value;
 				const num = "100";
-				const len = "11";
+				const len = "13";
 				const convertResult = convert(scr);
 				const result_moves = convertResult[0];
 				const result_rotation = convertResult[1];
 				const mask_input = getMaskInputsDouble();
 				const convertedMask = convertMask(mask_input.maskInputCenter, mask_input.maskInputEdges, mask_input.maskInputCorners, result_rotation);
 				setMask(convertedMask);
-				const args = { solver: "F2L", scr: result_moves, rot: "", slot: slot, ll: "", num: parseInt(num, 10), len: parseInt(len, 13), move_restrict: 'U_U2_U-_D_D2_D-_L_L2_L-_R_R2_R-_F_F2_F-_B_B2_B-', post_alg: premove, center_offset: center_offset, max_rot_count: parseInt('0', 10), ma2: '', mcString: '' };
+				const args = { solver: "F2L", scr: result_moves, rot: "", slot: slot, ll: "", num: parseInt(num, 10), len: parseInt(len, 10), move_restrict: 'U_U2_U-_D_D2_D-_L_L2_L-_R_R2_R-_F_F2_F-_B_B2_B-', post_alg: premove, center_offset: center_offset, max_rot_count: parseInt('0', 10), ma2: '', mcString: '' };
 				worker = new Worker('src/crossSolver/worker.js');
 				worker.postMessage(args);
 				if (worker) {
