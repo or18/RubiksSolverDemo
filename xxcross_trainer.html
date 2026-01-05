@@ -348,17 +348,8 @@
 	</script>
 	<a>Warning: This scrambler generates about 600~ MB locally on first run; initial scramble generation may take
 		several
-		tens of seconds to minutes. </a><br><br>
-
-	<label for="bucketModel">Bucket Model: </label>
-	<select translate="no" id="bucketModel">
-		<option translate="no" value="MOBILE_LOW">MOBILE_LOW (1/1/2/4 MB): 309MB for single</option>
-		<option translate="no" value="MOBILE_MIDDLE">MOBILE_MIDDLE (2/4/4/4 MB): 448MB for single</option>
-		<option translate="no" value="MOBILE_HIGH">MOBILE_HIGH (4/4/4/4 MB): 535MB for single</option>
-		<option translate="no" value="DESKTOP_STD" selected>DESKTOP_STD (8/8/8/8 MB): 756MB for single</option>
-		<option translate="no" value="DESKTOP_HIGH">DESKTOP_HIGH (8/16/16/16 MB): 1,393MB for single</option>
-		<option translate="no" value="DESKTOP_ULTRA">DESKTOP_ULTRA (16/16/16/16 MB): 1,442MB for single</option>
-	</select><br>
+		tens of seconds to minutes. Note that the bucket model automatically selects the minimum
+		configuration.</a><br><br>
 
 	<label for="rot">Rotation: </label>
 	<select translate="no" id="rot">
@@ -391,7 +382,7 @@
 		<option translate="no" value="x y2">x y2</option>
 		<option translate="no" value="x y'">x y'</option>
 	</select><br>
-	<label for="slot" onchange="update_setup_button()">Slot: </label>
+	<label for="slot">Slot: </label>
 	<select translate="no" id="slot">
 		<option translate="no" value="BL BR">BL BR</option>
 		<option translate="no" value="BL FR">BL FR</option>
@@ -400,6 +391,8 @@
 		<option translate="no" value="BR FL">BR FL</option>
 		<option translate="no" value="FR FL">FR FL</option>
 	</select><br>
+	<a>Note: Different search instances are launched for adjacent pairs and diagonal pairs. Initial generation takes
+		time for each.</a><br><br>
 	<label for="len">Length: </label>
 	<select translate="no" id="len">
 		<option translate="no" value="1">1</option>
@@ -413,8 +406,6 @@
 		<option translate="no" value="9">9</option>
 		<option translate="no" value="10">10</option>
 	</select><br>
-	<a class="hidden" id="warn_diag">Warning: Setup of database for diagonal slot pair is needed. </a>
-	<a class="hidden" id="warn_opp">Warning: Setup of database for opposite slot pair is needed. </a><br>
 	<button id="next" class="button medium" onclick="genscr()">Setup</button><br>
 	<h2 id="scr"></h2>
 	<div id="show"></div>
@@ -504,8 +495,6 @@
 		let convertMask;
 		let get_center;
 		let isFunctionsReady = false;
-		let isCalculationForDiagFinished = false;
-		let isCalcualtionForOppFinished = false;
 
 		async function InitializeFunctions() {
 			const Module = await window.loadFunctionsJs();
@@ -602,26 +591,13 @@
 			},
 		};
 
-		const slotToEMask = {
-			'BL': '--IIII',
-			'BR': '-I-III',
-			'FR': '-II-II',
-			'FL': '-III-I'
-		};
-
-		const slotToCMask = {
-			'BL': '-IIII',
-			'BR': 'I-III',
-			'FR': 'II-II',
-			'FL': 'III-I'
-		};
 		const slotToEMaskDouble = {
 			'BL BR': '---III',
 			'BL FR': '--I-II',
 			'BL FL': '--II-I',
 			'BR FR': '-I--II',
 			'BR FL': '-I-I-I',
-			'FR FL': '---III'
+			'FR FL': '-II--I'
 		};
 		const slotToCMaskDouble = {
 			'BL BR': '--III',
@@ -629,14 +605,14 @@
 			'BL FL': '-II-I',
 			'BR FR': 'I--II',
 			'BR FL': 'I-I-I',
-			'FR FL': 's--III'
+			'FR FL': 'II--I'
 		};
 
-		function getMaskInputs() {
-			const slot = document.getElementById("slot").value;
-			const maskInputCenter = "-";
-			const maskInputEdges = slotToEMask[slot];
-			const maskInputCorners = slotToCMask[slot];
+		function getMaskInputsDouble() {
+			const slots = document.getElementById("slot").value;
+			const maskInputCenter = "--";
+			const maskInputEdges = slotToEMaskDouble[slots];
+			const maskInputCorners = slotToCMaskDouble[slots];
 			return { maskInputCenter, maskInputEdges, maskInputCorners };
 		}
 
@@ -782,10 +758,10 @@
 				const convertResult = convert(scr);
 				const result_moves = convertResult[0];
 				const result_rotation = convertResult[1];
-				const mask_input = getMaskInputs();
+				const mask_input = getMaskInputsDouble();
 				const convertedMask = convertMask(mask_input.maskInputCenter, mask_input.maskInputEdges, mask_input.maskInputCorners, result_rotation);
 				setMask(convertedMask);
-				const args = { solver: "F2L", scr: result_moves, rot: "", slot: slot, ll: "", num: parseInt(num, 10), len: parseInt(len, 10), move_restrict: 'U_U2_U-_D_D2_D-_L_L2_L-_R_R2_R-_F_F2_F-_B_B2_B-', post_alg: premove, center_offset: center_offset, max_rot_count: parseInt('0', 10), ma2: '', mcString: '' };
+				const args = { solver: "F2L", scr: result_moves, rot: "", slot: slot, ll: "", num: parseInt(num, 10), len: parseInt(len, 13), move_restrict: 'U_U2_U-_D_D2_D-_L_L2_L-_R_R2_R-_F_F2_F-_B_B2_B-', post_alg: premove, center_offset: center_offset, max_rot_count: parseInt('0', 10), ma2: '', mcString: '' };
 				worker = new Worker('src/crossSolver/worker.js');
 				worker.postMessage(args);
 				if (worker) {
@@ -912,14 +888,7 @@
 			}
 		}
 
-		const slotToRot = {
-			'BL': "",
-			'BR': "y",
-			'FR': "y2",
-			'FL': "y'"
-		};
-
-		const slotPairToRot = {
+		const slotToRotDouble = {
 			'BL BR': "",
 			'BL FR': "",
 			'BF FL': "y'",
@@ -952,11 +921,12 @@
 				alert('Solver module not available.');
 				return;
 			}
-			const bucket_model = document.getElementById("bucketModel").value;
+			const bucket_model_adjacent = "MOBILE_LOW"; // Adjusted for performance in browser
+			const bucket_model_opposite = "MOBILE_LOW";
 			const sol_len = document.getElementById("len").value;
 			const rot = document.getElementById("rot").value;
 			const slot = document.getElementById("slot").value;
-			const mask_input = getMaskInputs();
+			const mask_input = getMaskInputsDouble();
 			const convertedMask = convertMask(mask_input.maskInputCenter, mask_input.maskInputEdges, mask_input.maskInputCorners, rot);
 			setMask(convertedMask);
 			let cube;
@@ -970,13 +940,26 @@
 				return;
 			}
 			let args;
-			if (!worker2_adjacent && slot in ['BL BR', 'BR FR', 'FR FL', 'FL BL']) {
-				worker2_adjacent = new Worker('src/xcrossTrainer/worker_prod.js');
-				args = { scr: solution, len: sol_len, pairType: 'adj', bucketModel: bucket_model };
+			const show = document.getElementById('show');
+			let slots_pairs_adjacent = ["BL BR", "BL FL", "BR FR", "FR FL"];
+			let slots_pairs_opposite = ["BL FR", "BR FL"];
+			if (slots_pairs_adjacent.includes(slot)) {
+				console.log('Generating for adjacent pair:', slot);
+				if (!worker2_adjacent) {
+					worker2_adjacent = new Worker('src/xxcrossTrainer/production/worker_prod.js');
+				}
+				args = { scr: solution, len: sol_len, pairType: 'adj', bucketModel: bucket_model_adjacent };
 				worker2_adjacent.onmessage = async function (event) {
 					try {
+						if (event.data === "Error") {
+							throw new Error('Worker reported an error during generating scramble.');
+						} else if (event.data === "Initial Error") {
+							throw new Error('Worker reported an initial database construction error. Please re-initialize the database for the selected slot pair.');
+							isCalculationForAdjFinished = false;
+							document.getElementById("adjacentStatus").innerText = "Initial calculation failed.";
+						}
 						const ret = (event.data).split(",");
-						var scramble = min2phase.solve(generateTwoPhaseInputWrapper(convert(ret[1] + reverse(ret[0]) + slotToRot[slot])[0]));
+						var scramble = min2phase.solve(generateTwoPhaseInputWrapper(convert(ret[1] + reverse(ret[0]) + slotToRotDouble[slot])[0]));
 						scramble = scr_fix(rot + scramble);
 						document.getElementById('scr').innerHTML = scramble;
 						try {
@@ -1008,13 +991,20 @@
 				};
 				worker2_adjacent.postMessage(args);
 			}
-			if (!worker2_opposite && slot in ['BR FL', 'FR BL']) {
-				worker2_opposite = new Worker('src/xcrossTrainer/worker_prod.js');
-				args = { scr: solution, len: sol_len, pairType: 'opp', bucketModel: bucket_model };
+			if (slots_pairs_opposite.includes(slot)) {
+				if (!worker2_opposite) {
+					worker2_opposite = new Worker('src/xxcrossTrainer/production/worker_prod.js');
+				}
+				args = { scr: solution, len: sol_len, pairType: 'opp', bucketModel: bucket_model_opposite };
 				worker2_opposite.onmessage = async function (event) {
 					try {
+						if (event.data === "Error") {
+							throw new Error('Worker reported an error during processing.');
+						} else if (event.data === "Initial Error") {
+							throw new Error('Worker reported an initialization error. Please re-initialize the database for the selected slot pair.');
+						}
 						const ret = (event.data).split(",");
-						var scramble = min2phase.solve(generateTwoPhaseInputWrapper(convert(ret[1] + reverse(ret[0]) + slotToRot[slot])[0]));
+						var scramble = min2phase.solve(generateTwoPhaseInputWrapper(convert(ret[1] + reverse(ret[0]) + slotToRotDouble[slot])[0]));
 						scramble = scr_fix(rot + scramble);
 						document.getElementById('scr').innerHTML = scramble;
 						try {
@@ -1045,32 +1035,6 @@
 					}
 				};
 				worker2_opposite.postMessage(args);
-			}
-			const show = document.getElementById('show');
-
-			worker2.postMessage(args);
-		}
-
-		function update_setup_button() {
-			const slot = document.getElementById("slot").value;
-			const diag_slots = ["BL BR", "BR FR", "FR FL", "FL BL"];
-			const oppo_slots = ["BR FL", "FR BL"];
-			const warn_diag = document.getElementById("warn_diag");
-			const warn_opp = document.getElementById("warn_opp");
-			if (diag_slots.includes(slot)) {
-				if (isCalculationForDiagFinished) {
-					warn_diag.classList.add("hidden");
-				} else {
-					warn_diag.classList.remove("hidden");
-				}
-			} else if (oppo_slots.includes(slot)) {
-				if (isCalculationForOppFinished) {
-					warn_opp.classList.add("hidden");
-				} else {
-					warn_opp.classList.remove("hidden");
-				}
-			} else {
-				warn_opp.classList.add("hidden");
 			}
 		}
 
