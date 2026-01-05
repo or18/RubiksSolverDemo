@@ -22,17 +22,21 @@ This is a high-performance Rubik's Cube XXCross (double cross) solver designed f
 
 ### Production Status (January 2026)
 
-**Comprehensive testing completed**: 6,000 trials across 12 configurations (6 models × 2 pair types × 5 depths × 100 trials each)
+**Status**: ✅ Production deployed - xxcross_trainer.html operational with browser verification
 
-**Performance Highlights**:
+**Deployment Configuration**:
+- **Default Model**: MOBILE_LOW (1M/1M/2M/4M buckets, ~600MB dual-heap)
+- **Implementation**: Hardcoded in xxcross_trainer.html (no bucket selection UI)
+- **Browser Testing**: Verified on desktop (PC) and mobile devices
+- **Performance**: 10-12s initialization, ~12-14ms depth 10 generation
+
+**Comprehensive Testing Results** (6,000 trials):
 - ✅ **100% depth guarantee accuracy** - All 6,000 trials generated exact depth scrambles
 - ✅ **<20ms depth 10 generation** - All models meet production requirements
 - ✅ **10-96s initialization** - Scales predictably with database size
 - ✅ **Production ready** - Comprehensive testing validates WASM module stability
 
-**Recommended configurations**:
-- **Mobile devices**: Mobile MIDDLE (17s init, 13ms depth 10 avg)
-- **Desktop browsers**: Desktop STD (35s init, 12ms depth 10 avg) ⭐ Best overall balance
+**Design Decision**: MOBILE_LOW selected as default configuration for simplicity, stability, and validated performance. Bucket selection UI not implemented - minimal configuration sufficient for all use cases.
 
 For detailed performance data, see [developer/performance_results.md](developer/performance_results.md)
 

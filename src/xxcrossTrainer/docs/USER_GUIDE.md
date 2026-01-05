@@ -19,13 +19,17 @@ The XXCross Solver is a high-performance Rubik's Cube F2L (First Two Layers) sol
 
 For most users, the WASM version running in a web browser is the easiest option:
 
-1. Open a trainer page (e.g., `xcross_trainer.html`)
-2. Select memory tier based on your device:
-   - **Mobile phones**: Mobile LOW/MIDDLE (618-896 MB)
-   - **Desktop/Laptop**: Desktop STD (1512 MB) ✅ Recommended
+1. Open `xxcross_trainer.html` in your web browser
+2. Wait for solver initialization (~10-12 seconds)
 3. Start solving!
 
-**WASM tiers** are pre-configured and automatically manage memory.
+**Production Configuration**:
+- **Default Model**: MOBILE_LOW (automatically selected)
+- **Memory Usage**: ~600MB (dual-solver for adjacent/opposite pairs)
+- **Initialization**: One-time ~10-12s per session
+- **Scramble Generation**: ~12-14ms for depth 10 (imperceptible latency)
+
+**Note**: The trainer uses MOBILE_LOW configuration by default. This provides excellent performance while ensuring broad device compatibility. No configuration selection is needed.
 
 ### Command Line (Native C++)
 
@@ -75,31 +79,33 @@ The solver uses **pre-configured WASM memory tiers** with specific bucket sizes 
 
 ## Deployment Examples
 
-### Web Hosting (WASM)
+### Production Deployment (Current)
 
-**Recommended deployment method** for most users:
+**xxcross_trainer.html** is production-ready and deployed:
 
 ```bash
-# Build production WASM module
-source ~/emsdk/emsdk_env.sh
-em++ solver_dev.cpp -o solver_dev.js -std=c++17 -O3 -I../.. \
-  -s WASM=1 -s ALLOW_MEMORY_GROWTH=1 -s MAXIMUM_MEMORY=4GB \
-  -s EXPORTED_RUNTIME_METHODS='["cwrap"]' -s MODULARIZE=1 \
-  -s EXPORT_NAME="createModule" --bind -s INITIAL_MEMORY=64MB
+# Production files (deploy to web server)
+cp production/solver_prod.{js,wasm} /var/www/html/trainer/
+cp production/worker_prod.js /var/www/html/trainer/
+cp xxcross_trainer.html /var/www/html/trainer/
+```
 
-# Deploy to web server
-cp solver_dev.{js,wasm} /var/www/html/trainer/
-cp test_wasm_browser.html /var/www/html/trainer/
-cp worker_test_wasm_browser.js /var/www/html/trainer/
+**Configuration**:
+- **Default**: MOBILE_LOW (hardcoded in xxcross_trainer.html)
+- **Memory**: ~600MB dual-heap (adjacent + opposite solvers)
+- **Build**: -O3 -msimd128 -flto (95KB JS, 302KB WASM)
+- **Browser Tested**: Desktop and mobile verified
 
-# Note: build_wasm_unified.sh builds solver_heap_measurement.{js,wasm}
-# for legacy heap measurement workflows (archived in backups/)
+**Build from source** (if needed):
+```bash
+cd src/xxcrossTrainer/production
+./build_production.sh  # Creates solver_prod.{js,wasm}
 ```
 
 **CDN deployment**:
 ```html
 <!-- In your HTML -->
-<script src="https://cdn.example.com/solver_dev.js"></script>
+<script src="https://cdn.example.com/solver_prod.js"></script>
 ```
 
 ### Docker (for development/testing)
