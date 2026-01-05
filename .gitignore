@@ -4,7 +4,6 @@ temp/
 src_test/
 src_test2/
 archive/
-xxcross_trainer.html
 # Experimental logs and backups (kept locally only)
 *.log
 nohup.out
