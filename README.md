@@ -10,6 +10,7 @@ Solvers for 3x3x3 Rubik's cube: cross, xcross, free pair, pseudo F2L, EOCross, a
 Also, the following trainers are available. 
 - [**Cross trainer**](https://or18.github.io/RubiksSolverDemo/cross_trainer)
 - [**XCross trainer**](https://or18.github.io/RubiksSolverDemo/xcross_trainer)
+- [**XXCross trainer**](https://or18.github.io/RubiksSolverDemo/xxcross_trainer)
 - [**Free Pair trainer**](https://or18.github.io/RubiksSolverDemo/pairing_trainer)
 - [**Pseudo XCross trainer**](https://or18.github.io/RubiksSolverDemo/pseudo_xcross_trainer)
 - [**Pseudo Free Pair trainer**](https://or18.github.io/RubiksSolverDemo/pseudo_pairing_trainer)

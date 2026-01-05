@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pwa-cache_v41';
+const CACHE_NAME = 'pwa-cache_v42';
 
 const urlsToPrecache = [
 	'index.html',
@@ -86,6 +86,9 @@ const urlsToCache = [
 	'src/xcrossTrainer/solver.js',
 	'src/xcrossTrainer/solver.wasm',
 	'src/xcrossTrainer/worker.js',
+	'src/xxcrossTrainer/production/solver_prod.js',
+	'src/xxcrossTrainer/production/solver_prod.wasm',
+	'src/xxcrossTrainer/production/worker_prod.js'
 ];
 
 let precacheDone = false;
