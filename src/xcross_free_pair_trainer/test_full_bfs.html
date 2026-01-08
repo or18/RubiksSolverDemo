@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Full BFS Mode Test</title>
+    <style>
+        body { font-family: monospace; padding: 20px; }
+        button { margin: 10px; padding: 10px 20px; font-size: 16px; }
+        #output { 
+            white-space: pre-wrap; 
+            background: #f0f0f0; 
+            padding: 10px; 
+            border: 1px solid #ccc;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>Full BFS Mode Test - XCross + Free Pair</h1>
+    
+    <div>
+        <button onclick="testDepth1()">Test Depth 1</button>
+        <button onclick="testDepth2()">Test Depth 2</button>
+        <button onclick="testDepth3()">Test Depth 3</button>
+        <button onclick="testDepth4()">Test Depth 4</button>
+        <button onclick="testDepth5()">Test Depth 5</button>
+        <button onclick="clearOutput()">Clear Output</button>
+    </div>
+    
+    <div id="output"></div>
+
+    <script>
+        let worker = null;
+        let outputElement = document.getElementById('output');
+
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString('en-GB', { hour12: false });
+            outputElement.textContent += `[${timestamp}] ${message}\n`;
+            outputElement.scrollTop = outputElement.scrollHeight;
+        }
+
+        function clearOutput() {
+            outputElement.textContent = '';
+        }
+
+        function testFullBFS(depth) {
+            if (worker) {
+                worker.terminate();
+            }
+
+            worker = new Worker('worker_test_full_bfs.js');
+            
+            worker.onmessage = function(e) {
+                if (e.data.type === 'log') {
+                    log(e.data.message);
+                } else if (e.data.type === 'result') {
+                    log('✅ Test completed');
+                    log('Result: ' + JSON.stringify(e.data.result, null, 2));
+                } else if (e.data.type === 'error') {
+                    log('❌ Error: ' + e.data.message);
+                }
+            };
+
+            worker.onerror = function(error) {
+                log('❌ Worker error: ' + error.message);
+            };
+
+            log(`Starting Full BFS test to depth ${depth}...`);
+            worker.postMessage({ 
+                command: 'build', 
+                depth: depth 
+            });
+        }
+
+        function testDepth1() { testFullBFS(1); }
+        function testDepth2() { testFullBFS(2); }
+        function testDepth3() { testFullBFS(3); }
+        function testDepth4() { testFullBFS(4); }
+        function testDepth5() { testFullBFS(5); }
+
+        log('Ready. Click a button to test Full BFS mode.');
+    </script>
+</body>
+</html>

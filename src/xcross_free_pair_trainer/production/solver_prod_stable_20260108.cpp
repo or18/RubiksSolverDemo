@@ -731,7 +731,7 @@ int create_prune_table_sparse(int index1, int index2, int index3, int size1, int
 	// Insert 16 free pair state nodes at depth 0
 	// NOTE: Cross edges (index1) remain solved; only F2L slots (index2, index3) are affected by free pair algorithms
 	std::vector<std::string> auf = {"", "U", "U2", "U'"};
-	std::vector<std::string> appl_moves = {"L U L'", "L U' L", "B' U B", "B' U' B"};
+	std::vector<std::string> appl_moves = {"L U L'", "L U' L'", "B' U B", "B' U' B"};
 	uint64_t index123_tmp_2;
 	int index23_tmp_2, index1_tmp_2, index2_tmp_2, index3_tmp_2;
 	for (int i  = 0; i < 4; ++i)
@@ -3814,7 +3814,7 @@ void create_prune_table2(int index1, int index2, int size1, int size2, int depth
 	int num_old = 1;
 	int tmp_index;
 	std::vector<std::string> auf = {"", "U", "U2", "U'"};
-	std::vector<std::string> appl_moves = {"L U L'", "L U' L", "B' U B", "B' U' B"};
+	std::vector<std::string> appl_moves = {"L U L'", "L U' L'", "B' U B", "B' U' B"};
 	// Add 16 free pair goal states at depth 0
 	// Note: This prune table is for F2L slots only (index2+index3), not cross edges
 	for (int i = 0; i < 4; ++i)
@@ -3870,6 +3870,48 @@ void create_prune_table2(int index1, int index2, int size1, int size2, int depth
 	}
 }
 
+void create_prune_table3(int index1, int index2, int size1, int size2, int depth, const std::vector<int> table1, const std::vector<int> table2, std::vector<unsigned char> &prune_table)
+{
+	int size = size1 * size2;
+	prune_table[index1 * size2 + index2] = 0;
+	int next_i;
+	int index1_tmp;
+	int index2_tmp;
+	int next_d;
+	int num_filled = 1;
+	int num_old = 1;
+	for (int d = 0; d < depth; ++d)
+	{
+		next_d = d + 1;
+		for (int i = 0; i < size; ++i)
+		{
+			if (prune_table[i] == d)
+			{
+				index1_tmp = (i / size2) * 18;
+				index2_tmp = (i % size2) * 18;
+				for (int j = 0; j < 18; ++j)
+				{
+					next_i = table1[index1_tmp + j] * size2 + table2[index2_tmp + j];
+					if (next_i != i && prune_table[next_i] == 255)
+					{
+						prune_table[next_i] = next_d;
+						num_filled += 1;
+					}
+				}
+			}
+		}
+		std::cout << "Depth " << next_d << ": " << num_filled << " / " << size << " filled." << std::endl;
+		if (num_filled == num_old)
+		{
+			break;
+		}
+		else
+		{
+			num_old = num_filled;
+		}
+	}
+}
+
 std::vector<bool> create_ma_table()
 {
 	std::vector<bool> ma;
@@ -3893,7 +3935,25 @@ static BucketConfig parseBucketModel(const std::string& model_name) {
 	BucketConfig config;
 	config.model = BucketModel::CUSTOM;
 	
-	if (model_name == "MOBILE_LOW") {
+	// New WASM tier configurations (2026-01-08)
+	if (model_name == "1M/1M/2M/2M") {
+		config.custom_bucket_6 = 1ULL * 1024 * 1024;  // 1M
+		config.custom_bucket_7 = 1ULL * 1024 * 1024;  // 1M
+		config.custom_bucket_8 = 2ULL * 1024 * 1024;  // 2M
+		config.custom_bucket_9 = 2ULL * 1024 * 1024;  // 2M (~332 MB heap, ~664 MB dual)
+	} else if (model_name == "1M/1M/1M/1M") {
+		config.custom_bucket_6 = 1ULL * 1024 * 1024;  // 1M
+		config.custom_bucket_7 = 1ULL * 1024 * 1024;  // 1M
+		config.custom_bucket_8 = 1ULL * 1024 * 1024;  // 1M
+		config.custom_bucket_9 = 1ULL * 1024 * 1024;  // 1M (~332 MB heap, ~664 MB dual)
+	} else if (model_name == "1M/1M/2M/4M") {
+		config.custom_bucket_6 = 1ULL * 1024 * 1024;  // 1M
+		config.custom_bucket_7 = 1ULL * 1024 * 1024;  // 1M
+		config.custom_bucket_8 = 2ULL * 1024 * 1024;  // 2M
+		config.custom_bucket_9 = 4ULL * 1024 * 1024;  // 4M (~398 MB heap, ~796 MB dual)
+	}
+	// Legacy configurations (kept for compatibility)
+	else if (model_name == "MOBILE_LOW") {
 		config.custom_bucket_6 = 1ULL * 1024 * 1024;
 		config.custom_bucket_7 = 1ULL * 1024 * 1024;
 		config.custom_bucket_8 = 2ULL * 1024 * 1024;
@@ -3924,11 +3984,11 @@ static BucketConfig parseBucketModel(const std::string& model_name) {
 		config.custom_bucket_8 = 16ULL * 1024 * 1024;
 		config.custom_bucket_9 = 16ULL * 1024 * 1024;
 	} else {
-		// Default to DESKTOP_STD for unknown models
-		config.custom_bucket_6 = 8ULL * 1024 * 1024;
-		config.custom_bucket_7 = 8ULL * 1024 * 1024;
-		config.custom_bucket_8 = 8ULL * 1024 * 1024;
-		config.custom_bucket_9 = 8ULL * 1024 * 1024;
+		// Default to 1M/1M/2M/2M (production standard, 2026-01-08)
+		config.custom_bucket_6 = 1ULL * 1024 * 1024;
+		config.custom_bucket_7 = 1ULL * 1024 * 1024;
+		config.custom_bucket_8 = 2ULL * 1024 * 1024;
+		config.custom_bucket_9 = 2ULL * 1024 * 1024;
 	}
 	
 	return config;
@@ -3951,6 +4011,7 @@ struct xxcross_search
 	std::vector<int> multi_move_table_F2L_slots_corners;
 	std::vector<unsigned char> prune_table1;
 	std::vector<unsigned char> prune_table23_couple;
+	std::vector<unsigned char> prune_table23_couple_xxcross;
 	std::vector<std::vector<uint64_t>> index_pairs;
 	std::vector<int> num_list;
 	std::vector<int> alg;
@@ -3997,24 +4058,8 @@ struct xxcross_search
 		config.skip_search = true;  // Only build database, no search
 		// high_memory_wasm_mode defaults to true in WASM (set in bucket_config.h)
 		
-		// Read environment variables for full BFS mode testing
-		const char *env_enable_local_expansion = std::getenv("ENABLE_LOCAL_EXPANSION");
-		if (env_enable_local_expansion != nullptr)
-		{
-			config.enable_local_expansion = (std::string(env_enable_local_expansion) == "1");
-		}
-		
-		const char *env_force_full_bfs = std::getenv("FORCE_FULL_BFS_TO_DEPTH");
-		if (env_force_full_bfs != nullptr)
-		{
-			config.force_full_bfs_to_depth = std::atoi(env_force_full_bfs);
-		}
-		
-		const char *env_collect_stats = std::getenv("COLLECT_DETAILED_STATISTICS");
-		if (env_collect_stats != nullptr)
-		{
-			config.collect_detailed_statistics = (std::string(env_collect_stats) == "1");
-		}
+		// Production mode: Environment variables not needed
+		// Local expansion is always enabled (enable_local_expansion = true by default)
 		
 		return config;
 	}
@@ -4205,6 +4250,7 @@ struct xxcross_search
 		create_multi_move_table(2, 3, 8, 24 * 21, corner_move_table, multi_move_table_F2L_slots_corners);
 		prune_table1 = std::vector<unsigned char>(24 * 22 * 20 * 18, 255);
 		prune_table23_couple = std::vector<unsigned char>(24 * 22 * 24 * 21, 255);
+		prune_table23_couple_xxcross = std::vector<unsigned char>(24 * 22 * 24 * 21, 255);
 
 		// Goal ;
 		cross_edges_goal = {16, 18, 20, 22};
@@ -4233,6 +4279,7 @@ struct xxcross_search
 
 		create_prune_table(index1, size1, 8, multi_move_table_cross_edges, prune_table1);
 		create_prune_table2(index2, index3, size2, size3, 9, multi_move_table_F2L_slots_edges, multi_move_table_F2L_slots_corners, prune_table23_couple);
+		create_prune_table3(index2, index3, size2, size3, 9, multi_move_table_F2L_slots_edges, multi_move_table_F2L_slots_corners, prune_table23_couple_xxcross);
 
 		size_t move_table_memory =
 			multi_move_table_cross_edges.size() * sizeof(int) +
@@ -4475,6 +4522,45 @@ struct xxcross_search
 		return false;
 	}
 
+	bool depth_limited_search_xxcross(int arg_index1, int arg_index2, int arg_index3, int depth, int prev)
+	{
+		for (int i : move_restrict)
+		{
+			if (ma[prev + i])
+			{
+				continue;
+			}
+			index2_tmp = multi_move_table_F2L_slots_edges[arg_index2 + i];
+			index3_tmp = multi_move_table_F2L_slots_corners[arg_index3 + i];
+			prune23_tmp = prune_table23_couple_xxcross[index2_tmp * size3 + index3_tmp];
+			if (prune23_tmp >= depth)
+			{
+				continue;
+			}
+			index1_tmp = multi_move_table_cross_edges[arg_index1 + i];
+			prune1_tmp = prune_table1[index1_tmp];
+			if (prune1_tmp >= depth)
+			{
+				continue;
+			}
+			sol.emplace_back(i);
+			if (depth == 1)
+			{
+				if (prune1_tmp == 0 && prune23_tmp == 0)
+				{
+					tmp = AlgToString(sol);
+					return true;
+				}
+			}
+			else if (depth_limited_search_xxcross(index1_tmp * 18, index2_tmp * 18, index3_tmp * 18, depth - 1, i * 18))
+			{
+				return true;
+			}
+			sol.pop_back();
+		}
+		return false;
+	}
+
 	std::string get_xxcross_scramble(std::string arg_length = "7")
 	{
 		sol.clear();
@@ -4537,11 +4623,22 @@ struct xxcross_search
 			// Check if actual depth matches requested depth
 			if (actual_depth == len)
 			{
+				std::string tmp_sol = tmp;
+				index1 /= 18;
+				index2 /= 18;
+				index3 /= 18;
+				for (int move : sol)
+				{
+					index1 = multi_move_table_cross_edges[index1 * 18 + move];
+					index2 = multi_move_table_F2L_slots_edges[index2 * 18 + move];
+					index3 = multi_move_table_F2L_slots_corners[index3 * 18 + move];
+				}
 				std::cout << "✓ Found valid node at attempt " << (attempt + 1) 
-				          << ": requested=" << len << ", actual=" << actual_depth << std::endl;
-				std::cout << "XXCross Solution from get_xxcross_scramble: " << AlgToString(sol) << std::endl;
-				tmp = AlgToString(sol);
-				return tmp;
+				<< ": requested=" << len << ", actual=" << actual_depth << std::endl;
+				std::cout << "XXCross Solution from get_xxcross_scramble: " << tmp_sol << std::endl;
+				std::string scramble_adjust = start_search_index(index1, index2, index3);
+				std::cout << "Adjustment scramble: " << scramble_adjust << std::endl;
+				return  tmp_sol + scramble_adjust;
 			}
 			
 			// Log mismatch and retry
@@ -4578,7 +4675,10 @@ struct xxcross_search
 			index3 = multi_move_table_F2L_slots_corners[index3 * 18 + move];
 		}
 		prune1_tmp = prune_table1[index1];
-		prune23_tmp = prune_table23_couple[index2 * size3 + index3];
+		prune23_tmp = prune_table23_couple_xxcross[index2 * size3 + index3];
+		std::cout << "Prune values: prune1=" << prune1_tmp 
+					<< ", prune23=" << prune23_tmp 
+					<< ", max=" << std::max(prune1_tmp, prune23_tmp) << std::endl;
 		if (prune1_tmp == 0 && prune23_tmp == 0)
 		{
 			std::cout << "Already solved state." << std::endl;
@@ -4589,12 +4689,40 @@ struct xxcross_search
 		index3 *= 18;
 		for (int d = std::max(prune1_tmp, prune23_tmp); d <= max_length; ++d)
 		{
-			if (depth_limited_search(index1, index2, index3, d, 324))
+			if (depth_limited_search_xxcross(index1, index2, index3, d, 324))
 			{
 				break;
 			}
 		}
 		std::cout << "XXCross Solution from start_search: " << AlgToString(sol) << std::endl;
+		return tmp;
+	}
+
+	std::string start_search_index(int arg_index1, int arg_index2, int arg_index3)
+	{
+		sol.clear();
+		max_length = 14;
+		prune1_tmp = prune_table1[index1];
+		prune23_tmp = prune_table23_couple_xxcross[index2 * size3 + index3];
+		std::cout << "Prune values: prune1=" << prune1_tmp 
+					<< ", prune23=" << prune23_tmp 
+					<< ", max=" << std::max(prune1_tmp, prune23_tmp) << std::endl;
+		if (prune1_tmp == 0 && prune23_tmp == 0)
+		{
+			std::cout << "Already solved state." << std::endl;
+			return "";
+		}
+		index1 *= 18;
+		index2 *= 18;
+		index3 *= 18;
+		for (int d = std::max(prune1_tmp, prune23_tmp); d <= max_length; ++d)
+		{
+			if (depth_limited_search_xxcross(index1, index2, index3, d, 324))
+			{
+				break;
+			}
+		}
+		std::cout << "XXCross Solution from start_search_index: " << AlgToString(sol) << std::endl;
 		return tmp;
 	}
 

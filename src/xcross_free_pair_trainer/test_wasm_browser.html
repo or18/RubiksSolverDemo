@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XCross + Free Pair WASM Test & Measurement - dev_20260106</title>
+    <style>
+        body {
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+        }
+        h1, h2 {
+            color: #4ec9b0;
+            border-bottom: 2px solid #4ec9b0;
+            padding-bottom: 10px;
+        }
+        .control-panel {
+            background-color: #252526;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #3e3e42;
+        }
+        .tier-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin: 15px 0;
+        }
+        .tier-btn {
+            background-color: #2d5a2d;
+            color: white;
+            border: none;
+            padding: 12px;
+            font-size: 13px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .tier-btn:hover {
+            background-color: #3a7a3a;
+        }
+        .tier-btn.selected {
+            background-color: #0e639c;
+        }
+        button {
+            background-color: #0e639c;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 14px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+            transition: background-color 0.2s;
+        }
+        button:hover {
+            background-color: #1177bb;
+        }
+        button:disabled {
+            background-color: #3e3e42;
+            color: #6c6c6c;
+            cursor: not-allowed;
+        }
+        .results-container {
+            display: block;
+            margin-top: 20px;
+        }
+        .result-panel {
+            background-color: #252526;
+            border: 1px solid #3e3e42;
+            border-radius: 8px;
+            padding: 20px;
+        }
+        .result-panel h3 {
+            color: #569cd6;
+            margin-top: 0;
+            border-bottom: 1px solid #3e3e42;
+            padding-bottom: 10px;
+        }
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #2d2d30;
+        }
+        .stat-label {
+            color: #9cdcfe;
+            font-weight: bold;
+        }
+        .stat-value {
+            color: #ce9178;
+            font-family: monospace;
+        }
+        .console-output {
+            background-color: #1e1e1e;
+            border: 1px solid #3e3e42;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 4px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-size: 12px;
+            line-height: 1.6;
+        }
+        .status {
+            padding: 12px;
+            border-radius: 4px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        .status.success {
+            background-color: #2d5a2d;
+            border: 1px solid #3a7a3a;
+        }
+        .status.error {
+            background-color: #5a2d2d;
+            border: 1px solid #7a3a3a;
+        }
+        .status.info {
+            background-color: #2d3d5a;
+            border: 1px solid #3a4d7a;
+        }
+        .scramble-test {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #1e1e1e;
+            border: 1px solid #3e3e42;
+            border-radius: 4px;
+        }
+        .scramble-output {
+            margin-top: 10px;
+            padding: 12px;
+            background-color: #252526;
+            border: 1px solid #3e3e42;
+            border-radius: 4px;
+            min-height: 60px;
+            color: #ce9178;
+            font-family: monospace;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #3e3e42;
+        }
+        th {
+            background-color: #1e1e1e;
+            color: #4ec9b0;
+            font-weight: bold;
+        }
+        tr:hover {
+            background-color: #2d2d30;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎲 XCross + Free Pair Solver - WASM Test & Heap Measurement</h1>
+    <p style="color: #858585;">dev_20260106 - Testing minimal bucket configurations (1M variants)</p>
+    
+    <div class="control-panel">
+        <h2>Configuration</h2>
+        <div id="status" class="status info">Initializing Web Worker...</div>
+        
+        <h3 style="color: #569cd6; margin-top: 20px;">Select WASM Tier (Minimal Configurations)</h3>
+        <div class="tier-grid">
+            <button class="tier-btn selected" data-buckets="1,1,1,1">Config A<br><small>1/1/1/1M - Est. ~500 MB</small></button>
+            <button class="tier-btn" data-buckets="1,1,1,2">Config B<br><small>1/1/1/2M - Est. ~550 MB</small></button>
+            <button class="tier-btn" data-buckets="1,1,2,2">Config C<br><small>1/1/2/2M - Est. ~600 MB</small></button>
+            <button class="tier-btn" data-buckets="1,1,2,4">Config D<br><small>1/1/2/4M - Est. ~650 MB</small></button>
+        </div>
+        
+        <div style="margin-top: 20px;">
+            <button id="buildBtn" onclick="buildDatabase()" disabled>🔨 Build Database</button>
+            <button onclick="clearOutput()">🗑️ Clear Console</button>
+            <button onclick="saveLog()">💾 Save Log</button>
+        </div>
+    </div>
+    
+    <div class="result-panel">
+        <h3>🎲 Scramble Generator (Random)</h3>
+        <div class="scramble-test">
+            <p style="color: #9cdcfe; margin-bottom: 10px;">
+                ℹ️ Uses retained solver instance for true random generation<br>
+                Note: This is actually the shortest solution that can be solved in exactly the specified number of moves. 
+            </p>
+            <label style="color: #569cd6;">Depth:</label>
+            <select id="depth-select">
+                <option value="1">Depth 1</option>
+                <option value="2">Depth 2</option>
+                <option value="3">Depth 3</option>
+                <option value="4">Depth 4</option>
+                <option value="5">Depth 5</option>
+                <option value="6" selected>Depth 6</option>
+                <option value="7">Depth 7</option>
+                <option value="8">Depth 8</option>
+                <option value="9">Depth 9</option>
+            </select>
+            <button onclick="testScramble()">🎲 Generate Scramble</button>
+            <div id="scramble-output" class="scramble-output"></div>
+        </div>
+    </div>
+    
+    <div class="results-container">
+        <div class="result-panel">
+            <h3>📊 Database Statistics</h3>
+            <div id="stats-content">
+                <p style="color: #858585;">Build database to see statistics...</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="result-panel">
+        <h3>📝 Console Output</h3>
+        <div id="output" class="console-output"></div>
+    </div>
+    
+    <script>
+        console.log('[Main] Script starting...');
+        
+        // Initialize Web Worker with cache busting
+        const workerUrl = 'worker_test_wasm_browser.js?v=' + Date.now();
+        console.log('[Main] Creating worker from:', workerUrl);
+        const worker = new Worker(workerUrl);
+        let currentStats = null;
+        let buildStartTime = 0;
+        let selectedBuckets = [1, 1, 1, 1];  // Default: Config A (1M/1M/1M/1M)
+        let allLogs = [];  // Store all logs for saving
+        
+        console.log('[Main] Worker created successfully');
+        
+        worker.onerror = function(error) {
+            console.error('[Main] Worker error:', error);
+            log('Worker error: ' + error.message, 'error');
+            document.getElementById('status').innerHTML = '❌ Worker error';
+            document.getElementById('status').className = 'status error';
+        };
+        
+        // Tier selection
+        document.querySelectorAll('.tier-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.tier-btn').forEach(b => b.classList.remove('selected'));
+                this.classList.add('selected');
+                selectedBuckets = this.dataset.buckets.split(',').map(n => parseInt(n));
+                log(`Selected tier: ${this.textContent.split('\\n')[0]} (${selectedBuckets.join('M/')}M)`, 'info');
+            });
+        });
+        
+        worker.onmessage = function(event) {
+            console.log('[Main] Received message from worker:', event.data.type);
+            const { type, message, stats, logs } = event.data;
+            
+            switch(type) {
+                case 'initialized':
+                    console.log('[Main] Worker initialized!');
+                    document.getElementById('status').innerHTML = '✅ Worker initialized and ready';
+                    document.getElementById('status').className = 'status success';
+                    document.getElementById('buildBtn').disabled = false;
+                    console.log('[Main] Build button enabled');
+                    log('Ready. Select a tier and click "Build Database".', 'info');
+                    break;
+                    
+                case 'progress':
+                    document.getElementById('status').innerHTML = message;
+                    document.getElementById('status').className = 'status info';
+                    log(message, 'info');
+                    break;
+                    
+                case 'log':
+                    log(message);
+                    break;
+                    
+                case 'scramble':
+                    const { scramble, actualDepth, pairType, moveCount } = event.data;
+                    const outputDiv = document.getElementById('scramble-output');
+                    
+                    if (!scramble) {
+                        outputDiv.innerHTML = '<div style="color: #f48771;">❌ Error: No scramble received</div>';
+                        log('Error: No scramble data in response', 'error');
+                        break;
+                    }
+                    
+                    // Use moveCount from C++ (reliable) or fallback to JS calculation
+                    const moves = moveCount !== undefined ? moveCount : scramble.trim().split(/\\s+/).length;
+                    outputDiv.innerHTML = `
+                        <div style="margin-bottom: 8px;">
+                            <strong style="color: #4ec9b0;">Depth ${actualDepth}</strong> | 
+                            <strong style="color: #569cd6;">${pairType}</strong> | 
+                            <strong style="color: #dcdcaa;">${moves} moves</strong>
+                        </div>
+                        <div style="font-size: 14px; color: #ce9178;">${scramble}</div>
+                    `;
+                    log(`Generated (${pairType}, depth ${actualDepth}, ${moves} moves): ${scramble}`, 'success');
+                    break;
+                    
+                case 'complete':
+                    const duration = ((Date.now() - buildStartTime) / 1000).toFixed(2);
+                    currentStats = stats;
+                    
+                    document.getElementById('status').innerHTML = 
+                        `✅ Build complete (${duration}s)`;
+                    document.getElementById('status').className = 'status success';
+                    document.getElementById('buildBtn').disabled = false;
+                    
+                    log(`\\n✅ Database built in ${duration}s`, 'success');
+                    
+                    // Display detailed statistics
+                    displayStatistics(stats);
+                    break;
+                    
+                case 'error':
+                    document.getElementById('status').innerHTML = '❌ Error: ' + message;
+                    document.getElementById('status').className = 'status error';
+                    document.getElementById('buildBtn').disabled = false;
+                    log('Error: ' + message, 'error');
+                    
+                    // Display error logs if available
+                    if (logs && logs.length > 0) {
+                        log('\\n=== Error Logs ===', 'error');
+                        logs.forEach(line => log(line, 'error'));
+                    }
+                    break;
+            }
+        };
+        
+        // Make function globally accessible
+        window.buildDatabase = function() {
+            console.log('[Main] buildDatabase() called');
+            console.log('[Main] Build button clicked');
+            console.log('[Main] Worker state:', worker);
+            console.log('[Main] Selected buckets:', selectedBuckets);
+            
+            buildStartTime = Date.now();
+            document.getElementById('buildBtn').disabled = true;
+            document.getElementById('stats-content').innerHTML = '<p style="color: #858585;">Building...</p>';
+            
+            log(`\\n🔨 Starting database build...`, 'info');
+            log(`Configuration: ${selectedBuckets.join('M/')}M`, 'info');
+            
+            console.log('[Main] Sending build message to worker...');
+            worker.postMessage({
+                type: 'build',
+                data: {
+                    buckets: selectedBuckets,
+                    adj: true,  // Adjacent pairs
+                    verbose: true
+                }
+            });
+            console.log('[Main] Build message sent');
+        };
+        
+        window.displayStatistics = function(stats) {
+            // Database Statistics
+            let statsHtml = '<table>';
+            statsHtml += '<tr><th>Metric</th><th>Value</th></tr>';
+            statsHtml += `<tr><td>Pair Type</td><td>${stats.pair_type || 'N/A'}</td></tr>`;
+            statsHtml += `<tr><td>Total Nodes</td><td>${(stats.total_nodes || 0).toLocaleString()}</td></tr>`;
+            
+            // Node distribution
+            if (stats.node_counts && stats.node_counts.length > 0) {
+                for (let i = 0; i < stats.node_counts.length; i++) {
+                    if (stats.node_counts[i] > 0) {
+                        const pct = stats.total_nodes > 0 ? 
+                            ((stats.node_counts[i] / stats.total_nodes) * 100).toFixed(1) : '0.0';
+                        statsHtml += `<tr><td>Depth ${i}</td><td>${stats.node_counts[i].toLocaleString()} (${pct}%)</td></tr>`;
+                    }
+                }
+            }
+            statsHtml += '</table>';
+            document.getElementById('stats-content').innerHTML = statsHtml;
+        }
+        
+        window.testScramble = function() {
+            console.log('[Main] testScramble() called');
+            if (!currentStats) {
+                log('Build database first!', 'error');
+                return;
+            }
+            
+            const depth = parseInt(document.getElementById('depth-select').value);
+            const outputDiv = document.getElementById('scramble-output');
+            
+            outputDiv.innerHTML = '<div style="color: #569cd6;">Generating scramble...</div>';
+            log(`Requesting scramble at depth ${depth}...`, 'info');
+            
+            worker.postMessage({
+                type: 'scramble',
+                data: { 
+                    depth: depth,
+                    pairType: 'adjacent'
+                }
+            });
+        };
+        
+        window.clearOutput = function() {
+            console.log('[Main] clearOutput() called');
+            document.getElementById('output').innerHTML = '';
+            allLogs = [];  // Clear saved logs too
+        };
+        
+        window.saveLog = function() {
+            console.log('[Main] saveLog() called');
+            if (allLogs.length === 0) {
+                alert('No logs to save. Build database first.');
+                return;
+            }
+            
+            // Create log content with metadata
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+            const tierName = document.querySelector('.tier-btn.selected').textContent.split('\n')[0];
+            const header = `XXCross WASM Test Log
+Generated: ${new Date().toLocaleString()}
+Tier: ${tierName} (${selectedBuckets.join('M/')}M)
+Browser: ${navigator.userAgent}
+${'='.repeat(80)}
+
+`;
+            
+            const logContent = header + allLogs.join('\n');
+            
+            // Create and download file
+            const blob = new Blob([logContent], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `xxcross_wasm_log_${timestamp}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            log(`Log saved to: ${a.download}`, 'success');
+        };
+        
+        window.log = function(message, type = 'info') {
+            const output = document.getElementById('output');
+            const timestamp = new Date().toLocaleTimeString();
+            const colors = {
+                'info': '#9cdcfe',
+                'success': '#4ec9b0',
+                'error': '#f48771'
+            };
+            const color = colors[type] || colors.info;
+            
+            // Store plain text version for saving
+            const plainLog = `[${timestamp}] ${message}`;
+            console.log(message);
+            allLogs.push(plainLog);
+            
+            // Convert \\n to <br>
+            const formattedMessage = message.replace(/\\n/g, '<br>');
+            output.innerHTML += `<div style="color: ${color};">[${timestamp}] ${formattedMessage}</div>`;
+            output.scrollTop = output.scrollHeight;
+        };
+        
+        console.log('[Main] All functions defined');
+        console.log('[Main] buildDatabase is:', typeof window.buildDatabase);
+        console.log('[Main] Script loaded successfully');
+    </script>
+</body>
+</html>
