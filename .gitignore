@@ -30,3 +30,6 @@ src/xxcrossTrainer/solver_mobile.wasm
 CLEANUP_REPORT.md
 *_REPORT.md
 src/xxcrossTrainer/docs/developer/RSS_MEASUREMENT_RESULTS.md
+
+# Experiments
+Experiments/

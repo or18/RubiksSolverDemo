@@ -84,6 +84,7 @@
 			border: none;
 			border-radius: 4px;
 			cursor: pointer;
+			margin-bottom: 5px;
 		}
 
 		.medium {
@@ -96,6 +97,11 @@
 
 		button:hover {
 			background-color: #4a4a6d;
+		}
+
+		.button:disabled {
+			opacity: 0.65;
+			cursor: not-allowed;
 		}
 
 		summary {
@@ -136,7 +142,7 @@
 			width: 100%;
 			max-width: 600px;
 			margin-bottom: 10px;
-            background-color: #000000;
+			background-color: #000000;
 		}
 
 		.custom-checkbox {
@@ -292,9 +298,9 @@
 				<span style="font-weight:bold;margin-top:12px;display:block;color:#fff;">Trainers:</span>
 				<a href="cross_trainer.html" rel="noopener noreferrer" translate="no">Cross</a>
 				<a href="xcross_trainer.html" rel="noopener noreferrer" translate="no">XCross</a>
-                <a href="xxcross_trainer.html" rel="noopener noreferrer" translate="no">XXCross</a>
+				<a href="xxcross_trainer.html" rel="noopener noreferrer" translate="no">XXCross</a>
 				<a href="pairing_trainer.html" rel="noopener noreferrer" translate="no">Free Pair</a>
-                <a href="xcross_pairing_trainer.html" rel="noopener noreferrer" translate="no">XCross Free Pair</a>
+				<a href="xcross_pairing_trainer.html" rel="noopener noreferrer" translate="no">XCross Free Pair</a>
 				<a href="pseudo_xcross_trainer.html" rel="noopener noreferrer" translate="no">Pseudo XCross</a>
 				<a href="pseudo_pairing_trainer.html" rel="noopener noreferrer" translate="no">Pseudo Free Pair</a>
 				<a href="eocross_trainer.html" rel="noopener noreferrer" translate="no">EOCross</a>
@@ -390,6 +396,7 @@
 		<option translate="no" value="7" selected>7</option>
 		<option translate="no" value="8">8</option>
 	</select><br>
+	<button id="back" class="button medium" onclick="back()" disabled>Back</button>
 	<button id="next" class="button medium" onclick="genscr()">Next</button><br>
 	<h2 id="scr"></h2>
 	<div id="show"></div>
@@ -479,6 +486,7 @@
 		let convertMask;
 		let get_center;
 		let isFunctionsReady = false;
+		let scr_old = null;
 
 		async function InitializeFunctions() {
 			const Module = await window.loadFunctionsJs();
@@ -588,7 +596,7 @@
 				case 'D':
 					return 'dim';
 				case 'I':
-					return {mask: 'ignored', hintMask: 'invisible'};
+					return { mask: 'ignored', hintMask: 'invisible' };
 				case '?':
 					return 'oriented';
 			}
@@ -850,6 +858,40 @@
 			}
 		}
 
+		async function back() {
+			let scramble = scr_old;
+			if (!scr_old) {
+				return;
+			}
+			scr_old = null;
+			document.getElementById('back').disabled = true;
+			const show = document.getElementById('show');
+			document.getElementById('scr').innerHTML = scramble;
+			try {
+				show.innerHTML = '';
+				const sim = createPlayer(scramble, '');
+				sim.experimentalStickeringMaskOrbits = mask;
+				sim.controlPanel = "none";
+				show.appendChild(sim);
+				return;
+			} catch (syncErr) {
+				console.warn('save: sync createPlayer failed, falling back to async', syncErr);
+			}
+			const placeholder = document.createElement('div');
+			placeholder.className = 'twisty-placeholder';
+			placeholder.textContent = 'Loading preview...';
+			show.appendChild(placeholder);
+			try {
+				const real = await createPlayerLazy(scramble, '');
+				real.experimentalStickeringMaskOrbits = mask;
+				real.controlPanel = "none";
+				placeholder.replaceWith(real);
+			} catch (asyncErr) {
+				console.error('save: async createPlayer failed', asyncErr);
+				placeholder.textContent = 'Warning: Failed to create TwistyPlayer.';
+			}
+		}
+
 		async function genscr() {
 			if (!isFunctionsReady) {
 				alert("The module is still initializing. Please try again in a moment.");
@@ -899,6 +941,13 @@
 					const ret = (event.data).split(",");
 					var scramble = min2phase.solve(generateTwoPhaseInputWrapper(convert(ret[1] + reverse(ret[0]))[0]));
 					scramble = scr_fix(rot + scramble);
+					const prev = document.getElementById('scr').innerHTML;
+					if (prev && prev.trim() !== "") {
+						scr_old = prev;
+						document.getElementById('back').disabled = false;
+					} else {
+						scr_old = null;
+					}
 					document.getElementById('scr').innerHTML = scramble;
 					try {
 						show.innerHTML = '';

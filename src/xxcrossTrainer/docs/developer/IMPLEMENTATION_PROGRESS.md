@@ -2734,7 +2734,7 @@ index_pairs[10] = std::move(depth_10_set);
    - **Solution**: Moved attach to **before expansion** (same as Phase 3, 4)
    - **Pattern**: `attach_element_vector()` → insert nodes → save size → `detach_element_vector()` → `swap()` to free
    - **Result**: index_pairs[10].size() = 1,887,437 ✅ (previously was 0)
-   - **Key Insight**: User correctly identified "depth 9→10への展開は基本的にdepth 8→9と全く同じ" - pattern consistency critical
+   - **Key Insight**: User correctly identified "The expansion from depth 9 to 10 is basically exactly the same as depth 8 to 9." - pattern consistency critical
 
 **Test Results (4M/4M/4M/2M)**:
 ```

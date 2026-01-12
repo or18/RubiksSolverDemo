@@ -101,9 +101,9 @@ To confirm root cause:
   - Mobile LOW: 600-700 MB (single: 300-350 MB)
   - Mobile MIDDLE: 700-900 MB (single: 350-450 MB)
   - Mobile HIGH: 900-1100 MB (single: 450-550 MB)
-  - Desktop STD (Mobile ULTRA統合): 1200-1600 MB (single: 600-800 MB)
+  - Desktop STD (Mobile ULTRA integration): 1200-1600 MB (single: 600-800 MB)
   - Desktop HIGH: 2000-3000 MB (single: 1000-1500 MB)
-  - Desktop ULTRA: 2700-2900 MB (single: 1350-1450 MB) - 4GB制限下の実質上限
+  - Desktop ULTRA: 2700-2900 MB (single: 1350-1450 MB) - Effective upper limit under 4GB limit
 
 ### 4.2 Recommended Configurations
 
