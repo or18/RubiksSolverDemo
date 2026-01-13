@@ -58,24 +58,46 @@ Each solution is given the following properties:
 | `subgroupThreshold` | null (automatic) | 1.5-4.0 | Subgroup division threshold within the school. Auto adjust if null |
 | `minSubgroupSize` | 3 | 2-5 | Minimum subgroup size required for labeling |
 
-### 3. Scoring weight distribution (%)
+### 3. Scoring weight distribution (normalized)
 
 | Parameter | Default | Range | Description |
 |------------|------------|------|------|
-| `rankWeight` | 40 | 10-60 | Weight of school rank (preferential treatment for large schools) |
-| `sizeWeight` | 30 | 5-40 | School size weight |
+| `rankWeight` | 1.0 | 0-3.0 | School rank weight multiplier (normalized). At 1.0, gives ~40 point impact for School_1 |
+| `sizeWeight` | 1.0 | 0-3.0 | School size weight multiplier (normalized). At 1.0, gives ~30 point impact for largest schools |
+
+**Note**: These parameters are normalized so that multiplier=1.0 gives similar impact (~10 points per unit) for typical solutions. This makes parameter adjustments more intuitive and responsive.
+
+**Normalization System**:
+- All penalty/bonus parameters use a normalized scale
+- `rankWeight × 4.0 × PENALTY_SCALE` for school rank (×4 because pow(0.5, rank) makes smaller values)
+- `sizeWeight × 3.0 × PENALTY_SCALE` for school size (×3 for balance)
+- This ensures all parameters at value=1.0 have similar real-world impact
 
 **Note**: `lengthWeight` was removed as it was redundant with QTM/HTM penalties. Move count is now controlled by `htmPenalty` and QTM penalty multipliers.
 
-### 4. QTM/HTM Penalty Settings
+### 4. QTM/HTM Penalty Settings (normalized)
 
 | Parameter | Default | Range | Description |
 |------------|------------|------|------|
-| `qtmSubgroup` | 0.3 | 0-2.0 | QTM penalty multiplier when selecting candidates within subgroups |
-| `htmPenalty` | 0.5 | 0-2.0 | HTM penalty multiplier (penalty = htm × multiplier). Set to 0 to disable |
-| `qtmCase1` | 1.5 | 0.5-5.0 | QTM penalty multiplier when subgroup formation fails (HTM NOT used) |
-| `qtmFinal` | 0.2 | 0-1.0 | QTM penalty multiplier for final ranking adjustment |
-| `rotationEfficiencyBonus` | 1.0 | 0-2.0 | Rotation efficiency bonus multiplier (bonus = HTM/QTM × multiplier) |
+| `qtmSubgroup` | 1.0 | 0-3.0 | QTM penalty multiplier when selecting candidates within subgroups (normalized) |
+| `htmPenalty` | 1.0 | 0-3.0 | HTM penalty multiplier (normalized). Set to 0 to disable |
+| `qtmCase1` | 1.5 | 0-5.0 | QTM penalty multiplier when subgroup formation fails (HTM NOT used) |
+| `qtmFinal` | 0.5 | 0-2.0 | QTM penalty multiplier for final ranking adjustment |
+| `rotationEfficiencyBonus` | 1.0 | 0-3.0 | Rotation efficiency bonus multiplier (normalized) |
+
+**Normalization System**:
+All penalty/bonus parameters are normalized so that multiplier=1.0 gives ~10 point impact for typical solutions:
+- `htmPenalty`: penalty = (htm / TYPICAL_HTM) × multiplier × PENALTY_SCALE
+- `qtmPenalty`: penalty = (qtm / TYPICAL_QTM) × multiplier × PENALTY_SCALE  
+- `efficiencyBonus`: bonus = (efficiency / TYPICAL_EFFICIENCY) × multiplier × PENALTY_SCALE
+
+Where typical values are:
+- TYPICAL_HTM = 8 (typical solution length in HTM)
+- TYPICAL_QTM = 10 (typical solution length in QTM)
+- TYPICAL_EFFICIENCY = 0.8 (typical rotation efficiency)
+- PENALTY_SCALE = 10 (scale factor)
+
+This makes all parameters have similar real-world impact and makes UI adjustments more intuitive and responsive.
 
 **QTM Penalty System**:
 - QTM parameters work as **penalties** (penalty = qtm × multiplier)
@@ -96,11 +118,11 @@ Each solution is given the following properties:
 - Higher efficiency gives higher bonus, promoting efficient solutions
 
 **Recommended Ranges**:
-- `qtmSubgroup`: 0.2-0.5 (moderate penalty for subgroup selection)
-- `htmPenalty`: 0.3-0.8 (adjust based on whether you want to consider move count)
-- `qtmCase1`: 1.0-2.5 (higher penalty when quality selection is critical, HTM not used)
-- `qtmFinal`: 0.1-0.3 (small adjustment to avoid QTM dominating ranking)
-- `rotationEfficiencyBonus`: 0.5-1.5 (reward efficient rotations)
+- `qtmSubgroup`: 0.5-2.0 (normalized penalty for subgroup selection)
+- `htmPenalty`: 0.5-2.0 (adjust based on whether you want to consider move count)
+- `qtmCase1`: 1.0-3.0 (higher penalty when quality selection is critical, HTM not used)
+- `qtmFinal`: 0.3-1.0 (adjustment to avoid QTM dominating ranking)
+- `rotationEfficiencyBonus`: 0.5-2.0 (reward efficient rotations)
 
 **Migration from Bonus to Penalty System (2026-01-12)**:
 
@@ -174,13 +196,13 @@ const config = {
     maxClusterSize: 20,
     subgroupThreshold: 2.5,
     minSubgroupSize: 3,
-    rankWeight: 40,
-    sizeWeight: 30,
+    rankWeight: 1.0,
+    sizeWeight: 1.0,
     focusMoves: 5,
-    qtmSubgroup: 0.3,
-    htmPenalty: 0.5,
+    qtmSubgroup: 1.0,
+    htmPenalty: 1.0,
     qtmCase1: 1.5,
-    qtmFinal: 0.2,
+    qtmFinal: 0.5,
     rotationEfficiencyBonus: 1.0,
     endFaceWeight: 40,
     endSequenceWeight: 40
