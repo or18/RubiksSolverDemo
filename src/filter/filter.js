@@ -194,24 +194,22 @@ function calculateEndSimilarity(a, b) {
  * @returns {number} - Similarity (0-1)
  */
 function calculateEndSimilarityConfigurable(a, b, config = {}) {
-    const { endFaceWeight = 40, endSequenceWeight = 40 } = config;
+    const { endFaceWeight = 40, endSequenceWeight = 40, focusMoves = 5 } = config;
     
-    // Decide the length of the second half according to the length of the procedure
-    const avgLength = (a.length + b.length) / 2;
-    let endChunkSize;
-    if (avgLength <= 7) {
-        endChunkSize = 3;
-    } else if (avgLength <= 10) {
-        endChunkSize = 4;
-    } else {
-        endChunkSize = 5;
-    }
+    // Use focusMoves parameter for end chunk size
+    const endChunkSize = focusMoves;
     
-    // Extract the second half
-    const endA = a.slice(-endChunkSize);
-    const endB = b.slice(-endChunkSize);
+    // For short solutions, use the entire sequence
+    // If solution is shorter than focusMoves, use all available moves
+    const endA = a.length <= endChunkSize ? a : a.slice(-endChunkSize);
+    const endB = b.length <= endChunkSize ? b : b.slice(-endChunkSize);
     
+    // If either solution is too short (less than 2 moves), fall back to simple comparison
     if (endA.length < 2 || endB.length < 2) {
+        // For very short solutions, use exact match
+        if (a.length === b.length && a.every((val, i) => val === b[i])) {
+            return 1.0;
+        }
         return 0;
     }
     
@@ -368,6 +366,7 @@ function calculateMultiScaleChunkSimilarity(a, b) {
  * Determine whether the targeted intermediate points are the same
  */
 function computeSchoolDistance(a, b, config = {}) {
+    // Pass focusMoves through config
     const endSim = calculateEndSimilarityConfigurable(a, b, config);
     
     // Higher similarity in the latter half = smaller distance
@@ -620,38 +619,13 @@ function divideIntoSubgroups(family, allMoves, threshold = 3) {
 
 /**
  * Calculate recommendation score for a solution (improved version)
- * Combine multiple statistical indicators for comprehensive evaluation
- * - Introduce the concept of "practical shortest solution" (lengths with 3 or more occurrences are considered practical shortest)
- * - Penalize if there are too few shortest solutions
- * - Consider chunk similarity
- * - Improve representativeness with relative evaluation within styles
+ * Note: Length-based scoring removed to avoid redundancy with QTM penalties
+ * QTM penalties in the main labeling logic handle move count efficiency
  */
 function calculateRecommendationScore(idx, family, familyRank, allMoves, families, config = {}) {
-    const { lengthWeight = 40, rankWeight = 25, sizeWeight = 15 } = config;
+    const { rankWeight = 40, sizeWeight = 30 } = config;
     const solution = allMoves[idx];
     const representative = allMoves[family.leaderIdx];
-
-    // Count the number of solutions for each length
-    const lengthCounts = new Map();
-    allMoves.forEach(m => {
-        const len = m.length;
-        lengthCounts.set(len, (lengthCounts.get(len) || 0) + 1);
-    });
-
-    // Absolute shortest solution
-    const minLength = Math.min(...allMoves.map(m => m.length));
-    const shortestCount = lengthCounts.get(minLength) || 0;
-
-    // Practical shortest solution (minimum length with 3 or more occurrences)
-    let practicalMinLength = minLength;
-    let practicalMinCount = shortestCount;
-    for (const [len, count] of Array.from(lengthCounts.entries()).sort((a, b) => a[0] - b[0])) {
-        if (count >= 3) {
-            practicalMinLength = len;
-            practicalMinCount = count;
-            break;
-        }
-    }
 
     // 1. Style size score (larger styles get higher scores)
     const maxFamilySize = Math.max(...families.map(f => f.memberIndices.length));
@@ -661,31 +635,7 @@ function calculateRecommendationScore(idx, family, familyRank, allMoves, familie
     // More strict: School_1=1.0, School_2=0.5, School_3=0.33...
     const rankScore = Math.pow(0.5, familyRank);
 
-    // 3. Length score (based on practical shortest solution)
-    const maxLength = Math.max(...allMoves.map(m => m.length));
-    const lengthDiff = solution.length - practicalMinLength;
-    const lengthRange = maxLength - practicalMinLength + 1;
-    
-    // Use exponential decay for stronger differentiation
-    // lengthDiff=0 → 1.0, lengthDiff=1 → ~0.7, lengthDiff=2 → ~0.5, lengthDiff=3+ → <0.35
-    let lengthScore = Math.pow(0.7, lengthDiff * 1.5);
-
-    // Penalize if there are too few shortest solutions (1-2)
-    if (solution.length === minLength && shortestCount < 3) {
-        // Shortest solution but insufficient count → significant penalty (0.2x)
-        lengthScore *= 0.2;
-    }
-
-    // Dynamic adjustment of length weight
-    // If practical shortest solution exists → prioritize length (50%)
-    // If no practical shortest solution (all <3) → prioritize next best (35%)
-    // Note: Use config parameter as base, then adjust based on data
-    let adjustedLengthWeight = lengthWeight; // Use config parameter as base
-    if (practicalMinCount >= 3) {
-        adjustedLengthWeight = Math.max(lengthWeight, 50); // Prioritize length if practical shortest solutions are abundant
-    }
-
-    // 4. Distance score from representative (using enhanced distance, considering chunk similarity)
+    // 3. Distance score from representative (using enhanced distance, considering chunk similarity)
     const distance = computeEnhancedDistance(solution, representative);
     const maxDist = family.memberIndices.reduce((max, i) => {
         const d = computeEnhancedDistance(allMoves[i], representative);
@@ -693,12 +643,12 @@ function calculateRecommendationScore(idx, family, familyRank, allMoves, familie
     }, 0);
     const distanceScore = maxDist > 0 ? 1 - distance / maxDist : 1;
 
-    // 5. Silhouette coefficient (cluster quality)
+    // 4. Silhouette coefficient (cluster quality)
     const silhouette = calculateSilhouette(idx, familyRank, families, allMoves);
     // More strict: silhouette<0 is 0 points, only silhouette>0 is scored
     const silhouetteScore = Math.max(0, silhouette); // 0 to 1 (negative is 0)
 
-    // 6. Improved representativeness evaluation (relative evaluation within styles)
+    // 5. Improved representativeness evaluation (relative evaluation within styles)
     // High bonus for shortest solution within the style
     const familyMinLength = Math.min(...family.memberIndices.map(i => allMoves[i].length));
     const isFamilyShortest = solution.length === familyMinLength ? 1.0 : 0.0;
@@ -710,21 +660,19 @@ function calculateRecommendationScore(idx, family, familyRank, allMoves, familie
     const representativeScore = Math.max(isFamilyShortest, isRepresentative);
 
     // Weighted total score (0-100 points)
-    // Weight distribution: configurable via lengthWeight, rankWeight, sizeWeight
-    // Remaining weight distributed to distanceScore, silhouetteScore, representativeScore
-    const usedWeight = adjustedLengthWeight + rankWeight + sizeWeight;
+    // Weight distribution: rankWeight (40%) + sizeWeight (30%) + remaining (30%)
+    const usedWeight = rankWeight + sizeWeight;
     const remainingWeight = 100 - usedWeight;
-    const distanceWeight = remainingWeight * 0.5;  // 50% of remaining
-    const silhouetteWeight = remainingWeight * 0.4; // 40% of remaining
-    const representativeWeight = remainingWeight * 0.1; // 10% of remaining
+    const distanceWeight = remainingWeight * 0.5;  // 50% of remaining (15%)
+    const silhouetteWeight = remainingWeight * 0.4; // 40% of remaining (12%)
+    const representativeWeight = remainingWeight * 0.1; // 10% of remaining (3%)
     
     const totalScore = (
-        lengthScore * adjustedLengthWeight +   // Configurable + dynamically adjusted length weight
-        rankScore * rankWeight +               // Configurable rank weight
-        sizeScore * sizeWeight +               // Configurable size weight
-        distanceScore * distanceWeight +       // Dynamic distance weight
-        silhouetteScore * silhouetteWeight +   // Dynamic silhouette weight
-        representativeScore * representativeWeight // Dynamic representative weight
+        rankScore * rankWeight +               // School rank (40%)
+        sizeScore * sizeWeight +               // School size (30%)
+        distanceScore * distanceWeight +       // Distance from Representative (15%)
+        silhouetteScore * silhouetteWeight +   // Cluster quality (12%)
+        representativeScore * representativeWeight // Representativeness (3%)
     );
 
     return totalScore;
@@ -772,14 +720,16 @@ function getFinalLabelList(rawMovesList, config = {}) {
         subgroupThreshold = null,  // null means automatic adjustment
         minSubgroupSize = 3,
         outlierThreshold = 3.5, // not used currently
-        lengthWeight = 40,
-        rankWeight = 25,
-        sizeWeight = 15,
+        rankWeight = 40,
+        sizeWeight = 30,
         qtmSubgroup = 0.3,
         qtmCase1 = 1.5,
         qtmFinal = 0.2,
+        htmPenalty = 0.5,  // HTM penalty multiplier (0 = no HTM penalty, higher = stronger penalty)
+        rotationEfficiencyBonus = 1.0,  // Rotation efficiency bonus multiplier (HTM/QTM ratio, higher efficiency = higher bonus)
         endFaceWeight = 40,
-        endSequenceWeight = 40
+        endSequenceWeight = 40,
+        focusMoves = 5  // Number of moves to focus on from the end for school classification
     } = config;
 
     const n = rawMovesList.length;
@@ -813,7 +763,7 @@ function getFinalLabelList(rawMovesList, config = {}) {
             if (family.memberIndices.length >= effectiveMaxClusterSize) continue;
             
             // Use distance emphasizing the latter half for style classification
-            if (computeSchoolDistance(allMoves[i], allMoves[family.leaderIdx], { endFaceWeight, endSequenceWeight }) <= effectiveThreshold) {
+            if (computeSchoolDistance(allMoves[i], allMoves[family.leaderIdx], { endFaceWeight, endSequenceWeight, focusMoves }) <= effectiveThreshold) {
                 family.memberIndices.push(i);
                 joined = true;
                 break;
@@ -896,13 +846,17 @@ function getFinalLabelList(rawMovesList, config = {}) {
         // C. Sort subgroups by score
         subgroupsWithQuality.sort((a, b) => b.score - a.score);
         
-        // Store subgroup information for all members (including unlabeled)
-        subgroupsWithQuality.forEach((subgroup, subgroupIndex) => {
+        // Store subgroup information for valid members only (size >= minSubgroupSize)
+        // Filter valid subgroups first
+        const validSubgroupsForInfo = subgroupsWithQuality.filter(sg => sg.size >= minSubgroupSize);
+        const totalValidSubgroups = validSubgroupsForInfo.length;
+        
+        validSubgroupsForInfo.forEach((subgroup, validIndex) => {
             subgroup.memberIndices.forEach(idx => {
                 subgroupInfoMap.set(idx, {
-                    subgroupIndex: subgroupIndex,
+                    subgroupIndex: validIndex,
                     subgroupSize: subgroup.size,
-                    totalSubgroups: subgroupsWithQuality.length
+                    totalSubgroups: totalValidSubgroups
                 });
             });
         });
@@ -928,15 +882,22 @@ function getFinalLabelList(rawMovesList, config = {}) {
             const candidates = subgroup.memberIndices.map(idx => {
                 const length = allMoves[idx].length;
                 const qtm = calculateQTM(allMoves[idx]);
+                const htm = calculateHTM(allMoves[idx]);
                 const prefix = getPrefixStr(allMoves[idx]);
-                const recScore = calculateRecommendationScore(idx, family, rank, allMoves, finalFamilies, { lengthWeight, rankWeight, sizeWeight });
+                const recScore = calculateRecommendationScore(idx, family, rank, allMoves, finalFamilies, { rankWeight, sizeWeight });
                 
-                // Overall score combining recommendation score, length bonus, and QTM efficiency
+                // Overall score combining recommendation score, HTM penalty, QTM penalty, and rotation efficiency bonus
                 // Length penalty: penalize if longer than schoolMinLength + 3
                 const lengthPenalty = Math.max(0, length - (schoolMinLength + 3)) * 5;
+                // HTM penalty: larger HTM gets penalized (multiplier)
+                const htmPenaltyValue = htm * htmPenalty;
                 // QTM penalty: larger QTM gets penalized (proportional to qtm)
                 const qtmPenalty = qtm * qtmSubgroup;
-                const totalScore = recScore - lengthPenalty - qtmPenalty;
+                // Rotation efficiency bonus: reward efficient rotations (high HTM/QTM ratio)
+                // Efficiency close to 1.0 = efficient (few 180° turns), close to 0.5 = inefficient (many 180° turns)
+                const efficiency = qtm > 0 ? htm / qtm : 1.0;
+                const efficiencyBonus = efficiency * rotationEfficiencyBonus;
+                const totalScore = recScore - lengthPenalty - htmPenaltyValue - qtmPenalty + efficiencyBonus;
                 
                 return { idx, length, qtm, prefix, score: totalScore };
             });
@@ -1013,15 +974,20 @@ function getFinalLabelList(rawMovesList, config = {}) {
             const allCandidates = family.memberIndices.map(idx => {
                 const length = allMoves[idx].length;
                 const qtm = calculateQTM(allMoves[idx]);
+                const htm = calculateHTM(allMoves[idx]);
                 const prefix = getPrefixStr(allMoves[idx]);
-                const recScore = calculateRecommendationScore(idx, family, rank, allMoves, finalFamilies, { lengthWeight, rankWeight, sizeWeight });
+                const recScore = calculateRecommendationScore(idx, family, rank, allMoves, finalFamilies, { rankWeight, sizeWeight });
                 
-                // Score emphasizing QTM efficiency
+                // Score emphasizing QTM efficiency and rotation efficiency
+                // NOTE: HTM is NOT used here because subgroup formation failed (HTM doesn't differentiate well)
                 // Length penalty: penalize if longer than schoolMinLength + 3
                 const lengthPenalty = Math.max(0, length - (schoolMinLength + 3)) * 5;
                 // QTM penalty: larger QTM gets penalized (using qtmCase1 multiplier)
                 const qtmPenalty = qtm * qtmCase1;
-                const totalScore = recScore - lengthPenalty - qtmPenalty;
+                // Rotation efficiency bonus: reward efficient rotations
+                const efficiency = qtm > 0 ? htm / qtm : 1.0;
+                const efficiencyBonus = efficiency * rotationEfficiencyBonus;
+                const totalScore = recScore - lengthPenalty - qtmPenalty + efficiencyBonus;
                 
                 return { idx, length, qtm, prefix, score: totalScore };
             });
@@ -1089,10 +1055,16 @@ function getFinalLabelList(rawMovesList, config = {}) {
                         const prefix = getPrefixStr(allMoves[idx]);
                         
                         if (length <= schoolMinLength + 2 && !usedPrefixesInSchool.has(prefix)) {
-                            const recScore = calculateRecommendationScore(idx, family, rank, allMoves, finalFamilies, { lengthWeight, rankWeight, sizeWeight });
+                            const recScore = calculateRecommendationScore(idx, family, rank, allMoves, finalFamilies, { rankWeight, sizeWeight });
+                            // HTM penalty: larger HTM gets penalized (multiplier)
+                            const htm = calculateHTM(allMoves[idx]);
+                            const htmPenaltyValue = htm * htmPenalty;
                             // QTM penalty: larger QTM gets penalized
                             const qtmPenalty = qtm * 1.0;
-                            const totalScore = recScore - qtmPenalty;
+                            // Rotation efficiency bonus: reward efficient rotations
+                            const efficiency = qtm > 0 ? htm / qtm : 1.0;
+                            const efficiencyBonus = efficiency * rotationEfficiencyBonus;
+                            const totalScore = recScore - htmPenaltyValue - qtmPenalty + efficiencyBonus;
                             
                             unassignedCandidates.push({ idx, length, qtm, prefix, score: totalScore });
                         }
@@ -1147,10 +1119,16 @@ function getFinalLabelList(rawMovesList, config = {}) {
                         const prefix = getPrefixStr(allMoves[idx]);
                         
                         if (length <= schoolMinLength + 2 && !usedPrefixesInSchool.has(prefix)) {
-                            const recScore = calculateRecommendationScore(idx, family, rank, allMoves, finalFamilies, { lengthWeight, rankWeight, sizeWeight });
+                            const recScore = calculateRecommendationScore(idx, family, rank, allMoves, finalFamilies, { rankWeight, sizeWeight });
+                            // HTM penalty: larger HTM gets penalized (multiplier)
+                            const htm = calculateHTM(allMoves[idx]);
+                            const htmPenaltyValue = htm * htmPenalty;
                             // QTM penalty: larger QTM gets penalized
                             const qtmPenalty = qtm * 1.0;
-                            const totalScore = recScore - qtmPenalty;
+                            // Rotation efficiency bonus: reward efficient rotations
+                            const efficiency = qtm > 0 ? htm / qtm : 1.0;
+                            const efficiencyBonus = efficiency * rotationEfficiencyBonus;
+                            const totalScore = recScore - htmPenaltyValue - qtmPenalty + efficiencyBonus;
                             
                             unassignedCandidates.push({ idx, length, qtm, prefix, score: totalScore });
                         }
@@ -1221,13 +1199,19 @@ function getFinalLabelList(rawMovesList, config = {}) {
                 labelBonus = 0;
             }
             
-            // Fine-tuning penalty based on QTM (kept small to avoid excessive influence)
+            // Fine-tuning bonuses/penalties based on HTM, QTM and rotation efficiency
             const qtm = calculateQTM(allMoves[idx]);
+            const htm = calculateHTM(allMoves[idx]);
+            // HTM penalty: larger HTM gets penalized (multiplier)
+            const htmPenaltyValue = htm * htmPenalty;
             // QTM penalty: larger QTM gets penalized (using qtmFinal multiplier)
             const qtmPenalty = qtm * qtmFinal;
+            // Rotation efficiency bonus (scaled down for final ranking)
+            const efficiency = qtm > 0 ? htm / qtm : 1.0;
+            const efficiencyBonus = efficiency * (rotationEfficiencyBonus * 0.5);
             
-            // Final adjusted score = original score + label bonus + size bonus - QTM penalty
-            const adjustedScore = label.score + labelBonus + sizeBonus - qtmPenalty;
+            // Final adjusted score = original score + label bonus + size bonus - HTM penalty - QTM penalty + efficiency bonus
+            const adjustedScore = label.score + labelBonus + sizeBonus - htmPenaltyValue - qtmPenalty + efficiencyBonus;
             
             labeledIndices.push({ 
                 idx, 

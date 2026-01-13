@@ -228,7 +228,8 @@
     <div class="info-box">
         <strong>Parameter tuning tool for developers</strong><br>
         You can use this tool to adjust various parameters of filter.js to find the optimal settings.
-        Please reflect the changed parameters in the actual code.
+        Please reflect the changed parameters in the actual code. 
+        Refer to the <a href="docs/PARAMETERS.md" style="color: #4ec9b0; text-decoration: underline;">PARAMETERS.md</a> document for details on each parameter.
     </div>
     
     <div class="warning-box" style="display: block;">
@@ -319,21 +320,9 @@
         <div class="param-grid">
             <div class="param-item">
                 <label class="param-label">
-                    Length Weight (Step length weight)
-                    <input type="range" id="lengthWeight" min="20" max="60" step="5" value="40" oninput="updateRangeDisplay('lengthWeight')">
-                    <span class="range-value" id="lengthWeight-value">40%</span>
-                </label>
-                <div class="param-description">
-                    Degree of preference for shorter solutions.<br>
-                    High: Emphasize step length, Low: Consider other factors
-                </div>
-            </div>
-            
-            <div class="param-item">
-                <label class="param-label">
                     Rank Weight (School rank weight)
-                    <input type="range" id="rankWeight" min="10" max="40" step="5" value="25" oninput="updateRangeDisplay('rankWeight')">
-                    <span class="range-value" id="rankWeight-value">25%</span>
+                    <input type="range" id="rankWeight" min="20" max="60" step="5" value="40" oninput="updateRangeDisplay('rankWeight')">
+                    <span class="range-value" id="rankWeight-value">40%</span>
                 </label>
                 <div class="param-description">
                     Degree of preference for large schools.<br>
@@ -344,12 +333,24 @@
             <div class="param-item">
                 <label class="param-label">
                     Size Weight (School size weight)
-                    <input type="range" id="sizeWeight" min="5" max="30" step="5" value="15" oninput="updateRangeDisplay('sizeWeight')">
-                    <span class="range-value" id="sizeWeight-value">15%</span>
+                    <input type="range" id="sizeWeight" min="10" max="50" step="5" value="30" oninput="updateRangeDisplay('sizeWeight')">
+                    <span class="range-value" id="sizeWeight-value">30%</span>
                 </label>
                 <div class="param-description">
-                    Degree of preference for school size.<br>
-                    High: Favor larger schools
+                    How much to weight larger schools.<br>
+                    High: Large schools have higher scores
+                </div>
+            </div>
+            
+            <div class="param-item">
+                <label class="param-label">
+                    Focus Moves (School classification focus)
+                    <input type="number" id="focusMoves" min="3" max="10" value="5" step="1">
+                </label>
+                <div class="param-description">
+                    Number of moves to focus on from the end for school classification.<br>
+                    Recommended: 5 (standard), 3 (shorter solutions), 7 (longer solutions)<br>
+                    For solutions shorter than this value, the entire solution is used.
                 </div>
             </div>
         </div>
@@ -366,6 +367,20 @@
                     QTM penalty multiplier when selecting the best solution within a subgroup.<br>
                     Higher QTM results in a greater score penalty (penalty = qtm × multiplier)<br>
                     Recommended: 0.2-0.5
+                </div>
+            </div>
+            
+            <div class="param-item">
+                <label class="param-label">
+                    HTM Penalty Multiplier (Move count penalty)
+                    <input type="range" id="htmPenalty" min="0" max="2.0" step="0.1" value="0.5" oninput="updateRangeDisplay('htmPenalty')">
+                    <span class="range-value" id="htmPenalty-value">0.5</span>
+                </label>
+                <div class="param-description">
+                    HTM penalty multiplier (penalty = htm × multiplier). Set to 0 to disable HTM penalty.<br>
+                    Works alongside QTM penalty. Can coexist or be used independently.<br>
+                    Note: NOT used in Case 1 (subgroup formation failure) where HTM doesn't differentiate.<br>
+                    Recommended: 0.3-0.8
                 </div>
             </div>
             
@@ -392,6 +407,20 @@
                     QTM penalty multiplier during final ranking.<br>
                     Affects overall ranking (usually set low)<br>
                     Recommended: 0.1-0.3
+                </div>
+            </div>
+            
+            <div class="param-item">
+                <label class="param-label">
+                    Rotation Efficiency Bonus Multiplier (HTM/QTM ratio bonus)
+                    <input type="range" id="rotationEfficiencyBonus" min="0" max="2.0" step="0.1" value="1.0" oninput="updateRangeDisplay('rotationEfficiencyBonus')">
+                    <span class="range-value" id="rotationEfficiencyBonus-value">1.0</span>
+                </label>
+                <div class="param-description">
+                    Rotation efficiency bonus multiplier (bonus = efficiency × multiplier).<br>
+                    Higher efficiency (fewer 180° turns) = higher bonus.<br>
+                    Promotes efficient, short solutions with good rotation patterns.<br>
+                    Recommended: 0.5-1.5
                 </div>
             </div>
         </div>
@@ -585,36 +614,41 @@ Or with numbering:
                 default: {
                     threshold: 4, minClusterSize: 5, maxClusterSize: 15,
                     subgroupThreshold: 2.5, minSubgroupSize: 3,
-                    lengthWeight: 40, rankWeight: 25, sizeWeight: 15,
-                    qtmSubgroup: 0.3, qtmCase1: 1.5, qtmFinal: 0.2,
+                    rankWeight: 40, sizeWeight: 30, focusMoves: 5,
+                    qtmSubgroup: 0.3, htmPenalty: 0.5, qtmCase1: 1.5, qtmFinal: 0.2,
+                    rotationEfficiencyBonus: 1.0,
                     endFaceWeight: 40, chunkJaccardWeight: 40
                 },
                 strict: {
                     threshold: 3, minClusterSize: 3, maxClusterSize: 10,
                     subgroupThreshold: 2.0, minSubgroupSize: 2,
-                    lengthWeight: 45, rankWeight: 20, sizeWeight: 15,
-                    qtmSubgroup: 0.2, qtmCase1: 1.0, qtmFinal: 0.15,
+                    rankWeight: 35, sizeWeight: 30, focusMoves: 4,
+                    qtmSubgroup: 0.2, htmPenalty: 0.3, qtmCase1: 1.0, qtmFinal: 0.15,
+                    rotationEfficiencyBonus: 0.8,
                     endFaceWeight: 35, chunkJaccardWeight: 45
                 },
                 loose: {
                     threshold: 6, minClusterSize: 7, maxClusterSize: 25,
                     subgroupThreshold: 3.5, minSubgroupSize: 4,
-                    lengthWeight: 35, rankWeight: 30, sizeWeight: 20,
-                    qtmSubgroup: 0.4, qtmCase1: 2.0, qtmFinal: 0.25,
+                    rankWeight: 45, sizeWeight: 30, focusMoves: 6,
+                    qtmSubgroup: 0.4, htmPenalty: 0.6, qtmCase1: 2.0, qtmFinal: 0.25,
+                    rotationEfficiencyBonus: 1.2,
                     endFaceWeight: 45, chunkJaccardWeight: 35
                 },
                 quality: {
                     threshold: 4, minClusterSize: 5, maxClusterSize: 15,
                     subgroupThreshold: 2.5, minSubgroupSize: 3,
-                    lengthWeight: 50, rankWeight: 20, sizeWeight: 10,
-                    qtmSubgroup: 0.2, qtmCase1: 1.0, qtmFinal: 0.1,
+                    rankWeight: 40, sizeWeight: 30, focusMoves: 5,
+                    qtmSubgroup: 0.2, htmPenalty: 0.4, qtmCase1: 1.0, qtmFinal: 0.1,
+                    rotationEfficiencyBonus: 1.0,
                     endFaceWeight: 30, chunkJaccardWeight: 40
                 },
                 qtm: {
                     threshold: 4, minClusterSize: 5, maxClusterSize: 15,
                     subgroupThreshold: 2.5, minSubgroupSize: 3,
-                    lengthWeight: 30, rankWeight: 25, sizeWeight: 15,
-                    qtmSubgroup: 0.5, qtmCase1: 2.5, qtmFinal: 0.3,
+                    rankWeight: 35, sizeWeight: 25, focusMoves: 5,
+                    qtmSubgroup: 0.5, htmPenalty: 0, qtmCase1: 2.5, qtmFinal: 0.3,
+                    rotationEfficiencyBonus: 1.4,
                     endFaceWeight: 40, chunkJaccardWeight: 40
                 }
             };
@@ -643,12 +677,14 @@ Or with numbering:
                 maxClusterSize: parseInt(document.getElementById('maxClusterSize').value),
                 subgroupThreshold: parseFloat(document.getElementById('subgroupThreshold').value),
                 minSubgroupSize: parseInt(document.getElementById('minSubgroupSize').value),
-                lengthWeight: parseInt(document.getElementById('lengthWeight').value),
                 rankWeight: parseInt(document.getElementById('rankWeight').value),
                 sizeWeight: parseInt(document.getElementById('sizeWeight').value),
+                focusMoves: parseInt(document.getElementById('focusMoves').value),
                 qtmSubgroup: parseFloat(document.getElementById('qtmSubgroup').value),
+                htmPenalty: parseFloat(document.getElementById('htmPenalty').value),
                 qtmCase1: parseFloat(document.getElementById('qtmCase1').value),
                 qtmFinal: parseFloat(document.getElementById('qtmFinal').value),
+                rotationEfficiencyBonus: parseFloat(document.getElementById('rotationEfficiencyBonus').value),
                 endFaceWeight: parseInt(document.getElementById('endFaceWeight').value),
                 chunkJaccardWeight: parseInt(document.getElementById('chunkJaccardWeight').value)
             };
@@ -696,12 +732,14 @@ Or with numbering:
                 subgroupThreshold: parseFloat(document.getElementById('subgroupThreshold').value),
                 minSubgroupSize: parseInt(document.getElementById('minSubgroupSize').value),
                 outlierThreshold: 3.5,  // Could be made configurable
-                lengthWeight: parseInt(document.getElementById('lengthWeight').value),
                 rankWeight: parseInt(document.getElementById('rankWeight').value),
                 sizeWeight: parseInt(document.getElementById('sizeWeight').value),
+                focusMoves: parseInt(document.getElementById('focusMoves').value),
                 qtmSubgroup: parseFloat(document.getElementById('qtmSubgroup').value),
+                htmPenalty: parseFloat(document.getElementById('htmPenalty').value),
                 qtmCase1: parseFloat(document.getElementById('qtmCase1').value),
                 qtmFinal: parseFloat(document.getElementById('qtmFinal').value),
+                rotationEfficiencyBonus: parseFloat(document.getElementById('rotationEfficiencyBonus').value),
                 endFaceWeight: parseInt(document.getElementById('endFaceWeight').value),
                 endSequenceWeight: parseInt(document.getElementById('chunkJaccardWeight').value)
             };
@@ -857,7 +895,7 @@ Or with numbering:
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
             // Initialize all range displays
-            ['threshold', 'subgroupThreshold', 'lengthWeight', 'rankWeight', 'sizeWeight',
+            ['threshold', 'subgroupThreshold', 'rankWeight', 'sizeWeight',
              'qtmSubgroup', 'qtmCase1', 'qtmFinal', 'endFaceWeight', 'chunkJaccardWeight'].forEach(id => {
                 updateRangeDisplay(id);
             });

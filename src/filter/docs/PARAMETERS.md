@@ -62,29 +62,45 @@ Each solution is given the following properties:
 
 | Parameter | Default | Range | Description |
 |------------|------------|------|------|
-| `lengthWeight` | 40 | 20-60 | Step length weight (preferential treatment of short solutions) |
-| `rankWeight` | 25 | 10-40 | Weight of school rank (preferential treatment for large schools) |
-| `sizeWeight` | 15 | 5-30 | School size weight |
+| `rankWeight` | 40 | 10-60 | Weight of school rank (preferential treatment for large schools) |
+| `sizeWeight` | 30 | 5-40 | School size weight |
 
-### 4. QTM Penalty Settings
+**Note**: `lengthWeight` was removed as it was redundant with QTM/HTM penalties. Move count is now controlled by `htmPenalty` and QTM penalty multipliers.
+
+### 4. QTM/HTM Penalty Settings
 
 | Parameter | Default | Range | Description |
 |------------|------------|------|------|
 | `qtmSubgroup` | 0.3 | 0-2.0 | QTM penalty multiplier when selecting candidates within subgroups |
-| `qtmCase1` | 1.5 | 0.5-5.0 | QTM penalty multiplier when subgroup formation fails |
+| `htmPenalty` | 0.5 | 0-2.0 | HTM penalty multiplier (penalty = htm × multiplier). Set to 0 to disable |
+| `qtmCase1` | 1.5 | 0.5-5.0 | QTM penalty multiplier when subgroup formation fails (HTM NOT used) |
 | `qtmFinal` | 0.2 | 0-1.0 | QTM penalty multiplier for final ranking adjustment |
+| `rotationEfficiencyBonus` | 1.0 | 0-2.0 | Rotation efficiency bonus multiplier (bonus = HTM/QTM × multiplier) |
 
 **QTM Penalty System**:
 - QTM parameters work as **penalties** (penalty = qtm × multiplier)
 - Larger QTM values result in lower scores
 - This prevents issues where very large QTM (e.g., > 15) would receive zero penalty
-- Previous bonus system: `Math.max(0, 15 - qtm) × multiplier` (capped at 0 when qtm > 15)
-- Current penalty system: `qtm × multiplier` (properly penalizes all QTM values)
+
+**HTM Penalty System**:
+- HTM penalty works alongside QTM penalty (penalty = htm × multiplier)
+- Can be set to 0 to disable HTM penalty (QTM-only mode)
+- **NOT used in Case 1** (subgroup formation failure) where HTM doesn't differentiate well
+- In Case 1, only QTM + rotation efficiency are used for evaluation
+
+**Rotation Efficiency Bonus**:
+- Efficiency = HTM / QTM (ranges from ~0.5 to 1.0)
+- 1.0 = perfect efficiency (no 180° rotations)
+- 0.5 = many 180° rotations
+- Bonus = efficiency × rotationEfficiencyBonus
+- Higher efficiency gives higher bonus, promoting efficient solutions
 
 **Recommended Ranges**:
 - `qtmSubgroup`: 0.2-0.5 (moderate penalty for subgroup selection)
-- `qtmCase1`: 1.0-2.5 (higher penalty when quality selection is critical)
+- `htmPenalty`: 0.3-0.8 (adjust based on whether you want to consider move count)
+- `qtmCase1`: 1.0-2.5 (higher penalty when quality selection is critical, HTM not used)
 - `qtmFinal`: 0.1-0.3 (small adjustment to avoid QTM dominating ranking)
+- `rotationEfficiencyBonus`: 0.5-1.5 (reward efficient rotations)
 
 **Migration from Bonus to Penalty System (2026-01-12)**:
 
@@ -126,7 +142,18 @@ Modified locations in filter.js:
 | `endFaceWeight` | 40 | 20-60 | Weight of face similarity during school classification |
 | `endSequenceWeight` | 40 | 20-60 | Jaccard similarity weight when dividing into subgroups |
 
-### 6. Advanced Parameters
+### 6. Focus Moves Parameter
+
+| Parameter | Default | Range | Description | Status |
+|------------|------------|------|------|--------|
+| `focusMoves` | 5 | 3-10 | Number of end moves to focus on for school classification | ✅ Active |
+
+**How it works**:
+- Controls how many moves from the end of each solution to analyze for school similarity
+- If solution is shorter than focusMoves, uses entire solution
+- Helps classify solutions based on their ending patterns (which are often more important)
+
+### 7. Advanced Parameters
 
 | Parameter | Default | Range | Description | Status |
 |------------|------------|------|------|--------|
@@ -147,12 +174,14 @@ const config = {
     maxClusterSize: 20,
     subgroupThreshold: 2.5,
     minSubgroupSize: 3,
-    lengthWeight: 45,
-    rankWeight: 25,
-    sizeWeight: 15,
+    rankWeight: 40,
+    sizeWeight: 30,
+    focusMoves: 5,
     qtmSubgroup: 0.3,
+    htmPenalty: 0.5,
     qtmCase1: 1.5,
     qtmFinal: 0.2,
+    rotationEfficiencyBonus: 1.0,
     endFaceWeight: 40,
     endSequenceWeight: 40
 };
