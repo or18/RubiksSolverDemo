@@ -904,7 +904,7 @@ struct cross_search
 			index1_tmp = multi_move_table[arg_index1 + m];
 			index2_tmp = multi_move_table[arg_index2 + m];
 			prune_tmp = prune_table[index1_tmp * 528 + index2_tmp];
-			if (prune_tmp >= depth)
+			if (prune_tmp != 255 && prune_tmp >= depth)
 			{
 				continue;
 			}
@@ -1021,7 +1021,7 @@ struct cross_search
 			index1_tmp = arg_index1 / 27;
 			index2_tmp = arg_index2 / 27;
 			prune_tmp = prune_table[index1_tmp * 528 + index2_tmp];
-			if (prune_tmp >= depth)
+			if (prune_tmp != 255 && prune_tmp >= depth)
 			{
 				continue;
 			}
@@ -1201,11 +1201,7 @@ struct cross_search
 			aprev_tmp = 54;
 		}
 		prune_tmp = prune_table[index1 * 528 + index2];
-		if (prune_tmp == 255)
-		{
-			update("Unsolvable.");
-		}
-		else if (prune_tmp == 0)
+		if (prune_tmp == 0)
 		{
 			update("Already solved.");
 		}
@@ -1213,7 +1209,12 @@ struct cross_search
 		{
 			index1 *= 27;
 			index2 *= 27;
-			for (int d = prune_tmp; d <= max_length; d++)
+			int d_min = prune_tmp;
+			if (d_min == 255)
+			{
+				d_min = 1;
+			}
+			for (int d = d_min; d <= max_length; d++)
 			{
 				tmp = "depth=" + std::to_string(d);
 				update(tmp.c_str());
@@ -1292,7 +1293,7 @@ struct xcross_search
 			index2_tmp = corner_move_table[arg_index2 + m];
 			index3_tmp = edge_move_table[arg_index3 + m];
 			prune1_tmp = prune_table1[index1_tmp * 24 + index2_tmp];
-			if (prune1_tmp >= depth)
+			if (prune1_tmp != 255 && prune1_tmp >= depth)
 			{
 				continue;
 			}
@@ -1413,7 +1414,7 @@ struct xcross_search
 			index2_tmp = arg_index2 / 27;
 			index3_tmp = arg_index3 / 27;
 			prune1_tmp = prune_table1[index1_tmp * 24 + index2_tmp];
-			if (prune1_tmp >= depth)
+			if (prune1_tmp != 255 && prune1_tmp >= depth)
 			{
 				continue;
 			}
@@ -1605,11 +1606,7 @@ struct xcross_search
 			aprev_tmp = 54;
 		}
 		prune1_tmp = prune_table1[index1 * 24 + index2];
-		if (prune1_tmp == 255)
-		{
-			update("Unsolvable.");
-		}
-		else if (prune1_tmp == 0 && index3 == edge_solved1)
+		if (prune1_tmp == 0 && index3 == edge_solved1)
 		{
 			update("Already solved.");
 		}
@@ -1618,7 +1615,12 @@ struct xcross_search
 			index1 *= 27;
 			index2 *= 27;
 			index3 *= 27;
-			for (int d = prune1_tmp; d <= max_length; d++)
+			int d_min = prune1_tmp;
+			if (d_min == 255)
+			{
+				d_min = 1;
+			}
+			for (int d = d_min; d <= max_length; d++)
 			{
 				tmp = "depth=" + std::to_string(d);
 				update(tmp.c_str());
@@ -1709,14 +1711,14 @@ struct xxcross_search
 			index2_tmp = corner_move_table[arg_index2 + m];
 			index5_tmp = edge_move_table[arg_index5 + m];
 			prune1_tmp = prune_table1[index1_tmp * 24 + index2_tmp];
-			if (prune1_tmp >= depth)
+			if (prune1_tmp != 255 && prune1_tmp >= depth)
 			{
 				continue;
 			}
 			index4_tmp = corner_move_table[arg_index4 + m];
 			index6_tmp = edge_move_table[arg_index6 + m];
 			prune2_tmp = prune_table2[index1_tmp * 24 + index4_tmp];
-			if (prune2_tmp >= depth)
+			if (prune2_tmp != 255 && prune2_tmp >= depth)
 			{
 				continue;
 			}
@@ -1843,14 +1845,14 @@ struct xxcross_search
 			index2_tmp = arg_index2 / 27;
 			index5_tmp = arg_index5 / 27;
 			prune1_tmp = prune_table1[index1_tmp * 24 + index2_tmp];
-			if (prune1_tmp >= depth)
+			if (prune1_tmp != 255 && prune1_tmp >= depth)
 			{
 				continue;
 			}
 			index4_tmp = arg_index4 / 27;
 			index6_tmp = arg_index6 / 27;
 			prune2_tmp = prune_table2[index1_tmp * 24 + index4_tmp];
-			if (prune2_tmp >= depth)
+			if (prune2_tmp != 255 && prune2_tmp >= depth)
 			{
 				continue;
 			}
@@ -2059,11 +2061,7 @@ struct xxcross_search
 		}
 		prune1_tmp = prune_table1[index1 * 24 + index2];
 		prune2_tmp = prune_table2[index1 * 24 + index4];
-		if (prune1_tmp == 255 || prune2_tmp == 255)
-		{
-			update("Unsolvable.");
-		}
-		else if (prune1_tmp == 0 && prune2_tmp == 0 && index5 == edge_solved1 && index6 == edge_solved2)
+		if (prune1_tmp == 0 && prune2_tmp == 0 && index5 == edge_solved1 && index6 == edge_solved2)
 		{
 			update("Already solved.");
 		}
@@ -2074,7 +2072,12 @@ struct xxcross_search
 			index4 *= 27;
 			index5 *= 27;
 			index6 *= 27;
-			for (int d = std::max(prune1_tmp, prune2_tmp); d <= max_length; d++)
+			int d_min = std::max(prune1_tmp, prune2_tmp);
+			if (d_min == 255)
+			{
+				d_min = 1;
+			}
+			for (int d = d_min; d <= max_length; d++)
 			{
 				tmp = "depth=" + std::to_string(d);
 				update(tmp.c_str());
@@ -2177,21 +2180,21 @@ struct xxxcross_search
 			index2_tmp = corner_move_table[arg_index2 + m];
 			index7_tmp = edge_move_table[arg_index7 + m];
 			prune1_tmp = prune_table1[index1_tmp * 24 + index2_tmp];
-			if (prune1_tmp >= depth)
+			if (prune1_tmp != 255 && prune1_tmp >= depth)
 			{
 				continue;
 			}
 			index4_tmp = corner_move_table[arg_index4 + m];
 			index8_tmp = edge_move_table[arg_index8 + m];
 			prune2_tmp = prune_table2[index1_tmp * 24 + index4_tmp];
-			if (prune2_tmp >= depth)
+			if (prune2_tmp != 255 && prune2_tmp >= depth)
 			{
 				continue;
 			}
 			index6_tmp = corner_move_table[arg_index6 + m];
 			index9_tmp = edge_move_table[arg_index9 + m];
 			prune3_tmp = prune_table3[index1_tmp * 24 + index6_tmp];
-			if (prune3_tmp >= depth)
+			if (prune3_tmp != 255 && prune3_tmp >= depth)
 			{
 				continue;
 			}
@@ -2324,21 +2327,21 @@ struct xxxcross_search
 			index2_tmp = arg_index2 / 27;
 			index7_tmp = arg_index7 / 27;
 			prune1_tmp = prune_table1[index1_tmp * 24 + index2_tmp];
-			if (prune1_tmp >= depth)
+			if (prune1_tmp != 255 && prune1_tmp >= depth)
 			{
 				continue;
 			}
 			index4_tmp = arg_index4 / 27;
 			index8_tmp = arg_index8 / 27;
 			prune2_tmp = prune_table2[index1_tmp * 24 + index4_tmp];
-			if (prune2_tmp >= depth)
+			if (prune2_tmp != 255 && prune2_tmp >= depth)
 			{
 				continue;
 			}
 			index6_tmp = arg_index6 / 27;
 			index9_tmp = arg_index9 / 27;
 			prune3_tmp = prune_table3[index1_tmp * 24 + index6_tmp];
-			if (prune3_tmp >= depth)
+			if (prune3_tmp != 255 && prune3_tmp >= depth)
 			{
 				continue;
 			}
@@ -2564,11 +2567,7 @@ struct xxxcross_search
 		prune1_tmp = prune_table1[index1 * 24 + index2];
 		prune2_tmp = prune_table2[index1 * 24 + index4];
 		prune3_tmp = prune_table3[index1 * 24 + index6];
-		if (prune1_tmp == 255 || prune2_tmp == 255 || prune3_tmp == 255)
-		{
-			update("Unsolvable.");
-		}
-		else if (prune1_tmp == 0 && prune2_tmp == 0 && prune3_tmp == 0 && index7 == edge_solved1 && index8 == edge_solved2 && index9 == edge_solved3)
+		if (prune1_tmp == 0 && prune2_tmp == 0 && prune3_tmp == 0 && index7 == edge_solved1 && index8 == edge_solved2 && index9 == edge_solved3)
 		{
 			update("Already solved.");
 		}
@@ -2581,7 +2580,12 @@ struct xxxcross_search
 			index7 *= 27;
 			index8 *= 27;
 			index9 *= 27;
-			for (int d = std::max(prune1_tmp, std::max(prune2_tmp, prune3_tmp)); d <= max_length; d++)
+			int d_min = std::max(prune1_tmp, std::max(prune2_tmp, prune3_tmp));
+			if (d_min == 255)
+			{
+				d_min = 1;
+			}
+			for (int d = d_min; d <= max_length; d++)
 			{
 				tmp = "depth=" + std::to_string(d);
 				update(tmp.c_str());
