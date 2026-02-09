@@ -119,6 +119,14 @@
 			border: 1px solid #41417f;
 			padding: 5px;
 			margin: 10px 0;
+			width: 100%;
+			border-radius: 8px;
+		}
+
+		table {
+			width: 100%;
+			overflow-x: auto;
+			display: block;
 		}
 
 		.table-res_table_wrapper {
@@ -552,7 +560,7 @@
 		<label for="premove">Pre Move: </label>
 		<input type="text" id="premove"><br>
 		<input type="checkbox" id="ignorePremoveCenter" class="custom-checkbox">
-		<label for="ignorePremoveCenter">Ignore the center state determined by Pre-move</label>
+		<label for="ignorePremoveCenter">Ignore Pre-move Center</label>
 	</details>
 	<br>
 	<button id="solveButton" class="button medium" onclick="startWorker()">Solve</button><br>
