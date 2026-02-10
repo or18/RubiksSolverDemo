@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pwa-cache_v50';
+const CACHE_NAME = 'pwa-cache_v51';
 
 const urlsToPrecache = [
 	'index.html',

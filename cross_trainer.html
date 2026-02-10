@@ -929,7 +929,8 @@
 					return;
 				}
 				document.getElementById("countLine").value = 0;
-				document.getElementById("result").innerHTML = "";
+				document.getElementById("currentDepth").value = -1;
+                document.getElementById("result").innerHTML = "";
 				messageCount = 0;
 				const scr = scr_fix(document.getElementById("scr").innerHTML);
 				const premove = scr_fix(document.getElementById('premove').value);
