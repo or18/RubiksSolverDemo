@@ -6,7 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="manifest" href="manifest.json">
     <title>2x2x2 Rubik's Cube Solver - Algorithm Search</title>
-    <meta name="description" content="Advanced and Fast 2x2x2 solver. Generate algorithms with customizable search settings. Offline PWA supported.">
+    <meta name="description"
+        content="Advanced and Fast 2x2x2 solver. Generate algorithms with customizable search settings. Offline PWA supported.">
     <script src="analytics.js" defer></script>
     <style>
         header {
@@ -93,6 +94,10 @@
             border-radius: 4px;
             cursor: pointer;
             margin-bottom: 4px;
+        }
+
+        .large {
+            max-width: 250px;
         }
 
         .medium {
@@ -195,7 +200,7 @@
             margin: 0;
             width: 100%;
             max-width: 600px;
-			margin-bottom: 10px;
+            margin-bottom: 10px;
             background-color: #000000;
         }
 
@@ -1052,6 +1057,10 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                     <tbody></tbody>
                 </table>
             </div><br>
+            <button id="uncheckMoveRotationOrder" class="button large" onclick="uncheckMoveRotationOrder()">Disable Move
+                → Rotation</button><br>
+            <button id="checkRotationMoveOrder" class="button large" onclick="checkRotationMoveOrder()">Enable Rotation
+                → Move</button><br><br>
             <label for="count_table">Max Move Count:</label>
             <div id="count_table_wrapper">
                 <table id="count_table" border="2" translate="no">
@@ -2073,6 +2082,99 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                 }
 
                 return true;
+            }
+
+            function uncheckMoveRotationOrder() {
+                const table = document.getElementById('move_available_table');
+                if (!table) return;
+
+                const thead = table.querySelector('thead tr');
+                const tbody = table.querySelector('tbody');
+                if (!thead || !tbody) return;
+
+                const headers = Array.from(thead.querySelectorAll('th'));
+                const rotationMoves = ['x', 'x2', "x'", 'y', 'y2', "y'", 'z', 'z2', "z'"];
+                const rotationColIndices = [];
+
+                headers.forEach((th, index) => {
+                    if (index === 0) return;
+                    const moveText = th.textContent.trim();
+                    if (rotationMoves.includes(moveText)) {
+                        rotationColIndices.push(index);
+                    }
+                });
+
+                if (rotationColIndices.length === 0) return;
+
+                const rows = Array.from(tbody.querySelectorAll('tr'));
+                rows.forEach(row => {
+                    const rowHeader = row.querySelector('th');
+                    if (!rowHeader) return;
+
+                    const rowMoveText = rowHeader.textContent.trim();
+
+                    if (rowMoveText !== '' && !rotationMoves.includes(rowMoveText)) {
+                        const cells = Array.from(row.querySelectorAll('td'));
+
+                        rotationColIndices.forEach(colIndex => {
+                            const cellIndex = colIndex - 1;
+                            if (cellIndex >= 0 && cellIndex < cells.length) {
+                                const checkbox = cells[cellIndex].querySelector('input[type="checkbox"]');
+                                if (checkbox) {
+                                    checkbox.checked = false;
+                                }
+                            }
+                        });
+                    }
+                });
+                updateUrlParams();
+            }
+
+            function checkRotationMoveOrder() {
+                const table = document.getElementById('move_available_table');
+                if (!table) return;
+
+                const thead = table.querySelector('thead tr');
+                const tbody = table.querySelector('tbody');
+                if (!thead || !tbody) return;
+
+                const headers = Array.from(thead.querySelectorAll('th'));
+                const rotationMoves = ['x', 'x2', "x'", 'y', 'y2', "y'", 'z', 'z2', "z'"];
+                const moveColIndices = [];
+
+                headers.forEach((th, index) => {
+                    if (index === 0) return;
+                    const moveText = th.textContent.trim();
+                    if (moveText !== '' && !rotationMoves.includes(moveText)) {
+                        moveColIndices.push(index);
+                    }
+                });
+
+                if (moveColIndices.length === 0) return;
+
+                const rows = Array.from(tbody.querySelectorAll('tr'));
+                rows.forEach(row => {
+                    const rowHeader = row.querySelector('th');
+                    if (!rowHeader) return;
+
+                    const rowMoveText = rowHeader.textContent.trim();
+
+                    if (rotationMoves.includes(rowMoveText)) {
+                        const cells = Array.from(row.querySelectorAll('td'));
+
+                        moveColIndices.forEach(colIndex => {
+                            const cellIndex = colIndex - 1;
+                            if (cellIndex >= 0 && cellIndex < cells.length) {
+                                const checkbox = cells[cellIndex].querySelector('input[type="checkbox"]');
+                                if (checkbox) {
+                                    checkbox.checked = true;
+                                }
+                            }
+                        });
+                    }
+                });
+
+                updateUrlParams();
             }
 
             function updateUrlParams() {
