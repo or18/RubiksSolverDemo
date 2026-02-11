@@ -113,7 +113,7 @@
 		return;
 	}
 
-	const IS_PRODUCTION = window.location.hostname === 'or18.github.io' || true;
+	const IS_PRODUCTION = window.location.hostname === 'or18.github.io';
 
 	if (!IS_PRODUCTION) {
 		console.log('Google Analytics is disabled (not production environment)');
