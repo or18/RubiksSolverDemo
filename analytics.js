@@ -25,16 +25,31 @@
 		}
 	}
 
+	function updateConsent(granted) {
+		const tryUpdate = () => {
+			if (typeof window.gtag === 'function') {
+				window.gtag('consent', 'update', {
+					'analytics_storage': granted ? 'granted' : 'denied'
+				});
+				console.log('Analytics consent updated:', granted ? 'granted' : 'denied');
+			} else {
+				setTimeout(tryUpdate, 100);
+			}
+		};
+		tryUpdate();
+	}
+
 	window.setAnalyticsConsent = function (consent) {
 		if (!isLocalStorageAvailable()) {
 			console.warn('localStorage is not available. Analytics consent cannot be saved.');
+			updateConsent(consent);
 			return;
 		}
 		try {
 			localStorage.setItem('analyticsConsent', consent ? 'true' : 'false');
+			updateConsent(consent);
 			if (consent) {
 				console.log('Google Analytics consent granted');
-				initializeGA();
 			} else {
 				console.log('Google Analytics consent denied');
 			}
@@ -65,20 +80,29 @@
 		}
 
 		try {
+			window.dataLayer = window.dataLayer || [];
+			function gtag() {
+				dataLayer.push(arguments);
+			}
+			window.gtag = gtag;
+			
+			gtag('consent', 'default', {
+				'analytics_storage': 'denied',
+				'ad_storage': 'denied',
+				'ad_user_data': 'denied',
+				'ad_personalization': 'denied'
+			});
+
 			const script = document.createElement('script');
 			script.async = true;
 			script.src = 'https://www.googletagmanager.com/gtag/js?id=G-MXJH30352W';
 			document.head.appendChild(script);
 
-			window.dataLayer = window.dataLayer || [];
-			function gtag() {
-				dataLayer.push(arguments);
-			}
 			gtag('js', new Date());
 			gtag('config', 'G-MXJH30352W');
 
 			window.__gaInitialized = true;
-			console.log('Google Analytics initialized');
+			console.log('Google Analytics initialized with Consent Mode v2 (default: denied)');
 		} catch (e) {
 			console.warn('Failed to initialize Google Analytics:', e);
 		}
@@ -89,22 +113,28 @@
 		return;
 	}
 
-	const IS_PRODUCTION = window.location.hostname === 'or18.github.io';
+	const IS_PRODUCTION = window.location.hostname === 'or18.github.io' || true;
 
 	if (!IS_PRODUCTION) {
 		console.log('Google Analytics is disabled (not production environment)');
 		return;
 	}
 
+	initializeGA();
+
 	if (hasAnalyticsConsent()) {
-		initializeGA();
-	} else {
-		if (isLocalStorageAvailable()) {
+		updateConsent(true);
+	} else if (isLocalStorageAvailable()) {
+		const consentValue = localStorage.getItem('analyticsConsent');
+		if (consentValue === null) {
 			console.log('Google Analytics waiting for consent');
 			showConsentBanner();
 		} else {
-			console.log('Google Analytics disabled (localStorage unavailable)');
+			console.log('Google Analytics consent previously denied');
+			updateConsent(false);
 		}
+	} else {
+		console.log('Google Analytics running with Consent Mode (localStorage unavailable)');
 	}
 
 	function showConsentBanner() {
