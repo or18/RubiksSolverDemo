@@ -133,6 +133,7 @@
         .table-res_table_wrapper {
             max-height: 400px;
             overflow: auto;
+            contain: layout style;
         }
 
         #move_available_table_wrapper {
@@ -140,11 +141,14 @@
             max-width: 100%;
             position: relative;
             max-height: 400px;
+            contain: layout style paint;
+            will-change: auto;
         }
 
         #move_available_table {
             max-height: 400px;
             overflow: auto;
+            contain: layout style;
         }
 
         #move_available_table tbody th {
@@ -1436,6 +1440,67 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                     return moveStr.replace(/'/g, '-');
                 }
 
+                function arraysEqual(arr1, arr2) {
+                    if (arr1.length !== arr2.length) return false;
+                    for (let i = 0; i < arr1.length; i++) {
+                        if (arr1[i] !== arr2[i]) return false;
+                    }
+                    return true;
+                }
+
+                function createCheckboxCell(checkboxId, isChecked) {
+                    const td = document.createElement('td');
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.className = 'custom-checkbox restrict';
+                    checkbox.id = checkboxId;
+                    checkbox.checked = isChecked;
+                    
+                    const label = document.createElement('label');
+                    label.htmlFor = checkboxId;
+                    
+                    td.appendChild(checkbox);
+                    td.appendChild(label);
+                    return td;
+                }
+
+                function createNumberInputCell(moveStr, value) {
+                    const td = document.createElement('td');
+                    const input = document.createElement('input');
+                    input.type = 'number';
+                    input.min = '0';
+                    input.className = 'move-count-input';
+                    input.dataset.move = moveStr;
+                    input.value = value;
+                    td.appendChild(input);
+                    return td;
+                }
+
+                function createRowBatch(rowBatch, newColHeaders, previousStates) {
+                    return rowBatch.map(({ rowHeaderText, sanitizedRow }) => {
+                        const bodyRow = document.createElement('tr');
+                        const rowTh = document.createElement('th');
+                        rowTh.textContent = rowHeaderText;
+                        bodyRow.appendChild(rowTh);
+
+                        newColHeaders.forEach(colHeaderText => {
+                            const sanitizedCol = sanitizeMoveForId(colHeaderText);
+                            const checkboxId = `checkbox_move_available_${sanitizedRow}_${sanitizedCol}`;
+                            
+                            let isChecked;
+                            if (previousStates.has(checkboxId)) {
+                                isChecked = previousStates.get(checkboxId);
+                            } else {
+                                isChecked = shouldBeCheckedByDefault(rowHeaderText, colHeaderText);
+                            }
+                            
+                            bodyRow.appendChild(createCheckboxCell(checkboxId, isChecked));
+                        });
+
+                        return bodyRow;
+                    });
+                }
+
                 function updateMoveAvailableTable() {
                     const thead = moveAvailableTable.querySelector('thead');
                     const tbody = moveAvailableTable.querySelector('tbody');
@@ -1446,7 +1511,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                     });
 
                     const restChecked = tableWrapper.querySelectorAll('input[type="checkbox"]:checked');
-                    const headers = Array.from(restChecked).map(cb => {
+                    const newHeaders = Array.from(restChecked).map(cb => {
                         const move = cb.value;
                         const suffix = cb.id.slice(-1);
                         if (suffix === '1') return move;
@@ -1455,78 +1520,183 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                         return '';
                     }).filter(Boolean);
 
-                    const colHeaders = headers;
-                    const rowHeaders = [...headers, ""];
+                    const newColHeaders = newHeaders;
+                    const newRowHeaders = [...newHeaders, ""];
 
-                    thead.innerHTML = '';
-                    tbody.innerHTML = '';
+                    const existingColHeaders = Array.from(thead.querySelectorAll('th')).slice(1).map(th => th.textContent);
+                    const existingRowHeaders = Array.from(tbody.querySelectorAll('tr')).map(tr => tr.querySelector('th').textContent);
 
-                    const headerRow = document.createElement('tr');
-                    headerRow.appendChild(document.createElement('th'));
-                    colHeaders.forEach(headerText => {
-                        const th = document.createElement('th');
-                        th.textContent = headerText;
-                        headerRow.appendChild(th);
-                    });
-                    thead.appendChild(headerRow);
+                    const colHeadersChanged = !arraysEqual(existingColHeaders, newColHeaders);
+                    const rowHeadersChanged = !arraysEqual(existingRowHeaders, newRowHeaders);
 
-                    rowHeaders.forEach(rowHeaderText => {
-                        const bodyRow = document.createElement('tr');
-                        const rowTh = document.createElement('th');
-                        rowTh.textContent = rowHeaderText;
-                        bodyRow.appendChild(rowTh);
+                    if (!colHeadersChanged && !rowHeadersChanged) {
+                        return;
+                    }
 
-                        const sanitizedRow = sanitizeMoveForId(rowHeaderText);
+                    if (colHeadersChanged) {
+                        const headerRow = document.createElement('tr');
+                        headerRow.appendChild(document.createElement('th'));
+                        newColHeaders.forEach(headerText => {
+                            const th = document.createElement('th');
+                            th.textContent = headerText;
+                            headerRow.appendChild(th);
+                        });
+                        thead.innerHTML = '';
+                        thead.appendChild(headerRow);
+                    }
 
-                        colHeaders.forEach(colHeaderText => {
-                            const td = document.createElement('td');
-                            const checkbox = document.createElement('input');
-                            checkbox.type = 'checkbox';
-                            checkbox.className = 'custom-checkbox restrict';
+                    if (colHeadersChanged || rowHeadersChanged) {
+                        const existingRowsMap = new Map();
+                        const existingRowElements = Array.from(tbody.querySelectorAll('tr'));
+                        existingRowElements.forEach(row => {
+                            const rowHeader = row.querySelector('th').textContent;
+                            existingRowsMap.set(rowHeader, row);
+                        });
 
-                            const sanitizedCol = sanitizeMoveForId(colHeaderText);
-                            checkbox.id = `checkbox_move_available_${sanitizedRow}_${sanitizedCol}`;
+                        const newRowsInOrder = [];
+                        const rowsToCreate = [];
 
-                            const label = document.createElement('label');
-                            label.htmlFor = checkbox.id;
+                        newRowHeaders.forEach(rowHeaderText => {
+                            const sanitizedRow = sanitizeMoveForId(rowHeaderText);
 
-                            if (previousStates.has(checkbox.id)) {
-                                checkbox.checked = previousStates.get(checkbox.id);
+                            if (existingRowsMap.has(rowHeaderText) && !colHeadersChanged) {
+                                const existingRow = existingRowsMap.get(rowHeaderText);
+                                newRowsInOrder.push(existingRow);
+                                existingRowsMap.delete(rowHeaderText);
                             } else {
-                                checkbox.checked = shouldBeCheckedByDefault(rowHeaderText, colHeaderText);
+                                rowsToCreate.push({ rowHeaderText, sanitizedRow });
+                                newRowsInOrder.push(null);
+                            }
+                        });
+
+                        existingRowsMap.forEach(row => row.remove());
+
+                        const CHUNK_SIZE = 8;
+                        if (rowsToCreate.length > CHUNK_SIZE) {
+                            const newRowElements = [];
+                            let currentIndex = 0;
+
+                            const processChunk = () => {
+                                const endIndex = Math.min(currentIndex + CHUNK_SIZE, rowsToCreate.length);
+                                const chunk = rowsToCreate.slice(currentIndex, endIndex);
+                                const batchResults = createRowBatch(chunk, newColHeaders, previousStates);
+                                newRowElements.push(...batchResults);
+                                currentIndex = endIndex;
+
+                                if (currentIndex < rowsToCreate.length) {
+                                    requestAnimationFrame(processChunk);
+                                } else {
+                                    let newRowIndex = 0;
+                                    for (let i = 0; i < newRowsInOrder.length; i++) {
+                                        if (newRowsInOrder[i] === null) {
+                                            newRowsInOrder[i] = newRowElements[newRowIndex++];
+                                        }
+                                    }
+
+                                    const currentOrder = Array.from(tbody.querySelectorAll('tr'));
+                                    let needsReorder = currentOrder.length !== newRowsInOrder.length;
+                                    if (!needsReorder) {
+                                        for (let i = 0; i < currentOrder.length; i++) {
+                                            if (currentOrder[i] !== newRowsInOrder[i]) {
+                                                needsReorder = true;
+                                                break;
+                                            }
+                                        }
+                                    }
+
+                                    if (needsReorder) {
+                                        const fragment = document.createDocumentFragment();
+                                        newRowsInOrder.forEach(row => fragment.appendChild(row));
+                                        tbody.innerHTML = '';
+                                        tbody.appendChild(fragment);
+                                    }
+                                }
+                            };
+
+                            requestAnimationFrame(processChunk);
+                        } else {
+                            const newRowElements = createRowBatch(rowsToCreate, newColHeaders, previousStates);
+
+                            let newRowIndex = 0;
+                            for (let i = 0; i < newRowsInOrder.length; i++) {
+                                if (newRowsInOrder[i] === null) {
+                                    newRowsInOrder[i] = newRowElements[newRowIndex++];
+                                }
                             }
 
-                            td.appendChild(checkbox);
-                            td.appendChild(label);
-                            bodyRow.appendChild(td);
-                        });
-                        tbody.appendChild(bodyRow);
-                    });
+                            const currentOrder = Array.from(tbody.querySelectorAll('tr'));
+                            let needsReorder = currentOrder.length !== newRowsInOrder.length;
+                            if (!needsReorder) {
+                                for (let i = 0; i < currentOrder.length; i++) {
+                                    if (currentOrder[i] !== newRowsInOrder[i]) {
+                                        needsReorder = true;
+                                        break;
+                                    }
+                                }
+                            }
+
+                            if (needsReorder) {
+                                const fragment = document.createDocumentFragment();
+                                newRowsInOrder.forEach(row => fragment.appendChild(row));
+                                tbody.innerHTML = '';
+                                tbody.appendChild(fragment);
+                            }
+                        }
+                    }
                 }
 
 
                 function updateMoveCountTable() {
                     const checkedMoves = Array.from(restrictFieldset.querySelectorAll('input:checked'), cb => cb.value);
-                    const existingRows = new Set(Array.from(moveCountTableBody.querySelectorAll('tr'), tr => tr.dataset.move));
-
-                    existingRows.forEach(move => {
-                        if (!checkedMoves.includes(move)) {
-                            moveCountTableBody.querySelector(`tr[data-move="${move}"]`)?.remove();
+                    const checkedMovesSet = new Set(checkedMoves);
+                    const existingRows = moveCountTableBody.querySelectorAll('tr');
+                    
+                    if (existingRows.length === checkedMoves.length) {
+                        let allMatch = true;
+                        existingRows.forEach(row => {
+                            if (!checkedMovesSet.has(row.dataset.move)) {
+                                allMatch = false;
+                            }
+                        });
+                        if (allMatch) return;
+                    }
+                    
+                    const existingMoves = new Set();
+                    const rowsToRemove = [];
+                    
+                    existingRows.forEach(row => {
+                        const move = row.dataset.move;
+                        existingMoves.add(move);
+                        if (!checkedMovesSet.has(move)) {
+                            rowsToRemove.push(row);
                         }
                     });
 
+                    rowsToRemove.forEach(row => row.remove());
+
+                    const fragment = document.createDocumentFragment();
+                    let hasNewRows = false;
+                    
                     checkedMoves.forEach(move => {
-                        if (!existingRows.has(move)) {
-                            const newRow = moveCountTableBody.insertRow();
+                        if (!existingMoves.has(move)) {
+                            const newRow = document.createElement('tr');
                             newRow.dataset.move = move;
-                            newRow.innerHTML = `
-                            <th>${move}</th>
-                            <td><input type="number" min="0" class="move-count-input" data-move="${move}" value="20"></td>
-                            <td><input type="number" min="0" class="move-count-input" data-move="${move}2" value="20"></td>
-                            <td><input type="number" min="0" class="move-count-input" data-move="${move}-" value="20"></td>
-                        `;
+                            
+                            const th = document.createElement('th');
+                            th.textContent = move;
+                            newRow.appendChild(th);
+                            newRow.appendChild(createNumberInputCell(move, '20'));
+                            newRow.appendChild(createNumberInputCell(move + '2', '20'));
+                            newRow.appendChild(createNumberInputCell(move + '-', '20'));
+                            
+                            fragment.appendChild(newRow);
+                            hasNewRows = true;
                         }
                     });
+                    
+                    if (hasNewRows) {
+                        moveCountTableBody.appendChild(fragment);
+                    }
                 }
 
                 function syncAllTables() {
@@ -1538,11 +1708,18 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                         row.style.display = checkedResMoves.has(move) ? '' : 'none';
                     });
 
+                    const resCheckboxCache = new Map();
+                    const restCheckboxCache = new Map();
+
                     moveCountTableBody.querySelectorAll('.move-count-input').forEach(countInput => {
                         const moveStr = countInput.dataset.move;
                         const moveBase = moveStr.charAt(0);
 
-                        const resCheckbox = restrictFieldset.querySelector(`input[value="${moveBase}"]`);
+                        if (!resCheckboxCache.has(moveBase)) {
+                            resCheckboxCache.set(moveBase, restrictFieldset.querySelector(`input[value="${moveBase}"]`));
+                        }
+                        const resCheckbox = resCheckboxCache.get(moveBase);
+                        
                         if (!resCheckbox || !resCheckbox.checked) {
                             return;
                         }
@@ -1553,7 +1730,10 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                         else if (suffix === '2') restCheckboxId = `checkbox_restrict${moveBase}2`;
                         else if (suffix === '-') restCheckboxId = `checkbox_restrict${moveBase}3`;
 
-                        const restCheckbox = tableBody.querySelector(`#${restCheckboxId}`);
+                        if (!restCheckboxCache.has(restCheckboxId)) {
+                            restCheckboxCache.set(restCheckboxId, tableBody.querySelector(`#${restCheckboxId}`));
+                        }
+                        const restCheckbox = restCheckboxCache.get(restCheckboxId);
 
                         if (restCheckbox && restCheckbox.checked) {
                             if ((countInput.disabled && countInput.value === '0') || countInput.value === '') {
@@ -1649,34 +1829,115 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                 function initializePage() {
 
                     const allPossibleMoves = Array.from(restrictFieldset.querySelectorAll('input.restrict'), cb => cb.value);
+                    const fragment = document.createDocumentFragment();
+                    
                     allPossibleMoves.forEach(move => {
-                        const newRow = moveCountTableBody.insertRow();
+                        const newRow = document.createElement('tr');
                         newRow.dataset.move = move;
-                        newRow.innerHTML = `
-                <th>${move}</th>
-                <td><input type="number" min="0" class="move-count-input" data-move="${move}"></td>
-                <td><input type="number" min="0" class="move-count-input" data-move="${move}2"></td>
-                <td><input type="number" min="0" class="move-count-input" data-move="${move}-"></td>
-            `;
+                        
+                        const th = document.createElement('th');
+                        th.textContent = move;
+                        newRow.appendChild(th);
+                        newRow.appendChild(createNumberInputCell(move, ''));
+                        newRow.appendChild(createNumberInputCell(move + '2', ''));
+                        newRow.appendChild(createNumberInputCell(move + '-', ''));
+                        
+                        fragment.appendChild(newRow);
                     });
+                    
+                    moveCountTableBody.appendChild(fragment);
+
+                    let handleCheckboxChangeTimer = null;
+                    let updateDebounceTimer = null;
+                    let tableWrapperChangeTimer = null;
+                    let isUpdatingMoveAvailableTable = false;
 
                     function handleCheckboxChange() {
-                        updateRestrictTable();
-                        updateMoveCountTable();
-                        syncAllTables();
-                        updateMoveAvailableTable();
-                        updateUrlParams();
+                        if (handleCheckboxChangeTimer) {
+                            clearTimeout(handleCheckboxChangeTimer);
+                        }
+                        
+                        handleCheckboxChangeTimer = setTimeout(() => {
+                            requestAnimationFrame(() => {
+                                updateRestrictTable();
+                                
+                                requestAnimationFrame(() => {
+                                    updateMoveCountTable();
+                                    
+                                    requestAnimationFrame(() => {
+                                        syncAllTables();
+                                        
+                                        if (!isUpdatingMoveAvailableTable) {
+                                            if (updateDebounceTimer) {
+                                                clearTimeout(updateDebounceTimer);
+                                            }
+                                            updateDebounceTimer = setTimeout(() => {
+                                                if (!isUpdatingMoveAvailableTable) {
+                                                    isUpdatingMoveAvailableTable = true;
+                                                    requestAnimationFrame(() => {
+                                                        updateMoveAvailableTable();
+                                                        setTimeout(() => {
+                                                            isUpdatingMoveAvailableTable = false;
+                                                        }, 100);
+                                                    });
+                                                }
+                                            }, 300);
+                                        }
+                                        
+                                        requestAnimationFrame(() => {
+                                            updateUrlParams();
+                                        });
+                                    });
+                                });
+                            });
+                        }, 200);
                     }
 
                     restrictFieldset.addEventListener('change', handleCheckboxChange);
                     tableWrapper.addEventListener('change', () => {
-                        syncAllTables();
-                        updateMoveAvailableTable();
-                        updateUrlParams();
+                        if (tableWrapperChangeTimer) {
+                            clearTimeout(tableWrapperChangeTimer);
+                        }
+                        
+                        tableWrapperChangeTimer = setTimeout(() => {
+                            requestAnimationFrame(() => {
+                                syncAllTables();
+                                
+                                if (!isUpdatingMoveAvailableTable) {
+                                    if (updateDebounceTimer) {
+                                        clearTimeout(updateDebounceTimer);
+                                    }
+                                    updateDebounceTimer = setTimeout(() => {
+                                        if (!isUpdatingMoveAvailableTable) {
+                                            isUpdatingMoveAvailableTable = true;
+                                            requestAnimationFrame(() => {
+                                                updateMoveAvailableTable();
+                                                setTimeout(() => {
+                                                    isUpdatingMoveAvailableTable = false;
+                                                }, 100);
+                                            });
+                                        }
+                                    }, 300);
+                                }
+                                
+                                requestAnimationFrame(() => {
+                                    updateUrlParams();
+                                });
+                            });
+                        }, 200);
                     });
 
                     if (moveCountTableWrapper) {
                         moveCountTableWrapper.addEventListener('input', () => { updateUrlParams(); });
+                    }
+                    
+                    const moveAvailableTableWrapper = document.getElementById('move_available_table_wrapper');
+                    if (moveAvailableTableWrapper) {
+                        moveAvailableTableWrapper.addEventListener('change', () => {
+                            setTimeout(() => {
+                                updateUrlParams();
+                            }, 50);
+                        });
                     }
                 }
 
@@ -2127,7 +2388,9 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                         });
                     }
                 });
-                updateUrlParams();
+                requestAnimationFrame(() => {
+                    updateUrlParams();
+                });
             }
 
             function checkRotationMoveOrder() {
@@ -2174,7 +2437,9 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                     }
                 });
 
-                updateUrlParams();
+                requestAnimationFrame(() => {
+                    updateUrlParams();
+                });
             }
 
             function updateUrlParams() {
@@ -2266,17 +2531,120 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                     finalRestId = defaultRest;
                 }
                 setIds([finalResId, finalRestId]);
-                const mavString = urlParams.get(idToKeyMap['mav']);
-                if (mavString) {
-                    setMavFromString(mavString);
-                }
-
+                
                 const mcvKey = idToKeyMap['mcv'];
                 const defaultMcv = '';
                 const mcvParam = urlParams.get(mcvKey);
                 setMoveCountFromString(mcvParam ?? defaultMcv, finalRestId);
+                
+                const mavString = urlParams.get(idToKeyMap['mav']);
+                
                 if (typeof window.initializeDynamicTables === 'function') {
                     window.initializeDynamicTables();
+                }
+                
+                if (mavString) {
+                    const existingIndicator = document.getElementById('mav-loading-indicator');
+                    if (existingIndicator) {
+                        existingIndicator.remove();
+                    }
+                    
+                    const loadingIndicator = document.createElement('div');
+                    loadingIndicator.id = 'mav-loading-indicator';
+                    loadingIndicator.style.cssText = 'position:fixed;top:30%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.85);color:white;padding:20px 30px;border-radius:8px;z-index:10000;font-size:18px;box-shadow:0 4px 12px rgba(0,0,0,0.3);';
+                    loadingIndicator.textContent = 'Loading Move Available Table...';
+                    document.body.appendChild(loadingIndicator);
+                    
+                    const restMoves = finalRestId ? finalRestId.split('_').filter(m => m) : [];
+                    const n = restMoves.length;
+                    const expectedCheckboxCount = (n + 1) * n;
+                    
+                    console.log(`[MAV] Expected checkboxes: ${expectedCheckboxCount} (${n} moves from rest parameter)`);
+                    
+                    const table = document.getElementById('move_available_table');
+                    if (!table) {
+                        console.error('[MAV] move_available_table not found');
+                        if (loadingIndicator.parentNode) {
+                            loadingIndicator.remove();
+                        }
+                        return;
+                    }
+                    
+                    const tbody = table.querySelector('tbody');
+                    if (!tbody) {
+                        console.error('[MAV] tbody not found');
+                        if (loadingIndicator.parentNode) {
+                            loadingIndicator.remove();
+                        }
+                        return;
+                    }
+                    
+                    let observerTimeout = null;
+                    
+                    const applyMavAndCleanup = () => {
+                        try {
+                            setMavFromString(mavString);
+                            
+                            requestAnimationFrame(() => {
+                                try {
+                                    updateUrlParams();
+                                } catch (e) {
+                                    console.error('updateUrlParams failed:', e);
+                                } finally {
+                                    if (loadingIndicator.parentNode) {
+                                        loadingIndicator.remove();
+                                    }
+                                }
+                            });
+                        } catch (e) {
+                            console.error('setMavFromString failed:', e);
+                            if (loadingIndicator.parentNode) {
+                                loadingIndicator.remove();
+                            }
+                        }
+                    };
+                    
+                    const initialCheckboxes = table.querySelectorAll('input[type="checkbox"]');
+                    const initialCount = initialCheckboxes.length;
+                    
+                    if (initialCount >= expectedCheckboxCount) {
+                        console.log(`[MAV] Table already complete (${initialCount} checkboxes), applying mav immediately`);
+                        applyMavAndCleanup();
+                    } else {
+                        console.log(`[MAV] Initial checkboxes: ${initialCount} / ${expectedCheckboxCount}, waiting for completion`);
+                        
+                        const observer = new MutationObserver(() => {
+                            const currentCheckboxes = table.querySelectorAll('input[type="checkbox"]');
+                            const currentCount = currentCheckboxes.length;
+                            
+                            console.log(`[MAV] Current checkboxes: ${currentCount} / ${expectedCheckboxCount}`);
+                            
+                            if (currentCount >= expectedCheckboxCount) {
+                                console.log('[MAV] Table generation complete, applying mav...');
+                                observer.disconnect();
+                                if (observerTimeout) {
+                                    clearTimeout(observerTimeout);
+                                }
+                                
+                                setTimeout(() => {
+                                    applyMavAndCleanup();
+                                }, 50);
+                            }
+                        });
+                        
+                        observer.observe(tbody, {
+                            childList: true,
+                            subtree: true
+                        });
+                        
+                        observerTimeout = setTimeout(() => {
+                            const currentCheckboxes = table.querySelectorAll('input[type="checkbox"]');
+                            const currentCount = currentCheckboxes.length;
+                            console.warn(`[MAV] Timeout - expected ${expectedCheckboxCount}, got ${currentCount}`);
+                            observer.disconnect();
+                            applyMavAndCleanup();
+                        }, 10000);
+                    }
                 }
             }
 
