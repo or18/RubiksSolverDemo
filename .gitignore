@@ -38,3 +38,5 @@ test_index.html
 
 # HTML backups
 html_backups/
+
+pwa-state.js
