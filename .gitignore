@@ -40,3 +40,5 @@ test_index.html
 html_backups/
 
 pwa-state.js
+
+compressor_backup/

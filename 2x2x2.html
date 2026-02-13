@@ -9,6 +9,7 @@
     <meta name="description"
         content="Advanced and Fast 2x2x2 solver. Generate algorithms with customizable search settings. Offline PWA supported.">
     <script src="analytics.js" defer></script>
+    <script src="url_params_compressor_simple.js" defer></script>
     <style>
         header {
             padding: 2px;
@@ -2499,7 +2500,18 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                     }
                 });
                 try {
-                    window.history.replaceState({}, '', url);
+                    // Compress URL for display
+                    if (typeof window.urlParamsCompressor !== 'undefined') {
+                        try {
+                            const compressed = window.urlParamsCompressor.compressUrlForDisplay(url.href);
+                            window.history.replaceState({}, '', compressed);
+                        } catch (error) {
+                            console.error('URL compression error:', error);
+                            window.history.replaceState({}, '', url);
+                        }
+                    } else {
+                        window.history.replaceState({}, '', url);
+                    }
                 } catch (e) {
                     console.log(e.message);
                 }
@@ -2815,10 +2827,24 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                     spaceElement2.innerHTML = "&nbsp;";
                     details.appendChild(spaceElement2);
                     const currentUrl = new URL(window.location.href);
-                    currentUrl.searchParams.set('index', `${messageCount}`);
-                    currentUrl.searchParams.set('sol', sol.replace(/ /g, '_').replace(/'/g, '-'));
+                    const linkParams = new URLSearchParams(currentUrl.search);
+                    linkParams.set('index', `${messageCount}`);
+                    linkParams.set('sol', sol.replace(/ /g, '_').replace(/'/g, '-'));
+                    const baseUrl = currentUrl.origin + currentUrl.pathname;
+                    const legacyUrl = baseUrl + '?' + linkParams.toString();
+                    
+                    // Compress the link for sharing
+                    let finalLinkUrl = legacyUrl;
+                    if (typeof window.urlParamsCompressor !== 'undefined') {
+                        try {
+                            finalLinkUrl = window.urlParamsCompressor.compressUrlForDisplay(legacyUrl);
+                        } catch (error) {
+                            console.error('Link compression error:', error);
+                        }
+                    }
+                    
                     var link_element3 = document.createElement('a');
-                    link_element3.href = currentUrl;
+                    link_element3.href = finalLinkUrl;
                     link_element3.target = '_blank';
                     link_element3.rel = 'noopener noreferrer';
                     link_element3.textContent = 'or18.github.io';
@@ -2828,7 +2854,16 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                     document.getElementById("countLine").value = messageCount;
                     if (messageCount === 1) {
                         try {
-                            window.history.replaceState({}, '', currentUrl);
+                            // Compress URL for history
+                            let historyUrl = legacyUrl;
+                            if (typeof window.urlParamsCompressor !== 'undefined') {
+                                try {
+                                    historyUrl = window.urlParamsCompressor.compressUrlForDisplay(legacyUrl);
+                                } catch (error) {
+                                    console.error('History URL compression error:', error);
+                                }
+                            }
+                            window.history.replaceState({}, '', historyUrl);
                         } catch (e) {
                             console.log(e.message);
                         }
@@ -3075,7 +3110,20 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             });
 
             window.onload = function () {
-                const urlParams = new URLSearchParams(window.location.search);
+                // Normalize URL: compressed format -> internal params (keep display URL as compressed)
+                let urlParams;
+                if (window.location.hash.includes('#hrest=') || window.location.hash.includes('#hmav=')) {
+                    try {
+                        const normalizedUrl = window.urlParamsCompressor.normalizeUrl(window.location.href);
+                        const normalized = new URL(normalizedUrl, window.location.href);
+                        urlParams = new URLSearchParams(normalized.search);
+                    } catch (error) {
+                        console.error('URL normalization error:', error);
+                        urlParams = new URLSearchParams(window.location.search);
+                    }
+                } else {
+                    urlParams = new URLSearchParams(window.location.search);
+                }
                 const scrambleParam = urlParams.get(idToKeyMap['scr']);
                 document.getElementById("result").innerHTML = "";
                 let deferredAppend = null;

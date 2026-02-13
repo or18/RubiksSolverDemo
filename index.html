@@ -9,6 +9,7 @@
     <meta name="description"
         content="Advanced and Fast 3x3x3 solver. Supports Cross, XCross, Pseudo F2L, EOCross, and Last Layer. Offline PWA supported.">
     <script src="analytics.js" defer></script>
+    <script src="url_params_compressor_simple.js" defer></script>
     <style>
         header {
             padding: 2px;
@@ -3681,7 +3682,18 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                 }
             });
             try {
-                window.history.replaceState({}, '', url);
+                // Compress URL for display
+                if (typeof window.urlParamsCompressor !== 'undefined') {
+                    try {
+                        const compressed = window.urlParamsCompressor.compressUrlForDisplay(url.href);
+                        window.history.replaceState({}, '', compressed);
+                    } catch (error) {
+                        console.error('URL compression error:', error);
+                        window.history.replaceState({}, '', url);
+                    }
+                } else {
+                    window.history.replaceState({}, '', url);
+                }
             } catch (e) {
                 console.log(e.message);
             }
@@ -3694,6 +3706,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             document.getElementById('rot').value = urlParams.get(idToKeyMap['rot']) ? urlParams.get(idToKeyMap['rot']).replace(/_/g, ' ').replace(/-/g, '\'') : defaultValues[solver]['rot'];
 
             let mavString = null;
+            let finalRestId = ''; // Declare in function scope for MAV processing
 
             if (solver !== "twophase") {
                 const premoveParam = urlParams.get(idToKeyMap['premove']);
@@ -3710,7 +3723,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                 const defaultRes = defaultValues[solver]['res'];
                 const defaultRest = defaultValues[solver]['rest'];
                 const finalResId = resParam || defaultRes;
-                let finalRestId;
+                // finalRestId is declared at function scope for MAV processing
 
                 if (restParam) {
                     finalRestId = restParam;
@@ -3778,8 +3791,10 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                 document.getElementById('slot_eo').value = urlParams.get(idToKeyMap['slot_eo']) ? urlParams.get(idToKeyMap['slot_eo']).replace(/_/g, ' ') : defaultValues[solver]['slot_eo'];
             }
 
-            if (typeof window.initializeDynamicTables === 'function') {
-                window.initializeDynamicTables();
+            // Sync all tables after parameter updates
+            // This ensures Move Count Table rows are properly shown/hidden and enabled/disabled
+            if (typeof syncAllTables === 'function') {
+                syncAllTables();
             }
 
             if (mavString) {
@@ -3794,21 +3809,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                 loadingIndicator.textContent = 'Loading Move Available Table...';
                 document.body.appendChild(loadingIndicator);
 
-                const restParam = urlParams.get(idToKeyMap['rest']);
-                const resParam = urlParams.get(idToKeyMap['res']);
-                const defaultRes = defaultValues[solver]['res'];
-                const defaultRest = defaultValues[solver]['rest'];
-
-                let finalRestId;
-                if (restParam) {
-                    finalRestId = restParam;
-                } else if (resParam) {
-                    const finalResId = resParam || defaultRes;
-                    finalRestId = finalResId.split('').flatMap(move => [move, move + '2', move + '-']).join('_');
-                } else {
-                    finalRestId = defaultRest;
-                }
-
+                // Use the finalRestId already calculated above (no need to recalculate)
                 const restMoves = finalRestId ? finalRestId.split('_').filter(m => m) : [];
                 const n = restMoves.length;
                 const expectedCheckboxCount = (n + 1) * n;
@@ -4154,11 +4155,26 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                 var spaceElement2 = document.createElement('a');
                 spaceElement2.innerHTML = "&nbsp;";
                 details.appendChild(spaceElement2);
+                // Create link with current parameters
                 const currentUrl = new URL(window.location.href);
-                currentUrl.searchParams.set('index', `${messageCount}`);
-                currentUrl.searchParams.set('sol', sol.replace(/ /g, '_').replace(/'/g, '-'));
+                const linkParams = internalUrlParams ? new URLSearchParams(internalUrlParams) : new URLSearchParams(currentUrl.search);
+                linkParams.set('index', `${messageCount}`);
+                linkParams.set('sol', sol.replace(/ /g, '_').replace(/'/g, '-'));
+                const baseUrl = currentUrl.origin + currentUrl.pathname;
+                const legacyUrl = baseUrl + '?' + linkParams.toString();
+                
+                // Compress the link for sharing
+                let finalLinkUrl = legacyUrl;
+                if (typeof window.urlParamsCompressor !== 'undefined') {
+                    try {
+                        finalLinkUrl = window.urlParamsCompressor.compressUrlForDisplay(legacyUrl);
+                    } catch (error) {
+                        console.error('Link compression error:', error);
+                    }
+                }
+                
                 var link_element3 = document.createElement('a');
-                link_element3.href = currentUrl;
+                link_element3.href = finalLinkUrl;
                 link_element3.target = '_blank';
                 link_element3.rel = 'noopener noreferrer';
                 link_element3.textContent = 'or18.github.io';
@@ -5597,13 +5613,32 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             }
         });
 
+        // Internal URLSearchParams (normalized from compressed URL)
+        let internalUrlParams = null;
+
         document.getElementById('clear').addEventListener('click', function () {
             document.getElementById('scr').value = '';
             save();
         });
 
         window.onload = function () {
-            const urlParams = new URLSearchParams(window.location.search);
+            // Normalize URL: compressed format -> internal params (keep display URL as compressed)
+            if (window.location.hash.includes('#hrest=') || window.location.hash.includes('#hmav=')) {
+                try {
+                    const normalizedUrl = window.urlParamsCompressor.normalizeUrl(window.location.href);
+                    const normalized = new URL(normalizedUrl, window.location.href);
+                    internalUrlParams = new URLSearchParams(normalized.search);
+                } catch (error) {
+                    console.error('URL normalization error:', error);
+                    internalUrlParams = new URLSearchParams(window.location.search);
+                }
+            } else {
+                internalUrlParams = new URLSearchParams(window.location.search);
+            }
+            initializePageWithParams(internalUrlParams);
+        };
+
+        function initializePageWithParams(urlParams) {
             const scrambleParam = urlParams.get(idToKeyMap['scr']);
             document.getElementById("result").innerHTML = "";
             let deferredAppend = null;
@@ -5657,7 +5692,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             } catch (e) {
                 console.warn('Initial save() failed (ignored):', e);
             }
-        };
+        }
     </script>
     <script src="sw-register.js" defer></script>
 </body>

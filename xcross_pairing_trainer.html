@@ -8,7 +8,7 @@
 	<title>Rubik's Cube XCross + Free Pair Trainer - Customizable Scrambler & Advanced Solver</title>
 	<meta name="description" content="Generate random XCross & Free Pair scrambles with specific conditions (length, faces, slots). Includes built-in advanced 3x3 solver. ">
 	<script src="analytics.js" defer></script>
-
+    <script src="url_params_compressor_simple.js" defer></script>
 	<style>
 		header {
 			padding: 2px;
@@ -1146,8 +1146,19 @@
 				currentUrl.searchParams.set('aslot', `${pair_slot}`);
 				currentUrl.searchParams.set('index', `${messageCount}`);
 				currentUrl.searchParams.set('sol', sol.replace(/ /g, '_').replace(/'/g, '-'));
+				
+				// Compress the link for sharing
+				let finalLinkUrl = currentUrl.href;
+				if (typeof window.urlParamsCompressor !== 'undefined') {
+					try {
+						finalLinkUrl = window.urlParamsCompressor.compressUrlForDisplay(currentUrl.href);
+					} catch (error) {
+						console.error('Link compression error:', error);
+					}
+				}
+				
 				var link_element3 = document.createElement('a');
-				link_element3.href = currentUrl;
+				link_element3.href = finalLinkUrl;
 				link_element3.target = '_blank';
 				link_element3.rel = 'noopener noreferrer';
 				link_element3.textContent = 'or18.github.io';
