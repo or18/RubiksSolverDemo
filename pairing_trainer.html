@@ -1074,7 +1074,8 @@
 				var spaceElement2 = document.createElement('a');
 				spaceElement2.innerHTML = "&nbsp;";
 				details.appendChild(spaceElement2);
-				const currentUrl = new URL("index.html", window.location.href);
+				const normalizedHref = window.urlParamsCompressor.normalizeUrl(window.location.href);
+				const currentUrl = new URL("index.html", normalizedHref);
 				currentUrl.searchParams.set('solver', `F2L_pair`);
 				currentUrl.searchParams.set('scramble', (scr + " // setup\n").replace(/ /g, '_').replace(/'/g, '-'));
 				if (premove !== "") {

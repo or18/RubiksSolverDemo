@@ -2827,7 +2827,9 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                     spaceElement2.innerHTML = "&nbsp;";
                     details.appendChild(spaceElement2);
                     const currentUrl = new URL(window.location.href);
-                    const linkParams = new URLSearchParams(currentUrl.search);
+                    const normalizedHref = window.urlParamsCompressor.normalizeUrl(currentUrl.href);
+                    const normalizedUrl = new URL(normalizedHref);
+                    const linkParams = new URLSearchParams(normalizedUrl.search);
                     linkParams.set('index', `${messageCount}`);
                     linkParams.set('sol', sol.replace(/ /g, '_').replace(/'/g, '-'));
                     const baseUrl = currentUrl.origin + currentUrl.pathname;

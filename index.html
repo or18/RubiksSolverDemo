@@ -4157,7 +4157,9 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                 details.appendChild(spaceElement2);
                 // Create link with current parameters
                 const currentUrl = new URL(window.location.href);
-                const linkParams = internalUrlParams ? new URLSearchParams(internalUrlParams) : new URLSearchParams(currentUrl.search);
+                const normalizedHref = window.urlParamsCompressor.normalizeUrl(currentUrl.href);
+                const normalizedUrl = new URL(normalizedHref);
+                const linkParams = new URLSearchParams(normalizedUrl.search);
                 linkParams.set('index', `${messageCount}`);
                 linkParams.set('sol', sol.replace(/ /g, '_').replace(/'/g, '-'));
                 const baseUrl = currentUrl.origin + currentUrl.pathname;
@@ -4184,7 +4186,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                 document.getElementById("countLine").value = messageCount;
                 if (messageCount === 1) {
                     try {
-                        window.history.replaceState({}, '', currentUrl);
+                        window.history.replaceState({}, '', finalLinkUrl);
                     } catch (e) {
                         console.log(e.message);
                     }
