@@ -58,9 +58,13 @@ function decodeRest(encoded) {
   return chars.map(c => CHAR_TO_MOVE[c] || '').join('_');
 }
 
-// ===== MAV Encoding =====
+// ===== MAV Encoding (v2: Hybrid Format) =====
 
-function encodeMav(mavString) {
+/**
+ * Encode MAV to v1 format (2-char pairs)
+ * Internal function for backward compatibility
+ */
+function encodeMav_v1(mavString) {
   if (!mavString || mavString.trim() === '') return '';
   const sections = mavString.split('|');
   let encoded = '';
@@ -78,7 +82,11 @@ function encodeMav(mavString) {
   return encoded;
 }
 
-function decodeMav(encodedMav) {
+/**
+ * Decode MAV from v1 format (2-char pairs)
+ * Internal function for backward compatibility
+ */
+function decodeMav_v1(encodedMav) {
   if (!encodedMav || encodedMav.trim() === '') return '';
   
   if (encodedMav.length % 2 !== 0) {
@@ -97,6 +105,192 @@ function decodeMav(encodedMav) {
     sections.push(`${move1}~${move2}`);
   }
   return sections.join('|');
+}
+
+/**
+ * Encode MAV to v2 format (grouped with hyphen)
+ */
+function encodeMav_v2(mavString) {
+  if (!mavString || mavString.trim() === '') return '';
+  const parts = mavString.split('|');
+  const groupMap = new Map();
+  
+  for (const pair of parts) {
+    const [move1, move2] = pair.split('~');
+    const move1Char = MOVE_TO_CHAR[move1];
+    const move2Char = MOVE_TO_CHAR[move2];
+    if (!move1Char || !move2Char) continue;
+    
+    if (!groupMap.has(move1Char)) {
+      groupMap.set(move1Char, []);
+    }
+    groupMap.get(move1Char).push(move2Char);
+  }
+  
+  // Unicode sort (uppercase → lowercase → numbers)
+  const sortedGroups = Array.from(groupMap.entries())
+    .sort((a, b) => a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0)
+    .map(([move1Char, move2Chars]) => ({
+      move1Char,
+      move2Chars: move2Chars.sort().join('')
+    }));
+  
+  // Format: "move1-move2s" using hyphen (URL-safe, no encoding needed)
+  return sortedGroups.map(g => `${g.move1Char}-${g.move2Chars}`).join('');
+}
+
+/**
+ * Decode MAV from v2 format (grouped with hyphen)
+ */
+function decodeMav_v2(encodedMav) {
+  if (!encodedMav || encodedMav.trim() === '') return '';
+  // Match pattern: char-chars (e.g., "A-tuv") using hyphen
+  const regex = /([A-Za-z0-2])-([A-Za-z0-2]+?)(?=[A-Za-z0-2]-|$)/g;
+  const pairs = [];
+  let match;
+  
+  while ((match = regex.exec(encodedMav)) !== null) {
+    const move1Char = match[1];
+    const move2Chars = match[2];
+    const move1 = CHAR_TO_MOVE[move1Char];
+    
+    for (const move2Char of move2Chars) {
+      const move2 = CHAR_TO_MOVE[move2Char];
+      pairs.push(`${move1}~${move2}`);
+    }
+  }
+  
+  return pairs.join('|');
+}
+
+/**
+ * Predict encoded length for v1 and v2 formats
+ * Returns: { v1: number, v2: number, pairCount: number, groupCount: number }
+ */
+function predictMavEncodedLength(mavString) {
+  if (!mavString || mavString.trim() === '') {
+    return { v1: 0, v2: 0, pairCount: 0, groupCount: 0 };
+  }
+  
+  const parts = mavString.split('|');
+  const groupMap = new Map();
+  let validMoveCount = 0;  // For v1: Count the number of individual moves
+  let pairCount = 0;       // For v2: Count the number of valid pairs
+  
+  for (const pair of parts) {
+    if (!pair) continue;
+    const moves = pair.split('~');
+    
+    // v1: Count individual moves (actual behavior of encodeMav_v1)
+    for (const move of moves) {
+      if (!move) continue;
+      const char = MOVE_TO_CHAR[move];
+      if (char) {
+        validMoveCount++;
+      }
+    }
+    
+    // v2: Count only if valid as a pair
+    const [move1, move2] = moves;
+    const move1Char = MOVE_TO_CHAR[move1];
+    const move2Char = MOVE_TO_CHAR[move2];
+    if (move1Char && move2Char) {
+      if (!groupMap.has(move1Char)) {
+        groupMap.set(move1Char, []);
+      }
+      groupMap.get(move1Char).push(move2Char);
+      pairCount++;
+    }
+  }
+  
+  const groupCount = groupMap.size;
+  
+  // v1: Each valid move is 1 char (NOT 2 chars per pair)
+  const v1Length = validMoveCount;
+  
+  // v2: Each group is "move1-move2s"
+  // = groupCount × 2 (move1 + hyphen) + pairCount (all move2s)
+  const v2Length = groupCount * 2 + pairCount;
+  
+  return {
+    v1: v1Length,
+    v2: v2Length,
+    pairCount,
+    groupCount
+  };
+}
+
+/**
+ * Choose optimal format (v1 or v2) based on predicted length
+ * Returns: 'v1' or 'v2'
+ */
+function chooseMavFormat(mavString) {
+  const prediction = predictMavEncodedLength(mavString);
+  
+  // If lengths are equal, prefer v1 (simpler, no special chars)
+  return prediction.v1 <= prediction.v2 ? 'v1' : 'v2';
+}
+
+/**
+ * Encode MAV with automatic format selection (v1 or v2)
+ * Chooses the format that produces shorter output
+ */
+function encodeMav_auto(mavString) {
+  if (!mavString || mavString.trim() === '') return '';
+  
+  const format = chooseMavFormat(mavString);
+  
+  if (format === 'v1') {
+    return encodeMav_v1(mavString);
+  } else if (format === 'v2') {
+    return encodeMav_v2(mavString);
+  } else {
+    // Defensive fallback: should never reach here
+    console.warn(`[MAV Encode Warning] Unexpected format "${format}", defaulting to v1`);
+    return encodeMav_v1(mavString);
+  }
+}
+
+/**
+ * Encode MAV (uses auto format selection for optimal compression)
+ * Automatically chooses between v1 and v2 based on which produces shorter output
+ */
+function encodeMav(mavString) {
+  if (!mavString || mavString.trim() === '') return '';
+  
+  // Use auto format selection
+  return encodeMav_auto(mavString);
+}
+
+/**
+ * Decode MAV from any format (v1/v2 auto-detection)
+ */
+function decodeMav(encodedMav) {
+  if (!encodedMav || encodedMav.trim() === '') return '';
+  
+  // Detect format:
+  // - v0 (legacy mav): contains '|' and '~' → already in correct format "R~x|U~y"
+  // - v1 (legacy hmav): no special chars → paired format "AtGw"
+  // - v2 (new hmav): contains '-' → grouped format "A-tuv"
+  
+  if (encodedMav.includes('|')) {
+    // v0 format: validate and return as-is
+    // Basic validation: should contain '~' for proper pairing
+    if (encodedMav.includes('~')) {
+      return encodedMav;
+    }
+    // Invalid v0 format, treat as v1
+    console.warn(`[MAV Decode Warning] Invalid v0 format (contains '|' but no '~'): "${encodedMav}". Treating as v1.`);
+    return decodeMav_v1(encodedMav);
+  }
+  
+  if (encodedMav.includes('-')) {
+    // v2 format: hyphen-delimited groups
+    return decodeMav_v2(encodedMav);
+  }
+  
+  // v1 format: backward compatibility
+  return decodeMav_v1(encodedMav);
 }
 
 // ===== CREST Encoding (Bitmap Optimization - 6-char Hexadecimal) =====
@@ -188,7 +382,7 @@ function decodeMcv(encodedMcv) {
     if (numStr === '') continue;
     entries.push(`${move}:${numStr}`);
   }
-  return entries.join('_') + '_';
+  return entries.join('_');
 }
 
 // ===== URL Processing =====
@@ -305,7 +499,13 @@ if (typeof window !== 'undefined') {
     encodeCrest, decodeCrest,
     encodeMcv, decodeMcv,
     normalizeUrl,
-    compressUrlForDisplay
+    compressUrlForDisplay,
+    // v1/v2 specific functions (for advanced usage)
+    encodeMav_v1, decodeMav_v1,
+    encodeMav_v2, decodeMav_v2,
+    encodeMav_auto,
+    predictMavEncodedLength,
+    chooseMavFormat
   };
 }
 
@@ -316,6 +516,12 @@ if (typeof module !== 'undefined' && module.exports) {
     encodeCrest, decodeCrest,
     encodeMcv, decodeMcv,
     normalizeUrl,
-    compressUrlForDisplay
+    compressUrlForDisplay,
+    // v1/v2 specific functions (for advanced usage)
+    encodeMav_v1, decodeMav_v1,
+    encodeMav_v2, decodeMav_v2,
+    encodeMav_auto,
+    predictMavEncodedLength,
+    chooseMavFormat
   };
 }
