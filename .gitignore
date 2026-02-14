@@ -45,3 +45,10 @@ compressor_backup/
 compressor_v2_backup/
 compressor_v3_backup/
 compressor_v4_backup/
+
+api/
+
+# Distribution package - exclude development docs and backups
+dist/docs/
+dist/*/backups/
+dist/src/*/backups/

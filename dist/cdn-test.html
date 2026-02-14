@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CDN Test - 2x2 Solver</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 900px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .container {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+    }
+    h1 { color: #333; margin-top: 0; }
+    h2 { color: #555; border-bottom: 2px solid #007bff; padding-bottom: 5px; }
+    .status {
+      padding: 10px;
+      border-radius: 4px;
+      margin: 10px 0;
+      font-weight: bold;
+    }
+    .status.loading { background: #fff3cd; color: #856404; }
+    .status.success { background: #d4edda; color: #155724; }
+    .status.error { background: #f8d7da; color: #721c24; }
+    input {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      box-sizing: border-box;
+      margin: 10px 0;
+    }
+    button {
+      background: #007bff;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin: 5px;
+    }
+    button:hover { background: #0056b3; }
+    button:disabled { background: #ccc; cursor: not-allowed; }
+    pre {
+      background: #f8f9fa;
+      padding: 15px;
+      border-radius: 4px;
+      overflow-x: auto;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    .solution {
+      padding: 8px;
+      margin: 5px 0;
+      background: #e7f3ff;
+      border-left: 3px solid #007bff;
+      border-radius: 3px;
+    }
+    .cdn-info {
+      background: #e7f3ff;
+      padding: 15px;
+      border-radius: 4px;
+      margin: 10px 0;
+    }
+    .cdn-info code {
+      background: #fff;
+      padding: 2px 6px;
+      border-radius: 3px;
+      color: #d63384;
+    }
+  </style>
+</head>
+<body>
+  <h1>🌐 CDN Loading Test - 2x2 Solver</h1>
+  
+  <div class="container">
+    <h2>CDN Source</h2>
+    <div id="cdnSource" class="cdn-info">
+      <p><strong>Testing CDN:</strong> <span id="cdnUrl">Loading...</span></p>
+      <p><strong>Status:</strong> <span id="loadStatus">Initializing...</span></p>
+    </div>
+  </div>
+
+  <div class="container">
+    <h2>Test 1: Module Import</h2>
+    <div id="importStatus" class="status loading">⏳ Testing module import...</div>
+    <div id="importDetails"></div>
+  </div>
+
+  <div class="container">
+    <h2>Test 2: Basic Solve</h2>
+    <input type="text" id="scramble" value="R U R' U'" placeholder="Enter scramble">
+    <button id="solveBtn" onclick="testSolve()" disabled>Solve</button>
+    <div id="solveStatus"></div>
+    <div id="solveOutput"></div>
+  </div>
+
+  <div class="container">
+    <h2>Test 3: Worker Functionality</h2>
+    <button id="workerTestBtn" onclick="testWorker()" disabled>Test Worker</button>
+    <div id="workerStatus"></div>
+    <div id="workerOutput"></div>
+  </div>
+
+  <div class="container">
+    <h2>Test Results Summary</h2>
+    <pre id="summary">Waiting for tests to complete...</pre>
+  </div>
+
+  <script type="module">
+    // CDN URLs to test (will try multiple sources)
+    const CDN_URLS = {
+      jsdelivr: 'https://cdn.jsdelivr.net/gh/or18/RubiksSolverDemo@main/dist/src/2x2solver/2x2solver.js',
+      githubRaw: 'https://raw.githubusercontent.com/or18/RubiksSolverDemo/main/dist/src/2x2solver/2x2solver.js',
+      local: './src/2x2solver/2x2solver.js'
+    };
+
+    // Try to detect which CDN to use based on URL parameters or auto-detect
+    const urlParams = new URLSearchParams(window.location.search);
+    const cdnType = urlParams.get('cdn') || 'local';
+    const CDN_URL = CDN_URLS[cdnType] || CDN_URLS.local;
+
+    document.getElementById('cdnUrl').textContent = CDN_URL;
+    document.getElementById('loadStatus').textContent = `Attempting to load from ${cdnType}...`;
+
+    let solveFunc = null;
+    let Solver2x2Class = null;
+    const testResults = {};
+
+    // Test 1: Import module
+    async function testImport() {
+      try {
+        const module = await import(CDN_URL);
+        solveFunc = module.solve;
+        Solver2x2Class = module.Solver2x2;
+        
+        if (solveFunc && Solver2x2Class) {
+          document.getElementById('importStatus').className = 'status success';
+          document.getElementById('importStatus').textContent = '✅ Module imported successfully';
+          document.getElementById('importDetails').innerHTML = `
+            <p>✓ <code>solve()</code> function available</p>
+            <p>✓ <code>Solver2x2</code> class available</p>
+          `;
+          document.getElementById('solveBtn').disabled = false;
+          document.getElementById('workerTestBtn').disabled = false;
+          testResults.import = 'PASS';
+          return true;
+        } else {
+          throw new Error('Module exports not found');
+        }
+      } catch (error) {
+        document.getElementById('importStatus').className = 'status error';
+        document.getElementById('importStatus').textContent = '❌ Module import failed';
+        document.getElementById('importDetails').innerHTML = `
+          <p style="color: #721c24;"><strong>Error:</strong> ${error.message}</p>
+          <pre>${error.stack}</pre>
+        `;
+        testResults.import = 'FAIL: ' + error.message;
+        return false;
+      }
+    }
+
+    // Test 2: Basic solve
+    window.testSolve = async function() {
+      const scramble = document.getElementById('scramble').value;
+      const statusDiv = document.getElementById('solveStatus');
+      const outputDiv = document.getElementById('solveOutput');
+      
+      statusDiv.className = 'status loading';
+      statusDiv.textContent = '⏳ Solving...';
+      outputDiv.innerHTML = '';
+
+      try {
+        const startTime = performance.now();
+        const solutions = await solveFunc(scramble, {
+          maxSolutions: 10,
+          maxLength: 15
+        });
+        const endTime = performance.now();
+
+        statusDiv.className = 'status success';
+        statusDiv.textContent = `✅ Found ${solutions.length} solutions in ${(endTime - startTime).toFixed(2)}ms`;
+        
+        outputDiv.innerHTML = `<p><strong>Solutions:</strong></p>`;
+        solutions.forEach((sol, i) => {
+          outputDiv.innerHTML += `<div class="solution">${i + 1}. ${sol}</div>`;
+        });
+
+        testResults.basicSolve = `PASS (${solutions.length} solutions, ${(endTime - startTime).toFixed(2)}ms)`;
+        updateSummary();
+      } catch (error) {
+        statusDiv.className = 'status error';
+        statusDiv.textContent = '❌ Solve failed';
+        outputDiv.innerHTML = `<pre style="color: #721c24;">${error.message}\n${error.stack}</pre>`;
+        testResults.basicSolve = 'FAIL: ' + error.message;
+        updateSummary();
+      }
+    };
+
+    // Test 3: Worker functionality
+    window.testWorker = async function() {
+      const statusDiv = document.getElementById('workerStatus');
+      const outputDiv = document.getElementById('workerOutput');
+      
+      statusDiv.className = 'status loading';
+      statusDiv.textContent = '⏳ Testing Worker API...';
+      outputDiv.innerHTML = '';
+
+      try {
+        const solver = new Solver2x2Class();
+        const solutions = [];
+        const startTime = performance.now();
+
+        await new Promise((resolve, reject) => {
+          solver.search("R U R' U'", {
+            maxSolutions: 5,
+            onSolution: (sol) => {
+              solutions.push(sol);
+              outputDiv.innerHTML += `<div class="solution">Found: ${sol}</div>`;
+            },
+            onDone: () => {
+              const endTime = performance.now();
+              statusDiv.className = 'status success';
+              statusDiv.textContent = `✅ Worker test completed in ${(endTime - startTime).toFixed(2)}ms`;
+              testResults.workerAPI = `PASS (${solutions.length} solutions, ${(endTime - startTime).toFixed(2)}ms)`;
+              updateSummary();
+              resolve();
+            },
+            onError: (err) => {
+              reject(err);
+            }
+          });
+        });
+      } catch (error) {
+        statusDiv.className = 'status error';
+        statusDiv.textContent = '❌ Worker test failed';
+        outputDiv.innerHTML += `<pre style="color: #721c24;">${error.message}\n${error.stack}</pre>`;
+        testResults.workerAPI = 'FAIL: ' + error.message;
+        updateSummary();
+      }
+    };
+
+    function updateSummary() {
+      const summary = document.getElementById('summary');
+      const results = Object.entries(testResults).map(([test, result]) => {
+        const status = result.startsWith('PASS') ? '✅' : '❌';
+        return `${status} ${test}: ${result}`;
+      }).join('\n');
+      
+      summary.textContent = results || 'No tests completed yet';
+    }
+
+    // Run import test on load
+    testImport().then(success => {
+      if (success) {
+        document.getElementById('loadStatus').textContent = '✅ CDN loaded successfully';
+      } else {
+        document.getElementById('loadStatus').textContent = '❌ CDN loading failed';
+      }
+    });
+  </script>
+</body>
+</html>
