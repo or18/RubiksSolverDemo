@@ -34,6 +34,19 @@ const CHAR_TO_MOVE = Object.fromEntries(
   Object.entries(MOVE_TO_CHAR).map(([k, v]) => [v, k])
 );
 
+// MCV-specific mapping (avoids digit conflict for z2/z-)
+// z2='0' and z-='1' cause issues when parsing "z1" vs "z" with count "1"
+// Solution: Use non-digit characters for z2 and z-
+const MOVE_TO_CHAR_MCV = {
+  ...MOVE_TO_CHAR,
+  'z2': '-',  // hyphen (URL-safe)
+  'z-': '_'   // underscore (URL-safe)
+};
+
+const CHAR_TO_MOVE_MCV = Object.fromEntries(
+  Object.entries(MOVE_TO_CHAR_MCV).map(([k, v]) => [v, k])
+);
+
 // CREST 24 patterns (index.html specific, 6 rows × 4 columns)
 const CREST_PATTERNS = [
   'EMPTY_EMPTY', 'EMPTY_y', 'EMPTY_y2', 'EMPTY_y-',
@@ -354,7 +367,7 @@ function encodeMcv(mcvString) {
     if (parts.length !== 2) continue;
     const move = parts[0];
     const count = parts[1];
-    const char = MOVE_TO_CHAR[move];
+    const char = MOVE_TO_CHAR_MCV[move];
     if (!char) continue;
     encoded += char + count;
   }
@@ -368,7 +381,15 @@ function decodeMcv(encodedMcv) {
   
   while (i < encodedMcv.length) {
     const char = encodedMcv[i];
-    const move = CHAR_TO_MOVE[char];
+    
+    // Try new mapping first (with - and _)
+    let move = CHAR_TO_MOVE_MCV[char];
+    
+    // Fallback to old mapping for backward compatibility
+    if (!move) {
+      move = CHAR_TO_MOVE[char];
+    }
+    
     if (!move) {
       i++;
       continue;
@@ -472,8 +493,9 @@ function normalizeUrl(urlString) {
     }
     
     if (qmcv && !mcv) {
-      // v0 format has colons and underscores, v3 format is encoded
-      if (qmcv.includes(':') || qmcv.includes('_')) {
+      // v0 format has colons (e.g., "x:1_y:2"), v3 format has no colons
+      // Note: v3 may contain underscores (e.g., "t1v1_1"), so we check for colons only
+      if (qmcv.includes(':')) {
         // v0 format: already decoded
         mcv = qmcv;
       } else {
@@ -614,8 +636,9 @@ function createCompressedQueryUrl(urlString) {
     }
     
     if (mcv) {
-      // v0: contains colons and underscores, v3: alphanumeric only
-      mcvIsEncoded = !mcv.includes(':') && !mcv.includes('_');
+      // v0: contains colons (e.g., "x:1_y:2"), v3: no colons (e.g., "t1v1_1")
+      // Note: v3 may contain underscores and hyphens for special moves (z-='_')
+      mcvIsEncoded = !mcv.includes(':');
     }
     
     // Also check hash parameters for backward compatibility (v1/v2)
