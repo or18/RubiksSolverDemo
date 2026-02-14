@@ -160,8 +160,11 @@ solver.search("R U R' U'", {
       
       currentSolver.search(scramble, {
         onSolution: (sol) => {
-          count++;
-          output.innerHTML += `<div class="solution">${count}. ${sol}</div>`;
+          // Filter out debug messages that might slip through
+          if (sol && !sol.startsWith('depth=') && !sol.startsWith('Depth=')) {
+            count++;
+            output.innerHTML += `<div class="solution">${count}. ${sol}</div>`;
+          }
         },
         onDone: () => {
           output.innerHTML += `<p><strong>Search completed! Found ${count} solutions.</strong></p>`;

@@ -46,6 +46,10 @@ self.postMessage = function(message) {
 				type: 'done',
 				data: null
 			});
+		} else if (message.startsWith('depth=') || message.startsWith('Depth=')) {
+			// Ignore debug messages from C++ solver
+			// These are progress indicators, not solutions
+			return;
 		} else {
 			// Normal solution string from C++ is sent as a solution message
 			originalPostMessage({

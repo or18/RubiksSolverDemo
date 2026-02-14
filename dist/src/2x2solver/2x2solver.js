@@ -59,7 +59,10 @@ export class Solver2x2 {
         const { type, data } = e.data;
         
         if (type === 'solution') {
-          solutions.push(data);
+          // Filter out debug messages (depth indicators)
+          if (data && !data.startsWith('depth=') && !data.startsWith('Depth=')) {
+            solutions.push(data);
+          }
         } else if (type === 'done') {
           this.worker.terminate();
           this.worker = null;
@@ -117,7 +120,10 @@ export class Solver2x2 {
       const { type, data } = e.data;
       
       if (type === 'solution' && options.onSolution) {
-        options.onSolution(data);
+        // Filter out debug messages (depth indicators)
+        if (data && !data.startsWith('depth=') && !data.startsWith('Depth=')) {
+          options.onSolution(data);
+        }
       } else if (type === 'done') {
         if (options.onDone) options.onDone();
         this.worker.terminate();
