@@ -1114,11 +1114,11 @@
 				currentUrl.searchParams.set('index', `${messageCount}`);
 				currentUrl.searchParams.set('sol', sol.replace(/ /g, '_').replace(/'/g, '-'));
 				
-				// Compress the link for sharing
-				let finalLinkUrl = currentUrl.href;
-				if (typeof window.urlParamsCompressor !== 'undefined') {
-					try {
-						finalLinkUrl = window.urlParamsCompressor.compressUrlForDisplay(currentUrl.href);
+// Compress the link for sharing (v3: query parameters)
+			let finalLinkUrl = currentUrl.href;
+			if (typeof window.urlParamsCompressor !== 'undefined') {
+				try {
+					finalLinkUrl = window.urlParamsCompressor.createCompressedQueryUrl(currentUrl.href);
 					} catch (error) {
 						console.error('Link compression error:', error);
 					}

@@ -2500,10 +2500,10 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                     }
                 });
                 try {
-                    // Compress URL for display
+                    // Compress URL for display (v3: query parameters)
                     if (typeof window.urlParamsCompressor !== 'undefined') {
                         try {
-                            const compressed = window.urlParamsCompressor.compressUrlForDisplay(url.href);
+                            const compressed = window.urlParamsCompressor.createCompressedQueryUrl(url.href);
                             window.history.replaceState({}, '', compressed);
                         } catch (error) {
                             console.error('URL compression error:', error);
@@ -2571,8 +2571,6 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                     const n = restMoves.length;
                     const expectedCheckboxCount = (n + 1) * n;
                     
-                    console.log(`[MAV] Expected checkboxes: ${expectedCheckboxCount} (${n} moves from rest parameter)`);
-                    
                     const table = document.getElementById('move_available_table');
                     if (!table) {
                         console.error('[MAV] move_available_table not found');
@@ -2620,19 +2618,13 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                     const initialCount = initialCheckboxes.length;
                     
                     if (initialCount >= expectedCheckboxCount) {
-                        console.log(`[MAV] Table already complete (${initialCount} checkboxes), applying mav immediately`);
                         applyMavAndCleanup();
                     } else {
-                        console.log(`[MAV] Initial checkboxes: ${initialCount} / ${expectedCheckboxCount}, waiting for completion`);
-                        
                         const observer = new MutationObserver(() => {
                             const currentCheckboxes = table.querySelectorAll('input[type="checkbox"]');
                             const currentCount = currentCheckboxes.length;
                             
-                            console.log(`[MAV] Current checkboxes: ${currentCount} / ${expectedCheckboxCount}`);
-                            
                             if (currentCount >= expectedCheckboxCount) {
-                                console.log('[MAV] Table generation complete, applying mav...');
                                 observer.disconnect();
                                 if (observerTimeout) {
                                     clearTimeout(observerTimeout);
@@ -2826,8 +2818,13 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                     var spaceElement2 = document.createElement('a');
                     spaceElement2.innerHTML = "&nbsp;";
                     details.appendChild(spaceElement2);
-                    const currentUrl = new URL(window.location.href);
-                    const normalizedHref = window.urlParamsCompressor.normalizeUrl(currentUrl.href);
+                    
+                    // Use cached normalized URL if available (to avoid timing issues after history.replaceState)
+                    const sourceUrl = cachedNormalizedUrl || window.location.href;
+                    const currentUrl = new URL(sourceUrl);
+                    
+                    // Normalize URL if not using cached version (cached is already normalized)
+                    const normalizedHref = cachedNormalizedUrl || window.urlParamsCompressor.normalizeUrl(currentUrl.href);
                     const normalizedUrl = new URL(normalizedHref);
                     const linkParams = new URLSearchParams(normalizedUrl.search);
                     linkParams.set('index', `${messageCount}`);
@@ -2835,11 +2832,11 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                     const baseUrl = currentUrl.origin + currentUrl.pathname;
                     const legacyUrl = baseUrl + '?' + linkParams.toString();
                     
-                    // Compress the link for sharing
+                    // Compress the link for sharing (v3: query parameters)
                     let finalLinkUrl = legacyUrl;
                     if (typeof window.urlParamsCompressor !== 'undefined') {
                         try {
-                            finalLinkUrl = window.urlParamsCompressor.compressUrlForDisplay(legacyUrl);
+                            finalLinkUrl = window.urlParamsCompressor.createCompressedQueryUrl(legacyUrl);
                         } catch (error) {
                             console.error('Link compression error:', error);
                         }
@@ -2856,11 +2853,11 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                     document.getElementById("countLine").value = messageCount;
                     if (messageCount === 1) {
                         try {
-                            // Compress URL for history
+                            // Compress URL for history (v3: query parameters)
                             let historyUrl = legacyUrl;
                             if (typeof window.urlParamsCompressor !== 'undefined') {
                                 try {
-                                    historyUrl = window.urlParamsCompressor.compressUrlForDisplay(legacyUrl);
+                                    historyUrl = window.urlParamsCompressor.createCompressedQueryUrl(legacyUrl);
                                 } catch (error) {
                                     console.error('History URL compression error:', error);
                                 }
@@ -3111,20 +3108,53 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                 }
             });
 
+            // Cache normalized URL for appendSol to avoid timing issues with history.replaceState
+            let cachedNormalizedUrl = null;
+
             window.onload = function () {
                 // Normalize URL: compressed format -> internal params (keep display URL as compressed)
                 let urlParams;
-                if (window.location.hash.includes('#hrest=') || window.location.hash.includes('#hmav=')) {
+                
+                // Detect if URL has compressed parameters (v1/v2 hash or v3 query)
+                const hasHashParams = window.location.hash.includes('#hrest=') || window.location.hash.includes('#hmav=');
+                const searchParams = new URLSearchParams(window.location.search);
+                const restParam = searchParams.get('rest');
+                const mavParam = searchParams.get('mav');
+                
+                // Check if query parameters are compressed (v3 format)
+                const hasCompressedRest = restParam && !restParam.includes('_');
+                const hasCompressedMav = mavParam && !mavParam.includes('~') && !mavParam.includes('|');
+                const hasCompressedQueryParams = hasCompressedRest || hasCompressedMav;
+                
+                if (hasHashParams || hasCompressedQueryParams) {
                     try {
                         const normalizedUrl = window.urlParamsCompressor.normalizeUrl(window.location.href);
+                        
+                        // Cache normalized URL for appendSol (before index/sol deletion)
+                        cachedNormalizedUrl = normalizedUrl;
+                        
                         const normalized = new URL(normalizedUrl, window.location.href);
                         urlParams = new URLSearchParams(normalized.search);
+                        
+                        // Update browser URL immediately (but remove index/sol for clean state)
+                        try {
+                            // Create clean URL without index/sol for appendSol to work correctly
+                            const cleanUrl = new URL(normalizedUrl);
+                            cleanUrl.searchParams.delete('index');
+                            cleanUrl.searchParams.delete('sol');
+                            const compressedUrl = window.urlParamsCompressor.createCompressedQueryUrl(cleanUrl.href);
+                            window.history.replaceState({}, '', compressedUrl);
+                        } catch (e) {
+                            console.error('URL compression error on load:', e);
+                        }
                     } catch (error) {
                         console.error('URL normalization error:', error);
                         urlParams = new URLSearchParams(window.location.search);
+                        cachedNormalizedUrl = window.location.href;
                     }
                 } else {
                     urlParams = new URLSearchParams(window.location.search);
+                    cachedNormalizedUrl = window.location.href;
                 }
                 const scrambleParam = urlParams.get(idToKeyMap['scr']);
                 document.getElementById("result").innerHTML = "";

@@ -135,7 +135,7 @@ function encodeMav_v2(mavString) {
       move2Chars: move2Chars.sort().join('')
     }));
   
-  // Format: "move1-move2s" using hyphen (URL-safe, no encoding needed)
+  // Format: "move1-move2s" using hyphen (URL-safe, readable)
   return sortedGroups.map(g => `${g.move1Char}-${g.move2Chars}`).join('');
 }
 
@@ -144,7 +144,7 @@ function encodeMav_v2(mavString) {
  */
 function decodeMav_v2(encodedMav) {
   if (!encodedMav || encodedMav.trim() === '') return '';
-  // Match pattern: char-chars (e.g., "A-tuv") using hyphen
+  // Match pattern: char-chars (e.g., "A-tuv") using hyphen as delimiter
   const regex = /([A-Za-z0-2])-([A-Za-z0-2]+?)(?=[A-Za-z0-2]-|$)/g;
   const pairs = [];
   let match;
@@ -388,46 +388,126 @@ function decodeMcv(encodedMcv) {
 // ===== URL Processing =====
 
 /**
- * Normalize URL: Convert compressed format to legacy format
- * Handles: #hrest=...&hmav=... → ?rest=...&mav=...
+ * Normalize URL: Convert any compressed format to uncompressed legacy format
+ * Handles all formats:
+ *  - v0: ?rest=U_D_L&mav=U~D|U~L (legacy uncompressed)
+ *  - v1/v2: #hrest=ABC&hmav=DEF (hash parameters)
+ *  - v3: ?rest=ABC&mav=DEF (compressed query parameters)
+ * Always returns: ?rest=U_D_L&mav=U~D|U~L (fully decoded)
  */
 function normalizeUrl(urlString) {
   try {
     const url = new URL(urlString);
     
-    // Check if hash contains compressed parameters
-    if (!url.hash || !url.hash.includes('=')) {
-      return urlString; // No compressed parameters
+    let rest = null;
+    let mav = null;
+    let crest = null;
+    let mcv = null;
+    
+    // Step 1: Check hash parameters (v1/v2 format)
+    if (url.hash && url.hash.includes('=')) {
+      const hashParams = new URLSearchParams(url.hash.substring(1));
+      
+      const hrest = hashParams.get('hrest');
+      const hmav = hashParams.get('hmav');
+      const hcrest = hashParams.get('hcrest');
+      const hmcv = hashParams.get('hmcv');
+      
+      if (hrest) rest = decodeRest(hrest);
+      if (hmav) mav = decodeMav(hmav);
+      if (hcrest) crest = decodeCrest(hcrest);
+      if (hmcv) mcv = decodeMcv(hmcv);
     }
-  
-  // Parse hash parameters
-  const hashParams = new URLSearchParams(url.hash.substring(1));
-  
-  const hrest = hashParams.get('hrest');
-  const hmav = hashParams.get('hmav');
-  const hcrest = hashParams.get('hcrest');
-  const hmcv = hashParams.get('hmcv');
-  
-  // If no hash parameters, return original
-  if (!hrest && !hmav && !hcrest && !hmcv) {
-    return urlString;
-  }
-  
-  // Decode parameters
-  const rest = hrest ? decodeRest(hrest) : null;
-  const mav = hmav ? decodeMav(hmav) : null;
-  const crest = hcrest ? decodeCrest(hcrest) : null;
-  const mcv = hmcv ? decodeMcv(hmcv) : null;
-  
-  // Build new URL with legacy format
-  const newUrl = new URL(url.origin + url.pathname + url.search);
-  
-  if (rest) newUrl.searchParams.set('rest', rest);
-  if (mav) newUrl.searchParams.set('mav', mav);
-  if (crest) newUrl.searchParams.set('crest', crest);
-  if (mcv) newUrl.searchParams.set('mcv', mcv);
-  
-  return newUrl.toString();
+    
+    // Step 2: Check query parameters (v0 or v3 format)
+    const qrest = url.searchParams.get('rest');
+    const qmav = url.searchParams.get('mav');
+    const qcrest = url.searchParams.get('crest');
+    const qmcv = url.searchParams.get('mcv');
+    
+    // Detect v0 vs v3 format and decode accordingly
+    if (qrest && !rest) {
+      // v0 format has underscores, v3 format is encoded (alphanumeric only)
+      if (qrest.includes('_')) {
+        // v0 format: already decoded, use as-is
+        rest = qrest;
+      } else {
+        // v3 format: encoded, decode it
+        try {
+          rest = decodeRest(qrest);
+        } catch (e) {
+          rest = qrest; // Fallback to original
+        }
+      }
+    }
+    
+    if (qmav && !mav) {
+      // v0 format has ~ or |, v3 format is encoded
+      if (qmav.includes('~') || qmav.includes('|')) {
+        // v0 format: already decoded, use as-is
+        mav = qmav;
+      } else {
+        // v3 format: encoded, decode it
+        try {
+          mav = decodeMav(qmav);
+        } catch (e) {
+          mav = qmav; // Fallback to original
+        }
+      }
+    }
+    
+    if (qcrest && !crest) {
+      // v0 format has underscores, v3 format is 6 hex digits
+      if (qcrest.includes('_')) {
+        // v0 format: already decoded
+        crest = qcrest;
+      } else {
+        // v3 format: encoded
+        try {
+          crest = decodeCrest(qcrest);
+        } catch (e) {
+          crest = qcrest;
+        }
+      }
+    }
+    
+    if (qmcv && !mcv) {
+      // v0 format has colons and underscores, v3 format is encoded
+      if (qmcv.includes(':') || qmcv.includes('_')) {
+        // v0 format: already decoded
+        mcv = qmcv;
+      } else {
+        // v3 format: encoded
+        try {
+          mcv = decodeMcv(qmcv);
+        } catch (e) {
+          mcv = qmcv;
+        }
+      }
+    }
+    
+    // If no parameters found, return original
+    if (!rest && !mav && !crest && !mcv) {
+      return urlString;
+    }
+    
+    // Build new URL with fully decoded parameters
+    const newUrl = new URL(url.origin + url.pathname);
+    
+    // Copy other parameters (non-rest/mav/crest/mcv)
+    url.searchParams.forEach((value, key) => {
+      if (key !== 'rest' && key !== 'mav' && key !== 'crest' && key !== 'mcv') {
+        newUrl.searchParams.set(key, value);
+      }
+    });
+    
+    // Add decoded parameters
+    if (rest) newUrl.searchParams.set('rest', rest);
+    if (mav) newUrl.searchParams.set('mav', mav);
+    if (crest) newUrl.searchParams.set('crest', crest);
+    if (mcv) newUrl.searchParams.set('mcv', mcv);
+    
+    return newUrl.toString();
   } catch (error) {
     console.warn('[URL Normalize Warning] Invalid URL format, using default:', error.message);
     if (typeof window !== 'undefined') {
@@ -491,6 +571,109 @@ function compressUrlForDisplay(urlString) {
   }
 }
 
+/**
+ * Create compressed URL with query parameters (v3 format)
+ * Handles: ?rest=...&mav=... → ?rest=ENCODED&mav=ENCODED (no hash)
+ * This is the new default format for URLs generated after migration.
+ */
+/**
+ * Create compressed query URL (v3 format)
+ * Converts any format to v3: ?rest=ABC&mav=A-DGJ (compressed query parameters)
+ * Input can be v0 (decoded), v1/v2 (hash), or v3 (already compressed query)
+ */
+function createCompressedQueryUrl(urlString) {
+  try {
+    const url = new URL(urlString);
+  
+    // Get parameters from query (may be v0 or v3)
+    let rest = url.searchParams.get('rest');
+    let mav = url.searchParams.get('mav');
+    let crest = url.searchParams.get('crest');
+    let mcv = url.searchParams.get('mcv');
+    
+    // Check if query parameters are already encoded (v3) or decoded (v0)
+    // v0 format has underscores/tildes/pipes, v3 format is alphanumeric+hyphens only
+    let restIsEncoded = false;
+    let mavIsEncoded = false;
+    let crestIsEncoded = false;
+    let mcvIsEncoded = false;
+    
+    if (rest) {
+      // v0: contains underscores, v3: alphanumeric only
+      restIsEncoded = !rest.includes('_');
+    }
+    
+    if (mav) {
+      // v0: contains ~ or |, v3: alphanumeric + hyphens only
+      mavIsEncoded = !mav.includes('~') && !mav.includes('|');
+    }
+    
+    if (crest) {
+      // v0: contains underscores, v3: 6 hex digits
+      crestIsEncoded = !crest.includes('_') && crest.length === 6;
+    }
+    
+    if (mcv) {
+      // v0: contains colons and underscores, v3: alphanumeric only
+      mcvIsEncoded = !mcv.includes(':') && !mcv.includes('_');
+    }
+    
+    // Also check hash parameters for backward compatibility (v1/v2)
+    if (url.hash && url.hash.includes('=')) {
+      const hashParams = new URLSearchParams(url.hash.substring(1));
+      const hrest = hashParams.get('hrest');
+      const hmav = hashParams.get('hmav');
+      const hcrest = hashParams.get('hcrest');
+      const hmcv = hashParams.get('hmcv');
+      
+      // Hash parameters are always encoded, decode them
+      if (hrest && !rest) {
+        rest = decodeRest(hrest);
+        restIsEncoded = false; // Now decoded
+      }
+      if (hmav && !mav) {
+        mav = decodeMav(hmav);
+        mavIsEncoded = false; // Now decoded
+      }
+      if (hcrest && !crest) {
+        crest = decodeCrest(hcrest);
+        crestIsEncoded = false; // Now decoded
+      }
+      if (hmcv && !mcv) {
+        mcv = decodeMcv(hmcv);
+        mcvIsEncoded = false; // Now decoded
+      }
+    }
+  
+    // Encode parameters (only if not already encoded)
+    const encodedRest = rest ? (restIsEncoded ? rest : encodeRest(rest)) : null;
+    const encodedMav = mav ? (mavIsEncoded ? mav : encodeMav(mav)) : null;
+    const encodedCrest = crest ? (crestIsEncoded ? crest : encodeCrest(crest)) : null;
+    const encodedMcv = mcv ? (mcvIsEncoded ? mcv : encodeMcv(mcv)) : null;
+  
+    // Build new URL with compressed query parameters (v3)
+    const newUrl = new URL(url.origin + url.pathname);
+  
+    // Keep non-compressed parameters (like 'scramble', 'rc', 'res', etc.)
+    url.searchParams.forEach((value, key) => {
+      if (key !== 'rest' && key !== 'mav' && key !== 'crest' && key !== 'mcv') {
+        newUrl.searchParams.set(key, value);
+      }
+    });
+    
+    // Add compressed parameters as query parameters (not hash)
+    if (encodedRest) newUrl.searchParams.set('rest', encodedRest);
+    if (encodedMav) newUrl.searchParams.set('mav', encodedMav);
+    if (encodedCrest) newUrl.searchParams.set('crest', encodedCrest);
+    if (encodedMcv) newUrl.searchParams.set('mcv', encodedMcv);
+  
+    return newUrl.toString();
+  } catch (error) {
+    console.warn('[URL Create Warning] Invalid URL format, returning original:', error.message);
+    return urlString;
+  }
+}
+
 // Export functions
 if (typeof window !== 'undefined') {
   window.urlParamsCompressor = {
@@ -500,6 +683,7 @@ if (typeof window !== 'undefined') {
     encodeMcv, decodeMcv,
     normalizeUrl,
     compressUrlForDisplay,
+    createCompressedQueryUrl,
     // v1/v2 specific functions (for advanced usage)
     encodeMav_v1, decodeMav_v1,
     encodeMav_v2, decodeMav_v2,
@@ -517,6 +701,7 @@ if (typeof module !== 'undefined' && module.exports) {
     encodeMcv, decodeMcv,
     normalizeUrl,
     compressUrlForDisplay,
+    createCompressedQueryUrl,
     // v1/v2 specific functions (for advanced usage)
     encodeMav_v1, decodeMav_v1,
     encodeMav_v2, decodeMav_v2,
