@@ -223,12 +223,15 @@ streamingSolve().catch(console.error);</pre>
       const statusDiv = document.getElementById('loadStatus');
       
       try {
-        statusDiv.textContent = `⏳ Loading helper${useCDN ? ' from CDN' : ''}${cacheBust ? ' (cache busting)' : ''}...`;
+        const timestamp = cacheBust ? Date.now() : '';
+        statusDiv.textContent = `⏳ Loading helper${useCDN ? ' from CDN' : ''}${cacheBust ? ` (cache bust: ${timestamp})` : ''}...`;
         statusDiv.style.color = '#856404';
         
         const scriptUrl = useCDN 
-          ? CDN_BASE_URL + 'solver-helper.js' + (cacheBust ? `?v=${Date.now()}` : '')
+          ? CDN_BASE_URL + 'solver-helper.js' + (cacheBust ? `?v=${timestamp}` : '')
           : 'solver-helper.js';
+        
+        console.log('[Helper Load] URL:', scriptUrl);
         
         await new Promise((resolve, reject) => {
           const script = document.createElement('script');
@@ -242,7 +245,9 @@ streamingSolve().catch(console.error);</pre>
         await new Promise(resolve => setTimeout(resolve, 150));
         
         if (typeof window.Solver2x2Helper !== 'undefined') {
-          statusDiv.textContent = `✅ Helper loaded successfully${useCDN ? ' from CDN' : ' (local)'}!`;
+          const version = window.Solver2x2Helper.toString().match(/@version\s+([^\n]+)/);
+          const versionInfo = version ? ` (${version[1].trim()})` : '';
+          statusDiv.textContent = `✅ Helper loaded${versionInfo}${useCDN ? ' from CDN' : ' (local)'}!`;
           statusDiv.style.color = '#155724';
         } else {
           throw new Error('Solver2x2Helper not found after loading');

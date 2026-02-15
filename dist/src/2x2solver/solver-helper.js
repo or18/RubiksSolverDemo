@@ -1,5 +1,6 @@
 /**
  * 2x2x2 Solver Helper - Simplified Promise-based API for Web Workers
+ * @version 1.1.0 (2026-02-15) - CDN auto-detect + cache busting support
  * 
  * This helper wraps the Web Worker interface to provide a simple Promise-based API.
  * No need to handle worker.onmessage manually!
@@ -31,14 +32,26 @@ class Solver2x2Helper {
       if (typeof document !== 'undefined' && document.currentScript && document.currentScript.src) {
         // Loaded via <script src="...">
         const scriptUrl = document.currentScript.src;
-        const baseUrl = scriptUrl.substring(0, scriptUrl.lastIndexOf('/') + 1);
-        this.workerPath = baseUrl + 'worker_persistent.js';
+        
+        // Extract base URL (without filename)
+        const lastSlashIndex = scriptUrl.lastIndexOf('/');
+        const baseUrl = scriptUrl.substring(0, lastSlashIndex + 1);
+        
+        // Extract query parameters (e.g., ?v=timestamp for cache busting)
+        const queryIndex = scriptUrl.indexOf('?', lastSlashIndex);
+        const queryParams = queryIndex !== -1 ? scriptUrl.substring(queryIndex) : '';
+        
+        // Apply same query params to worker (for cache busting)
+        this.workerPath = baseUrl + 'worker_persistent.js' + queryParams;
+        this.cacheBustParams = queryParams; // Store for later use
       } else {
         // Fallback to relative path
         this.workerPath = './worker_persistent.js';
+        this.cacheBustParams = '';
       }
     } else {
       this.workerPath = workerPath;
+      this.cacheBustParams = '';
     }
     
     this.worker = null;
@@ -219,14 +232,21 @@ class Solver2x2Helper {
     
     let code = await res.text();
     
-    // Extract base URL from worker URL
-    const baseURL = workerUrl.substring(0, workerUrl.lastIndexOf('/') + 1);
+    // Extract base URL from worker URL (strip query params)
+    const urlWithoutQuery = workerUrl.split('?')[0];
+    const baseURL = urlWithoutQuery.substring(0, urlWithoutQuery.lastIndexOf('/') + 1);
     
     // Replace baseURL calculation in worker code
     const oldCode = `const scriptPath = self.location.href;
 const baseURL = scriptPath.substring(0, scriptPath.lastIndexOf('/') + 1);`;
     const newCode = `const baseURL = '${baseURL}';`;
     code = code.replace(oldCode, newCode);
+    
+    // Apply cache busting to solver.js and solver.wasm if present
+    if (this.cacheBustParams) {
+      code = code.replace(/(['"`])solver\.js\1/g, `$1solver.js${this.cacheBustParams}$1`);
+      code = code.replace(/(['"`])solver\.wasm\1/g, `$1solver.wasm${this.cacheBustParams}$1`);
+    }
     
     // Create blob and worker
     const blob = new Blob([code], { type: 'application/javascript' });
@@ -239,4 +259,9 @@ if (typeof module !== 'undefined' && module.exports) {
   module.exports = Solver2x2Helper;
 } else {
   window.Solver2x2Helper = Solver2x2Helper;
+  // Debug info for cache verification
+  if (typeof console !== 'undefined') {
+    console.log('[Solver2x2Helper] v1.1.0 loaded from:', 
+      typeof document !== 'undefined' && document.currentScript ? document.currentScript.src : 'unknown');
+  }
 }

@@ -181,6 +181,16 @@ Both [demo.html](src/2x2solver/demo.html) and [example-helper.html](src/2x2solve
 
 ⚠️ **Cache Busting** adds `?v=timestamp` to URLs - only affects your browser, safe for testing.
 
+**Important:** If you see old code even with cache busting enabled:
+
+1. **Check Console** - Look for `[Solver2x2Helper] v1.1.0 loaded from: ...` to verify version
+2. **Hard Refresh Browser Cache**:
+   - Windows/Linux: `Ctrl + Shift + R` or `Ctrl + F5`
+   - Mac: `Cmd + Shift + R`
+3. **Clear Browser Cache** (if still old):
+   - Chrome: DevTools → Network tab → "Disable cache" checkbox
+   - Or clear site data: DevTools → Application → Clear storage
+
 **Method 2: Instant Purge** (affects all users globally):
 ```bash
 cd dist/src/2x2solver
@@ -189,7 +199,7 @@ cd dist/src/2x2solver
 
 ⚠️ **Warning**: This clears CDN cache globally. Use for development only.
 
-**Method 3: Manual Cache Busting** (code):
+**After purging CDN**, you must also hard-refresh your browser (see above) to clear local cache.
 - Open [demo.html](src/2x2solver/demo.html) and enable "🔄 Cache Busting" checkbox
 - Only affects your browser, safe for testing
 
