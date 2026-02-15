@@ -25,8 +25,22 @@
  * helper.terminate();
  */
 class Solver2x2Helper {
-  constructor(workerPath = './worker_persistent.js') {
-    this.workerPath = workerPath;
+  constructor(workerPath = null) {
+    // Auto-detect worker path based on how this script was loaded
+    if (!workerPath) {
+      if (typeof document !== 'undefined' && document.currentScript && document.currentScript.src) {
+        // Loaded via <script src="...">
+        const scriptUrl = document.currentScript.src;
+        const baseUrl = scriptUrl.substring(0, scriptUrl.lastIndexOf('/') + 1);
+        this.workerPath = baseUrl + 'worker_persistent.js';
+      } else {
+        // Fallback to relative path
+        this.workerPath = './worker_persistent.js';
+      }
+    } else {
+      this.workerPath = workerPath;
+    }
+    
     this.worker = null;
     this.ready = false;
     this.currentResolve = null;
@@ -44,9 +58,18 @@ class Solver2x2Helper {
       return; // Already initialized
     }
     
-    return new Promise((resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
       try {
-        this.worker = new Worker(this.workerPath);
+        // Check if worker path is from CDN (different origin)
+        const isCDN = this.workerPath.startsWith('http://') || this.workerPath.startsWith('https://');
+        
+        if (isCDN) {
+          // Use Blob URL technique to bypass CORS
+          this.worker = await this._createWorkerFromCDN(this.workerPath);
+        } else {
+          // Local worker
+          this.worker = new Worker(this.workerPath);
+        }
         
         this.worker.onmessage = (event) => {
           const msg = event.data;
@@ -180,6 +203,34 @@ class Solver2x2Helper {
   async reset() {
     this.terminate();
     await this.init();
+  }
+  
+  /**
+   * Create Worker from CDN URL using Blob URL technique to bypass CORS.
+   * @private
+   * @param {string} workerUrl - Full URL to worker script
+   * @returns {Promise<Worker>}
+   */
+  async _createWorkerFromCDN(workerUrl) {
+    const res = await fetch(workerUrl);
+    if (!res.ok) {
+      throw new Error(`Failed to fetch worker from ${workerUrl}: ${res.status} ${res.statusText}`);
+    }
+    
+    let code = await res.text();
+    
+    // Extract base URL from worker URL
+    const baseURL = workerUrl.substring(0, workerUrl.lastIndexOf('/') + 1);
+    
+    // Replace baseURL calculation in worker code
+    const oldCode = `const scriptPath = self.location.href;
+const baseURL = scriptPath.substring(0, scriptPath.lastIndexOf('/') + 1);`;
+    const newCode = `const baseURL = '${baseURL}';`;
+    code = code.replace(oldCode, newCode);
+    
+    // Create blob and worker
+    const blob = new Blob([code], { type: 'application/javascript' });
+    return new Worker(URL.createObjectURL(blob));
   }
 }
 
