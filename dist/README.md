@@ -10,6 +10,8 @@ This library provides WebAssembly-compiled cube solvers with persistent state op
 
 ### Web Worker (Browser - Recommended)
 
+**Local files:**
+
 ```javascript
 const worker = new Worker('src/2x2solver/worker_persistent.js');
 
@@ -28,6 +30,29 @@ worker.onmessage = (e) => {
   }
 };
 ```
+
+**From CDN (jsDelivr):**
+
+```javascript
+// Helper function to create worker from CDN (bypasses CORS)
+async function createWorkerFromCDN(baseURL) {
+  const res = await fetch(baseURL + 'worker_persistent.js');
+  let code = await res.text();
+  code = code.replace(/importScripts\(baseURL \+ 'solver\.js'\)/, 
+    `importScripts('${baseURL}solver.js')`);
+  code = code.replace(/return baseURL \+ path;/g, 
+    `return '${baseURL}' + path;`);
+  const blob = new Blob([code], { type: 'application/javascript' });
+  return new Worker(URL.createObjectURL(blob));
+}
+
+// Usage
+const cdn = 'https://cdn.jsdelivr.net/gh/or18/RubiksSolverDemo@main/dist/src/2x2solver/';
+const worker = await createWorkerFromCDN(cdn);
+worker.onmessage = (e) => { /* same as above */ };
+```
+
+See [src/2x2solver/cdn-test.html](src/2x2solver/cdn-test.html) for complete example.
 
 ### Node.js
 

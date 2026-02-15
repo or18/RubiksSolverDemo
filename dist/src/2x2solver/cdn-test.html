@@ -314,11 +314,11 @@
         <div class="info-box">
           <h3>ℹ️ CDN Usage Notes</h3>
           <p>
-            <strong>Recommended:</strong> Use <strong>jsDelivr CDN</strong> for production.<br>
-            <strong>GitHub Raw:</strong> May fail in some browsers due to Content-Type restrictions (serves as text/plain).<br>
-            <strong>Local:</strong> For development and testing.<br><br>
-            The worker automatically resolves paths for solver.js and solver.wasm from the same directory.
-            No additional configuration needed!
+            <strong>How it works:</strong> This demo fetches the worker script from CDN and creates it via Blob URL to bypass CORS restrictions.<br><br>
+            <strong>jsDelivr CDN:</strong> Fast, reliable, recommended for production.<br>
+            <strong>GitHub Raw:</strong> Works but may have rate limits.<br>
+            <strong>Local:</strong> Direct loading, no CORS issues, best for development.<br><br>
+            For your own applications, you can use the same Blob URL technique shown in this page's source code.
           </p>
         </div>
         
@@ -431,9 +431,36 @@
         
         const source = CDN_SOURCES[currentCDN];
         
-        // Simply create worker from CDN URL
-        // worker_persistent.js will handle path resolution automatically
-        worker = new Worker(source.base + source.worker);
+        if (currentCDN === 'local') {
+          // Local: Create worker directly (no CORS issues)
+          worker = new Worker(source.base + source.worker);
+        } else {
+          // CDN: Fetch worker code and create via Blob URL (bypass CORS)
+          const workerResponse = await fetch(source.base + source.worker);
+          if (!workerResponse.ok) {
+            throw new Error(`Failed to fetch worker: ${workerResponse.status} ${workerResponse.statusText}`);
+          }
+          
+          let workerCode = await workerResponse.text();
+          
+          // Replace relative paths with absolute CDN URLs
+          workerCode = workerCode.replace(
+            /importScripts\(baseURL \+ 'solver\.js'\)/,
+            `importScripts('${source.base}solver.js')`
+          );
+          
+          // Replace locateFile to use CDN base URL
+          workerCode = workerCode.replace(
+            /return baseURL \+ path;/g,
+            `return '${source.base}' + path;`
+          );
+          
+          // Create Blob URL
+          const blob = new Blob([workerCode], { type: 'application/javascript' });
+          const blobURL = URL.createObjectURL(blob);
+          
+          worker = new Worker(blobURL);
+        }
         
         worker.onmessage = function(event) {
           const msg = event.data;
@@ -459,6 +486,7 @@
         worker.onerror = function(error) {
           showStatus('cdnStatus', 'error', '❌ Worker error: ' + error.message);
           showStatus('workerStatus', 'error', '❌ Worker failed: ' + error.message);
+          console.error('Worker error:', error);
         };
         
       } catch (error) {

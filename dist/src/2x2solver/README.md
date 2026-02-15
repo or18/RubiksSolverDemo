@@ -20,8 +20,10 @@ python3 -m http.server 8000
 
 The recommended approach for browser applications. Runs in a separate thread to avoid blocking the UI.
 
+**Local files:**
+
 ```javascript
-// Create worker
+// Create worker (same origin, no CORS issues)
 const worker = new Worker('worker_persistent.js');
 
 // Handle messages
@@ -51,6 +53,39 @@ worker.postMessage({
   allowedMoves: 'U_U2_U-_R_R2_R-_F_F2_F-'
 });
 ```
+
+**From CDN (requires Blob URL for CORS):**
+
+```javascript
+// Fetch worker from CDN and create via Blob URL
+async function createWorkerFromCDN(cdnURL) {
+  const response = await fetch(cdnURL + 'worker_persistent.js');
+  let code = await response.text();
+  
+  // Replace relative paths with CDN URLs
+  code = code.replace(
+    /importScripts\(baseURL \+ 'solver\.js'\)/,
+    `importScripts('${cdnURL}solver.js')`
+  );
+  code = code.replace(
+    /return baseURL \+ path;/g,
+    `return '${cdnURL}' + path;`
+  );
+  
+  const blob = new Blob([code], { type: 'application/javascript' });
+  return new Worker(URL.createObjectURL(blob));
+}
+
+// Usage
+const cdnURL = 'https://cdn.jsdelivr.net/gh/or18/RubiksSolverDemo@main/dist/src/2x2solver/';
+const worker = await createWorkerFromCDN(cdnURL);
+
+// Use same message handlers as above
+worker.onmessage = function(event) { /* ... */ };
+worker.postMessage({ scramble: "R U R' U'", /* ... */ });
+```
+
+See [cdn-test.html](cdn-test.html) for a complete CDN loading example.
 
 **Key Features:**
 - ✅ **Non-blocking**: UI remains responsive during computation
@@ -286,6 +321,7 @@ em++ solver.cpp -o solver.js \
 ### Browser Usage
 - `worker_persistent.js` - Web Worker wrapper
 - `demo.html` - Interactive demo (recommended starting point)
+- `cdn-test.html` - CDN loading test (shows how to load from jsDelivr/GitHub)
 
 ### Documentation
 - `README.md` - This file (quick start & API reference)
