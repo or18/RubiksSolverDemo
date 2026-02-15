@@ -289,6 +289,12 @@
           <strong>Current CDN:</strong>
           <div id="cdnUrl">Local (./)</div>
         </div>
+        <div style="margin: 15px 0; padding: 10px; background: #fff3cd; border-radius: 6px; border-left: 4px solid #ffc107;">
+          <label style="display: flex; align-items: center; cursor: pointer; color: #664d03;">
+            <input type="checkbox" id="cacheBust" style="margin-right: 8px; width: auto; cursor: pointer;">
+            <span><strong>🔄 Enable Cache Busting</strong> (Development mode - forces fresh CDN files)</span>
+          </label>
+        </div>
         <div id="cdnStatus" class="status info show">
           ℹ️ Select a CDN source and initialize the worker
         </div>
@@ -431,43 +437,72 @@
         showStatus('cdnStatus', 'info', '⏳ Loading worker from CDN...');
         showStatus('workerStatus', 'info', '⏳ Initializing...');
         
+        // Add cache busting parameter if enabled
+        const cacheBust = document.getElementById('cacheBust').checked;
+        const cacheBustParam = cacheBust ? `?v=${Date.now()}` : '';
+        console.log('🔄 Cache busting:', cacheBust ? 'ENABLED' : 'DISABLED');
+        
         const source = CDN_SOURCES[currentCDN];
         
         if (currentCDN === 'local') {
           // Local: Create worker directly (no CORS issues)
-          worker = new Worker(source.base + source.worker);
+          worker = new Worker(source.base + source.worker + cacheBustParam);
         } else {
           // CDN: Fetch worker code and create via Blob URL (bypass CORS)
-          const workerResponse = await fetch(source.base + source.worker);
+          const workerResponse = await fetch(source.base + source.worker + cacheBustParam);
           if (!workerResponse.ok) {
             throw new Error(`Failed to fetch worker: ${workerResponse.status} ${workerResponse.statusText}`);
           }
           
           let workerCode = await workerResponse.text();
           
-          // Replace each line separately for better compatibility
-          // 1. Comment out the scriptPath line (not needed when we hardcode baseURL)
-          if (!workerCode.includes('const scriptPath = self.location.href;')) {
-            console.error('Cannot find scriptPath line in worker code');
-            console.log('First 1000 chars:', workerCode.substring(0, 1000));
-            throw new Error('Worker code format unexpected - missing scriptPath line');
+          // Strategy: Inject baseURL definition at the beginning
+          // This works regardless of whether the worker code already has baseURL or not
+          
+          // Find where to inject (after the initial comments and variables)
+          const injectPoint = workerCode.indexOf('let persistentSolver = null;');
+          
+          if (injectPoint === -1) {
+            throw new Error('Cannot find injection point in worker code');
           }
           
+          // Inject baseURL constant right after persistentSolver declaration
+          const baseURLInjection = `
+// CDN base URL (injected by cdn-test.html)
+const CDN_BASE_URL = '${source.base}';
+`;
+          
+          workerCode = workerCode.substring(0, injectPoint) + 
+                       'let persistentSolver = null;\n' +
+                       baseURLInjection +
+                       workerCode.substring(injectPoint + 'let persistentSolver = null;'.length);
+          
+          // Replace any existing baseURL calculation or importScripts
+          // Replace importScripts to use CDN_BASE_URL (with cache busting)
           workerCode = workerCode.replace(
-            'const scriptPath = self.location.href;',
-            '// const scriptPath = self.location.href; // Not needed with CDN'
+            /importScripts\((baseURL \+ 'solver\.js'|'solver\.js')\);?/,
+            `importScripts(CDN_BASE_URL + 'solver.js' + '${cacheBustParam}');`
           );
           
-          // 2. Replace the baseURL calculation with hardcoded CDN URL
-          if (!workerCode.includes("scriptPath.substring(0, scriptPath.lastIndexOf('/') + 1)")) {
-            console.error('Cannot find baseURL calculation in worker code');
-            throw new Error('Worker code format unexpected - missing baseURL calculation');
+          // Replace locateFile to use CDN_BASE_URL (with cache busting)
+          workerCode = workerCode.replace(
+            /return baseURL \+ path;/g,
+            `return CDN_BASE_URL + path + '${cacheBustParam}';`
+          );
+          
+          // If there's an old-style baseURL calculation, comment it out
+          if (workerCode.includes('const scriptPath = self.location.href;')) {
+            workerCode = workerCode.replace(
+              'const scriptPath = self.location.href;',
+              '// const scriptPath = self.location.href; // Disabled for CDN'
+            );
           }
-          
-          workerCode = workerCode.replace(
-            "const baseURL = scriptPath.substring(0, scriptPath.lastIndexOf('/') + 1);",
-            `const baseURL = '${source.base}';`
-          );
+          if (workerCode.includes("const baseURL = scriptPath.substring(0, scriptPath.lastIndexOf('/') + 1);")) {
+            workerCode = workerCode.replace(
+              "const baseURL = scriptPath.substring(0, scriptPath.lastIndexOf('/') + 1);",
+              "// const baseURL = scriptPath.substring(0, scriptPath.lastIndexOf('/') + 1); // Disabled for CDN"
+            );
+          }
           
           // Create Blob URL
           const blob = new Blob([workerCode], { type: 'application/javascript' });

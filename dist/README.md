@@ -202,6 +202,42 @@ const createModule = require('./src/2x2solver/solver.js');
 
 ---
 
+## 🌐 CDN Usage & Cache Management
+
+### Using from CDN
+
+The 2x2 solver can be loaded directly from jsDelivr CDN:
+
+```
+https://cdn.jsdelivr.net/gh/or18/RubiksSolverDemo@main/dist/src/2x2solver/
+```
+
+**Important**: CDN files require CORS bypass using the Blob URL technique (see Quick Start above or [cdn-test.html](src/2x2solver/cdn-test.html)).
+
+### CDN Cache Refresh
+
+When you update code on GitHub, CDN caches may take time to update (typically a few minutes to hours).
+
+**For Developers**: Two methods to ensure fresh CDN files:
+
+1. **Purge Cache Script** (instant):
+   ```bash
+   cd dist/src/2x2solver
+   ./purge-cdn-cache.sh
+   ```
+   This calls jsDelivr's Purge API to immediately clear cached files.
+
+2. **Cache Busting** (during testing):
+   Open [cdn-test.html](src/2x2solver/cdn-test.html) and enable the "🔄 Enable Cache Busting" checkbox. This adds timestamps to URLs to force fresh downloads.
+
+**For End Users**: Use versioned URLs for production:
+```
+https://cdn.jsdelivr.net/gh/or18/RubiksSolverDemo@v1.0.0/dist/src/2x2solver/
+```
+Versioned URLs are permanently cached and won't change.
+
+---
+
 ## 🔧 Compilation
 
 Each solver can be recompiled from C++ source:

@@ -409,6 +409,42 @@ import createModule from './solver.js';
 2. Increase `maxLength` if scramble is very long
 3. Verify scramble notation is correct (space-separated moves)
 
+### CDN Cache Issues
+
+If you just pushed code changes but CDN still serves old files:
+
+**Method 1: Purge CDN Cache (Immediate)**
+```bash
+./purge-cdn-cache.sh
+```
+This script calls jsDelivr's Purge API to instantly clear cached files:
+- `worker_persistent.js`
+- `solver.js`
+- `solver.wasm`
+
+Wait 10-30 seconds after purging, then reload your page.
+
+**Method 2: Cache Busting (For Testing)**
+
+1. Open [cdn-test.html](cdn-test.html)
+2. Enable "🔄 Enable Cache Busting" checkbox
+3. Initialize the worker
+
+Cache busting adds `?v=<timestamp>` to all CDN URLs, forcing fresh downloads on every load. Use this during development, but disable for production.
+
+**Method 3: Version Tags (For Production)**
+
+Instead of `@main`, use release tags:
+```
+https://cdn.jsdelivr.net/gh/or18/RubiksSolverDemo@v1.0.0/dist/src/2x2solver/
+```
+Versioned URLs are permanently cached and guarantee stability.
+
+**CDN Update Timeline:**
+- **jsDelivr**: 2-12 hours (can purge immediately)
+- **GitHub Raw**: 5-60 minutes (no purge API)
+- **Browser Cache**: Ctrl+Shift+R to force reload
+
 ## 📖 Additional Resources
 
 - **Detailed Guide**: See [PERSISTENT_SOLVER_README.md](PERSISTENT_SOLVER_README.md)
