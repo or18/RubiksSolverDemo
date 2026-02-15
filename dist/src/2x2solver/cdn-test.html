@@ -443,17 +443,19 @@
           
           let workerCode = await workerResponse.text();
           
-          // Replace relative paths with absolute CDN URLs
-          workerCode = workerCode.replace(
-            /importScripts\(baseURL \+ 'solver\.js'\)/,
-            `importScripts('${source.base}solver.js')`
-          );
+          // Replace the baseURL calculation lines with CDN base URL
+          // We need to replace both lines:
+          // const scriptPath = self.location.href;
+          // const baseURL = scriptPath.substring(0, scriptPath.lastIndexOf('/') + 1);
+          const oldCode = `const scriptPath = self.location.href;
+const baseURL = scriptPath.substring(0, scriptPath.lastIndexOf('/') + 1);`;
+          const newCode = `const baseURL = '${source.base}';`;
           
-          // Replace locateFile to use CDN base URL
-          workerCode = workerCode.replace(
-            /return baseURL \+ path;/g,
-            `return '${source.base}' + path;`
-          );
+          if (workerCode.indexOf(oldCode) === -1) {
+            throw new Error('Worker code format has changed - cannot find baseURL calculation');
+          }
+          
+          workerCode = workerCode.replace(oldCode, newCode);
           
           // Create Blob URL
           const blob = new Blob([workerCode], { type: 'application/javascript' });

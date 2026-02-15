@@ -38,10 +38,13 @@ worker.onmessage = (e) => {
 async function createWorkerFromCDN(baseURL) {
   const res = await fetch(baseURL + 'worker_persistent.js');
   let code = await res.text();
-  code = code.replace(/importScripts\(baseURL \+ 'solver\.js'\)/, 
-    `importScripts('${baseURL}solver.js')`);
-  code = code.replace(/return baseURL \+ path;/g, 
-    `return '${baseURL}' + path;`);
+  
+  // Replace baseURL calculation with CDN URL
+  const oldCode = `const scriptPath = self.location.href;
+const baseURL = scriptPath.substring(0, scriptPath.lastIndexOf('/') + 1);`;
+  const newCode = `const baseURL = '${baseURL}';`;
+  code = code.replace(oldCode, newCode);
+  
   const blob = new Blob([code], { type: 'application/javascript' });
   return new Worker(URL.createObjectURL(blob));
 }

@@ -62,15 +62,11 @@ async function createWorkerFromCDN(cdnURL) {
   const response = await fetch(cdnURL + 'worker_persistent.js');
   let code = await response.text();
   
-  // Replace relative paths with CDN URLs
-  code = code.replace(
-    /importScripts\(baseURL \+ 'solver\.js'\)/,
-    `importScripts('${cdnURL}solver.js')`
-  );
-  code = code.replace(
-    /return baseURL \+ path;/g,
-    `return '${cdnURL}' + path;`
-  );
+  // Replace baseURL calculation with CDN URL
+  const oldCode = `const scriptPath = self.location.href;
+const baseURL = scriptPath.substring(0, scriptPath.lastIndexOf('/') + 1);`;
+  const newCode = `const baseURL = '${cdnURL}';`;
+  code = code.replace(oldCode, newCode);
   
   const blob = new Blob([code], { type: 'application/javascript' });
   return new Worker(URL.createObjectURL(blob));
