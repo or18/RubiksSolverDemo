@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Solver Helper Example</title>
+  <style>
+    body {
+      font-family: monospace;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    
+    h1 { color: #333; }
+    
+    button {
+      padding: 10px 20px;
+      margin: 5px;
+      background: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    
+    button:hover { background: #45a049; }
+    
+    #output {
+      background: white;
+      padding: 15px;
+      border-radius: 4px;
+      margin-top: 20px;
+      min-height: 200px;
+      white-space: pre-wrap;
+    }
+    
+    .code {
+      background: #f0f0f0;
+      padding: 10px;
+      border-radius: 4px;
+      margin: 10px 0;
+      font-family: 'Courier New', monospace;
+    }
+  </style>
+</head>
+<body>
+  <h1>🎯 2x2 Solver Helper Example</h1>
+  
+  <p><strong>Simple Promise-based API - No manual worker.onmessage!</strong></p>
+  
+  <div class="code">
+const helper = new Solver2x2Helper();
+await helper.init();
+const solutions = await helper.solve("R U R' U'");
+  </div>
+  
+  <button onclick="example1()">Example 1: Basic Solve</button>
+  <button onclick="example2()">Example 2: With Options</button>
+  <button onclick="example3()">Example 3: Progress Callback</button>
+  <button onclick="example4()">Example 4: Reset Table</button>
+  <button onclick="streamingExample()" style="background: #FF9800;">📡 Streaming Output</button>
+  
+  <!-- CDN Configuration -->
+  <div style="margin: 20px 0; padding: 15px; background: #fff8e1; border-radius: 6px; border-left: 4px solid #ff9800;">
+    <label style="display: flex; align-items: center; cursor: pointer;">
+      <input type="checkbox" id="useCDN" onchange="reloadHelper()" style="margin-right: 10px; cursor: pointer;">
+      <span>
+        <strong>🌐 Use CDN (jsDelivr)</strong>
+        <span style="font-weight: normal; color: #666; font-size: 0.9em;">
+          (Load from CDN instead of local files)
+        </span>
+      </span>
+    </label>
+    
+    <div id="cacheBustOption" style="display: none; margin-top: 10px; margin-left: 28px;">
+      <label style="display: flex; align-items: center; cursor: pointer;">
+        <input type="checkbox" id="cacheBust" onchange="reloadHelper()" style="margin-right: 10px; cursor: pointer;">
+        <span>
+          <strong>🔄 Cache Busting</strong>
+          <span style="font-weight: normal; color: #666; font-size: 0.85em;">
+            (Development only - adds timestamp to URLs)
+          </span>
+        </span>
+      </label>
+    </div>
+    
+    <div id="loadStatus" style="margin-top: 10px; padding: 8px; background: white; border-radius: 4px; font-size: 0.9em;"></div>
+  </div>
+  
+  <div id="output">Click a button to run an example...</div>
+
+  <hr style="margin: 40px 0; border: none; border-top: 2px solid #ddd;">
+  
+  <h2>📡 Streaming Output Code Samples</h2>
+  
+  <h3>Browser (via CDN)</h3>
+  <p>Copy-paste ready code for real-time progress and solutions:</p>
+  <pre class="code" style="font-size: 13px; line-height: 1.5; overflow-x: auto;">&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;
+  &lt;meta charset="UTF-8"&gt;
+  &lt;title&gt;Streaming Solver&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+  &lt;h1&gt;2x2 Solver - Streaming Output&lt;/h1&gt;
+  &lt;button onclick="streamingSolve()"&gt;Solve with Progress&lt;/button&gt;
+  &lt;div id="output"&gt;&lt;/div&gt;
+
+  &lt;script src="https://cdn.jsdelivr.net/gh/or18/RubiksSolverDemo@main/dist/src/2x2solver/solver-helper.js"&gt;&lt;/script&gt;
+  &lt;script&gt;
+    const helper = new Solver2x2Helper();
+    
+    async function streamingSolve() {
+      const output = document.getElementById('output');
+      output.innerHTML = '';
+      
+      // Initialize once
+      await helper.init();
+      
+      // Solve with real-time progress
+      const solutions = await helper.solve("R U R' U' R' F R2 U' R' U", {
+        maxSolutions: 10,
+        maxLength: 15,
+        onProgress: (depth) =&gt; {
+          output.innerHTML += `🔍 Depth: ${depth}&lt;br&gt;`;
+        }
+      });
+      
+      // Display results
+      output.innerHTML += `&lt;br&gt;✅ Found ${solutions.length} solutions:&lt;br&gt;`;
+      solutions.forEach((sol, i) =&gt; {
+        output.innerHTML += `${i+1}. ${sol}&lt;br&gt;`;
+      });
+    }
+  &lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;</pre>
+
+  <h3>Node.js</h3>
+  <p>Real-time solution streaming with callback:</p>
+  <pre class="code" style="font-size: 13px; line-height: 1.5; overflow-x: auto;">const { Solver2x2HelperNode } = require('./solver-helper-node.js');
+
+async function streamingSolve() {
+  const helper = new Solver2x2HelperNode();
+  
+  // Initialize solver
+  await helper.init();
+  console.log('✅ Solver ready!\n');
+  
+  // Solve with real-time callbacks
+  const solutions = await helper.solve("R U R' U' R' F R2 U' R' U", {
+    maxSolutions: 10,
+    maxLength: 15,
+    onProgress: (depth) => {
+      // Real-time depth progress
+      console.log(`🔍 Searching depth: ${depth}`);
+    },
+    onSolution: (solution) => {
+      // Real-time solution output (as found!)
+      console.log(`✅ Solution: ${solution}`);
+    }
+  });
+  
+  console.log(`\n📊 Total: ${solutions.length} solutions found`);
+}
+
+streamingSolve().catch(console.error);</pre>
+
+  <p style="background: #fff3cd; padding: 10px; border-radius: 4px; margin-top: 20px;">
+    <strong>💡 Tip:</strong> Use <code>onProgress</code> for depth updates and <code>onSolution</code> (Node.js only) 
+    for true streaming output as each solution is found during the search.
+  </p>
+
+  <script>
+    // Configuration
+    const CDN_BASE_URL = 'https://cdn.jsdelivr.net/gh/or18/RubiksSolverDemo@main/dist/src/2x2solver/';
+    let helper = null;
+    let Solver2x2Helper = null;
+    const output = document.getElementById('output');
+    
+    // Dynamic script loading
+    function loadScript(src) {
+      return new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = src;
+        script.onload = resolve;
+        script.onerror = () => reject(new Error(`Failed to load script: ${src}`));
+        document.head.appendChild(script);
+      });
+    }
+    
+    // Load helper on page load
+    window.addEventListener('load', async () => {
+      await loadHelperScript();
+      document.getElementById('useCDN').addEventListener('change', function(e) {
+        const cacheBustOption = document.getElementById('cacheBustOption');
+        cacheBustOption.style.display = e.target.checked ? 'block' : 'none';
+        if (!e.target.checked) {
+          document.getElementById('cacheBust').checked = false;
+        }
+      });
+    });
+    
+    async function loadHelperScript() {
+      const statusDiv = document.getElementById('loadStatus');
+      const useCDN = document.getElementById('useCDN').checked;
+      const cacheBust = document.getElementById('cacheBust').checked;
+      
+      try {
+        statusDiv.textContent = `⏳ Loading helper${useCDN ? ' from CDN' : ''}${cacheBust ? ' (cache busting)' : ''}...`;
+        statusDiv.style.color = '#856404';
+        
+        const scriptUrl = useCDN 
+          ? CDN_BASE_URL + 'solver-helper.js' + (cacheBust ? `?v=${Date.now()}` : '')
+          : 'solver-helper.js';
+        
+        await loadScript(scriptUrl);
+        
+        // Get the class from global scope
+        if (typeof window.Solver2x2Helper !== 'undefined') {
+          Solver2x2Helper = window.Solver2x2Helper;
+          statusDiv.textContent = `✅ Helper loaded successfully${useCDN ? ' from CDN' : ' (local)'}!`;
+          statusDiv.style.color = '#155724';
+        } else {
+          throw new Error('Solver2x2Helper not found in loaded script');
+        }
+      } catch (error) {
+        statusDiv.textContent = `❌ Failed to load helper: ${error.message}`;
+        statusDiv.style.color = '#721c24';
+      }
+    }
+    
+    async function reloadHelper() {
+      // Terminate existing helper
+      if (helper) {
+        try {
+          await helper.terminate();
+        } catch (e) {
+          // Ignore termination errors
+        }
+        helper = null;
+      }
+      
+      // Clear global class
+      Solver2x2Helper = null;
+      if (window.Solver2x2Helper) {
+        delete window.Solver2x2Helper;
+      }
+      
+      // Reload script
+      await loadHelperScript();
+      
+      // Clear output
+      clear();
+      output.textContent = 'Helper reloaded. Click a button to run an example...';
+    }
+    
+    function log(msg) {
+      output.textContent += msg + '\n';
+    }
+    
+    function clear() {
+      output.textContent = '';
+    }
+    
+    async function ensureInit() {
+      if (!Solver2x2Helper) {
+        log('❌ Helper not loaded. Please check load status above.');
+        throw new Error('Helper not loaded');
+      }
+      
+      if (!helper) {
+        log('Initializing helper...');
+        helper = new Solver2x2Helper();
+        await helper.init();
+        log('✅ Helper ready!\n');
+      }
+    }
+    
+    async function example1() {
+      clear();
+      log('=== Example 1: Basic Solve ===\n');
+      
+      try {
+        await ensureInit();
+        
+        log('Solving: R U R\' U\'\n');
+        const solutions = await helper.solve("R U R' U'");
+        
+        log(`Found ${solutions.length} solutions:`);
+        solutions.forEach((sol, i) => {
+          log(`  ${i + 1}. ${sol}`);
+        });
+        
+      } catch (error) {
+        log('❌ Error: ' + error.message);
+      }
+    }
+    
+    async function example2() {
+      clear();
+      log('=== Example 2: With Options ===\n');
+      
+      try {
+        await ensureInit();
+        
+        log('Solving: R U F');
+        log('Options: maxSolutions=5, maxLength=12, rotation=y\n');
+        
+        const solutions = await helper.solve("R U F", {
+          maxSolutions: 5,
+          maxLength: 12,
+          rotation: 'y'
+        });
+        
+        log(`Found ${solutions.length} solutions:`);
+        solutions.forEach((sol, i) => {
+          log(`  ${i + 1}. ${sol}`);
+        });
+        
+      } catch (error) {
+        log('❌ Error: ' + error.message);
+      }
+    }
+    
+    async function example3() {
+      clear();
+      log('=== Example 3: Progress Callback ===\n');
+      
+      try {
+        await ensureInit();
+        
+        log('Solving: R U R\' U\' R\' F R2 U\' R\' U');
+        log('(Long scramble - you\'ll see depth progress)\n');
+        
+        const solutions = await helper.solve("R U R' U' R' F R2 U' R' U", {
+          onProgress: (depth) => {
+            log(`  Searching depth: ${depth}`);
+          }
+        });
+        
+        log(`\nFound ${solutions.length} solutions:`);
+        solutions.forEach((sol, i) => {
+          log(`  ${i + 1}. ${sol}`);
+        });
+        
+      } catch (error) {
+        log('❌ Error: ' + error.message);
+      }
+    }
+    
+    async function example4() {
+      clear();
+      log('=== Example 4: Reset Table ===\n');
+      
+      try {
+        await ensureInit();
+        
+        log('First solve (uses existing table)...');
+        let start = performance.now();
+        await helper.solve("R U");
+        log(`  ✅ Completed in ${(performance.now() - start).toFixed(0)}ms\n`);
+        
+        log('Resetting helper (clears table)...');
+        await helper.reset();
+        log('  ✅ Helper reset!\n');
+        
+        log('Second solve (rebuilds table)...');
+        start = performance.now();
+        const solutions = await helper.solve("R U");
+        log(`  ✅ Completed in ${(performance.now() - start).toFixed(0)}ms`);
+        log(`  (Should be slower - table was rebuilt)\n`);
+        
+        log(`Found ${solutions.length} solutions:`);
+        solutions.forEach((sol, i) => {
+          log(`  ${i + 1}. ${sol}`);
+        });
+        
+      } catch (error) {
+        log('❌ Error: ' + error.message);
+      }
+    }
+    
+    // Streaming Example
+    async function streamingExample() {
+      clear();
+      log('=== Streaming Output Example ===\n');
+      log('Finding up to 10 solutions with real-time output...\n');
+      
+      try {
+        await ensureInit();
+        
+        const solutions = [];
+        
+        const result = await helper.solve("R U R' U' R' F R2 U' R' U", {
+          maxSolutions: 10,
+          maxLength: 15,
+          onProgress: (depth) => {
+            // Real-time depth progress
+            log(`🔍 Searching depth: ${depth}`);
+          }
+        });
+        
+        // Note: Solutions arrive all at once in current implementation
+        // For true streaming, use the lower-level worker API with solution callbacks
+        log(`\n✅ Search complete! Found ${result.length} solutions:\n`);
+        result.forEach((sol, i) => {
+          log(`  ${i + 1}. ${sol}`);
+        });
+        
+      } catch (error) {
+        log('❌ Error: ' + error.message);
+      }
+    }
+  </script>
+</body>
+</html>

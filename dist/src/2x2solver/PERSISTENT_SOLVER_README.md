@@ -288,7 +288,6 @@ createModule().then(Module => {
 ```
 
 ✅ **Advantage**: Single binary for all environments - no need to maintain separate builds.
-```
 
 ## Comparison
 

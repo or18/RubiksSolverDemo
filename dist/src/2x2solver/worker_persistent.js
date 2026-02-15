@@ -131,12 +131,50 @@ self.onmessage = async function(event) {
 		const moveOrder = data.moveOrder || data.mav || data.ma2 || '';
 		const moveCount = data.moveCount || data.mcv || data.mcString || '';
 		
+		// Input validation
 		if (!scramble) {
 			originalPostMessage({
 				type: 'error',
 				data: 'scramble parameter is required'
 			});
 			return;
+		}
+		
+		if (typeof maxSolutions !== 'number' || maxSolutions < 1) {
+			originalPostMessage({
+				type: 'error',
+				data: 'maxSolutions must be a number >= 1'
+			});
+			return;
+		}
+		
+		if (typeof maxLength !== 'number' || maxLength < 1 || maxLength > 30) {
+			originalPostMessage({
+				type: 'error',
+				data: 'maxLength must be a number between 1 and 30'
+			});
+			return;
+		}
+		
+		if (typeof pruneDepth !== 'number' || pruneDepth < 0 || pruneDepth > 20) {
+			originalPostMessage({
+				type: 'error',
+				data: 'pruneDepth must be a number between 0 and 20'
+			});
+			return;
+		}
+		
+		// Basic scramble format validation (space-separated moves)
+		const movePattern = /^[URFLBD][2']?$/;
+		const moves = scramble.trim().split(/\s+/).filter(m => m);
+		for (const move of moves) {
+			if (!movePattern.test(move)) {
+				originalPostMessage({
+					type: 'error',
+					data: `Invalid move format: "${move}". Use format like: R U R' U2 F2`
+				});
+				return;
+			}
 		}
 		
 		// Call persistent solver (reuses prune table)

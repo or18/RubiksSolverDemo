@@ -16,6 +16,14 @@ python3 -m http.server 8000
 # http://localhost:8000/demo.html
 ```
 
+**Demo Features:**
+- ✅ **Full Parameter Control** - Configure all 9 solver parameters
+- ♻️ **Reuse Pruning Table** - Toggle persistence for performance testing
+- 🌐 **CDN Toggle** - Switch between local files and jsDelivr CDN
+- 🔄 **Cache Busting** - Development option for testing latest CDN changes
+
+Both [demo.html](demo.html) and [example-helper.html](example-helper.html) support local and CDN modes.
+
 ### Web Worker API (Recommended)
 
 The recommended approach for browser applications. Runs in a separate thread to avoid blocking the UI.
@@ -53,6 +61,67 @@ worker.postMessage({
   allowedMoves: 'U_U2_U-_R_R2_R-_F_F2_F-'
 });
 ```
+
+### 🎁 Simplified Helper API ⭐ Recommended for Beginners
+
+For easier usage, use the `Solver2x2Helper` which wraps the worker with a Promise-based API:
+
+```html
+<!-- Include the helper -->
+<script src="solver-helper.js"></script>
+
+<script>
+  // Simple 3-line usage!
+  const helper = new Solver2x2Helper();
+  await helper.init();
+  const solutions = await helper.solve("R U R' U'");
+  console.log(solutions); // ['U R U\' R\'', 'R\' U\' R\' U R U', ...]
+  
+  // With options
+  const solutions2 = await helper.solve("R U F", {
+    maxSolutions: 5,
+    rotation: 'y',
+    onProgress: (depth) => console.log(`Searching depth ${depth}`)
+  });
+  
+  // Cleanup
+  helper.terminate();
+</script>
+```
+
+**Helper Benefits:**
+- ✅ **No manual `worker.onmessage`** - Promise-based API
+- ✅ **async/await support** - Modern JavaScript patterns
+- ✅ **Progress callbacks** - Optional real-time updates
+- ✅ **Type-safe** - Clear parameter documentation
+
+See [example-helper.html](example-helper.html) for interactive examples.
+
+### 🔧 Direct Worker API (Advanced)
+
+## 🎮 Interactive Demo
+
+Open [demo.html](demo.html) in your browser for a full-featured interactive demo:
+
+**Features:**
+- ⚙️ All 9 parameters configurable via UI
+- ✅ Real-time input validation (client + worker)
+- 📊 Live statistics (solutions, time)
+- 🎯 Preset move restrictions (URF, Full, Custom)
+- 📝 Help text for each parameter
+
+**Usage:**
+```bash
+cd dist/src/2x2solver
+python -m http.server 8000
+# Open http://localhost:8000/demo.html
+```
+
+The demo uses local Worker - no CDN required!
+
+---
+
+## 🌐 CDN Usage
 
 **From CDN (requires Blob URL for CORS):**
 
@@ -142,6 +211,42 @@ const createModule = require('./solver.js');
   }
 })();
 ```
+
+### 🎁 Node.js Helper API ⭐ Recommended for Beginners
+
+For easier usage, use the `Solver2x2HelperNode` which provides a Promise-based API:
+
+```javascript
+const Solver2x2HelperNode = require('./solver-helper-node.js');
+
+(async () => {
+  // Simple 3-line usage!
+  const helper = new Solver2x2HelperNode();
+  await helper.init();
+  const solutions = await helper.solve("R U R' U'");
+  console.log(solutions); // ['U R U\' R\'', 'R\' U\' R\' U R U', ...]
+  
+  // With options
+  const solutions2 = await helper.solve("R U F", {
+    maxSolutions: 5,
+    rotation: 'y',
+    onProgress: (depth) => console.log(`Searching depth ${depth}`),
+    onSolution: (sol) => console.log(`Found: ${sol}`)
+  });
+  
+  // Solver automatically reuses pruning table for better performance!
+})();
+```
+
+**Helper Benefits:**
+- ✅ **No manual `globalThis.postMessage`** - Promise-based API
+- ✅ **async/await support** - Modern JavaScript patterns
+- ✅ **Automatic table reuse** - Optimal performance
+- ✅ **Progress & solution callbacks** - Real-time updates
+
+See `backups/test_files/example-helper-node.js` for more examples.
+
+---
 
 ## 📚 API Reference
 
@@ -315,15 +420,21 @@ em++ solver.cpp -o solver.js \
 - `compile.sh` - Compilation script
 
 ### Browser Usage
-- `worker_persistent.js` - Web Worker wrapper
-- `demo.html` - Interactive demo (recommended starting point)
-- `cdn-test.html` - CDN loading test (shows how to load from jsDelivr/GitHub)
+- `worker_persistent.js` - Web Worker wrapper (advanced)
+- `solver-helper.js` - Promise-based helper for Web Workers ⭐ Recommended
+- `demo.html` - Interactive demo with full parameter control
+- `example-helper.html` - Helper API examples
+
+### Node.js Usage
+- `solver-helper-node.js` - Promise-based helper for Node.js ⭐ Recommended
 
 ### Documentation
 - `README.md` - This file (quick start & API reference)
 - `PERSISTENT_SOLVER_README.md` - Detailed implementation guide
+- `RELEASE_GUIDE.md` - Release process and versioning guide
 
-### Backups
+### Development Tools
+- `purge-cdn-cache.sh` - CDN cache purging script
 - `backups/` - Test files and old implementations
 
 ## 🚀 Examples
@@ -441,9 +552,13 @@ https://cdn.jsdelivr.net/gh/or18/RubiksSolverDemo@v1.0.0/dist/src/2x2solver/
 Versioned URLs are permanently cached and guarantee stability.
 
 **CDN Update Timeline:**
-- **jsDelivr**: 2-12 hours (can purge immediately)
-- **GitHub Raw**: 5-60 minutes (no purge API)
+- **jsDelivr**: 2-12 hours typical (can purge immediately with script)
+- **Purge Script**: Instant, but affects all users globally ⚠️
+- **Cache Busting**: Local only, safe for testing ✅
 - **Browser Cache**: Ctrl+Shift+R to force reload
+
+**Production Recommendation:**
+Use Git tags (`@v1.0.0`) instead of `@main` for stable releases. Tagged versions are permanently cached and won't be affected by purge operations.
 
 ## 📖 Additional Resources
 

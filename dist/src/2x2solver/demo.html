@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>2x2x2 Persistent Solver - Demo</title>
+  <title>2x2x2 Persistent Solver Demo</title>
   <style>
     * {
       margin: 0;
@@ -50,7 +50,7 @@
     }
     
     .section {
-      margin-bottom: 30px;
+      margin-bottom: 25px;
       padding: 20px;
       background: #f8f9fa;
       border-radius: 8px;
@@ -60,7 +60,7 @@
     .section h2 {
       color: #333;
       margin-bottom: 15px;
-      font-size: 1.5em;
+      font-size: 1.4em;
     }
     
     .input-group {
@@ -69,23 +69,37 @@
     
     .input-group label {
       display: block;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
       color: #555;
       font-weight: 600;
+      font-size: 0.95em;
     }
     
-    .input-group input {
+    .input-group input, .input-group select {
       width: 100%;
-      padding: 12px;
+      padding: 10px;
       border: 2px solid #ddd;
       border-radius: 6px;
-      font-size: 16px;
+      font-size: 15px;
       transition: border-color 0.3s;
+      font-family: 'Courier New', monospace;
     }
     
-    .input-group input:focus {
+    .input-group input:focus, .input-group select:focus {
       outline: none;
       border-color: #667eea;
+    }
+    
+    .input-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+    }
+    
+    .input-row-three {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 15px;
     }
     
     .button-group {
@@ -102,8 +116,6 @@
       border-radius: 6px;
       cursor: pointer;
       transition: all 0.3s;
-      flex: 1;
-      min-width: 120px;
     }
     
     button.primary {
@@ -113,7 +125,7 @@
     
     button.primary:hover:not(:disabled) {
       transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+      box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
     }
     
     button.secondary {
@@ -126,7 +138,7 @@
     }
     
     button:disabled {
-      opacity: 0.6;
+      opacity: 0.5;
       cursor: not-allowed;
     }
     
@@ -134,18 +146,12 @@
       padding: 12px;
       border-radius: 6px;
       margin: 15px 0;
-      font-weight: 600;
+      font-weight: 500;
       display: none;
     }
     
     .status.show {
       display: block;
-    }
-    
-    .status.info {
-      background: #cfe2ff;
-      color: #084298;
-      border-left: 4px solid #0d6efd;
     }
     
     .status.success {
@@ -160,10 +166,10 @@
       border-left: 4px solid #dc3545;
     }
     
-    .status.warning {
-      background: #fff3cd;
-      color: #664d03;
-      border-left: 4px solid #ffc107;
+    .status.info {
+      background: #cff4fc;
+      color: #055160;
+      border-left: 4px solid #0dcaf0;
     }
     
     .solutions {
@@ -171,73 +177,20 @@
     }
     
     .solution-item {
-      padding: 12px;
-      margin: 8px 0;
       background: white;
+      padding: 12px;
+      margin-bottom: 10px;
       border-radius: 6px;
       border-left: 4px solid #667eea;
       font-family: 'Courier New', monospace;
-      font-size: 14px;
-    }
-    
-    .solution-item strong {
-      color: #667eea;
-      margin-right: 8px;
-    }
-    
-    .progress {
-      margin: 15px 0;
-      font-size: 14px;
-      color: #666;
-      font-family: 'Courier New', monospace;
-    }
-    
-    .examples {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 10px;
-      margin: 15px 0;
-    }
-    
-    .example-btn {
-      padding: 10px;
-      background: white;
-      border: 2px solid #667eea;
-      color: #667eea;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 14px;
-      transition: all 0.3s;
-    }
-    
-    .example-btn:hover {
-      background: #667eea;
-      color: white;
-    }
-    
-    .info-box {
-      background: #e7f3ff;
-      border-left: 4px solid #0d6efd;
-      padding: 15px;
-      border-radius: 6px;
-      margin: 15px 0;
-    }
-    
-    .info-box h3 {
-      color: #084298;
-      margin-bottom: 8px;
-    }
-    
-    .info-box p {
-      color: #084298;
-      line-height: 1.6;
+      font-size: 16px;
     }
     
     .stats {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
       gap: 15px;
-      margin: 15px 0;
+      margin-top: 15px;
     }
     
     .stat-card {
@@ -245,307 +198,560 @@
       padding: 15px;
       border-radius: 6px;
       text-align: center;
-      border: 2px solid #eee;
-    }
-    
-    .stat-card .value {
-      font-size: 2em;
-      font-weight: bold;
-      color: #667eea;
+      border-left: 4px solid #667eea;
     }
     
     .stat-card .label {
-      font-size: 0.9em;
       color: #666;
-      margin-top: 5px;
+      font-size: 0.85em;
+      margin-bottom: 5px;
+    }
+    
+    .stat-card .value {
+      color: #333;
+      font-size: 1.8em;
+      font-weight: 700;
+    }
+    
+    .help-text {
+      font-size: 0.85em;
+      color: #666;
+      margin-top: 4px;
+    }
+    
+    .info-box {
+      background: #e7f3ff;
+      border-left: 4px solid #0d6efd;
+      padding: 12px;
+      border-radius: 6px;
+      margin: 15px 0;
+      font-size: 0.9em;
+    }
+    
+    .info-box strong {
+      color: #084298;
     }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="header">
-      <h1>🧊 2x2x2 Persistent Solver</h1>
-      <p>Fast optimal solver with persistent pruning tables</p>
+      <h1>🎯 2x2x2 Persistent Solver</h1>
+      <p>High-performance WebAssembly solver with custom parameters</p>
     </div>
     
     <div class="content">
       <!-- Worker Status -->
       <div class="section">
-        <h2>🔧 Solver Status</h2>
+        <h2>🔧 Worker Status</h2>
         <div id="workerStatus" class="status info show">
-          ⏳ Initializing Web Worker...
+          ⏳ Initializing worker...
         </div>
-        <div class="stats" id="statsContainer" style="display: none;">
-          <div class="stat-card">
-            <div class="value" id="statSolves">0</div>
-            <div class="label">Total Solves</div>
+        
+        <div style="margin-top: 15px; padding: 12px; background: white; border-radius: 6px; border-left: 4px solid #667eea;">
+          <label style="display: flex; align-items: center; cursor: pointer; color: #333;">
+            <input type="checkbox" id="reuseTable" checked style="margin-right: 10px; width: auto; cursor: pointer;">
+            <span>
+              <strong>♻️ Reuse Pruning Table</strong> 
+              <span style="font-weight: normal; color: #666; font-size: 0.9em;">
+                (Keep worker alive between solves - much faster!)
+              </span>
+            </span>
+          </label>
+          <div style="margin-top: 8px; margin-left: 28px; font-size: 0.85em; color: #666;">
+            • <strong>ON</strong>: First solve builds table (~3-4s), subsequent solves reuse it (<1s)<br>
+            • <strong>OFF</strong>: Each solve rebuilds table from scratch (slower, for testing)
           </div>
-          <div class="stat-card">
-            <div class="value" id="statSolutions">0</div>
-            <div class="label">Solutions Found</div>
+        </div>
+        
+        <!-- CDN Configuration (For developer) -->
+        <div style="margin-top: 15px; padding: 12px; background: #fff8e1; border-radius: 6px; border-left: 4px solid #ff9800;">
+          <label style="display: flex; align-items: center; cursor: pointer; color: #333;">
+            <input type="checkbox" id="useCDN" style="margin-right: 10px; width: auto; cursor: pointer;">
+            <span>
+              <strong>🌐 Use CDN (jsDelivr)</strong> 
+              <span style="font-weight: normal; color: #666; font-size: 0.9em;">
+                (Load from CDN instead of local files)
+              </span>
+            </span>
+          </label>
+          
+          <div id="cacheBustOption" style="display: none; margin-top: 10px; margin-left: 28px;">
+            <label style="display: flex; align-items: center; cursor: pointer; color: #333;">
+              <input type="checkbox" id="cacheBust" style="margin-right: 10px; width: auto; cursor: pointer;">
+              <span>
+                <strong>🔄 Cache Busting</strong>
+                <span style="font-weight: normal; color: #666; font-size: 0.85em;">
+                  (Development only - adds timestamp to URLs)
+                </span>
+              </span>
+            </label>
           </div>
-          <div class="stat-card">
-            <div class="value" id="statAvgTime">-</div>
-            <div class="label">Avg Time (ms)</div>
+          
+          <div style="margin-top: 8px; margin-left: 28px; font-size: 0.85em; color: #666;">
+            • <strong>Local</strong>: Uses files in current directory (default)<br>
+            • <strong>CDN</strong>: Loads from https://cdn.jsdelivr.net/gh/or18/RubiksSolverDemo@main/<br>
+            • <strong>Cache Busting</strong>: For developers testing latest changes (bypasses CDN cache)
           </div>
         </div>
       </div>
       
-      <!-- Main Input -->
+      <!-- Solver Parameters -->
       <div class="section">
-        <h2>🎯 Solve a Scramble</h2>
-        
-        <div class="info-box">
-          <h3>ℹ️ How it works</h3>
-          <p>
-            Enter a scramble below and click "Solve". The solver uses <strong>URF moves</strong> 
-            (U, U2, U', R, R2, R', F, F2, F') which form a complete system for 2x2x2.
-            The first solve builds a pruning table (~3-4 seconds), subsequent solves are much faster (&lt;1 second).
-          </p>
-        </div>
+        <h2>⚙️ Solver Parameters</h2>
         
         <div class="input-group">
-          <label for="scramble">Scramble:</label>
+          <label for="scramble">Scramble <span style="color: #dc3545;">*</span></label>
           <input 
             type="text" 
             id="scramble" 
-            placeholder="e.g., R U R' U'" 
+            placeholder="e.g., R U R' U' F R2 U' R' U"
             value="R U R' U'"
           >
+          <div class="help-text">Space-separated moves (e.g., R U R' U2 F2)</div>
         </div>
         
-        <div class="examples">
-          <button class="example-btn" onclick="setScramble('R U R\' U\'')">R U R' U'</button>
-          <button class="example-btn" onclick="setScramble('R2 U2')">R2 U2</button>
-          <button class="example-btn" onclick="setScramble('U R2 U\'')">U R2 U'</button>
-          <button class="example-btn" onclick="setScramble('U\' F2 U R\' U\' R F\' R F2 U')">10-move scramble</button>
+        <div class="input-row">
+          <div class="input-group">
+            <label for="rotation">Rotation (optional)</label>
+            <input 
+              type="text" 
+              id="rotation" 
+              placeholder="e.g., y, y2, x, z"
+              value=""
+            >
+            <div class="help-text">Cube rotation before solving</div>
+          </div>
+          
+          <div class="input-group">
+            <label for="preMove">Pre-Move (optional)</label>
+            <input 
+              type="text" 
+              id="preMove" 
+              placeholder="e.g., U R"
+              value=""
+            >
+            <div class="help-text">Moves to prepend to solutions</div>
+          </div>
+        </div>
+        
+        <div class="input-row-three">
+          <div class="input-group">
+            <label for="maxSolutions">Max Solutions</label>
+            <input 
+              type="number" 
+              id="maxSolutions" 
+              min="1" 
+              value="3"
+            >
+            <div class="help-text">No upper limit (use with caution)</div>
+          </div>
+          
+          <div class="input-group">
+            <label for="maxLength">Max Length</label>
+            <input 
+              type="number" 
+              id="maxLength" 
+              min="1" 
+              max="20" 
+              value="11"
+            >
+          </div>
+          
+          <div class="input-group">
+            <label for="pruneDepth">Prune Depth</label>
+            <input 
+              type="number" 
+              id="pruneDepth" 
+              min="0" 
+              max="20" 
+              value="1"
+            >
+            <div class="help-text">0-20 (1 recommended for URF)</div>
+          </div>
+        </div>
+        
+        <div class="input-group">
+          <label for="allowedMoves">Allowed Moves</label>
+          <select id="allowedMoves">
+            <option value="U_U2_U-_R_R2_R-_F_F2_F-">URF (9 moves) - Recommended for 2x2x2</option>
+            <option value="U_U2_U-_R_R2_R-_F_F2_F-_L_L2_L-_B_B2_B-_D_D2_D-">All moves (18 moves)</option>
+            <option value="U_R_F">U R F only (3 moves)</option>
+            <option value="custom">Custom...</option>
+          </select>
+          <input 
+            type="text" 
+            id="allowedMovesCustom" 
+            placeholder="e.g., U_U2_U-_R_R2_R-"
+            style="display: none; margin-top: 10px;"
+          >
+          <div class="help-text">Underscore-separated moves (e.g., U_U2_U-_R_R2_R-_F_F2_F-)</div>
+        </div>
+        
+        <div class="input-row">
+          <div class="input-group">
+            <label for="moveOrder">Move Order (optional)</label>
+            <input 
+              type="text" 
+              id="moveOrder" 
+              placeholder="Leave empty for default"
+              value=""
+            >
+            <div class="help-text">Advanced: Custom move ordering</div>
+          </div>
+          
+          <div class="input-group">
+            <label for="moveCount">Move Count (optional)</label>
+            <input 
+              type="text" 
+              id="moveCount" 
+              placeholder="Leave empty for default"
+              value=""
+            >
+            <div class="help-text">Advanced: Move count restrictions</div>
+          </div>
+        </div>
+        
+        <div class="info-box">
+          <strong>ℹ️ Parameter Guide:</strong><br>
+          • <strong>URF moves</strong> (9 moves) are optimal for 2x2x2 - fastest and covers all positions<br>
+          • <strong>Prune Depth 1</strong> is recommended for URF moves<br>
+          • First solve builds 84MB pruning table (~1-2 seconds), then reused for all subsequent solves
         </div>
         
         <div class="button-group">
-          <button id="solveBtn" class="primary" onclick="solveCube()" disabled>
-            🔍 Solve
+          <button class="primary" onclick="solve()" id="solveBtn" disabled>
+            🚀 Solve
           </button>
           <button class="secondary" onclick="clearResults()">
-            🗑️ Clear
+            🗑️ Clear Results
           </button>
         </div>
-        
-        <div id="solveStatus" class="status"></div>
-        <div id="progress" class="progress"></div>
-        
-        <div id="solutionsContainer" class="solutions"></div>
       </div>
       
-      <!-- Quick Tests -->
-      <div class="section">
-        <h2>⚡ Quick Test Suite</h2>
-        <p style="margin-bottom: 15px; color: #666;">
-          Run multiple scrambles to see the performance benefit of persistent tables.
-        </p>
-        <div class="button-group">
-          <button class="primary" onclick="runTests()" id="testBtn" disabled>
-            ▶️ Run All Tests
-          </button>
-        </div>
-        <div id="testStatus" class="status"></div>
-        <div id="testProgress" class="progress"></div>
-        <div id="testResults" class="solutions"></div>
+      <!-- Results -->
+      <div class="section" id="resultsSection" style="display: none;">
+        <h2>✨ Solutions</h2>
+        <div id="solveStatus" class="status"></div>
+        <div id="solutions" class="solutions"></div>
+        <div class="stats" id="stats"></div>
       </div>
     </div>
   </div>
 
   <script>
     let worker = null;
-    let currentSolveTime = 0;
-    let stats = {
-      solves: 0,
-      solutions: 0,
-      times: []
-    };
+    let solveStartTime = 0;
+    let solutionCount = 0;
+    const CDN_BASE_URL = 'https://cdn.jsdelivr.net/gh/or18/RubiksSolverDemo@main/dist/src/2x2solver/';
     
-    // Initialize Worker
-    function initWorker() {
-      worker = new Worker('worker_persistent.js');
-      
-      worker.onmessage = function(event) {
-        const msg = event.data;
-        
-        if (msg.type === 'ready') {
-          showStatus('workerStatus', 'success', '✅ Solver ready! Pruning tables will be built on first solve.');
-          document.getElementById('solveBtn').disabled = false;
-          document.getElementById('testBtn').disabled = false;
-          document.getElementById('statsContainer').style.display = 'grid';
-        } else if (msg.type === 'solution') {
-          if (msg.data) {
-            handleSolution(msg.data);
-          }
-        } else if (msg.type === 'depth') {
-          handleProgress(msg.data);
-        } else if (msg.type === 'done') {
-          handleDone();
-        } else if (msg.type === 'error') {
-          handleError(msg.data);
+    // Initialize worker on page load
+    window.addEventListener('load', initWorker);
+    
+    // Handle allowed moves dropdown
+    document.getElementById('allowedMoves').addEventListener('change', function(e) {
+      const customInput = document.getElementById('allowedMovesCustom');
+      if (e.target.value === 'custom') {
+        customInput.style.display = 'block';
+        customInput.value = 'U_U2_U-_R_R2_R-_F_F2_F-';
+      } else {
+        customInput.style.display = 'none';
+      }
+    });
+    
+    // Handle CDN checkbox
+    document.getElementById('useCDN').addEventListener('change', function(e) {
+      const cacheBustOption = document.getElementById('cacheBustOption');
+      if (e.target.checked) {
+        cacheBustOption.style.display = 'block';
+        // Reinitialize worker with CDN
+        if (worker) {
+          worker.terminate();
+          worker = null;
         }
-      };
-      
-      worker.onerror = function(error) {
-        showStatus('workerStatus', 'error', '❌ Worker error: ' + error.message);
-      };
+        initWorker();
+      } else {
+        cacheBustOption.style.display = 'none';
+        document.getElementById('cacheBust').checked = false;
+        // Reinitialize worker with local files
+        if (worker) {
+          worker.terminate();
+          worker = null;
+        }
+        initWorker();
+      }
+    });
+    
+    // Handle cache bust checkbox
+    document.getElementById('cacheBust').addEventListener('change', function(e) {
+      // Reinitialize worker with/without cache busting
+      if (worker) {
+        worker.terminate();
+        worker = null;
+      }
+      initWorker();
+    });
+    
+    function showStatus(elementId, type, message) {
+      const el = document.getElementById(elementId);
+      el.className = `status show ${type}`;
+      el.textContent = message;
     }
     
-    // Solve function
-    let currentSolutions = [];
+    // Create Worker from CDN (bypasses CORS with Blob URL)
+    async function createWorkerFromCDN(baseURL, cacheBust = false) {
+      const url = baseURL + 'worker_persistent.js' + (cacheBust ? `?v=${Date.now()}` : '');
+      const res = await fetch(url);
+      let code = await res.text();
+      
+      // Replace baseURL calculation with CDN URL
+      const oldCode = `const scriptPath = self.location.href;
+const baseURL = scriptPath.substring(0, scriptPath.lastIndexOf('/') + 1);`;
+      const newCode = `const baseURL = '${baseURL}';`;
+      code = code.replace(oldCode, newCode);
+      
+      // Add cache busting to WASM/JS imports if enabled
+      if (cacheBust) {
+        code = code.replace(/solver\.js/g, `solver.js?v=${Date.now()}`);
+        code = code.replace(/solver\.wasm/g, `solver.wasm?v=${Date.now()}`);
+      }
+      
+      const blob = new Blob([code], { type: 'application/javascript' });
+      return new Worker(URL.createObjectURL(blob));
+    }
     
-    function solveCube() {
+    async function initWorker() {
+      try {
+        const useCDN = document.getElementById('useCDN').checked;
+        const cacheBust = document.getElementById('cacheBust').checked;
+        
+        if (useCDN) {
+          showStatus('workerStatus', 'info', `⏳ Loading worker from CDN${cacheBust ? ' (cache busting enabled)' : ''}...`);
+          worker = await createWorkerFromCDN(CDN_BASE_URL, cacheBust);
+        } else {
+          showStatus('workerStatus', 'info', '⏳ Loading worker from local files...');
+          worker = new Worker('worker_persistent.js');
+        }
+        
+        worker.onmessage = function(event) {
+          const msg = event.data;
+          
+          if (msg.type === 'ready') {
+            showStatus('workerStatus', 'success', '✅ Worker ready! Pruning table will be built on first solve.');
+            document.getElementById('solveBtn').disabled = false;
+          } else if (msg.type === 'solution') {
+            if (msg.data) {
+              handleSolution(msg.data);
+            }
+          } else if (msg.type === 'depth') {
+            handleProgress(msg.data);
+          } else if (msg.type === 'done') {
+            handleDone();
+          } else if (msg.type === 'error') {
+            handleError(msg.data);
+          }
+        };
+        
+        worker.onerror = function(error) {
+          showStatus('workerStatus', 'error', '❌ Worker error: ' + error.message);
+          document.getElementById('solveBtn').disabled = true;
+        };
+        
+      } catch (error) {
+        showStatus('workerStatus', 'error', '❌ Failed to initialize worker: ' + error.message);
+        document.getElementById('solveBtn').disabled = true;
+      }
+    }
+    
+    function validateInput() {
       const scramble = document.getElementById('scramble').value.trim();
       
       if (!scramble) {
-        showStatus('solveStatus', 'error', '❌ Please enter a scramble');
+        showStatus('solveStatus', 'error', '❌ Scramble is required');
+        return false;
+      }
+      
+      // Basic move validation
+      const validMoves = /^[URFLBD][2']?\s*$/;
+      const moves = scramble.split(/\s+/).filter(m => m);
+      for (const move of moves) {
+        if (!validMoves.test(move + ' ')) {
+          showStatus('solveStatus', 'error', `❌ Invalid move: ${move}. Use format like: R U R' U2 F2`);
+          return false;
+        }
+      }
+      
+      return true;
+    }
+    
+    function solve() {
+      if (!worker) {
+        showStatus('solveStatus', 'error', '❌ Worker not initialized');
         return;
       }
       
-      currentSolutions = [];
-      currentSolveTime = performance.now();
-      document.getElementById('solutionsContainer').innerHTML = '';
-      document.getElementById('progress').innerHTML = '';
-      showStatus('solveStatus', 'info', '⏳ Solving... (first solve builds pruning table, ~3-4 seconds)');
+      if (!validateInput()) {
+        return;
+      }
       
+      // Check reuse table option
+      const reuseTable = document.getElementById('reuseTable').checked;
+      
+      // If reuse is OFF, terminate current worker and create new one
+      if (!reuseTable) {
+        showStatus('solveStatus', 'info', '🔄 Reuse OFF: Recreating worker (table will be rebuilt)...');
+        worker.terminate();
+        worker = null;
+        
+        // Reinitialize worker
+        const useCDN = document.getElementById('useCDN').checked;
+        const cacheBust = document.getElementById('cacheBust').checked;
+        
+        const initPromise = useCDN 
+          ? createWorkerFromCDN(CDN_BASE_URL, cacheBust)
+          : Promise.resolve(new Worker('worker_persistent.js'));
+        
+        initPromise.then(newWorker => {
+          worker = newWorker;
+          
+          worker.onmessage = function(event) {
+            const msg = event.data;
+            
+            if (msg.type === 'ready') {
+              // Worker ready, proceed with solve
+              performSolve();
+            } else if (msg.type === 'solution') {
+              if (msg.data) {
+                handleSolution(msg.data);
+              }
+            } else if (msg.type === 'depth') {
+              handleProgress(msg.data);
+            } else if (msg.type === 'done') {
+              handleDone();
+            } else if (msg.type === 'error') {
+              handleError(msg.data);
+            }
+          };
+          
+          worker.onerror = function(error) {
+            showStatus('solveStatus', 'error', '❌ Worker error: ' + error.message);
+            document.getElementById('solveBtn').disabled = false;
+          };
+          
+          // Worker will send 'ready' message, then performSolve() will be called
+        }).catch(error => {
+          showStatus('solveStatus', 'error', '❌ Failed to recreate worker: ' + error.message);
+          document.getElementById('solveBtn').disabled = false;
+        });
+        
+        return;
+      } else {
+        // Reuse is ON, just solve directly
+        performSolve();
+      }
+    }
+    
+    function performSolve() {
+      if (!worker) {
+        showStatus('solveStatus', 'error', '❌ Worker not initialized');
+        return;
+      }
+      
+      // Get all parameters
+      const scramble = document.getElementById('scramble').value.trim();
+      const rotation = document.getElementById('rotation').value.trim();
+      const maxSolutions = parseInt(document.getElementById('maxSolutions').value);
+      const maxLength = parseInt(document.getElementById('maxLength').value);
+      const pruneDepth = parseInt(document.getElementById('pruneDepth').value);
+      const preMove = document.getElementById('preMove').value.trim();
+      const moveOrder = document.getElementById('moveOrder').value.trim();
+      const moveCount = document.getElementById('moveCount').value.trim();
+      
+      // Get allowed moves
+      let allowedMoves = document.getElementById('allowedMoves').value;
+      if (allowedMoves === 'custom') {
+        allowedMoves = document.getElementById('allowedMovesCustom').value.trim();
+        if (!allowedMoves) {
+          showStatus('solveStatus', 'error', '❌ Please enter custom allowed moves');
+          return;
+        }
+      }
+      
+      // Reset results
+      solutionCount = 0;
+      document.getElementById('solutions').innerHTML = '';
+      document.getElementById('stats').innerHTML = '';
+      document.getElementById('resultsSection').style.display = 'block';
+      showStatus('solveStatus', 'info', '🔍 Solving...');
+      
+      solveStartTime = performance.now();
+      
+      // Send to worker
       worker.postMessage({
         scramble: scramble,
-        maxSolutions: 3,
-        maxLength: 11,
-        pruneDepth: 1,
-        allowedMoves: 'U_U2_U-_R_R2_R-_F_F2_F-'
+        rotation: rotation,
+        maxSolutions: maxSolutions,
+        maxLength: maxLength,
+        pruneDepth: pruneDepth,
+        allowedMoves: allowedMoves,
+        preMove: preMove,
+        moveOrder: moveOrder,
+        moveCount: moveCount
       });
+      
+      document.getElementById('solveBtn').disabled = true;
     }
     
     function handleSolution(solution) {
-      currentSolutions.push(solution);
-      const container = document.getElementById('solutionsContainer');
-      const div = document.createElement('div');
-      div.className = 'solution-item';
-      div.innerHTML = `<strong>Solution ${currentSolutions.length}:</strong> ${solution}`;
-      container.appendChild(div);
+      solutionCount++;
+      const solutionsDiv = document.getElementById('solutions');
       
-      stats.solutions++;
-      updateStats();
+      const item = document.createElement('div');
+      item.className = 'solution-item';
+      item.textContent = `Solution ${solutionCount}: ${solution}`;
+      solutionsDiv.appendChild(item);
     }
     
-    function handleProgress(depthMsg) {
-      document.getElementById('progress').textContent = depthMsg;
+    function handleProgress(message) {
+      showStatus('solveStatus', 'info', `🔍 Searching... ${message}`);
     }
     
     function handleDone() {
-      const elapsed = performance.now() - currentSolveTime;
-      stats.solves++;
-      stats.times.push(elapsed);
-      updateStats();
+      const elapsed = performance.now() - solveStartTime;
       
-      if (currentSolutions.length > 0) {
-        showStatus('solveStatus', 'success', 
-          `✅ Found ${currentSolutions.length} solution(s) in ${elapsed.toFixed(0)}ms`);
+      if (solutionCount === 0) {
+        showStatus('solveStatus', 'error', '❌ No solutions found within the given constraints');
       } else {
-        showStatus('solveStatus', 'warning', 
-          `⚠️ No solutions found in ${elapsed.toFixed(0)}ms`);
+        showStatus('solveStatus', 'success', `✅ Search complete! Found ${solutionCount} solution(s) in ${elapsed.toFixed(0)}ms`);
       }
+      
+      // Show stats
+      const statsDiv = document.getElementById('stats');
+      statsDiv.innerHTML = `
+        <div class="stat-card">
+          <div class="label">Solutions</div>
+          <div class="value">${solutionCount}</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">Time</div>
+          <div class="value">${elapsed.toFixed(0)}<span style="font-size:0.5em">ms</span></div>
+        </div>
+      `;
+      
+      document.getElementById('solveBtn').disabled = false;
     }
     
     function handleError(error) {
       showStatus('solveStatus', 'error', '❌ Error: ' + error);
-    }
-    
-    // Test suite
-    const testScrambles = [
-      { name: 'Test 1', scramble: 'R U R\' U\'', note: 'Builds pruning table' },
-      { name: 'Test 2', scramble: 'R2 U2', note: 'Reuses table' },
-      { name: 'Test 3', scramble: 'U R2 U\'', note: 'Reuses table' },
-      { name: 'Test 4', scramble: 'U\' F2 U R\' U\' R F\' R F2 U', note: '10-move challenge' }
-    ];
-    
-    let testIndex = 0;
-    let testStartTime = 0;
-    
-    function runTests() {
-      testIndex = 0;
-      testStartTime = performance.now();
-      document.getElementById('testResults').innerHTML = '';
-      document.getElementById('testProgress').innerHTML = '';
-      showStatus('testStatus', 'info', '⏳ Running tests...');
-      
-      runNextTest();
-    }
-    
-    function runNextTest() {
-      if (testIndex >= testScrambles.length) {
-        const totalTime = performance.now() - testStartTime;
-        showStatus('testStatus', 'success', 
-          `✅ All ${testScrambles.length} tests completed in ${(totalTime / 1000).toFixed(1)}s`);
-        return;
-      }
-      
-      const test = testScrambles[testIndex];
-      currentSolutions = [];
-      currentSolveTime = performance.now();
-      
-      document.getElementById('testProgress').innerHTML = 
-        `Running ${test.name}: "${test.scramble}" (${test.note})`;
-      
-      // Override handlers temporarily
-      const originalDone = handleDone;
-      window.handleDone = function() {
-        const elapsed = performance.now() - currentSolveTime;
-        const container = document.getElementById('testResults');
-        const div = document.createElement('div');
-        div.className = 'solution-item';
-        div.innerHTML = `
-          <strong>${test.name}:</strong> ${currentSolutions.length} solution(s) 
-          in ${elapsed.toFixed(0)}ms<br>
-          <small style="color: #666;">${test.note}</small>
-        `;
-        container.appendChild(div);
-        
-        testIndex++;
-        setTimeout(runNextTest, 100);
-      };
-      
-      worker.postMessage({
-        scramble: test.scramble,
-        maxSolutions: 3,
-        maxLength: 11,
-        pruneDepth: 1,
-        allowedMoves: 'U_U2_U-_R_R2_R-_F_F2_F-'
-      });
-    }
-    
-    // Utility functions
-    function setScramble(scramble) {
-      document.getElementById('scramble').value = scramble;
+      document.getElementById('solveBtn').disabled = false;
     }
     
     function clearResults() {
-      document.getElementById('solutionsContainer').innerHTML = '';
-      document.getElementById('progress').innerHTML = '';
-      document.getElementById('solveStatus').className = 'status';
+      document.getElementById('solutions').innerHTML = '';
+      document.getElementById('stats').innerHTML = '';
+      document.getElementById('resultsSection').style.display = 'none';
+      showStatus('solveStatus', 'info', '');
     }
-    
-    function showStatus(elementId, type, message) {
-      const status = document.getElementById(elementId);
-      status.className = `status ${type} show`;
-      status.textContent = message;
-    }
-    
-    function updateStats() {
-      document.getElementById('statSolves').textContent = stats.solves;
-      document.getElementById('statSolutions').textContent = stats.solutions;
-      
-      if (stats.times.length > 0) {
-        const avg = stats.times.reduce((a, b) => a + b, 0) / stats.times.length;
-        document.getElementById('statAvgTime').textContent = avg.toFixed(0);
-      }
-    }
-    
-    // Initialize on load
-    initWorker();
   </script>
 </body>
 </html>

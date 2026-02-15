@@ -6,101 +6,136 @@ High-performance WebAssembly-based Rubik's Cube solvers with persistent pruning 
 
 This library provides WebAssembly-compiled cube solvers with persistent state optimization. Solvers build expensive pruning tables once and reuse them across multiple solves, dramatically improving performance for batch operations.
 
-## Quick Start
+## 🚀 Quick Start
 
-### Web Worker (Browser - Recommended)
+All examples use the **Helper API** - a Promise-based wrapper that eliminates complex worker message handling.
 
-**Local files:**
+### Browser (HTML + CDN)
 
-```javascript
-const worker = new Worker('src/2x2solver/worker_persistent.js');
+Copy-paste ready example using CDN:
 
-worker.onmessage = (e) => {
-  const msg = e.data;
-  if (msg.type === 'ready') {
-    worker.postMessage({
-      scramble: "R U R' U'",
-      maxSolutions: 3,
-      maxLength: 11,
-      pruneDepth: 1,
-      allowedMoves: 'U_U2_U-_R_R2_R-_F_F2_F-'
-    });
-  } else if (msg.type === 'solution') {
-    console.log('Solution:', msg.data);
-  }
-};
+```html
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>2x2 Solver</title>
+</head>
+<body>
+  <h1>2x2 Solver Demo</h1>
+  <button onclick="solve()">Solve</button>
+  <div id="output"></div>
+
+  <script src="https://cdn.jsdelivr.net/gh/or18/RubiksSolverDemo@main/dist/src/2x2solver/solver-helper.js"></script>
+  <script>
+    const helper = new Solver2x2Helper();
+    
+    async function solve() {
+      await helper.init();
+      const solutions = await helper.solve("R U R' U'", {
+        maxSolutions: 5,
+        onProgress: (depth) => {
+          console.log(`Searching depth: ${depth}`);
+        }
+      });
+      
+      document.getElementById('output').innerHTML = 
+        solutions.map((s, i) => `${i+1}. ${s}`).join('<br>');
+    }
+  </script>
+</body>
+</html>
 ```
-
-**From CDN (jsDelivr):**
-
-```javascript
-// Helper function to create worker from CDN (bypasses CORS)
-async function createWorkerFromCDN(baseURL) {
-  const res = await fetch(baseURL + 'worker_persistent.js');
-  let code = await res.text();
-  
-  // Replace baseURL calculation with CDN URL
-  const oldCode = `const scriptPath = self.location.href;
-const baseURL = scriptPath.substring(0, scriptPath.lastIndexOf('/') + 1);`;
-  const newCode = `const baseURL = '${baseURL}';`;
-  code = code.replace(oldCode, newCode);
-  
-  const blob = new Blob([code], { type: 'application/javascript' });
-  return new Worker(URL.createObjectURL(blob));
-}
-
-// Usage
-const cdn = 'https://cdn.jsdelivr.net/gh/or18/RubiksSolverDemo@main/dist/src/2x2solver/';
-const worker = await createWorkerFromCDN(cdn);
-worker.onmessage = (e) => { /* same as above */ };
-```
-
-See [src/2x2solver/cdn-test.html](src/2x2solver/cdn-test.html) for complete example.
 
 ### Node.js
 
 ```javascript
-const createModule = require('./src/2x2solver/solver.js');
+const { Solver2x2HelperNode } = require('./src/2x2solver/solver-helper-node.js');
 
-(async () => {
-  const Module = await createModule();
-  const solver = new Module.PersistentSolver2x2();
+async function solve() {
+  const helper = new Solver2x2HelperNode();
   
-  globalThis.postMessage = (msg) => {
-    if (msg !== 'Search finished.' && msg !== '') {
-      console.log('Solution:', msg);
-    }
-  };
+  await helper.init();
+  console.log('✅ Solver ready!\n');
   
-  solver.solve(
-    "R U R' U'", '', 3, 11, 1,
-    'U_U2_U-_R_R2_R-_F_F2_F-', '', '', ''
-  );
-})();
+  const solutions = await helper.solve("R U R' U'", {
+    maxSolutions: 5,
+    onProgress: (depth) => console.log(`Depth: ${depth}`),
+    onSolution: (sol) => console.log(`Found: ${sol}`)
+  });
+  
+  console.log(`\nTotal: ${solutions.length} solutions`);
+}
+
+solve().catch(console.error);
 ```
 
-## Browser Requirements
+### Local Files (Browser)
 
-- WebAssembly support
-- Web Workers (for non-blocking operation)
-- ES6 modules
+```html
+<script src="src/2x2solver/solver-helper.js"></script>
+<script>
+  const helper = new Solver2x2Helper();
+  
+  (async () => {
+    await helper.init();
+    const solutions = await helper.solve("R U R' U'");
+    console.log(solutions); // ['U2 R', 'U F2 U', ...]
+  })();
+</script>
+```
 
-All modern browsers (Chrome, Firefox, Safari, Edge) are supported.
+## 📊 Performance
 
----
+| Solve | Time | Notes |
+|-------|------|-------|
+| **1st** | ~3-4s | Builds pruning table (~84MB) |
+| **2nd+** | <1s | **Reuses table** |
 
-## 2x2x2 Cube Solver
+**Batch Example**: 4 scrambles in ~5-6 seconds (vs. ~12-16s without persistence)
 
-Optimal solver for 2x2x2 Rubik's Cube (Pocket Cube) with persistent pruning tables.
+## ⚙️ Configuration
 
-### ✨ Key Features
+```javascript
+const solutions = await helper.solve(scramble, {
+  maxSolutions: 3,        // No upper limit (use with caution)
+  maxLength: 11,          // 1-30 moves
+  pruneDepth: 1,          // 0-20 (1 recommended for URF)
+  allowedMoves: 'U_U2_U-_R_R2_R-_F_F2_F-', // URF move set
+  rotation: '',           // Cube rotation (e.g., 'y', 'x2')
+  preMove: '',            // Pre-move sequence
+  onProgress: (depth) => console.log(depth)  // Progress callback
+});
+```
 
-- **Persistent Tables**: Build pruning table once (~3-4s), reuse for all subsequent solves (<1s each)
-- **URF Optimization**: Uses 9 URF moves for optimal 2x2x2 solving
-- **Non-blocking**: Web Worker keeps UI responsive during computation
-- **Universal Binary**: Single compilation works in Node.js, browser, and Web Worker
+## 📡 Streaming Output
 
-### 🚀 Quick Demo
+### Browser
+
+```javascript
+const solutions = await helper.solve("R U R' U'", {
+  maxSolutions: 10,
+  onProgress: (depth) => {
+    console.log(`🔍 Searching depth: ${depth}`);
+  }
+});
+```
+
+### Node.js (True Streaming)
+
+```javascript
+const solutions = await helper.solve("R U R' U'", {
+  maxSolutions: 10,
+  onProgress: (depth) => console.log(`Depth: ${depth}`),
+  onSolution: (sol) => console.log(`✅ ${sol}`)  // Real-time!
+});
+```
+
+See [example-helper.html](src/2x2solver/example-helper.html) for interactive examples.
+
+## 🎮 Interactive Demos
+
+Try the solver directly in your browser:
 
 ```bash
 cd dist/src/2x2solver
@@ -108,167 +143,109 @@ python3 -m http.server 8000
 # Open http://localhost:8000/demo.html
 ```
 
-### 📋 Basic Usage (Web Worker)
+**Demo Features:**
+- ✅ **Full Parameter Control** - All 9 solver parameters with validation
+- 🔄 **Reuse Pruning Table** - Toggle table persistence for performance testing
+- 🌐 **CDN Toggle** - Switch between local files and jsDelivr CDN
+- 🔄 **Cache Busting** - Development option for testing latest CDN changes
+- 📊 **Real-time Results** - Solutions display as they're found
 
-```javascript
-const worker = new Worker('src/2x2solver/worker_persistent.js');
+Both [demo.html](src/2x2solver/demo.html) and [example-helper.html](src/2x2solver/example-helper.html) support:
+- **Local mode** (default) - Uses files in current directory
+- **CDN mode** - Loads from jsDelivr with optional cache busting
 
-worker.onmessage = (e) => {
-  const msg = e.data;
-  
-  if (msg.type === 'ready') {
-    // Worker initialized, send solve request
-    worker.postMessage({
-      scramble: "R U R' U'",
-      maxSolutions: 3,
-      maxLength: 11,
-      pruneDepth: 1,
-      allowedMoves: 'U_U2_U-_R_R2_R-_F_F2_F-'
-    });
-  } else if (msg.type === 'solution') {
-    console.log('Solution:', msg.data);
-  } else if (msg.type === 'depth') {
-    console.log('Progress:', msg.data);
-  } else if (msg.type === 'done') {
-    console.log('Complete!');
-  }
-};
+## 🌐 CDN Usage
+
+**Recommended for production** - Use versioned tags:
+
+```html
+<!-- Stable version (permanent cache) -->
+<script src="https://cdn.jsdelivr.net/gh/or18/RubiksSolverDemo@v1.0.0/dist/src/2x2solver/solver-helper.js"></script>
+
+<!-- Latest development (may change) -->
+<script src="https://cdn.jsdelivr.net/gh/or18/RubiksSolverDemo@main/dist/src/2x2solver/solver-helper.js"></script>
 ```
 
-### 📋 Basic Usage (Node.js)
+### CDN Cache Management (Developers)
 
-```javascript
-const createModule = require('./src/2x2solver/solver.js');
+When updating code, jsDelivr may cache old versions.
 
-(async () => {
-  const Module = await createModule();
-  const solver = new Module.PersistentSolver2x2();
-  
-  let solutions = [];
-  globalThis.postMessage = (msg) => {
-    if (msg !== 'Search finished.' && msg !== '') {
-      solutions.push(msg);
-    }
-  };
-  
-  // First solve builds table, subsequent solves reuse it
-  const scrambles = ["R U R' U'", "R2 U2", "U R2 U'"];
-  for (const scr of scrambles) {
-    solutions = [];
-    solver.solve(scr, '', 3, 11, 1, 'U_U2_U-_R_R2_R-_F_F2_F-', '', '', '');
-    console.log(`${scr}:`, solutions);
-  }
-})();
+**Method 1: Interactive Demo Pages**
+
+Both [demo.html](src/2x2solver/demo.html) and [example-helper.html](src/2x2solver/example-helper.html) have built-in CDN controls:
+
+1. Open demo page in browser
+2. Check "🌐 Use CDN (jsDelivr)"
+3. Check "🔄 Cache Busting" (development only)
+4. Test your changes with bypassed cache
+
+⚠️ **Cache Busting** adds `?v=timestamp` to URLs - only affects your browser, safe for testing.
+
+**Method 2: Instant Purge** (affects all users globally):
+```bash
+cd dist/src/2x2solver
+./purge-cdn-cache.sh
 ```
 
-### 📊 Performance
+⚠️ **Warning**: This clears CDN cache globally. Use for development only.
 
-| Solve | Scramble | Time | Notes |
-|-------|----------|------|-------|
-| **1st** | `R U R' U'` | ~3-4s | Builds pruning table (~84MB) |
-| **2nd** | `R2 U2` | <1s | **Reuses table** |
-| **3rd** | `U R2 U'` | <1s | **Reuses table** |
-| **4th** | 10-move scramble | ~1-2s | **Reuses table** |
+**Method 3: Manual Cache Busting** (code):
+- Open [demo.html](src/2x2solver/demo.html) and enable "🔄 Cache Busting" checkbox
+- Only affects your browser, safe for testing
 
-**Total**: ~5-6 seconds for 4 scrambles (vs. ~12-16s without persistence)
-
-### ⚙️ Configuration Parameters
-
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `scramble` | string | *(required)* | Scramble sequence (e.g., `"R U R' U'"`) |
-| `maxSolutions` | number | `3` | Maximum number of solutions to find |
-| `maxLength` | number | `11` | Maximum solution length in moves |
-| `pruneDepth` | number | `1` | Search depth (1 recommended with URF) |
-| `allowedMoves` | string | `"U_U2_U-_R_R2_R-_F_F2_F-"` | Allowed move set (URF recommended) |
-| `rotation` | string | `""` | Whole-cube rotation |
-| `preMove` | string | `""` | Pre-move sequence |
-| `moveOrder` | string | `""` | Move order constraints |
-| `moveCount` | string | `""` | Move count limits |
-
-### 📁 Files
-
-### 📁 Files
+## 📁 2x2x2 Solver Files
 
 - `solver.cpp` - C++ solver with PersistentSolver2x2
-- `solver.js` + `solver.wasm` - Universal MODULARIZE binary
-- `worker_persistent.js` - Web Worker wrapper (recommended)
-- `demo.html` - Interactive demo with UI
-- `compile.sh` - Compilation script
+- `solver.js` + `solver.wasm` - Universal binary (Node.js + Browser)
+- `solver-helper.js` - Promise-based Web Worker API ⭐
+- `solver-helper-node.js` - Promise-based Node.js API ⭐
+- `worker_persistent.js` - Low-level Web Worker (advanced)
+- `demo.html` - Interactive demo with full UI
+- `example-helper.html` - Code examples and tutorials
 
-📖 **[Full Documentation](./src/2x2solver/README.md)** - Complete API reference, compilation guide, and advanced examples.
+📖 **[Full Documentation](./src/2x2solver/README.md)** - Complete API reference and advanced usage
 
-📖 **[Implementation Guide](./src/2x2solver/PERSISTENT_SOLVER_README.md)** - Detailed technical documentation.
-
----
-
-## 🌐 CDN Usage & Cache Management
-
-### Using from CDN
-
-The 2x2 solver can be loaded directly from jsDelivr CDN:
-
-```
-https://cdn.jsdelivr.net/gh/or18/RubiksSolverDemo@main/dist/src/2x2solver/
-```
-
-**Important**: CDN files require CORS bypass using the Blob URL technique (see Quick Start above or [cdn-test.html](src/2x2solver/cdn-test.html)).
-
-### CDN Cache Refresh
-
-When you update code on GitHub, CDN caches may take time to update (typically a few minutes to hours).
-
-**For Developers**: Two methods to ensure fresh CDN files:
-
-1. **Purge Cache Script** (instant):
-   ```bash
-   cd dist/src/2x2solver
-   ./purge-cdn-cache.sh
-   ```
-   This calls jsDelivr's Purge API to immediately clear cached files.
-
-2. **Cache Busting** (during testing):
-   Open [cdn-test.html](src/2x2solver/cdn-test.html) and enable the "🔄 Enable Cache Busting" checkbox. This adds timestamps to URLs to force fresh downloads.
-
-**For End Users**: Use versioned URLs for production:
-```
-https://cdn.jsdelivr.net/gh/or18/RubiksSolverDemo@v1.0.0/dist/src/2x2solver/
-```
-Versioned URLs are permanently cached and won't change.
-
----
+📖 **[Technical Details](./src/2x2solver/PERSISTENT_SOLVER_README.md)** - Implementation guide
 
 ## 🔧 Compilation
 
-Each solver can be recompiled from C++ source:
-
 ```bash
 cd dist/src/2x2solver
-
-# Load Emscripten SDK
 source /path/to/emsdk/emsdk_env.sh
-
-# Compile
 ./compile.sh
 ```
 
-See individual solver directories for specific compilation instructions.
+See [compile.sh](src/2x2solver/compile.sh) for compilation flags.
 
----
+## 📦 Other Solvers
 
-## Other Solvers
+Additional solvers available in `src/` directory:
 
-*(Additional solvers available in `src/` directory)*
-
-- Cross Solver (`crossSolver/`)
-- EOCross Solver (`EOCrossSolver/`)
-- XCross Trainer (`xcrossTrainer/`)
-- XXCross Trainer (`xxcrossTrainer/`)
-- F2L Pairing Solver (`F2L_PairingSolver/`)
+- **Cross Solver** (`crossSolver/`) - First step cross solving
+- **EOCross Solver** (`EOCrossSolver/`) - Edge orientation + cross
+- **XCross Trainer** (`xcrossTrainer/`) - Extended cross training
+- **XXCross Trainer** (`xxcrossTrainer/`) - Double cross
+- **F2L Pairing** (`F2L_PairingSolver/`) - First two layers
 
 Each solver has its own README with usage instructions.
 
----
+## 🎯 Interactive Demos
+
+Try the solvers in your browser:
+
+```bash
+cd dist/src/2x2solver
+python3 -m http.server 8000
+# Open http://localhost:8000/demo.html
+```
+
+## Browser Requirements
+
+- WebAssembly support
+- Web Workers (for non-blocking operation)
+- ES6 modules (for Helper API)
+
+All modern browsers (Chrome, Firefox, Safari, Edge) are supported.
 
 ## License
 
@@ -277,3 +254,4 @@ See repository root for license information.
 ## Contributing
 
 Contributions welcome! Please see the main repository for guidelines.
+
