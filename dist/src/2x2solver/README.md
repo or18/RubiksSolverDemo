@@ -1,513 +1,393 @@
-# 2x2 Cube Solver
+# 2x2x2 Persistent Cube Solver
 
-WebAssembly-based 2x2x2 Rubik's Cube solver with a simple JavaScript API.
+High-performance WebAssembly-based 2x2x2 Rubik's Cube solver with persistent pruning tables for optimal batch solving.
 
-## Quick Start
+## 🎯 Quick Start
 
-### Option 1: Simple API (Recommended)
+### Live Demo
 
-```javascript
-import { solve } from './2x2solver.js';
+Open [demo.html](demo.html) in your browser for an interactive demonstration.
 
-// Basic usage
-const solutions = await solve("R U R' U'");
-console.log(solutions);
-// ['U R U\' R\'', 'R\' U\' R\' U R U', ...]
+```bash
+# Start a local server
+python3 -m http.server 8000
 
-// With options
-const solutions = await solve("R U R' U'", {
-  maxSolutions: 10,
-  maxLength: 15
-});
+# Open in browser
+# http://localhost:8000/demo.html
 ```
 
-### Option 2: Event-based API (Streaming)
+### Web Worker API (Recommended)
+
+The recommended approach for browser applications. Runs in a separate thread to avoid blocking the UI.
 
 ```javascript
-import { Solver2x2 } from './2x2solver.js';
+// Create worker
+const worker = new Worker('worker_persistent.js');
 
-const solver = new Solver2x2();
-
-solver.search("R U R' U'", {
-  onSolution: (sol) => console.log('Found:', sol),
-  onDone: () => console.log('Search complete'),
-  onError: (err) => console.error(err)
-});
-
-// Cancel if needed
-solver.cancel();
-```
-
-### Option 3: Worker API (Advanced)
-
-Direct Web Worker usage for fine-grained control.
-
-```javascript
-const worker = new Worker('worker.js');
-
-worker.onmessage = (e) => {
-  const { type, data } = e.data;
-  if (type === 'solution') {
-    console.log('Solution:', data);
-  } else if (type === 'done') {
+// Handle messages
+worker.onmessage = function(event) {
+  const msg = event.data;
+  
+  if (msg.type === 'ready') {
+    console.log('Solver initialized!');
+    // Now you can send solve requests
+  } else if (msg.type === 'solution') {
+    console.log('Solution:', msg.data);
+  } else if (msg.type === 'depth') {
+    console.log('Progress:', msg.data);
+  } else if (msg.type === 'done') {
     console.log('Search complete');
-  } else if (type === 'error') {
-    console.error('Error:', data);
+  } else if (msg.type === 'error') {
+    console.error('Error:', msg.data);
   }
 };
 
-// Send solve request
+// Solve a scramble
 worker.postMessage({
   scramble: "R U R' U'",
-  maxSolutions: 20,
-  maxLength: 20,
-  pruneDepth: 8,
-  rotation: "",
-  allowedMoves: "U_U2_U-_R_R2_R-_F_F2_F-",
-  preMove: "",
-  moveOrder: "",
-  moveCount: ""
-});
-
-// Later: terminate when done
-worker.terminate();
-```
-
-**Message types received:**
-- `{ type: 'solution', data: <solution_string> }` - A solution was found
-- `{ type: 'done' }` - Search completed
-- `{ type: 'error', data: <error_message> }` - An error occurred
-
-**Note:** The simple API (Option 1) and class-based API (Option 2) are recommended for most use cases.
-
-## API Reference
-
-### `solve(scramble, options)`
-
-Solves a scramble and returns all solutions as a Promise.
-
-**Parameters:**
-- `scramble` (string, required): The scramble to solve
-- `options` (object, optional):
-  - `maxSolutions` (number, default: 20): Maximum number of solutions to find
-  - `maxLength` (number, default: 20): Maximum solution length in moves
-  - `pruneDepth` (number, default: 8): Search depth (1-11)
-  - `rotation` (string, default: ""): Whole-cube rotation
-  - `allowedMoves` (string, default: "U_U2_U-_R_R2_R-_F_F2_F-"): Allowed move set
-  - `preMove` (string, default: ""): Pre-move sequence
-  - `moveOrder` (string, default: ""): Move order constraints
-  - `moveCount` (string, default: ""): Move count limits
-
-**Returns:** `Promise<string[]>` - Array of solution strings
-
-**Example:**
-```javascript
-const solutions = await solve("R U R' U'", {
-  maxSolutions: 5,
-  maxLength: 12,
-  pruneDepth: 9
+  maxSolutions: 3,
+  maxLength: 11,
+  pruneDepth: 1,
+  allowedMoves: 'U_U2_U-_R_R2_R-_F_F2_F-'
 });
 ```
 
----
+**Key Features:**
+- ✅ **Non-blocking**: UI remains responsive during computation
+- ✅ **Persistent tables**: First solve builds pruning table (~3-4s), subsequent solves are fast (<1s)
+- ✅ **URF optimization**: Uses 9 URF moves (U, U2, U', R, R2, R', F, F2, F') for optimal 2x2x2 solving
 
-## Parameter Reference
+### Node.js API
 
-### `scramble` (string, required)
-
-The scramble sequence to solve.
-
-**Format:** Space-separated move notation
-- Clockwise turns: `U`, `D`, `L`, `R`, `F`, `B`
-- 180° turns: `U2`, `D2`, `L2`, `R2`, `F2`, `B2`
-- Counter-clockwise (prime): `U'`, `D'`, `L'`, `R'`, `F'`, `B'`
-
-**Examples:**
-```javascript
-"R U R' U'"
-"F R U' R' U' R U R' F'"
-"R2 U2 R U2 R2"
-""  // Empty string (solved cube)
-```
-
-### `maxSolutions` (number, optional)
-
-Maximum number of solutions to find before stopping the search.
-
-**Type:** Integer  
-**Range:** 1 to 999999  
-**Default:** 20
-
-**Examples:**
-```javascript
-{ maxSolutions: 1 }   // Find first solution only
-{ maxSolutions: 100 } // Find up to 100 solutions
-```
-
-### `maxLength` (number, optional)
-
-Maximum solution length in moves. Solutions longer than this will be ignored.
-
-**Type:** Integer  
-**Range:** 1 to 30 (recommended: 10-25)  
-**Default:** 20
-
-**Examples:**
-```javascript
-{ maxLength: 10 }  // Only solutions ≤10 moves
-{ maxLength: 25 }  // Allow longer solutions
-```
-
-### `pruneDepth` (number, optional)
-
-Search depth for the pruning table. Higher values find more solutions but are slower.
-
-**Type:** Integer  
-**Range:** 1 to 11  
-**Default:** 8  
-**Recommended:**
-- Fast: 6 (quick search, fewer solutions)
-- Standard: 8 (balanced)
-- Thorough: 10-11 (slow, comprehensive)
-
-**Examples:**
-```javascript
-{ pruneDepth: 6 }   // Fast search
-{ pruneDepth: 11 }  // Complete search
-```
-
-**Warning:** Values >10 may take significantly longer.
-
-### `rotation` (string, optional)
-
-Apply a whole-cube rotation before solving.
-
-**Type:** String  
-**Allowed values:**
-- X-axis: `"x"`, `"x2"`, `"x'"`
-- Y-axis: `"y"`, `"y2"`, `"y'"`
-- Z-axis: `"z"`, `"z2"`, `"z'"`
-- No rotation: `""` (empty string)
-
-**Default:** `""` (no rotation)
-
-**Examples:**
-```javascript
-{ rotation: "y" }    // Rotate cube 90° on Y-axis
-{ rotation: "y2" }   // Rotate 180° on Y-axis
-{ rotation: "y'" }   // Rotate -90° on Y-axis
-{ rotation: "x2" }   // Rotate 180° on X-axis
-{ rotation: "" }     // No rotation
-```
-
-### `allowedMoves` (string, optional)
-
-Restrict which moves the solver can use in solutions.
-
-**Format:** Underscore-separated move list  
-**Move notation:**
-- Clockwise: `U`, `D`, `L`, `R`, `F`, `B`
-- 180°: `U2`, `D2`, `L2`, `R2`, `F2`, `B2`
-- Counter-clockwise: `U-`, `D-`, `L-`, `R-`, `F-`, `B-` (use `-` not `'`)
-
-**Default:** `"U_U2_U-_R_R2_R-_F_F2_F-"` (URF faces, all turns)
-
-**Examples:**
-```javascript
-// Only 90-degree clockwise turns
-{ allowedMoves: "U_R_F_D_L_B" }
-
-// URF faces with all turn types (default)
-{ allowedMoves: "U_U2_U-_R_R2_R-_F_F2_F-" }
-
-// All 18 moves (full move set)
-{ allowedMoves: "U_U2_U-_D_D2_D-_L_L2_L-_R_R2_R-_F_F2_F-_B_B2_B-" }
-
-// Only R and U moves
-{ allowedMoves: "R_R2_R-_U_U2_U-" }
-
-// No moves (will fail)
-{ allowedMoves: "" }
-```
-
-**Note:** Prime moves (`'`) must be written as `-` in this parameter.
-
-### `preMove` (string, optional)
-
-Apply a move sequence before the search. The solver will find solutions that complete after this pre-move.
-
-**Format:** Space-separated move notation (same as `scramble`)  
-**Default:** `""` (no pre-move)
-
-**Examples:**
-```javascript
-{ preMove: "U R" }        // Apply U R before solving
-{ preMove: "R' F' R F" }  // Apply R' F' R F first
-{ preMove: "" }           // No pre-move
-```
-
-### `moveOrder` (string, optional)
-
-Override default move order constraints. By default, the solver follows these axis orders:
-- X-axis: L → R → x
-- Y-axis: U → D → y
-- Z-axis: F → B → z
-
-**Format:** `"<move1>~<move2>"` to reverse the constraint  
-**Default:** `""` (use default ordering)
-
-**Examples:**
-```javascript
-// Allow R before L (reverse default L→R)
-{ moveOrder: "R~L", allowedMoves: "U_U2_U-_D_D2_D-_L_L2_L-_R_R2_R-_F_F2_F-_B_B2_B-" }
-
-// Allow D before U (reverse default U→D)
-{ moveOrder: "D~U", allowedMoves: "U_U2_U-_D_D2_D-_L_L2_L-_R_R2_R-_F_F2_F-_B_B2_B-" }
-
-// No override
-{ moveOrder: "" }
-```
-
-**Note:** Must include both moves in `allowedMoves`.
-
-### `moveCount` (string, optional)
-
-Limit how many times each move can appear in solutions.
-
-**Format:** `"<move>:<count>_<move>:<count>_..."`  
-**Count range:** 0 to 99  
-**Default:** `""` (no limits)
-
-**Examples:**
-```javascript
-// U max 2 times, R max 3 times
-{ moveCount: "U:2_R:3" }
-
-// No F moves, U max 1 time
-{ moveCount: "F:0_U:1" }
-
-// R and L each max 4 times
-{ moveCount: "R:4_L:4" }
-
-// No limits
-{ moveCount: "" }
-```
-
-**Note:** 
-- Use base move only (e.g., `U`, not `U2` or `U-`)
-- Counts apply to all variations (e.g., `U:2` limits `U`, `U2`, `U'` combined)
-- Moves not listed have no limit
-
-### `class Solver2x2`
-
-#### `async solve(scramble, options)` (Method)
-
-Same as the standalone `solve()` function but as an instance method.
-
-**Returns:** `Promise<string[]>`
-
-#### `search(scramble, options)` (Method)
-
-Starts an asynchronous search with event callbacks for streaming results.
-
-**Parameters:**
-- `scramble` (string, required): The scramble to solve
-- `options` (object, optional):
-  - **Solving parameters:** All parameters from `solve()` (see Parameter Reference)
-  - **Callback functions:**
-    - `onSolution` (function, optional): Called for each solution found
-      - **Signature:** `(solution: string) => void`
-      - **Argument:** Solution string (e.g., `"U R U' R'"`)
-    - `onDone` (function, optional): Called when search completes successfully
-      - **Signature:** `() => void`
-    - `onError` (function, optional): Called if an error occurs
-      - **Signature:** `(error: Error) => void`
-      - **Argument:** Error object with message
-
-**Returns:** `void` (use callbacks to receive results)
-
-**Example:**
-```javascript
-const solver = new Solver2x2();
-let count = 0;
-
-solver.search("R U R' U'", {
-  maxSolutions: 100,
-  onSolution: (sol) => {
-    count++;
-    console.log(`Solution ${count}: ${sol}`);
-  },
-  onDone: () => console.log(`Found ${count} solutions`),
-  onError: (err) => console.error('Error:', err)
-});
-```
-
-#### `cancel()` (Method)
-
-Cancels the current search and terminates the worker.
-
-**Parameters:** None  
-**Returns:** `void`
-
-**Example:**
-```javascript
-const solver = new Solver2x2();
-solver.search("R U R' U'", { onSolution: (s) => console.log(s) });
-
-// Cancel after 1 second
-setTimeout(() => solver.cancel(), 1000);
-```
-
----
-
-## Usage Examples
-
-### Restricting Allowed Moves
-
-Use the `allowedMoves` parameter to restrict the solver's move set. See [allowedMoves](#allowedmoves-string-optional) for full details.
+For server-side or batch processing applications.
 
 ```javascript
-// Only 90-degree turns (no 180° or prime moves)
-const solutions = await solve("R U R' U'", {
-  allowedMoves: "U_R_F_D_L_B"
-});
+const createModule = require('./solver.js');
 
-// URF faces only with all turn types (default)
-const solutions = await solve("R U R' U'", {
-  allowedMoves: "U_U2_U-_R_R2_R-_F_F2_F-"
-});
-
-// All 18 moves (complete move set)
-const solutions = await solve("R U R' U'", {
-  allowedMoves: "U_U2_U-_D_D2_D-_L_L2_L-_R_R2_R-_F_F2_F-_B_B2_B-"
-});
+(async () => {
+  // Initialize module
+  const Module = await createModule();
+  
+  // Create persistent solver instance
+  const solver = new Module.PersistentSolver2x2();
+  
+  // Override postMessage to capture solutions
+  let solutions = [];
+  globalThis.postMessage = function(msg) {
+    if (msg.startsWith('depth=')) {
+      console.log(msg); // Progress
+    } else if (msg === 'Search finished.') {
+      console.log(`Found ${solutions.length} solutions`);
+    } else if (msg !== '') {
+      solutions.push(msg);
+    }
+  };
+  
+  // Solve multiple scrambles (reuses pruning table)
+  const scrambles = [
+    "R U R' U'",
+    "R2 U2",
+    "U R2 U'",
+    "U' F2 U R' U' R F' R F2 U"
+  ];
+  
+  for (const scramble of scrambles) {
+    solutions = [];
+    
+    solver.solve(
+      scramble,        // scramble
+      '',              // rotation
+      3,               // maxSolutions
+      11,              // maxLength
+      1,               // pruneDepth
+      'U_U2_U-_R_R2_R-_F_F2_F-', // allowedMoves (URF)
+      '',              // preMove
+      '',              // moveOrder
+      ''               // moveCount
+    );
+    
+    console.log(`Scramble: ${scramble}`);
+    console.log(`Solutions:`, solutions);
+  }
+})();
 ```
 
-**Note:** Prime moves (`'`) must be written as `-` (hyphen) in the `allowedMoves` string.
+## 📚 API Reference
 
-### Applying Cube Rotations
+### Worker Messages
 
-Apply whole-cube rotations before solving. See [rotation](#rotation-string-optional) for all valid values.
+#### To Worker (postMessage)
 
 ```javascript
-// Rotate cube on Y-axis
-const solutions = await solve("R U R' U'", {
-  rotation: "y"
-});
-
-// 180-degree rotations
-const solutions = await solve("R U R' U'", {
-  rotation: "y2"
-});
-
-// Counter-clockwise rotation
-const solutions = await solve("R U R' U'", {
-  rotation: "y'"
-});
-
-// Other axes: "x", "x2", "x'", "z", "z2", "z'"
+{
+  scramble: string,        // Required: scramble to solve
+  rotation: string,        // Optional: whole-cube rotation (default: '')
+  maxSolutions: number,    // Optional: max solutions to find (default: 3)
+  maxLength: number,       // Optional: max solution length (default: 11)
+  pruneDepth: number,      // Optional: search depth (default: 1, range: 1-11)
+  allowedMoves: string,    // Optional: allowed move set (default: URF)
+  preMove: string,         // Optional: pre-move sequence (default: '')
+  moveOrder: string,       // Optional: move order constraints (default: '')
+  moveCount: string        // Optional: move count limits (default: '')
+}
 ```
 
-### Using Pre-moves
-
-Apply a move sequence before the solver runs. See [preMove](#premove-string-optional).
+#### From Worker (onmessage)
 
 ```javascript
-// Find solutions after applying U R
-const solutions = await solve("R U R' U'", {
-  preMove: "U R"
-});
+// Initialization complete
+{ type: 'ready', data: null }
 
-// Complex pre-move sequence
-const solutions = await solve("F R U' R' U' R U R' F'", {
-  preMove: "R' F' R F"
-});
+// Solution found
+{ type: 'solution', data: "U' F2 R' F R' U R U' F2 U" }
+
+// Search progress
+{ type: 'depth', data: "depth=5" }
+
+// Search complete
+{ type: 'done', data: null }
+
+// Error occurred
+{ type: 'error', data: "error message" }
 ```
 
-### Customizing Move Order
+### C++ API (via Emscripten)
 
-Override default move ordering rules. See [moveOrder](#moveorder-string-optional) for details.
-
-```javascript
-// Allow R→L instead of default L→R ordering
-const solutions = await solve("R U R' U'", {
-  moveOrder: "R~L",
-  allowedMoves: "U_U2_U-_D_D2_D-_L_L2_L-_R_R2_R-_F_F2_F-_B_B2_B-"
-});
+```cpp
+class PersistentSolver2x2 {
+public:
+  void solve(
+    std::string scramble,      // Scramble to solve
+    std::string rotation,      // Whole-cube rotation
+    int max_solutions,         // Maximum number of solutions
+    int max_length,            // Maximum solution length
+    int prune_depth,           // Pruning depth (1-11)
+    std::string move_restrict, // Allowed moves (underscore-separated)
+    std::string post_alg,      // Post-algorithm
+    std::string move_order,    // Move ordering
+    std::string move_count     // Move count constraints
+  );
+};
 ```
 
-**Default ordering rules:**
-- X-axis: L → R → x
-- Y-axis: U → D → y
-- Z-axis: F → B → z
+## ⚙️ Configuration
 
-### Limiting Move Counts
+### Move Restrictions
 
-Restrict how many times each move appears in solutions. See [moveCount](#movecount-string-optional).
+The solver supports different move sets. For 2x2x2, **URF moves are optimal**:
 
-```javascript
-// U max 2 times, R max 3 times
-const solutions = await solve("R U R' U'", {
-  moveCount: "U:2_R:3"
-});
-
-// Forbid F moves entirely, limit U to 1 use
-const solutions = await solve("R U R' U'", {
-  moveCount: "F:0_U:1"
-});
+```
+'U_U2_U-_R_R2_R-_F_F2_F-'  // URF (9 moves) - RECOMMENDED
 ```
 
-**Note:** Limits apply to all variations (e.g., `U:2` limits `U`, `U2`, and `U'` combined).
+URF moves form a complete system that generates all positions of a 2x2x2 cube optimally.
 
-### Performance Tuning
-
-Adjust search parameters for different speed/completeness trade-offs.
-
-```javascript
-// Fast search (quick results, may miss solutions)
-const solutions = await solve("R U R' U'", {
-  pruneDepth: 6,
-  maxLength: 15,
-  maxSolutions: 10
-});
-
-// Standard search (balanced)
-const solutions = await solve("R U R' U'", {
-  pruneDepth: 8,    // default
-  maxLength: 20,    // default
-  maxSolutions: 20  // default
-});
-
-// Thorough search (slower, finds more solutions)
-const solutions = await solve("R U R' U'", {
-  pruneDepth: 11,
-  maxLength: 25,
-  maxSolutions: 100
-});
+Other move sets (not recommended for 2x2x2):
+```
+'U_U2_U-_R_R2_R-'                              // UR only (6 moves)
+'U_U2_U-_D_D2_D-_L_L2_L-_R_R2_R-_F_F2_F-_B_B2_B-'  // All moves (18 moves, excessive)
 ```
 
-See [Performance Tips](#performance-tips) for recommendations.
+### Prune Depth
 
-## Performance Tips
+Controls the search depth for the pruning table:
 
-- **Fast search**: `pruneDepth: 6`, `maxLength: 15`
-- **Standard**: `pruneDepth: 8`, `maxLength: 20` (default)
-- **Thorough**: `pruneDepth: 11`, `maxLength: 25` (slower)
+- `pruneDepth: 1` - **Recommended for URF moves** (fast, sufficient for URF complete system)
+- `pruneDepth: 8` - Deeper search (slower initialization, marginally better for some cases)
+- Valid range: 1-11
 
-Higher `pruneDepth` = more solutions but slower search.
+**With URF moves, `pruneDepth: 1` is optimal** - provides complete coverage with minimal overhead.
 
-## Files
+### Max Length
 
-- `2x2solver.js` - Simple JavaScript API (recommended)
-- `worker.js` - Web Worker interface
-- `solver.js` - Emscripten-generated JavaScript
+Maximum solution length to search:
+
+- `maxLength: 11` - **Recommended** (handles up to 11-move solutions)
+- Increase for longer scrambles, decrease for faster searches
+
+## 🔧 Compilation
+
+### Requirements
+
+- [Emscripten SDK](https://emscripten.org/docs/getting_started/downloads.html)
+
+### Build
+
+```bash
+# Load Emscripten environment
+source /path/to/emsdk/emsdk_env.sh
+
+# Compile
+cd dist/src/2x2solver
+./compile.sh
+```
+
+This produces:
+- `solver.js` - Universal MODULARIZE module
 - `solver.wasm` - WebAssembly binary
-- `example.html` - Interactive examples
 
-## Browser Support
+**Single compilation works for**:
+- ✅ Node.js (CommonJS/ES6)
+- ✅ Browser main thread
+- ✅ Web Worker
 
-Requires ES6 modules and Web Workers. Works in all modern browsers.
+### Compilation Details
 
-## License
+The `compile.sh` script runs:
 
-See repository root for license information.
+```bash
+em++ solver.cpp -o solver.js \
+  -O3 \
+  -msimd128 \
+  -flto \
+  -s TOTAL_MEMORY=150MB \
+  -s WASM=1 \
+  -s MODULARIZE=1 \
+  -s EXPORT_NAME="createModule" \
+  --bind
+```
+
+**Flags**:
+- `-O3`: Maximum optimization
+- `-msimd128`: SIMD vectorization
+- `-flto`: Link-time optimization
+- `-s TOTAL_MEMORY=150MB`: Fixed memory (sufficient for ~84MB pruning table)
+- `-s MODULARIZE=1`: Factory function pattern
+- `-s EXPORT_NAME="createModule"`: Exports `createModule()` factory
+- `--bind`: Embind C++ bindings
+
+## 📊 Performance
+
+### Typical Performance
+
+| Solve | Scramble | Time | Notes |
+|-------|----------|------|-------|
+| **1st** | `R U R' U'` | ~3-4s | Builds pruning table (~84MB) |
+| **2nd** | `R2 U2` | <1s | Reuses table |
+| **3rd** | `U R2 U'` | <1s | Reuses table |
+| **4th** | `U' F2 U R' U' R F' R F2 U` | ~1-2s | 10-move scramble, reuses table |
+
+**Total**: ~5-6 seconds for 4 scrambles
+
+### Performance Tips
+
+1. **Use Web Worker in browser** - prevents UI blocking
+2. **Keep solver instance alive** - reuses expensive pruning tables
+3. **Use URF moves** - optimal for 2x2x2, fastest searches
+4. **Set pruneDepth=1 with URF** - sufficient for complete coverage
+
+## 📁 Files
+
+### Core Implementation
+- `solver.cpp` - C++ solver with PersistentSolver2x2
+- `solver.js` + `solver.wasm` - Compiled WASM module (universal)
+- `compile.sh` - Compilation script
+
+### Browser Usage
+- `worker_persistent.js` - Web Worker wrapper
+- `demo.html` - Interactive demo (recommended starting point)
+
+### Documentation
+- `README.md` - This file (quick start & API reference)
+- `PERSISTENT_SOLVER_README.md` - Detailed implementation guide
+
+### Backups
+- `backups/` - Test files and old implementations
+
+## 🚀 Examples
+
+### Example 1: Single Solve (Worker)
+
+```javascript
+const worker = new Worker('worker_persistent.js');
+
+worker.onmessage = (e) => {
+  if (e.data.type === 'ready') {
+    worker.postMessage({
+      scramble: "R U R' U'",
+      maxSolutions: 3,
+      maxLength: 11,
+      pruneDepth: 1,
+      allowedMoves: 'U_U2_U-_R_R2_R-_F_F2_F-'
+    });
+  } else if (e.data.type === 'solution') {
+    console.log('Solution:', e.data.data);
+  } else if (e.data.type === 'done') {
+    console.log('Complete!');
+  }
+};
+```
+
+### Example 2: Batch Solving (Node.js)
+
+See [backups/test_files/test_simple.js](backups/test_files/test_simple.js) for a complete example.
+
+```javascript
+const createModule = require('./solver.js');
+
+(async () => {
+  const Module = await createModule();
+  const solver = new Module.PersistentSolver2x2();
+  
+  // ... (see Node.js API section above)
+})();
+```
+
+### Example 3: Web Application
+
+See [demo.html](demo.html) for a complete web application example with:
+- Real-time progress updates
+- Solution display
+- Performance statistics
+- Test suite
+
+## 🐛 Troubleshooting
+
+### Browser: `postMessage` Error
+
+The solver uses `globalThis.postMessage` which is overridden in `worker_persistent.js`. No action needed when using the Worker.
+
+If using MODULARIZE directly in browser main thread (not recommended):
+
+```javascript
+// Define before loading solver.js
+globalThis.postMessage = function(msg) {
+  console.log(msg);
+};
+
+// Then load
+const Module = await createModule();
+```
+
+### Node.js: Module Not Found
+
+Ensure you're using the MODULARIZE compiled version:
+
+```javascript
+// For CommonJS
+const createModule = require('./solver.js');
+
+// For ES6 modules
+import createModule from './solver.js';
+```
+
+### Solutions Not Found
+
+1. Check move restrictions - URF moves cover all 2x2x2 positions
+2. Increase `maxLength` if scramble is very long
+3. Verify scramble notation is correct (space-separated moves)
+
+## 📖 Additional Resources
+
+- **Detailed Guide**: See [PERSISTENT_SOLVER_README.md](PERSISTENT_SOLVER_README.md)
+- **Demo**: Open [demo.html](demo.html) in browser
+- **Test Suite**: See `backups/test_files/` for test examples
+- **Web Worker Pattern**: Study [worker_persistent.js](worker_persistent.js)
+
+## 📝 License
+
+See top-level [LICENSE](../../../LICENSE) file.
+
+## 🤝 Contributing
+
+This is part of the RubiksSolverDemo project. See main [README](../../../README.md).

@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>2x2x2 Solver - CDN Test</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+    
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      overflow: hidden;
+    }
+    
+    .header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 30px;
+      text-align: center;
+    }
+    
+    .header h1 {
+      font-size: 2.5em;
+      margin-bottom: 10px;
+      font-weight: 700;
+    }
+    
+    .header p {
+      font-size: 1.1em;
+      opacity: 0.95;
+    }
+    
+    .content {
+      padding: 30px;
+    }
+    
+    .section {
+      margin-bottom: 30px;
+      padding: 20px;
+      background: #f8f9fa;
+      border-radius: 8px;
+      border-left: 4px solid #667eea;
+    }
+    
+    .section h2 {
+      color: #333;
+      margin-bottom: 15px;
+      font-size: 1.5em;
+    }
+    
+    .cdn-selector {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    
+    .cdn-selector button {
+      flex: 1;
+      min-width: 150px;
+      padding: 12px 20px;
+      border: 2px solid #667eea;
+      background: white;
+      color: #667eea;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.3s;
+    }
+    
+    .cdn-selector button.active {
+      background: #667eea;
+      color: white;
+    }
+    
+    .cdn-selector button:hover:not(.active) {
+      background: #f0f0ff;
+    }
+    
+    .cdn-info {
+      background: #e7f3ff;
+      border-left: 4px solid #0d6efd;
+      padding: 15px;
+      border-radius: 6px;
+      margin: 15px 0;
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+      word-break: break-all;
+    }
+    
+    .cdn-info strong {
+      display: block;
+      margin-bottom: 5px;
+      color: #084298;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+    }
+    
+    .input-group {
+      margin-bottom: 15px;
+    }
+    
+    .input-group label {
+      display: block;
+      margin-bottom: 8px;
+      color: #555;
+      font-weight: 600;
+    }
+    
+    .input-group input {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #ddd;
+      border-radius: 6px;
+      font-size: 16px;
+      transition: border-color 0.3s;
+    }
+    
+    .input-group input:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+    
+    .button-group {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    
+    button.primary {
+      padding: 12px 24px;
+      font-size: 16px;
+      font-weight: 600;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.3s;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      flex: 1;
+      min-width: 120px;
+    }
+    
+    button.primary:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+    
+    button.primary:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    
+    .status {
+      padding: 12px;
+      border-radius: 6px;
+      margin: 15px 0;
+      font-weight: 600;
+      display: none;
+    }
+    
+    .status.show {
+      display: block;
+    }
+    
+    .status.info {
+      background: #cfe2ff;
+      color: #084298;
+      border-left: 4px solid #0d6efd;
+    }
+    
+    .status.success {
+      background: #d1e7dd;
+      color: #0f5132;
+      border-left: 4px solid #198754;
+    }
+    
+    .status.error {
+      background: #f8d7da;
+      color: #842029;
+      border-left: 4px solid #dc3545;
+    }
+    
+    .status.warning {
+      background: #fff3cd;
+      color: #664d03;
+      border-left: 4px solid #ffc107;
+    }
+    
+    .solutions {
+      margin-top: 20px;
+    }
+    
+    .solution-item {
+      padding: 12px;
+      margin: 8px 0;
+      background: white;
+      border-radius: 6px;
+      border-left: 4px solid #667eea;
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+    }
+    
+    .solution-item strong {
+      color: #667eea;
+      margin-right: 8px;
+    }
+    
+    .progress {
+      margin: 15px 0;
+      font-size: 14px;
+      color: #666;
+      font-family: 'Courier New', monospace;
+    }
+    
+    .examples {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 10px;
+      margin: 15px 0;
+    }
+    
+    .example-btn {
+      padding: 10px;
+      background: white;
+      border: 2px solid #667eea;
+      color: #667eea;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.3s;
+    }
+    
+    .example-btn:hover {
+      background: #667eea;
+      color: white;
+    }
+    
+    .info-box {
+      background: #e7f3ff;
+      border-left: 4px solid #0d6efd;
+      padding: 15px;
+      border-radius: 6px;
+      margin: 15px 0;
+    }
+    
+    .info-box h3 {
+      color: #084298;
+      margin-bottom: 8px;
+    }
+    
+    .info-box p {
+      color: #084298;
+      line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🌐 CDN Loading Test</h1>
+      <p>Testing 2x2x2 Persistent Solver via CDN (Web Worker)</p>
+    </div>
+    
+    <div class="content">
+      <!-- CDN Source Selection -->
+      <div class="section">
+        <h2>📡 Select CDN Source</h2>
+        <div class="cdn-selector">
+          <button onclick="selectCDN('jsdelivr')" id="cdn-jsdelivr">jsDelivr CDN</button>
+          <button onclick="selectCDN('github')" id="cdn-github">GitHub Raw</button>
+          <button onclick="selectCDN('local')" id="cdn-local" class="active">Local Files</button>
+        </div>
+        <div id="cdnInfo" class="cdn-info">
+          <strong>Current CDN:</strong>
+          <div id="cdnUrl">Local (./)</div>
+        </div>
+        <div id="cdnStatus" class="status info show">
+          ℹ️ Select a CDN source and initialize the worker
+        </div>
+        <div class="button-group">
+          <button class="primary" onclick="initWorker()" id="initBtn">
+            🚀 Initialize Worker
+          </button>
+        </div>
+      </div>
+      
+      <!-- Worker Status -->
+      <div class="section">
+        <h2>🔧 Worker Status</h2>
+        <div id="workerStatus" class="status info show">
+          ⏳ Worker not initialized
+        </div>
+      </div>
+      
+      <!-- Solve Interface -->
+      <div class="section">
+        <h2>🎯 Solve a Scramble</h2>
+        
+        <div class="info-box">
+          <h3>ℹ️ CDN Test Notice</h3>
+          <p>
+            This page loads solver files from CDN and runs them in a Web Worker (non-blocking).
+            The Worker is created dynamically using Blob URLs to work around CORS restrictions.
+          </p>
+        </div>
+        
+        <div class="input-group">
+          <label for="scramble">Scramble:</label>
+          <input 
+            type="text" 
+            id="scramble" 
+            placeholder="e.g., R U R' U'" 
+            value="R U R' U'"
+          >
+        </div>
+        
+        <div class="examples">
+          <button class="example-btn" onclick="setScramble('R U R\' U\'')">R U R' U'</button>
+          <button class="example-btn" onclick="setScramble('R2 U2')">R2 U2</button>
+          <button class="example-btn" onclick="setScramble('U R2 U\'')">U R2 U'</button>
+          <button class="example-btn" onclick="setScramble('U\' F2 U R\' U\' R F\' R F2 U')">10-move scramble</button>
+        </div>
+        
+        <div class="button-group">
+          <button id="solveBtn" class="primary" onclick="solveCube()" disabled>
+            🔍 Solve
+          </button>
+        </div>
+        
+        <div id="solveStatus" class="status"></div>
+        <div id="progress" class="progress"></div>
+        <div id="solutionsContainer" class="solutions"></div>
+      </div>
+      
+      <!-- Quick Tests -->
+      <div class="section">
+        <h2>⚡ Quick Test Suite</h2>
+        <p style="margin-bottom: 15px; color: #666;">
+          Run 4 test scrambles to verify CDN loading and persistent table reuse.
+        </p>
+        <div class="button-group">
+          <button class="primary" onclick="runTests()" id="testBtn" disabled>
+            ▶️ Run All Tests
+          </button>
+        </div>
+        <div id="testStatus" class="status"></div>
+        <div id="testProgress" class="progress"></div>
+        <div id="testResults" class="solutions"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const CDN_SOURCES = {
+      jsdelivr: {
+        name: 'jsDelivr CDN',
+        base: 'https://cdn.jsdelivr.net/gh/or18/RubiksSolverDemo@main/dist/src/2x2solver/',
+        solver: 'solver.js',
+        worker: 'worker_persistent.js'
+      },
+      github: {
+        name: 'GitHub Raw',
+        base: 'https://raw.githubusercontent.com/or18/RubiksSolverDemo/main/dist/src/2x2solver/',
+        solver: 'solver.js',
+        worker: 'worker_persistent.js'
+      },
+      local: {
+        name: 'Local Files',
+        base: './',
+        solver: 'solver.js',
+        worker: 'worker_persistent.js'
+      }
+    };
+    
+    let currentCDN = 'local';
+    let worker = null;
+    let currentSolveTime = 0;
+    
+    function selectCDN(cdn) {
+      currentCDN = cdn;
+      
+      // Update button states
+      document.querySelectorAll('.cdn-selector button').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      document.getElementById('cdn-' + cdn).classList.add('active');
+      
+      // Update CDN info
+      const source = CDN_SOURCES[cdn];
+      document.getElementById('cdnUrl').innerHTML = `
+        ${source.name}<br>
+        Base: ${source.base}<br>
+        Worker: ${source.base}${source.worker}<br>
+        Solver: ${source.base}${source.solver}
+      `;
+      
+      showStatus('cdnStatus', 'info', `ℹ️ Selected ${source.name}. Click "Initialize Worker" to load.`);
+      
+      // Terminate existing worker if any
+      if (worker) {
+        worker.terminate();
+        worker = null;
+        showStatus('workerStatus', 'info', '⏳ Worker terminated, ready to reinitialize');
+        document.getElementById('solveBtn').disabled = true;
+        document.getElementById('testBtn').disabled = true;
+      }
+    }
+    
+    async function initWorker() {
+      try {
+        showStatus('cdnStatus', 'info', '⏳ Loading worker from CDN...');
+        showStatus('workerStatus', 'info', '⏳ Initializing...');
+        
+        const source = CDN_SOURCES[currentCDN];
+        
+        // Fetch worker script from CDN
+        const workerResponse = await fetch(source.base + source.worker);
+        if (!workerResponse.ok) {
+          throw new Error(`Failed to fetch worker: ${workerResponse.status}`);
+        }
+        const workerCode = await workerResponse.text();
+        
+        // Modify worker code to use CDN path for solver.js
+        const modifiedWorkerCode = workerCode.replace(
+          "importScripts('solver.js')",
+          `importScripts('${source.base}solver.js')`
+        );
+        
+        // Create blob URL for worker
+        const blob = new Blob([modifiedWorkerCode], { type: 'application/javascript' });
+        const workerUrl = URL.createObjectURL(blob);
+        
+        // Create worker from blob URL
+        worker = new Worker(workerUrl);
+        
+        worker.onmessage = function(event) {
+          const msg = event.data;
+          
+          if (msg.type === 'ready') {
+            showStatus('cdnStatus', 'success', `✅ Successfully loaded from ${source.name}`);
+            showStatus('workerStatus', 'success', '✅ Worker ready! Pruning table will be built on first solve.');
+            document.getElementById('solveBtn').disabled = false;
+            document.getElementById('testBtn').disabled = false;
+          } else if (msg.type === 'solution') {
+            if (msg.data) {
+              handleSolution(msg.data);
+            }
+          } else if (msg.type === 'depth') {
+            handleProgress(msg.data);
+          } else if (msg.type === 'done') {
+            handleDone();
+          } else if (msg.type === 'error') {
+            handleError(msg.data);
+          }
+        };
+        
+        worker.onerror = function(error) {
+          showStatus('cdnStatus', 'error', '❌ Worker error: ' + error.message);
+          showStatus('workerStatus', 'error', '❌ Worker failed');
+        };
+        
+      } catch (error) {
+        showStatus('cdnStatus', 'error', '❌ Failed to load from CDN: ' + error.message);
+        showStatus('workerStatus', 'error', '❌ Initialization failed');
+        console.error('CDN loading error:', error);
+      }
+    }
+    
+    // Solve function
+    let currentSolutions = [];
+    
+    function solveCube() {
+      const scramble = document.getElementById('scramble').value.trim();
+      
+      if (!scramble) {
+        showStatus('solveStatus', 'error', '❌ Please enter a scramble');
+        return;
+      }
+      
+      if (!worker) {
+        showStatus('solveStatus', 'error', '❌ Worker not initialized');
+        return;
+      }
+      
+      currentSolutions = [];
+      currentSolveTime = performance.now();
+      document.getElementById('solutionsContainer').innerHTML = '';
+      document.getElementById('progress').innerHTML = '';
+      showStatus('solveStatus', 'info', '⏳ Solving... (first solve builds pruning table, ~3-4 seconds)');
+      
+      worker.postMessage({
+        scramble: scramble,
+        maxSolutions: 3,
+        maxLength: 11,
+        pruneDepth: 1,
+        allowedMoves: 'U_U2_U-_R_R2_R-_F_F2_F-'
+      });
+    }
+    
+    function handleSolution(solution) {
+      currentSolutions.push(solution);
+      const container = document.getElementById('solutionsContainer');
+      const div = document.createElement('div');
+      div.className = 'solution-item';
+      div.innerHTML = `<strong>Solution ${currentSolutions.length}:</strong> ${solution}`;
+      container.appendChild(div);
+    }
+    
+    function handleProgress(depthMsg) {
+      document.getElementById('progress').textContent = depthMsg;
+    }
+    
+    function handleDone() {
+      const elapsed = performance.now() - currentSolveTime;
+      
+      if (currentSolutions.length > 0) {
+        showStatus('solveStatus', 'success', 
+          `✅ Found ${currentSolutions.length} solution(s) in ${elapsed.toFixed(0)}ms`);
+      } else {
+        showStatus('solveStatus', 'warning', 
+          `⚠️ No solutions found in ${elapsed.toFixed(0)}ms`);
+      }
+    }
+    
+    function handleError(error) {
+      showStatus('solveStatus', 'error', '❌ Error: ' + error);
+    }
+    
+    // Test suite
+    const testScrambles = [
+      { name: 'Test 1', scramble: 'R U R\' U\'', note: 'Builds pruning table' },
+      { name: 'Test 2', scramble: 'R2 U2', note: 'Reuses table' },
+      { name: 'Test 3', scramble: 'U R2 U\'', note: 'Reuses table' },
+      { name: 'Test 4', scramble: 'U\' F2 U R\' U\' R F\' R F2 U', note: '10-move challenge' }
+    ];
+    
+    let testIndex = 0;
+    let testStartTime = 0;
+    
+    function runTests() {
+      if (!worker) {
+        showStatus('testStatus', 'error', '❌ Worker not initialized');
+        return;
+      }
+      
+      testIndex = 0;
+      testStartTime = performance.now();
+      document.getElementById('testResults').innerHTML = '';
+      document.getElementById('testProgress').innerHTML = '';
+      showStatus('testStatus', 'info', '⏳ Running tests...');
+      
+      runNextTest();
+    }
+    
+    function runNextTest() {
+      if (testIndex >= testScrambles.length) {
+        const totalTime = performance.now() - testStartTime;
+        showStatus('testStatus', 'success', 
+          `✅ All ${testScrambles.length} tests completed in ${(totalTime / 1000).toFixed(1)}s`);
+        return;
+      }
+      
+      const test = testScrambles[testIndex];
+      currentSolutions = [];
+      currentSolveTime = performance.now();
+      
+      document.getElementById('testProgress').innerHTML = 
+        `Running ${test.name}: "${test.scramble}" (${test.note})`;
+      
+      // Override handlers temporarily
+      const originalDone = handleDone;
+      window.handleDone = function() {
+        const elapsed = performance.now() - currentSolveTime;
+        const container = document.getElementById('testResults');
+        const div = document.createElement('div');
+        div.className = 'solution-item';
+        div.innerHTML = `
+          <strong>${test.name}:</strong> ${currentSolutions.length} solution(s) 
+          in ${elapsed.toFixed(0)}ms<br>
+          <small style="color: #666;">${test.note}</small>
+        `;
+        container.appendChild(div);
+        
+        testIndex++;
+        setTimeout(runNextTest, 100);
+      };
+      
+      worker.postMessage({
+        scramble: test.scramble,
+        maxSolutions: 3,
+        maxLength: 11,
+        pruneDepth: 1,
+        allowedMoves: 'U_U2_U-_R_R2_R-_F_F2_F-'
+      });
+    }
+    
+    // Utility functions
+    function setScramble(scramble) {
+      document.getElementById('scramble').value = scramble;
+    }
+    
+    function showStatus(elementId, type, message) {
+      const status = document.getElementById(elementId);
+      status.className = `status ${type} show`;
+      status.textContent = message;
+    }
+  </script>
+</body>
+</html>

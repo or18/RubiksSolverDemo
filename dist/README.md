@@ -1,38 +1,61 @@
 # Rubik's Cube Solver Libraries
 
-WebAssembly-based Rubik's Cube solvers with simple JavaScript APIs.
+High-performance WebAssembly-based Rubik's Cube solvers with persistent pruning tables for optimal batch solving.
 
 ## Overview
 
-This library provides high-performance cube solvers compiled to WebAssembly, offering both Promise-based and event-driven APIs for various cube puzzles.
+This library provides WebAssembly-compiled cube solvers with persistent state optimization. Solvers build expensive pruning tables once and reuse them across multiple solves, dramatically improving performance for batch operations.
 
-## Installation
+## Quick Start
 
-### Option 1: ES6 Module (Recommended)
-
-```javascript
-import { solve } from './src/2x2solver/2x2solver.js';
-
-const solutions = await solve("R U R' U'");
-console.log(solutions);
-```
-
-### Option 2: CDN (Coming Soon)
+### Web Worker (Browser - Recommended)
 
 ```javascript
-// Future CDN support
-import { solve } from 'https://cdn.example.com/rubiks-solver/2x2solver.js';
+const worker = new Worker('src/2x2solver/worker_persistent.js');
+
+worker.onmessage = (e) => {
+  const msg = e.data;
+  if (msg.type === 'ready') {
+    worker.postMessage({
+      scramble: "R U R' U'",
+      maxSolutions: 3,
+      maxLength: 11,
+      pruneDepth: 1,
+      allowedMoves: 'U_U2_U-_R_R2_R-_F_F2_F-'
+    });
+  } else if (msg.type === 'solution') {
+    console.log('Solution:', msg.data);
+  }
+};
 ```
 
-### Option 3: Local Files
+### Node.js
 
-Download the solver directory and include files in your project.
+```javascript
+const createModule = require('./src/2x2solver/solver.js');
+
+(async () => {
+  const Module = await createModule();
+  const solver = new Module.PersistentSolver2x2();
+  
+  globalThis.postMessage = (msg) => {
+    if (msg !== 'Search finished.' && msg !== '') {
+      console.log('Solution:', msg);
+    }
+  };
+  
+  solver.solve(
+    "R U R' U'", '', 3, 11, 1,
+    'U_U2_U-_R_R2_R-_F_F2_F-', '', '', ''
+  );
+})();
+```
 
 ## Browser Requirements
 
-- ES6 module support
-- Web Workers
-- WebAssembly
+- WebAssembly support
+- Web Workers (for non-blocking operation)
+- ES6 modules
 
 All modern browsers (Chrome, Firefox, Safari, Edge) are supported.
 
@@ -40,104 +63,146 @@ All modern browsers (Chrome, Firefox, Safari, Edge) are supported.
 
 ## 2x2x2 Cube Solver
 
-Optimal solver for 2x2x2 Rubik's Cube (Pocket Cube).
+Optimal solver for 2x2x2 Rubik's Cube (Pocket Cube) with persistent pruning tables.
 
-### Basic Usage
+### ✨ Key Features
 
-```javascript
-import { solve } from './src/2x2solver/2x2solver.js';
+- **Persistent Tables**: Build pruning table once (~3-4s), reuse for all subsequent solves (<1s each)
+- **URF Optimization**: Uses 9 URF moves for optimal 2x2x2 solving
+- **Non-blocking**: Web Worker keeps UI responsive during computation
+- **Universal Binary**: Single compilation works in Node.js, browser, and Web Worker
 
-// Simple solve
-const solutions = await solve("R U R' U'");
+### 🚀 Quick Demo
 
-// With options
-const solutions = await solve("R U R' U'", {
-  maxSolutions: 10,
-  maxLength: 15,
-  pruneDepth: 8
-});
+```bash
+cd dist/src/2x2solver
+python3 -m http.server 8000
+# Open http://localhost:8000/demo.html
 ```
 
-### API Parameters
+### 📋 Basic Usage (Web Worker)
+
+```javascript
+const worker = new Worker('src/2x2solver/worker_persistent.js');
+
+worker.onmessage = (e) => {
+  const msg = e.data;
+  
+  if (msg.type === 'ready') {
+    // Worker initialized, send solve request
+    worker.postMessage({
+      scramble: "R U R' U'",
+      maxSolutions: 3,
+      maxLength: 11,
+      pruneDepth: 1,
+      allowedMoves: 'U_U2_U-_R_R2_R-_F_F2_F-'
+    });
+  } else if (msg.type === 'solution') {
+    console.log('Solution:', msg.data);
+  } else if (msg.type === 'depth') {
+    console.log('Progress:', msg.data);
+  } else if (msg.type === 'done') {
+    console.log('Complete!');
+  }
+};
+```
+
+### 📋 Basic Usage (Node.js)
+
+```javascript
+const createModule = require('./src/2x2solver/solver.js');
+
+(async () => {
+  const Module = await createModule();
+  const solver = new Module.PersistentSolver2x2();
+  
+  let solutions = [];
+  globalThis.postMessage = (msg) => {
+    if (msg !== 'Search finished.' && msg !== '') {
+      solutions.push(msg);
+    }
+  };
+  
+  // First solve builds table, subsequent solves reuse it
+  const scrambles = ["R U R' U'", "R2 U2", "U R2 U'"];
+  for (const scr of scrambles) {
+    solutions = [];
+    solver.solve(scr, '', 3, 11, 1, 'U_U2_U-_R_R2_R-_F_F2_F-', '', '', '');
+    console.log(`${scr}:`, solutions);
+  }
+})();
+```
+
+### 📊 Performance
+
+| Solve | Scramble | Time | Notes |
+|-------|----------|------|-------|
+| **1st** | `R U R' U'` | ~3-4s | Builds pruning table (~84MB) |
+| **2nd** | `R2 U2` | <1s | **Reuses table** |
+| **3rd** | `U R2 U'` | <1s | **Reuses table** |
+| **4th** | 10-move scramble | ~1-2s | **Reuses table** |
+
+**Total**: ~5-6 seconds for 4 scrambles (vs. ~12-16s without persistence)
+
+### ⚙️ Configuration Parameters
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `scramble` | string | *(required)* | Scramble sequence (e.g., `"R U R' U'"`) |
-| `maxSolutions` | number | `20` | Maximum number of solutions to find |
-| `maxLength` | number | `20` | Maximum solution length in moves |
-| `pruneDepth` | number | `8` | Search depth (1-11, higher = more thorough) |
-| `rotation` | string | `""` | Whole-cube rotation (`"y"`, `"z"`, `"x"`, etc.) |
-| `allowedMoves` | string | `"U_U2_U-_R_R2_R-_F_F2_F-"` | Allowed move set (underscore-separated) |
+| `maxSolutions` | number | `3` | Maximum number of solutions to find |
+| `maxLength` | number | `11` | Maximum solution length in moves |
+| `pruneDepth` | number | `1` | Search depth (1 recommended with URF) |
+| `allowedMoves` | string | `"U_U2_U-_R_R2_R-_F_F2_F-"` | Allowed move set (URF recommended) |
+| `rotation` | string | `""` | Whole-cube rotation |
 | `preMove` | string | `""` | Pre-move sequence |
 | `moveOrder` | string | `""` | Move order constraints |
-| `moveCount` | string | `""` | Move count limits (e.g., `"U:2_R:3"`) |
+| `moveCount` | string | `""` | Move count limits |
 
-### Event-Based API
+### 📁 Files
 
-For streaming results:
+### 📁 Files
 
-```javascript
-import { Solver2x2 } from './src/2x2solver/2x2solver.js';
+- `solver.cpp` - C++ solver with PersistentSolver2x2
+- `solver.js` + `solver.wasm` - Universal MODULARIZE binary
+- `worker_persistent.js` - Web Worker wrapper (recommended)
+- `demo.html` - Interactive demo with UI
+- `compile.sh` - Compilation script
 
-const solver = new Solver2x2();
-solver.search("R U R' U'", {
-  onSolution: (sol) => console.log('Found:', sol),
-  onDone: () => console.log('Complete')
-});
+📖 **[Full Documentation](./src/2x2solver/README.md)** - Complete API reference, compilation guide, and advanced examples.
+
+📖 **[Implementation Guide](./src/2x2solver/PERSISTENT_SOLVER_README.md)** - Detailed technical documentation.
+
+---
+
+## 🔧 Compilation
+
+Each solver can be recompiled from C++ source:
+
+```bash
+cd dist/src/2x2solver
+
+# Load Emscripten SDK
+source /path/to/emsdk/emsdk_env.sh
+
+# Compile
+./compile.sh
 ```
 
-### Performance Modes
-
-| Mode | `pruneDepth` | `maxLength` | Use Case |
-|------|--------------|-------------|----------|
-| Fast | `6` | `15` | Quick results |
-| Standard | `8` | `20` | Balanced (default) |
-| Thorough | `10-11` | `25` | Complete search |
-
-### Common Use Cases
-
-**Restrict to specific faces (e.g., RU only):**
-```javascript
-await solve("R U R' U'", {
-  allowedMoves: "R_R2_R-_U_U2_U-"
-});
-```
-
-**Apply cube rotation:**
-```javascript
-await solve("R U R' U'", {
-  rotation: "y"  // Rotate on Y-axis
-});
-```
-
-**Find optimal solutions only:**
-```javascript
-await solve("R U R' U'", {
-  maxLength: 10,
-  maxSolutions: 1
-});
-```
-
-### Files
-
-- `2x2solver.js` - Main API (Promise-based)
-- `worker.js` - Web Worker interface
-- `solver.wasm` - WebAssembly binary
-- `example.html` - Interactive examples
-
-📖 **[Full Documentation](./src/2x2solver/README.md)** - Complete parameter reference, advanced options, and detailed examples.
+See individual solver directories for specific compilation instructions.
 
 ---
 
 ## Other Solvers
 
-*(Coming soon)*
+*(Additional solvers available in `src/` directory)*
 
-- 3x3x3 Cross Solver
-- 3x3x3 EOCross Solver
-- 3x3x3 XCross Solver
-- 3x3x3 XXCross Solver
-- F2L Pairing Solver
+- Cross Solver (`crossSolver/`)
+- EOCross Solver (`EOCrossSolver/`)
+- XCross Trainer (`xcrossTrainer/`)
+- XXCross Trainer (`xxcrossTrainer/`)
+- F2L Pairing Solver (`F2L_PairingSolver/`)
+
+Each solver has its own README with usage instructions.
 
 ---
 
