@@ -178,47 +178,45 @@ streamingSolve().catch(console.error);</pre>
     // Configuration
     const CDN_BASE_URL = 'https://cdn.jsdelivr.net/gh/or18/RubiksSolverDemo@main/dist/src/2x2solver/';
     let helper = null;
-    let currentScriptTag = null; // Track current script tag
     const output = document.getElementById('output');
-    
-    // Dynamic script loading
-    function loadScript(src) {
-      return new Promise((resolve, reject) => {
-        // Remove old script tag if exists
-        if (currentScriptTag) {
-          currentScriptTag.remove();
-          currentScriptTag = null;
-          // Clear the global class
-          if (window.Solver2x2Helper) {
-            delete window.Solver2x2Helper;
-          }
-        }
-        
-        const script = document.createElement('script');
-        script.src = src;
-        script.onload = resolve;
-        script.onerror = () => reject(new Error(`Failed to load script: ${src}`));
-        document.head.appendChild(script);
-        currentScriptTag = script;
-      });
-    }
     
     // Load helper on page load
     window.addEventListener('load', async () => {
-      await loadHelperScript();
+      const useCDN = getParam('cdn') === '1';
+      const cacheBust = getParam('cb') === '1';
+      
+      // Set checkboxes from URL params
+      document.getElementById('useCDN').checked = useCDN;
+      document.getElementById('cacheBust').checked = cacheBust;
+      document.getElementById('cacheBustOption').style.display = useCDN ? 'block' : 'none';
+      
+      await loadHelperScript(useCDN, cacheBust);
+      
+      // Add change listeners that reload page
       document.getElementById('useCDN').addEventListener('change', function(e) {
-        const cacheBustOption = document.getElementById('cacheBustOption');
-        cacheBustOption.style.display = e.target.checked ? 'block' : 'none';
-        if (!e.target.checked) {
-          document.getElementById('cacheBust').checked = false;
-        }
+        reloadWithParams(e.target.checked, false);
+      });
+      
+      document.getElementById('cacheBust').addEventListener('change', function(e) {
+        reloadWithParams(document.getElementById('useCDN').checked, e.target.checked);
       });
     });
     
-    async function loadHelperScript() {
+    function getParam(name) {
+      const params = new URLSearchParams(window.location.search);
+      return params.get(name);
+    }
+    
+    function reloadWithParams(useCDN, cacheBust) {
+      const params = new URLSearchParams();
+      if (useCDN) params.set('cdn', '1');
+      if (cacheBust) params.set('cb', '1');
+      const query = params.toString();
+      window.location.href = window.location.pathname + (query ? '?' + query : '');
+    }
+    
+    async function loadHelperScript(useCDN, cacheBust) {
       const statusDiv = document.getElementById('loadStatus');
-      const useCDN = document.getElementById('useCDN').checked;
-      const cacheBust = document.getElementById('cacheBust').checked;
       
       try {
         statusDiv.textContent = `⏳ Loading helper${useCDN ? ' from CDN' : ''}${cacheBust ? ' (cache busting)' : ''}...`;
@@ -228,41 +226,27 @@ streamingSolve().catch(console.error);</pre>
           ? CDN_BASE_URL + 'solver-helper.js' + (cacheBust ? `?v=${Date.now()}` : '')
           : 'solver-helper.js';
         
-        await loadScript(scriptUrl);
+        await new Promise((resolve, reject) => {
+          const script = document.createElement('script');
+          script.src = scriptUrl;
+          script.onload = resolve;
+          script.onerror = () => reject(new Error(`Failed to load: ${scriptUrl}`));
+          document.head.appendChild(script);
+        });
         
-        // Wait a bit for script execution
-        await new Promise(resolve => setTimeout(resolve, 100));
+        // Wait for script execution
+        await new Promise(resolve => setTimeout(resolve, 150));
         
-        // Verify the class is available in global scope
         if (typeof window.Solver2x2Helper !== 'undefined') {
           statusDiv.textContent = `✅ Helper loaded successfully${useCDN ? ' from CDN' : ' (local)'}!`;
           statusDiv.style.color = '#155724';
         } else {
-          throw new Error('Solver2x2Helper not found in loaded script');
+          throw new Error('Solver2x2Helper not found after loading');
         }
       } catch (error) {
         statusDiv.textContent = `❌ Failed to load helper: ${error.message}`;
         statusDiv.style.color = '#721c24';
       }
-    }
-    
-    async function reloadHelper() {
-      // Terminate existing helper
-      if (helper) {
-        try {
-          await helper.terminate();
-        } catch (e) {
-          // Ignore termination errors
-        }
-        helper = null;
-      }
-      
-      // Reload script
-      await loadHelperScript();
-      
-      // Clear output
-      clear();
-      output.textContent = 'Helper reloaded. Click a button to run an example...';
     }
     
     function log(msg) {
