@@ -1,9 +1,14 @@
 /**
  * 2x2x2 Solver Helper - Simplified Promise-based API for Web Workers
- * @version 1.1.0 (2026-02-15) - CDN auto-detect + cache busting support
+ * @version 1.2.0 (2026-02-15) - Dynamic script loading support
  * 
  * This helper wraps the Web Worker interface to provide a simple Promise-based API.
  * No need to handle worker.onmessage manually!
+ * 
+ * Features:
+ * - CDN auto-detection (works with both <script src> and dynamic createElement)
+ * - Cache busting propagation (?v=timestamp → worker.js + solver.wasm)
+ * - CORS bypass via Blob URL for CDN workers
  * 
  * @example
  * // Basic usage
@@ -29,10 +34,24 @@ class Solver2x2Helper {
   constructor(workerPath = null) {
     // Auto-detect worker path based on how this script was loaded
     if (!workerPath) {
+      let scriptUrl = null;
+      
+      // Method 1: Try document.currentScript (works for inline <script src="...">)
       if (typeof document !== 'undefined' && document.currentScript && document.currentScript.src) {
-        // Loaded via <script src="...">
-        const scriptUrl = document.currentScript.src;
-        
+        scriptUrl = document.currentScript.src;
+      } 
+      // Method 2: Search all script tags for solver-helper.js (works for dynamic loading)
+      else if (typeof document !== 'undefined') {
+        const scripts = document.getElementsByTagName('script');
+        for (let i = 0; i < scripts.length; i++) {
+          if (scripts[i].src && scripts[i].src.includes('solver-helper.js')) {
+            scriptUrl = scripts[i].src;
+            break;
+          }
+        }
+      }
+      
+      if (scriptUrl) {
         // Extract base URL (without filename)
         const lastSlashIndex = scriptUrl.lastIndexOf('/');
         const baseUrl = scriptUrl.substring(0, lastSlashIndex + 1);
@@ -51,7 +70,9 @@ class Solver2x2Helper {
       }
     } else {
       this.workerPath = workerPath;
-      this.cacheBustParams = '';
+      // Extract cache bust params from provided path if present
+      const queryIndex = workerPath.indexOf('?');
+      this.cacheBustParams = queryIndex !== -1 ? workerPath.substring(queryIndex) : '';
     }
     
     this.worker = null;
@@ -261,7 +282,7 @@ if (typeof module !== 'undefined' && module.exports) {
   window.Solver2x2Helper = Solver2x2Helper;
   // Debug info for cache verification
   if (typeof console !== 'undefined') {
-    console.log('[Solver2x2Helper] v1.1.0 loaded from:', 
+    console.log('[Solver2x2Helper] v1.2.0 loaded from:', 
       typeof document !== 'undefined' && document.currentScript ? document.currentScript.src : 'unknown');
   }
 }

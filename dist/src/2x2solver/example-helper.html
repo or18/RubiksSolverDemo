@@ -102,6 +102,11 @@ const solutions = await helper.solve("R U R' U'");
     <strong>💡 Note:</strong> The helper automatically detects CDN usage and handles CORS issues with Worker loading.
     Just include the script from CDN and use normally!
   </p>
+  <p style="background: #fff3cd; padding: 8px; border-radius: 4px; font-size: 0.9em; margin-bottom: 10px; border-left: 3px solid #ff9800;">
+    <strong>⚠️ Development:</strong> If testing latest changes from <code>@main</code>, add cache busting:<br>
+    <code>&lt;script src="...solver-helper.js<strong>?v=YOUR_TIMESTAMP</strong>"&gt;&lt;/script&gt;</code><br>
+    Or use a versioned release tag: <code>@v1.0.0</code> instead of <code>@main</code>
+  </p>
   <pre class="code" style="font-size: 13px; line-height: 1.5; overflow-x: auto;">&lt;!DOCTYPE html&gt;
 &lt;html&gt;
 &lt;head&gt;

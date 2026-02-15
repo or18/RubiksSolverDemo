@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CDN Dynamic Loading Test - PersistentSolver2x2</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      max-width: 900px;
+      margin: 30px auto;
+      padding: 20px;
+      line-height: 1.6;
+    }
+    h1 { color: #2c3e50; border-bottom: 3px solid #3498db; padding-bottom: 10px; }
+    .info-box {
+      background: #e8f4f8;
+      border-left: 4px solid #3498db;
+      padding: 15px;
+      margin: 20px 0;
+    }
+    .success { background: #d4edda; border-color: #28a745; }
+    .error { background: #f8d7da; border-color: #dc3545; }
+    button {
+      background: #3498db;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      font-size: 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin: 10px 5px;
+    }
+    button:hover { background: #2980b9; }
+    button:disabled { background: #95a5a6; cursor: not-allowed; }
+    #output {
+      background: #2c3e50;
+      color: #ecf0f1;
+      padding: 15px;
+      border-radius: 4px;
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+      white-space: pre-wrap;
+      max-height: 400px;
+      overflow-y: auto;
+      margin-top: 20px;
+    }
+    code {
+      background: #f4f4f4;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-family: 'Courier New', monospace;
+      color: #e74c3c;
+    }
+  </style>
+</head>
+<body>
+  <h1>🧩 CDN Dynamic Loading Test</h1>
+  
+  <div class="info-box">
+    <strong>Test Purpose:</strong><br>
+    Verify that <code>solver-helper.js v1.2.0</code> can automatically detect its CDN URL
+    when loaded dynamically via <code>document.createElement('script')</code>.
+    <br><br>
+    <strong>What's Being Tested:</strong><br>
+    • Dynamic script loading (not <code>&lt;script src="..."&gt;</code>)<br>
+    • Automatic CDN URL detection via <code>document.getElementsByTagName('script')</code><br>
+    • Cache busting propagation to <code>worker_persistent.js</code> and <code>solver.wasm</code>
+  </div>
+
+  <button id="loadBtn" onclick="loadSolverFromCDN()">📥 Load solver-helper.js from CDN</button>
+  <button id="testBtn" onclick="runTest()" disabled>🎯 Run Solve Test</button>
+  <button onclick="clearOutput()">🗑️ Clear Output</button>
+
+  <div id="output"></div>
+
+  <script>
+    const CDN_BASE_URL = 'https://cdn.jsdelivr.net/gh/TokarevDmitrii/RubiksSolverDemo@latest/dist/src/2x2solver/';
+    const output = document.getElementById('output');
+    
+    function log(message, type = 'info') {
+      const timestamp = new Date().toLocaleTimeString();
+      const prefix = type === 'error' ? '❌' : type === 'success' ? '✅' : 'ℹ️';
+      output.textContent += `[${timestamp}] ${prefix} ${message}\n`;
+      output.scrollTop = output.scrollHeight;
+    }
+    
+    function clearOutput() {
+      output.textContent = '';
+    }
+    
+    function loadSolverFromCDN() {
+      const loadBtn = document.getElementById('loadBtn');
+      loadBtn.disabled = true;
+      
+      log('Starting dynamic script load...');
+      
+      // Generate cache bust parameter
+      const cacheBust = '?v=' + Date.now();
+      const scriptUrl = CDN_BASE_URL + 'solver-helper.js' + cacheBust;
+      
+      log(`Loading: ${scriptUrl}`);
+      
+      // Create script element dynamically
+      const script = document.createElement('script');
+      script.src = scriptUrl;
+      
+      script.onload = () => {
+        log('✅ Script loaded successfully!', 'success');
+        log(`Detected version: v1.2.0 (should appear in console)`);
+        log(`Solver2x2Helper available: ${typeof Solver2x2Helper !== 'undefined'}`);
+        
+        // Check if class is available
+        if (typeof Solver2x2Helper !== 'undefined') {
+          // Create instance to check workerPath
+          const testHelper = new Solver2x2Helper();
+          log(`Worker path detected: ${testHelper.workerPath}`);
+          log(`Cache bust params: ${testHelper.cacheBustParams}`);
+          
+          if (testHelper.workerPath.includes('cdn.jsdelivr.net')) {
+            log('✅ CDN URL auto-detected correctly!', 'success');
+          } else {
+            log('❌ WARNING: Worker path is not CDN URL!', 'error');
+            log(`Expected: ${CDN_BASE_URL}worker_persistent.js${cacheBust}`, 'error');
+            log(`Got: ${testHelper.workerPath}`, 'error');
+          }
+          
+          document.getElementById('testBtn').disabled = false;
+        } else {
+          log('❌ ERROR: Solver2x2Helper not found!', 'error');
+        }
+      };
+      
+      script.onerror = (err) => {
+        log('❌ Failed to load script!', 'error');
+        log(err.toString(), 'error');
+        loadBtn.disabled = false;
+      };
+      
+      // Append to head
+      document.head.appendChild(script);
+      log('Script element appended to document.head');
+    }
+    
+    async function runTest() {
+      const testBtn = document.getElementById('testBtn');
+      testBtn.disabled = true;
+      
+      try {
+        log('Creating Solver2x2Helper instance...');
+        const solver = new Solver2x2Helper();
+        
+        log('Initializing solver (loading WASM)...');
+        await solver.init();
+        log('✅ Solver initialized!', 'success');
+        
+        log('Solving scramble: R U R\' U\'');
+        const solutions = await solver.solve('R U R\' U\'', {
+          maxSolutions: 3,
+          maxLength: 11
+        });
+        
+        log(`✅ Found ${solutions.length} solution(s):`, 'success');
+        solutions.forEach((sol, i) => {
+          log(`  ${i + 1}. ${sol}`);
+        });
+        
+        solver.terminate();
+        log('✅ Test completed successfully!', 'success');
+        
+      } catch (err) {
+        log('❌ ERROR during test:', 'error');
+        log(err.toString(), 'error');
+        log('Stack trace:', 'error');
+        log(err.stack, 'error');
+      } finally {
+        testBtn.disabled = false;
+      }
+    }
+    
+    // Initial message
+    log('CDN Dynamic Loading Test ready. Click "Load solver-helper.js from CDN" to start.');
+    log(`CDN Base URL: ${CDN_BASE_URL}`);
+  </script>
+</body>
+</html>

@@ -9,6 +9,7 @@ BASE_URL="https://purge.jsdelivr.net/gh/or18/RubiksSolverDemo@main/dist/src/2x2s
 
 # Purge all solver files
 files=(
+    "solver-helper.js"
     "worker_persistent.js"
     "solver.js"
     "solver.wasm"
