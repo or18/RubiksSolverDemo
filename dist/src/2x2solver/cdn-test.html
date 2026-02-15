@@ -312,10 +312,13 @@
         <h2>🎯 Solve a Scramble</h2>
         
         <div class="info-box">
-          <h3>ℹ️ CDN Test Notice</h3>
+          <h3>ℹ️ CDN Usage Notes</h3>
           <p>
-            This page loads solver files from CDN and runs them in a Web Worker (non-blocking).
-            The Worker is created dynamically using Blob URLs to work around CORS restrictions.
+            <strong>Recommended:</strong> Use <strong>jsDelivr CDN</strong> for production.<br>
+            <strong>GitHub Raw:</strong> May fail in some browsers due to Content-Type restrictions (serves as text/plain).<br>
+            <strong>Local:</strong> For development and testing.<br><br>
+            The worker automatically resolves paths for solver.js and solver.wasm from the same directory.
+            No additional configuration needed!
           </p>
         </div>
         
@@ -428,25 +431,9 @@
         
         const source = CDN_SOURCES[currentCDN];
         
-        // Fetch worker script from CDN
-        const workerResponse = await fetch(source.base + source.worker);
-        if (!workerResponse.ok) {
-          throw new Error(`Failed to fetch worker: ${workerResponse.status}`);
-        }
-        const workerCode = await workerResponse.text();
-        
-        // Modify worker code to use CDN path for solver.js
-        const modifiedWorkerCode = workerCode.replace(
-          "importScripts('solver.js')",
-          `importScripts('${source.base}solver.js')`
-        );
-        
-        // Create blob URL for worker
-        const blob = new Blob([modifiedWorkerCode], { type: 'application/javascript' });
-        const workerUrl = URL.createObjectURL(blob);
-        
-        // Create worker from blob URL
-        worker = new Worker(workerUrl);
+        // Simply create worker from CDN URL
+        // worker_persistent.js will handle path resolution automatically
+        worker = new Worker(source.base + source.worker);
         
         worker.onmessage = function(event) {
           const msg = event.data;
@@ -471,7 +458,7 @@
         
         worker.onerror = function(error) {
           showStatus('cdnStatus', 'error', '❌ Worker error: ' + error.message);
-          showStatus('workerStatus', 'error', '❌ Worker failed');
+          showStatus('workerStatus', 'error', '❌ Worker failed: ' + error.message);
         };
         
       } catch (error) {

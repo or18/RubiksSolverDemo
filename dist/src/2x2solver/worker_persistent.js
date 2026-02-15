@@ -3,6 +3,7 @@
  * 
  * Uses MODULARIZE version (solver.js) for universal compatibility.
  * Same binary used in Node.js and Web Worker.
+ * Works with both local files and CDN loading.
  * 
  * Message format (to worker):
  *   {
@@ -68,11 +69,25 @@ globalThis.postMessage = function(message) {
 	}
 };
 
+// Determine base path for assets (solver.js, solver.wasm)
+// This works for both local files and CDN
+const scriptPath = self.location.href;
+const baseURL = scriptPath.substring(0, scriptPath.lastIndexOf('/') + 1);
+
 // Import MODULARIZE version (same as Node.js)
-importScripts('solver.js');
+importScripts(baseURL + 'solver.js');
 
 // Initialize with createModule() factory
-createModule().then(Module => {
+// Use locateFile to ensure WASM is loaded from the correct path
+createModule({
+	locateFile: function(path) {
+		// Ensure WASM and other assets are loaded from the same directory as worker
+		if (path.endsWith('.wasm') || path.endsWith('.wasm.map')) {
+			return baseURL + path;
+		}
+		return path;
+	}
+}).then(Module => {
 	try {
 		persistentSolver = new Module.PersistentSolver2x2();
 		
