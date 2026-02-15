@@ -89,6 +89,34 @@
       outline: none;
       border-color: #667eea;
     }
+
+    /* Larger/tappable checkboxes and CDN URL wrapping for small screens */
+    #reuseTable, #useCDN, #cacheBust {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+      vertical-align: middle;
+    }
+
+    .cdn-url {
+      display: inline-block;
+      max-width: 100%;
+      word-break: break-all;
+      overflow-wrap: anywhere;
+    }
+
+    @media (max-width: 520px) {
+      #reuseTable, #useCDN, #cacheBust {
+        transform: scale(1.35);
+        margin-right: 12px;
+      }
+      .cdn-note, .cdn-url {
+        word-break: break-all;
+        overflow-wrap: anywhere;
+      }
+      /* Slightly larger labels for touch devices */
+      .section label { font-size: 1rem; }
+    }
     
     .input-row {
       display: grid;
@@ -288,9 +316,9 @@
             </label>
           </div>
           
-          <div style="margin-top: 8px; margin-left: 28px; font-size: 0.85em; color: #666;">
+          <div class="cdn-note" style="margin-top: 8px; margin-left: 28px; font-size: 0.85em; color: #666;">
             • <strong>Local</strong>: Uses files in current directory (default)<br>
-            • <strong>CDN</strong>: Loads from https://cdn.jsdelivr.net/gh/or18/RubiksSolverDemo@main/<br>
+            • <strong>CDN</strong>: Loads from <span class="cdn-url">https://cdn.jsdelivr.net/gh/or18/RubiksSolverDemo@main/</span><br>
             • <strong>Cache Busting</strong>: For developers testing latest changes (bypasses CDN cache)
           </div>
         </div>
