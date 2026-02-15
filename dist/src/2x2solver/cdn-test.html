@@ -314,10 +314,12 @@
         <div class="info-box">
           <h3>ℹ️ CDN Usage Notes</h3>
           <p>
+            <strong>Important:</strong> CDN sources require the latest code to be pushed to GitHub first!<br>
+            If you just modified worker_persistent.js, you need to commit and push before CDN testing.<br><br>
             <strong>How it works:</strong> This demo fetches the worker script from CDN and creates it via Blob URL to bypass CORS restrictions.<br><br>
-            <strong>jsDelivr CDN:</strong> Fast, reliable, recommended for production.<br>
-            <strong>GitHub Raw:</strong> Works but may have rate limits.<br>
-            <strong>Local:</strong> Direct loading, no CORS issues, best for development.<br><br>
+            <strong>jsDelivr CDN:</strong> Fast, reliable, recommended for production. May take a few minutes to update after push.<br>
+            <strong>GitHub Raw:</strong> Updates faster but may fail due to Content-Type (text/plain) restrictions.<br>
+            <strong>Local:</strong> Direct loading, no CORS issues, best for development and immediate testing.<br><br>
             For your own applications, you can use the same Blob URL technique shown in this page's source code.
           </p>
         </div>
@@ -443,19 +445,29 @@
           
           let workerCode = await workerResponse.text();
           
-          // Replace the baseURL calculation lines with CDN base URL
-          // We need to replace both lines:
-          // const scriptPath = self.location.href;
-          // const baseURL = scriptPath.substring(0, scriptPath.lastIndexOf('/') + 1);
-          const oldCode = `const scriptPath = self.location.href;
-const baseURL = scriptPath.substring(0, scriptPath.lastIndexOf('/') + 1);`;
-          const newCode = `const baseURL = '${source.base}';`;
-          
-          if (workerCode.indexOf(oldCode) === -1) {
-            throw new Error('Worker code format has changed - cannot find baseURL calculation');
+          // Replace each line separately for better compatibility
+          // 1. Comment out the scriptPath line (not needed when we hardcode baseURL)
+          if (!workerCode.includes('const scriptPath = self.location.href;')) {
+            console.error('Cannot find scriptPath line in worker code');
+            console.log('First 1000 chars:', workerCode.substring(0, 1000));
+            throw new Error('Worker code format unexpected - missing scriptPath line');
           }
           
-          workerCode = workerCode.replace(oldCode, newCode);
+          workerCode = workerCode.replace(
+            'const scriptPath = self.location.href;',
+            '// const scriptPath = self.location.href; // Not needed with CDN'
+          );
+          
+          // 2. Replace the baseURL calculation with hardcoded CDN URL
+          if (!workerCode.includes("scriptPath.substring(0, scriptPath.lastIndexOf('/') + 1)")) {
+            console.error('Cannot find baseURL calculation in worker code');
+            throw new Error('Worker code format unexpected - missing baseURL calculation');
+          }
+          
+          workerCode = workerCode.replace(
+            "const baseURL = scriptPath.substring(0, scriptPath.lastIndexOf('/') + 1);",
+            `const baseURL = '${source.base}';`
+          );
           
           // Create Blob URL
           const blob = new Blob([workerCode], { type: 'application/javascript' });
