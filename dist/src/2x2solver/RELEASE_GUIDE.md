@@ -1,358 +1,226 @@
 # 2x2 Solver Release Guide
 
-Complete step-by-step guide for releasing the 2x2 Persistent Solver.
+2x2 Persistent Solver specific release checklist and verification steps.
+
+**For general release workflow**, see [../../RELEASE_GUIDE.md](../../RELEASE_GUIDE.md).
+
+---
 
 ## 📋 Pre-Release Checklist
 
-### 1. Code Verification ✅
-- [x] solver.cpp compiles without warnings
-- [x] solver.js + solver.wasm built with MODULARIZE
-- [x] worker_persistent.js works locally
-- [x] demo.html runs all 4 tests successfully
-- [x] cdn-test.html works with jsDelivr CDN
-- [x] Documentation complete (README.md, PERSISTENT_SOLVER_README.md)
+### 1. Code Verification
+- [ ] `solver.cpp` compiles without warnings
+- [ ] `solver.js` + `solver.wasm` built with MODULARIZE
+- [ ] `worker_persistent.js` works locally
+- [ ] Helper APIs tested (`solver-helper.js`, `solver-helper-node.js`)
+- [ ] `demo.html` runs all tests successfully (local + CDN modes)
+- [ ] `example-helper.html` works (local + CDN modes)
+- [ ] `node-example.js` executes successfully
+- [ ] Documentation complete and accurate
 
-### 2. Testing ✅
-Run demo.html and verify:
+### 2. Local Testing
+
+**Test Suite (demo.html)**
 ```bash
 cd dist/src/2x2solver
 python -m http.server 8000
-# Open http://localhost:8000/demo.html
+# Open http://localhost:8000/dist/src/2x2solver/demo.html
 # Click "Run Test Suite (4 scrambles)"
-# Verify: Total time ~5-6 seconds, all tests pass
+# Expected: Total time ~5-6 seconds, all tests pass
 ```
 
-### 3. File Organization ✅
-Production files in `dist/src/2x2solver/`:
+**Helper API (example-helper.html)**
+```bash
+# Same server, open example-helper.html
+# Test both "Local" and "CDN" modes
+# Verify all solve buttons work correctly
 ```
-├── solver.cpp              # Source code
-├── solver.js + solver.wasm # Compiled WASM
-├── worker_persistent.js    # Web Worker wrapper
-├── demo.html               # Interactive demo
-├── cdn-test.html           # CDN testing page
-├── compile.sh              # Build script
-├── purge-cdn-cache.sh      # CDN cache management
-├── README.md               # User documentation
-└── PERSISTENT_SOLVER_README.md  # Technical docs
+
+**Node.js Direct Usage**
+```bash
+cd dist/src/2x2solver
+node node-example.js
+# Expected output:
+# ✓ Found 3 solutions (R U R' U')
+# ✓ Found 3 solutions (R2 U2, reusing prune table)
+# === Complete! ===
 ```
+
+### 3. File Organization
+
+Production files ready for release:
+```
+# Core Implementation
+solver.cpp              # C++ source with PersistentSolver2x2
+solver.js               # Compiled WASM module (universal)
+solver.wasm             # WebAssembly binary (~195KB)
+compile.sh              # Build script
+
+# Web Worker
+worker_persistent.js    # Web Worker wrapper
+
+# Helper APIs (Recommended)
+solver-helper.js        # Browser Promise-based wrapper
+solver-helper-node.js   # Node.js Promise-based wrapper
+
+# Documentation
+README.md               # User guide + API reference
+IMPLEMENTATION_NOTES.md # C++ implementation details
+TROUBLESHOOTING.md      # Common issues & solutions
+RELEASE_GUIDE.md        # This file
+
+# Demo & Examples
+demo.html               # Interactive demo (local + CDN)
+example-helper.html     # Helper API examples
+node-example.js         # Node.js direct usage example
+
+# Development Tools
+purge-cdn-cache.sh      # CDN cache purging script
+backups/                # Old test files & deprecated docs
+```
+
+**Verify all files exist and are up-to-date** ✅
 
 ---
 
-## 🚀 Release Process
+## 📦 Post-Release Verification
 
-### Step 1: Commit All Changes
+After following [../../RELEASE_GUIDE.md](../../RELEASE_GUIDE.md) to create the release:
 
-```bash
-cd /workspaces/RubiksSolverDemo
+### CDN Testing
 
-# Check status
-git status
+Wait 2-5 minutes after creating GitHub release, then test CDN availability:
 
-# Add all 2x2 solver files
-git add dist/src/2x2solver/
-git add dist/README.md
-
-# Commit with descriptive message
-git commit -m "Release: 2x2 Persistent Solver v1.0.0
-
-- Persistent solver with pruning table reuse
-- URF move optimization (9 moves, prune_depth=1)
-- Web Worker implementation for non-blocking UI
-- CDN support via jsDelivr
-- Complete documentation and examples
-- Test suite with 4 scrambles (~5-6s total)
-"
-
-# Push to GitHub
-git push origin main
-```
-
-### Step 2: Create GitHub Release
-
-#### Option A: Via GitHub Web Interface (Recommended for first time)
-
-1. **Go to GitHub Repository**
-   - Navigate to: https://github.com/or18/RubiksSolverDemo
-
-2. **Create New Release**
-   - Click "Releases" (right sidebar)
-   - Click "Draft a new release"
-
-3. **Tag Configuration**
-   - **Tag version**: `2x2-solver-v1.0.0`
-   - **Target**: `main` branch
-   - Choose a tag: Type `2x2-solver-v1.0.0` and select "Create new tag"
-
-4. **Release Details**
-   - **Release title**: `2x2 Persistent Solver v1.0.0`
-   - **Description**:
-     # 2x2x2 Persistent Solver v1.0.0
-     
-     High-performance WebAssembly 2x2x2 Rubik's Cube solver with persistent pruning tables.
-     
-     ## Features
-     - ⚡ Persistent solver: Builds 84MB pruning table once, reuses across solves
-     - 🎯 URF optimization: 9 moves (U/U2/U'/R/R2/R'/F/F2/F'), optimal for 2x2x2
-     - 🔧 Web Worker: Non-blocking UI for browser applications
-     - 🌐 CDN Ready: Load via jsDelivr without local installation
-     - 📊 Fast: ~5-6 seconds for 4 scrambles (including table build on first solve)
-     
-     ## Quick Start
-     
-     ### Browser (CDN)
-     ```javascript
-     // See cdn-test.html for complete example
-     const cdn = 'https://cdn.jsdelivr.net/gh/or18/RubiksSolverDemo@2x2-solver-v1.0.0/dist/src/2x2solver/';
-     ```
-     
-     ### Browser (Local)
-     ```javascript
-     const worker = new Worker('worker_persistent.js');
-     worker.postMessage({
-       scramble: "R U R' U'",
-       maxSolutions: 3,
-       maxLength: 11,
-       pruneDepth: 1,
-       allowedMoves: 'U_U2_U-_R_R2_R-_F_F2_F-'
-     });
-     ```
-     
-     ## Documentation
-     - 📖 [User Guide](dist/src/2x2solver/README.md)
-     - 🔬 [Technical Details](dist/src/2x2solver/PERSISTENT_SOLVER_README.md)
-     - 🎮 [Interactive Demo](dist/src/2x2solver/demo.html)
-     - 🌐 [CDN Test Page](dist/src/2x2solver/cdn-test.html)
-     
-     ## Files
-     - `solver.cpp` - C++ source code
-     - `solver.js` + `solver.wasm` - Compiled WASM module
-     - `worker_persistent.js` - Web Worker wrapper
-     - `demo.html` - Interactive demo
-     - `cdn-test.html` - CDN loading example
-     - `compile.sh` - Build script
-     
-     ## Performance
-     - Test 1 (7-move): 1390ms, 3 solutions
-     - Test 2 (8-move): 1439ms, 3 solutions  
-     - Test 3 (9-move): 2153ms, 3 solutions
-     - Test 4 (10-move): 3198ms, 3 solutions
-     - **Total: ~5-6 seconds** (includes 84MB table build on first solve)
-     
-     ## Requirements
-     - Browser: Modern browser with WebAssembly support
-     - Node.js: v14+ (for Node.js usage)
-     
-     ## License
-     See [LICENSE](LICENSE) file in repository root.
-
-5. **Publish Release**
-   - Click "Publish release"
-   - ✅ GitHub creates the tag `2x2-solver-v1.0.0`
-
-#### Option B: Via Command Line (Advanced)
-
-```bash
-# Create annotated tag
-git tag -a 2x2-solver-v1.0.0 -m "2x2 Persistent Solver v1.0.0"
-
-# Push tag to GitHub
-git push origin 2x2-solver-v1.0.0
-
-# Then create release on GitHub web interface
-# (or use GitHub CLI: gh release create)
-```
-
-### Step 3: Verify CDN Availability
-
-After publishing release, jsDelivr automatically picks it up:
-
-```bash
-# Wait 2-5 minutes, then test
-curl -I "https://cdn.jsdelivr.net/gh/or18/RubiksSolverDemo@2x2-solver-v1.0.0/dist/src/2x2solver/solver.js"
-
-# Should return: HTTP/2 200
-```
-
-**CDN URLs for v1.0.0:**
-```
-https://cdn.jsdelivr.net/gh/or18/RubiksSolverDemo@2x2-solver-v1.0.0/dist/src/2x2solver/worker_persistent.js
-https://cdn.jsdelivr.net/gh/or18/RubiksSolverDemo@2x2-solver-v1.0.0/dist/src/2x2solver/solver.js
-https://cdn.jsdelivr.net/gh/or18/RubiksSolverDemo@2x2-solver-v1.0.0/dist/src/2x2solver/solver.wasm
-```
-
-### Step 4: Update Documentation for Users
-
-Create a user-facing example in main README:
-
-## Installation
-
-### From CDN (Recommended)
-```html
-<script>
-  async function loadSolver() {
-    const cdn = 'https://cdn.jsdelivr.net/gh/or18/RubiksSolverDemo@2x2-solver-v1.0.0/dist/src/2x2solver/';
-    // See cdn-test.html for complete implementation
-  }
-</script>
-```
-
----
-
-## 📦 Post-Release
-
-### 1. Test CDN Version
-
-**Interactive Demo Pages** (Easiest)
-
-Both [demo.html](demo.html) and [example-helper.html](example-helper.html) have built-in CDN testing:
-
+**Using demo.html** (Easiest)
 ```bash
 cd dist/src/2x2solver
 python -m http.server 8000
 # Open http://localhost:8000/demo.html
 ```
 
-Testing steps:
-1. ✅ **Test Local Mode First** (default)
+Test sequence:
+1. ✅ **Local Mode** (default)
    - Uncheck "🌐 Use CDN"
-   - Solve a scramble
-   - Verify it works
+   - Solve a scramble → Verify it works
 
-2. ✅ **Test CDN Mode (@main branch)**
+2. ✅ **CDN Mode (@main)**
    - Check "🌐 Use CDN (jsDelivr)"
-   - Uncheck "🔄 Cache Busting" (test production-like mode)
-   - Solve a scramble
-   - Verify CDN version works
+   - Uncheck "🔄 Cache Busting"
+   - Solve a scramble → Verify CDN works
 
-3. ✅ **Test with Cache Busting** (development)
-   - Check "🔄 Cache Busting"
-   - Solve a scramble
-   - Verify latest changes are loaded (bypasses CDN cache)
+3. ✅ **Tagged Version**
+   - Update demo.html CDN URL to `@2x2-solver-v1.0.0`
+   - Or test via curl:
+   ```bash
+   curl -I "https://cdn.jsdelivr.net/gh/or18/RubiksSolverDemo@2x2-solver-v1.0.0/dist/src/2x2solver/solver.js"
+   # Should return: HTTP/2 200
+   ```
 
-**Manual URL Testing** (Advanced)
+### Performance Benchmarks
 
-After creating Git tag `2x2-solver-v1.0.0`:
-```html
-<!-- Test stable version -->
-<script src="https://cdn.jsdelivr.net/gh/or18/RubiksSolverDemo@2x2-solver-v1.0.0/dist/src/2x2solver/solver-helper.js"></script>
+Verify performance matches expectations:
 
-<!-- Test development version -->
-<script src="https://cdn.jsdelivr.net/gh/or18/RubiksSolverDemo@main/dist/src/2x2solver/solver-helper.js"></script>
-```
+| Solve | Scramble | Expected Time | Notes |
+|-------|----------|---------------|-------|
+| 1st | `R U R' U'` | ~3-4s | Builds 84MB prune table |
+| 2nd | `R2 U2` | <1s | Reuses table |
+| 3rd | `U R2 U'` | <1s | Reuses table |
+| 4th | `U' F2 U R' U' R F' R F2 U` | ~1-2s | 10-move, reuses table |
 
-### 2. Announce Release
-- Update main README.md with installation instructions
-- Share CDN URLs with users
-- Document breaking changes (if any)
-
-### 3. Continue Development on @main
-```bash
-# After release, continue development on main branch
-git checkout main
-
-# @main = development version (can purge cache, frequent updates)
-# @2x2-solver-v1.0.0 = stable version (never purge, permanent cache)
-```
+**Total**: ~5-6 seconds for 4 scrambles
 
 ---
 
-## 🔄 Future Updates
+## 🔄 Compilation
 
-### Patch Release (v1.0.1 - Bug fixes only)
-```bash
-# Fix bug, test, commit
-git commit -m "Fix: ..."
-git tag -a 2x2-solver-v1.0.1 -m "Bug fixes"
-git push origin 2x2-solver-v1.0.1
-```
-
-### Minor Release (v1.1.0 - New features, backward compatible)
-```bash
-# Add feature, test, commit
-git commit -m "Feature: ..."
-git tag -a 2x2-solver-v1.1.0 -m "New features"
-git push origin 2x2-solver-v1.1.0
-```
-
-### Major Release (v2.0.0 - Breaking changes)
-```bash
-# Breaking change, test, commit
-git commit -m "BREAKING: ..."
-git tag -a 2x2-solver-v2.0.0 -m "Major update with breaking changes"
-git push origin 2x2-solver-v2.0.0
-```
-
----
-
-## ⚠️ Important Notes
-
-### CDN Cache Management
-
-**Development (@main):**
-- ✅ Can use `purge-cdn-cache.sh`
-- ✅ Can use cache busting
-- ⚠️ May break for users (use for testing only)
-
-**Production (@2x2-solver-v1.0.0):**
-- ❌ Never purge cache
-- ❌ Never modify released tag
-- ✅ Permanent, stable URLs
-- ✅ Recommended for end users
-
-### Versioning Strategy
-
-Use [Semantic Versioning](https://semver.org/):
-- **MAJOR** (v2.0.0): Breaking API changes
-- **MINOR** (v1.1.0): New features, backward compatible
-- **PATCH** (v1.0.1): Bug fixes only
-
-### Tag Naming
-
-Options:
-1. `2x2-solver-v1.0.0` (clear, specific)
-2. `v1.0.0` (simple, if repository is only for 2x2 solver)
-
-For multi-solver repository, use prefix: `2x2-solver-v1.0.0`
-
----
-
-## 📚 Resources
-
-- [GitHub Releases Documentation](https://docs.github.com/en/repositories/releasing-projects-on-github)
-- [jsDelivr Documentation](https://www.jsdelivr.com/)
-- [Semantic Versioning](https://semver.org/)
-
----
-
-## ✅ Current Status
-
-- **Development Branch**: `main`
-  - URL: `@main/dist/src/2x2solver/`
-  - Status: Active development
-  - Can purge CDN cache
-
-- **Latest Release**: Not yet released
-  - Next version: `2x2-solver-v1.0.0`
-  - Ready to release: ✅ Yes
-
----
-
-## 🎯 Quick Commands Reference
+Only required if modifying C++ source code:
 
 ```bash
-# 1. Final commit
-git add -A
-git commit -m "Release: 2x2 Persistent Solver v1.0.0"
-git push origin main
-
-# 2. Create tag (after GitHub release is created)
-git tag -a 2x2-solver-v1.0.0 -m "2x2 Persistent Solver v1.0.0"
-git push origin 2x2-solver-v1.0.0
-
-# 3. Test CDN (wait 2-5 minutes after release)
-curl -I "https://cdn.jsdelivr.net/gh/or18/RubiksSolverDemo@2x2-solver-v1.0.0/dist/src/2x2solver/solver.js"
-
-# 4. Purge cache (only for @main development)
 cd dist/src/2x2solver
-./purge-cdn-cache.sh
+./compile.sh
+
+# Verify output
+ls -lh solver.js solver.wasm
+# solver.js  ~45KB
+# solver.wasm ~195KB
 ```
+
+**Requirements**:
+- Emscripten SDK installed
+- See [IMPLEMENTATION_NOTES.md](IMPLEMENTATION_NOTES.md) for details
+
+---
+
+## 📝 2x2 Solver Release Notes Template
+
+Use this when creating GitHub releases (copy to release description):
+
+### v1.0.0 (Initial Release)
+
+```markdown
+## ✨ Features
+
+- **Persistent Solver**: Builds 84MB pruning table once, reuses across all subsequent solves
+- **URF Move Optimization**: 9 moves (U/U2/U'/R/R2/R'/F/F2/F') optimized for 2x2x2
+- **Web Worker Support**: Non-blocking UI for browser applications
+- **CDN Distribution**: Load directly via jsDelivr without installation
+- **Helper APIs**: Promise-based wrappers for browser and Node.js
+- **Batch Processing**: Efficient for solving multiple scrambles
+
+## 📊 Performance
+
+- Memory: ~150MB (84MB prune table + 66MB overhead)
+- First solve: ~3-4s (includes table initialization)
+- Subsequent solves: <1s each
+- 4-scramble test suite: ~5-6s total
+
+## 🔧 Technical Specifications
+
+- **Compiled with**: Emscripten 3.1.69 (MODULARIZE mode)
+- **Target**: WebAssembly + JavaScript glue code
+- **Prune Depth**: 0-20 (default: 1 for URF)
+- **Max Solutions**: 1 to ∞ (default: 3)
+- **Max Length**: 1-30 (default: 11)
+- **Allowed Moves**: URF (9 moves) - optimal for 2x2x2
+```
+
+### v1.1.0 (Minor Update - Example)
+
+```markdown
+## ✨ New Features
+
+- Added `moveOrder` parameter for move sequence constraints
+- Added `moveCount` parameter to limit specific move types
+
+## 🔧 Specification Changes
+
+- **maxSolutions**: Removed upper limit (previously capped at 100)
+- **pruneDepth**: Range extended to 0-20 (was 0-11)
+```
+
+### v1.0.1 (Patch Release - Example)
+
+```markdown
+## 🐛 Bug Fixes
+
+- Fixed Worker path detection in CDN dynamic loading
+- Corrected parameter format documentation (moveOrder, moveCount)
+- Fixed cache busting propagation to Worker script
+
+## 📖 Documentation Updates
+
+- Added Node.js non-helper usage example
+- Clarified moveOrder format: `'ROW~COL|ROW~COL|...'`
+- Clarified moveCount format: `'MOVE:COUNT_MOVE:COUNT_...'`
+
+No API changes - fully backward compatible with v1.0.0.
+```
+
+---
+
+## 📚 Additional Resources
+
+- **General Release Process**: [../../RELEASE_GUIDE.md](../../RELEASE_GUIDE.md)
+- **Implementation Details**: [IMPLEMENTATION_NOTES.md](IMPLEMENTATION_NOTES.md)
+- **Troubleshooting**: [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
+- **API Reference**: [README.md](README.md)

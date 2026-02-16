@@ -1,6 +1,6 @@
 /**
  * 2x2x2 Solver Helper - Simplified Promise-based API for Web Workers
- * @version 1.2.0 (2026-02-15) - Dynamic script loading support
+ * @version 1.0.0 (2026-02-16) - Initial release
  * 
  * This helper wraps the Web Worker interface to provide a simple Promise-based API.
  * No need to handle worker.onmessage manually!
@@ -282,7 +282,7 @@ if (typeof module !== 'undefined' && module.exports) {
   window.Solver2x2Helper = Solver2x2Helper;
   // Debug info for cache verification
   if (typeof console !== 'undefined') {
-    console.log('[Solver2x2Helper] v1.2.0 loaded from:', 
+    console.log('[Solver2x2Helper] v1.0.0 loaded from:', 
       typeof document !== 'undefined' && document.currentScript ? document.currentScript.src : 'unknown');
   }
 }
