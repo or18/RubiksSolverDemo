@@ -413,6 +413,12 @@ For common issues and detailed debugging:
 - Internet Explorer ❌
 - Safari < 11 (iOS < 11.3) ❌
 
+Note on strict Content Security Policy (CSP) environments
+-------------------------------------------------------
+- Some hosting environments and CMS platforms (for example, certain shared WordPress setups, restrictive managed hosting, or sites that disallow `unsafe-eval` and similar script sources) may prevent the Emscripten/WASM glue code from compiling or instantiating. In those cases you will see clear console errors such as WebAssembly.instantiate / CompileError or messages indicating `unsafe-eval` is blocked.
+- A possible technical fallback is to build and ship asm.js (no-WASM) artifacts, but that has large performance costs and is not implemented in this distribution.
+- We cannot reliably support every restrictive CSP configuration. If you must run in such an environment, consider either loosening the CSP to allow the required runtime features, hosting the solver binaries on a server you control, or using the C++ source directly and compiling in an environment that you control.
+
 ---
 
 ## 📖 Advanced Documentation

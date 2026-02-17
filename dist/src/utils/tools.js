@@ -345,3 +345,30 @@ if (typeof module !== 'undefined' && module.exports) {
 		mirrorAlg
 	};
 }
+
+// Expose a well-known global object for ESM/module consumers (including
+// module workers) that import the script as a non-ESM script. Some runtime
+// environments perform a dynamic `import()` but the file isn't an ES module,
+// resulting in an empty module namespace; attaching a global allows such
+// consumers to access the API via `self.__TOOLS_UTILS_EXPORTS__` or
+// `window.__TOOLS_UTILS_EXPORTS__` as a fallback.
+try {
+	const exportsObj = {
+		init,
+		detectBaseUrl,
+		_loadCppFunctionModule,
+		scrambleFilter,
+		scr_fix,
+		scr_fix2,
+		insertSpaces,
+		insertSpaces,
+		invertAlg,
+		mirrorAlg
+	};
+	if (typeof self !== 'undefined') {
+		try { self.__TOOLS_UTILS_EXPORTS__ = exportsObj; } catch (e) { /* ignore */ }
+	}
+	if (typeof window !== 'undefined') {
+		try { window.__TOOLS_UTILS_EXPORTS__ = exportsObj; } catch (e) { /* ignore */ }
+	}
+} catch (e) { /* ignore */ }
