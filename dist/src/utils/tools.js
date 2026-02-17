@@ -10,10 +10,27 @@ function detectBaseUrl() {
 
 	// Browser main thread
 	if (typeof document !== 'undefined') {
-		const cur = document.currentScript || (document.scripts && document.scripts[document.scripts.length - 1]);
+		// Prefer document.currentScript when available
+		let cur = document.currentScript;
 		if (cur && cur.src) {
 			return cur.src.replace(/\/[^\/]*$/, '/');
 		}
+		// Try to locate a script element that points to this utils bundle (e.g. CDN URL)
+		try {
+			const scripts = document.getElementsByTagName('script');
+			for (let i = scripts.length - 1; i >= 0; i--) {
+				const s = scripts[i];
+				if (!s || !s.src) continue;
+				const srcAttr = s.getAttribute && s.getAttribute('src');
+				if (!srcAttr) continue;
+				if (srcAttr.endsWith('/tools.js') || /dist\/src\/utils/.test(srcAttr) || /\/tools\.js($|[?#])/.test(srcAttr)) {
+					return s.src.replace(/\/[^\/]*$/, '/');
+				}
+			}
+			// fallback: last script element with src
+			const last = (document.scripts && document.scripts[document.scripts.length - 1]);
+			if (last && last.src) return last.src.replace(/\/[^\/]*$/, '/');
+		} catch (e) { /* ignore DOM access errors */ }
 		// fallback to location
 		if (typeof location !== 'undefined' && location.href) {
 			return location.href.replace(/\/[^\/]*$/, '/');
