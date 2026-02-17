@@ -51,4 +51,9 @@ api/
 # Distribution package - exclude development docs and backups
 dist/docs/
 dist/*/backups/
+dist/*/test/
 dist/src/*/backups/
+dist/src/*/test/
+dist/plans/
+
+.github/
