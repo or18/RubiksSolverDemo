@@ -219,11 +219,18 @@ function scrambleFilter(scrStr, removeComments = true) {
 async function invertAlg(algStr, puzzleType = '3x3') {
 	const Module = await _loadCppFunctionModule();
 	let c_reverse = null;
-	if (Module && typeof Module.cwrap === 'function') {
-		try { c_reverse = Module.cwrap('reverse_alg', 'string', ['string']); } catch (e) { c_reverse = null; }
-	}
-	if (!c_reverse && Module && typeof Module.scr_reverse === 'function') {
+	// Prefer direct exported function if present
+	if (Module && typeof Module.scr_reverse === 'function') {
 		c_reverse = Module.scr_reverse;
+	} else if (Module && typeof Module.cwrap === 'function') {
+		// try several candidate exported names with cwrap
+		const candidates = ['scr_reverse', 'reverse_alg', 'reverse'];
+		for (const name of candidates) {
+			try {
+				const fn = Module.cwrap(name, 'string', ['string']);
+				if (typeof fn === 'function') { c_reverse = fn; break; }
+			} catch (e) { /* ignore */ }
+		}
 	}
 	if (!c_reverse) {
 		throw new Error('reverse function not available in loaded module');
@@ -246,11 +253,17 @@ async function invertAlg(algStr, puzzleType = '3x3') {
 async function mirrorAlg(algStr, puzzleType = '3x3') {
 	const Module = await _loadCppFunctionModule();
 	let c_mirror = null;
-	if (Module && typeof Module.cwrap === 'function') {
-		try { c_mirror = Module.cwrap('mirror_alg', 'string', ['string']); } catch (e) { c_mirror = null; }
-	}
-	if (!c_mirror && Module && typeof Module.scr_mirror === 'function') {
+	// Prefer direct exported function if present
+	if (Module && typeof Module.scr_mirror === 'function') {
 		c_mirror = Module.scr_mirror;
+	} else if (Module && typeof Module.cwrap === 'function') {
+		const candidates = ['scr_mirror', 'mirror_alg', 'mirror'];
+		for (const name of candidates) {
+			try {
+				const fn = Module.cwrap(name, 'string', ['string']);
+				if (typeof fn === 'function') { c_mirror = fn; break; }
+			} catch (e) { /* ignore */ }
+		}
 	}
 	if (!c_mirror) {
 		throw new Error('mirror function not available in loaded module');
