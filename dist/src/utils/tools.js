@@ -10,6 +10,13 @@ function detectBaseUrl() {
 
 	// Browser main thread
 	if (typeof document !== 'undefined') {
+		// Allow build tools to inject a known global base at build time (bundlers)
+		try {
+			if (typeof window !== 'undefined') {
+				if (window.__TOOLS_BASE_URL__) return _normalizeBase(window.__TOOLS_BASE_URL__);
+				if (window.__SIMULATED_BUILD_BASE__) return _normalizeBase(window.__SIMULATED_BUILD_BASE__);
+			}
+		} catch (e) { }
 		// Prefer document.currentScript when available
 		let cur = document.currentScript;
 		if (cur && cur.src) {
@@ -156,6 +163,47 @@ async function _loadCppFunctionModule(baseUrl) {
 						}
 					}, 50);
 				}
+			} catch (e) {
+				reject(e);
+			}
+			// Web Worker (non-module) - use importScripts
+		} else if (typeof self !== 'undefined' && typeof importScripts === 'function') {
+			try {
+				// importScripts synchronously loads the script in worker
+				importScripts(scriptUrl);
+				// Prefer MODULARIZE=1 factory
+				if (typeof createCppFunctionsModule === 'function') {
+					const factory = createCppFunctionsModule;
+					const opts = {
+						locateFile: function (path) {
+							return normalizedBase + 'cpp-functions/' + path;
+						}
+					};
+					const maybePromise = factory(opts);
+					Promise.resolve(maybePromise).then(m => resolve(m)).catch(reject);
+					return;
+				}
+				// Fallback to global Module on worker
+				if (self.Module) {
+					const mod = self.Module;
+					if (mod.calledRun) return resolve(mod);
+					if (typeof mod.onRuntimeInitialized === 'function') {
+						const orig = mod.onRuntimeInitialized;
+						mod.onRuntimeInitialized = function() {
+							try { orig(); } catch (e) { }
+							resolve(mod);
+						};
+						return;
+					}
+					const poll = setInterval(() => {
+						if (mod.calledRun || typeof mod.cwrap === 'function') {
+							clearInterval(poll);
+							resolve(mod);
+						}
+					}, 50);
+					return;
+				}
+				return reject(new Error('Emscripten module not found in worker after importScripts ' + scriptUrl));
 			} catch (e) {
 				reject(e);
 			}
