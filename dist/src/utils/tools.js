@@ -123,6 +123,7 @@ async function _loadCppFunctionModule(baseUrl) {
 							const maybePromise = factory(opts);
 							Promise.resolve(maybePromise).then(m => {
 								try { if (typeof self !== 'undefined' && typeof self.postMessage === 'function') self.postMessage({ type: 'tools_debug', event: 'factory_resolved' }); else console.log('tools_debug: factory_resolved'); } catch(e){}
+								try { if (typeof self !== 'undefined' && typeof self.postMessage === 'function') self.postMessage({ type: 'tools_debug', event: 'resolved_module_type', moduleType: typeof m }); } catch(e){}
 								resolve(m);
 							}).catch(reject);
 						} catch (e) {
@@ -133,7 +134,10 @@ async function _loadCppFunctionModule(baseUrl) {
 					// Fallback to global Module
 					if (window.Module) {
 						const mod = window.Module;
-						if (mod.calledRun) return resolve(mod);
+						if (mod.calledRun) {
+							try { if (typeof self !== 'undefined' && typeof self.postMessage === 'function') self.postMessage({ type: 'tools_debug', event: 'module_calledRun' }); else console.log('tools_debug: module_calledRun'); } catch(e){}
+							return resolve(mod);
+						}
 						if (typeof mod.onRuntimeInitialized === 'function') {
 							const orig = mod.onRuntimeInitialized;
 							mod.onRuntimeInitialized = function () {
@@ -175,17 +179,22 @@ async function _loadCppFunctionModule(baseUrl) {
 				const resolved = path.resolve(__dirname, baseUrl || '', 'cpp-functions/functions.js');
 				const modFactory = require(resolved);
 				if (typeof modFactory === 'function') {
-					Promise.resolve(modFactory()).then(m => resolve(m)).catch(reject);
+					Promise.resolve(modFactory()).then(m => {
+						try { if (typeof self !== 'undefined' && typeof self.postMessage === 'function') self.postMessage({ type: 'tools_debug', event: 'node_factory_resolved' }); else console.log('tools_debug: node_factory_resolved'); } catch(e){}
+						resolve(m);
+					}).catch(reject);
 				} else {
 					// modFactory is the Module object; wait until runtime is initialized
 					const mod = modFactory;
 					if (mod.calledRun) {
+						try { if (typeof self !== 'undefined' && typeof self.postMessage === 'function') self.postMessage({ type: 'tools_debug', event: 'node_module_calledRun' }); else console.log('tools_debug: node_module_calledRun'); } catch(e){}
 						return resolve(mod);
 					}
 					if (typeof mod.onRuntimeInitialized === 'function') {
 						const orig = mod.onRuntimeInitialized;
 						mod.onRuntimeInitialized = function () {
 							try { orig(); } catch (e) { /* ignore */ }
+							try { if (typeof self !== 'undefined' && typeof self.postMessage === 'function') self.postMessage({ type: 'tools_debug', event: 'node_runtime_initialized' }); else console.log('tools_debug: node_runtime_initialized'); } catch(e){}
 							resolve(mod);
 						};
 						return;
