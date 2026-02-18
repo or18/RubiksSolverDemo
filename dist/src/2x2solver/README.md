@@ -105,6 +105,17 @@ const solutions = await helper.solve(scramble, options);
 //   onSolution?: (solution: string) => void
 // }
 
+// Structured helper options (preferred for programmatic use):
+//   allowedMovesArray?: string[] | string
+//     - Allowed moves as an array (e.g. ['U','U2','U\'',...]) or a near-human string.
+//     - The helper will convert this to the worker `allowedMoves` string format.
+//   moveOrderArray?: Array<[string,string]>
+//     - Array of [left, right] pairs specifying move-order constraints; the helper
+//       will convert this to the worker `moveOrder` (mav) string.
+//   moveCountMap?: { [move: string]: number }
+//     - Object mapping moves to allowed counts (e.g. { "F'": 0 }). The helper
+//       converts this to the worker `moveCount` (mcv) string.
+
 helper.terminate();  // Clean up Worker
 ```
 
@@ -143,6 +154,19 @@ worker.postMessage({
   pruneDepth: 1,
   allowedMoves: 'U_U2_U-_R_R2_R-_F_F2_F-'
 });
+
+// Alternatively, as a commented example showing structured input (note: the
+// Worker expects string fields; `allowedMovesArray` is a helper-side structured
+// form—pass this to `Solver2x2Helper.solve()` or convert it to the string
+// format before posting if you interact with the Worker directly):
+// worker.postMessage({
+//   scramble: "R U R' U'",
+//   maxSolutions: 3,
+//   maxLength: 11,
+//   pruneDepth: 1,
+//   // structured (helper-only) form - helper will convert this to `allowedMoves`
+//   // allowedMovesArray: ['U','U2','U\'','R','R2','R\'','F','F2','F\'']
+// });
 ```
 
 **Worker messages:**
@@ -159,6 +183,14 @@ To Worker (postMessage):
   preMove: string,         // Optional (default: '')
   moveOrder: string,       // Optional (default: '')
   moveCount: string        // Optional (default: '')
+}
+
+// Helper-only structured inputs (accepted by `Solver2x2Helper` and converted into
+// the worker string fields above before posting):
+{
+  allowedMovesArray: string[] | string,    // Array of move tokens (apostrophe or hyphen allowed) or near-human string; converted to `allowedMoves`.
+  moveOrderArray: Array<[string,string]>,  // Array of [left, right] pairs; converted to `moveOrder` (mav).
+  moveCountMap: { [move: string]: number } // Mapping of moves to allowed counts; converted to `moveCount` (mcv).
 }
 ```
 
@@ -227,6 +259,9 @@ https://cdn.jsdelivr.net/gh/or18/RubiksSolverDemo@2x2-solver-v1.0.0/dist/src/2x2
 | maxLength | 1 to 30 | 11 | number | Maximum solution length |
 | pruneDepth | 0 to 20 | 1 | number | Pruning table search depth |
 | allowedMoves | string | URF (9 moves) | `'MOVE1_MOVE2_...'` | Allowed move set (underscore-separated) |
+| allowedMovesArray | array|string | URF (9 moves) | array | Allowed moves as an array (preferred). Helper converts to `allowedMoves` string for the worker. |
+| moveOrderArray | array | '' | array of pairs | Move order pairs (left~right). Helper converts to `moveOrder` (mav) string. |
+| moveCountMap | object | '' | mapping | Move count limits as an object (e.g. `{ "F'":0 }`). Helper converts to `moveCount` (mcv) string. |
 | rotation | string | '' | `'x'`, `'y'`, `'z'`, `'x2'`, etc. | Whole-cube rotation (empty string for none) |
 | preMove | string | '' | `'R U R\' U\''` | Pre-move sequence (space-separated) |
 | moveOrder | string | '' | `'ROW~COL\|ROW~COL\|...'` | Move ordering constraints (see notes) |
@@ -238,6 +273,10 @@ https://cdn.jsdelivr.net/gh/or18/RubiksSolverDemo@2x2-solver-v1.0.0/dist/src/2x2
 - **preMove**: Standard cube notation with spaces (e.g., `'R U R\' U\''`)
 - **moveOrder**: Advanced feature for move sequence constraints (rarely used)
 - **moveCount**: Limits specific move types (rarely used)
+
+- **Structured parameters**: The helper accepts `allowedMovesArray`, `moveOrderArray`, and `moveCountMap` as structured inputs. When provided, the helper normalizes them via `buildRestFromArray`, `buildMavFromPairs`, and `buildMcvFromObject` (respectively) into the string formats the Worker expects.
+
+- **Apostrophe vs hyphen**: `build*()` functions and the helper accept apostrophe notation (e.g. `R'`) and internally normalize apostrophes to hyphens (`'` → `-`) for worker compatibility. If you pass string forms directly to the Worker, prefer hyphen (`R-`) or run `normalizeRestForCpp()` first.
 
 ### Optimal Settings for 2x2x2
 
@@ -312,7 +351,7 @@ backups/                # Old test files & deprecated docs
 **Documentation:**
 - **Usage**: [README.md](README.md) (this file)
 - **Implementation**: [IMPLEMENTATION_NOTES.md](IMPLEMENTATION_NOTES.md) - C++ changes, persistence architecture
-- **Troubleshooting**: [TROUBLESHOOTING.md](TROUBLESHOOTING.md) - CDN issues, common errors, debugging
+- **Troubleshooting**: [TROUBLESHOOTING.md](../../TROUBLESHOOTING.md) - CDN issues, common errors, debugging
 - **Release**: [RELEASE_GUIDE.md](RELEASE_GUIDE.md) - Versioning, publishing workflow
 
 ---
@@ -495,6 +534,38 @@ createModule().then(Module => {
 });
 ```
 
+### Example 6: Structured Inputs (Recommended)
+
+Use the Helper API with structured options — this is the recommended, programmatic
+way to pass move sets, order constraints, and count limits. The helper converts
+these structured inputs into the worker string formats automatically.
+
+```javascript
+// Browser (recommended)
+const helper = new Solver2x2Helper();
+await helper.init();
+
+const solutions = await helper.solve("R U R' U'", {
+  // Allowed moves as an array (apostrophe or hyphen accepted)
+  allowedMovesArray: ['U','U2',"U'",'R','R2',"R'",'F','F2',"F'"],
+
+  // Optional: move order pairs (left, right)
+  moveOrderArray: [["R'","U'"]],
+
+  // Optional: move count limits (mapping)
+  moveCountMap: { "F'": 0, "F2": 0 },
+
+  maxSolutions: 5,
+  onProgress: (d) => console.log('depth=', d)
+});
+
+console.log('Solutions:', solutions);
+```
+
+Short note: if you must use the Worker directly, convert structured inputs
+into the `allowedMoves` / `moveOrder` / `moveCount` string forms before
+calling `worker.postMessage()`; otherwise prefer the Helper.
+
 **Notes:**
 - No helper required - direct PersistentSolver2x2 usage
 - `globalThis.postMessage` must be defined **before** loading module
@@ -504,7 +575,7 @@ createModule().then(Module => {
 
 ## 🐛 Troubleshooting
 
-For detailed troubleshooting, see [TROUBLESHOOTING.md](TROUBLESHOOTING.md).
+For detailed troubleshooting, see the consolidated guide at [dist/TROUBLESHOOTING.md](../../TROUBLESHOOTING.md) and worker-specific notes at [dist/TROUBLESHOOTING_WORKER_COMPAT.md](../../TROUBLESHOOTING_WORKER_COMPAT.md).
 
 ### Quick Fixes
 
@@ -528,7 +599,15 @@ Solution: Use Web Worker (worker_persistent.js or Helper API)
 Solution: Increase maxLength, verify scramble notation, check allowedMoves
 ```
 
-See [TROUBLESHOOTING.md](TROUBLESHOOTING.md) for:
+See the consolidated troubleshooting guide for general issues:
+
+- [General Troubleshooting](../../TROUBLESHOOTING.md)
+
+And for worker/module compatibility deep-dives:
+
+- [Worker Compatibility & Blob-runner details](../../TROUBLESHOOTING_WORKER_COMPAT.md)
+
+See these for:
 - CDN cache debugging
 - CORS issues
 - Worker path problems
@@ -544,7 +623,7 @@ See [TROUBLESHOOTING.md](TROUBLESHOOTING.md) for:
   - Persistent solver architecture
   - MODULARIZE build system
 
-- **Common Issues**: [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
+- **Common Issues**: [TROUBLESHOOTING.md](../../TROUBLESHOOTING.md)
   - CDN cache problems
   - Worker loading errors
   - Performance debugging
@@ -553,6 +632,9 @@ See [TROUBLESHOOTING.md](TROUBLESHOOTING.md) for:
   - Versioning strategy
   - CDN deployment
   - Git tagging workflow
+
+- **Tools API**: [TOOLS_API.md](../utils/TOOLS_API.md)
+  - Utility functions used by helpers: normalization, builders, validators
 
 - **Interactive Demos**:
   - [demo.html](demo.html) - Full-featured solver demo

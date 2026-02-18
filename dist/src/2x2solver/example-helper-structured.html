@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Solver Helper Example (Structured Inputs)</title>
+  <style>
+    body { font-family: monospace; max-width: 800px; margin: 50px auto; padding: 20px; background: #f5f5f5; }
+    h1 { color: #333; }
+    button { padding: 10px 20px; margin: 5px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; }
+    button:hover { background: #45a049; }
+    #output { background: white; padding: 15px; border-radius: 4px; margin-top: 20px; min-height: 200px; white-space: pre-wrap; }
+    .code { background: #f0f0f0; padding: 10px; border-radius: 4px; margin: 10px 0; font-family: 'Courier New', monospace; }
+  </style>
+</head>
+<body>
+  <h1>🎯 2x2 Solver Helper Example — Structured Inputs</h1>
+  <p><strong>Demonstrates using structured options: <code>allowedMovesArray</code>, <code>moveOrderArray</code>, <code>moveCountMap</code>.</strong></p>
+
+  <div class="code">const helper = new Solver2x2Helper();
+await helper.init();
+// Use structured inputs:
+const solutions = await helper.solve("R U R' U'", { allowedMovesArray: ['U','U2','U\'','R','R2','R\'','F','F2','F\''] });
+  </div>
+
+  <button onclick="structuredBaseline()">Structured: Baseline</button>
+  <button onclick="structuredNoF()">Structured: Disable F / F2</button>
+  <button onclick="structuredMoveOrder()">Structured: Add ['R\'', 'U\''] Pair</button>
+
+  <!-- CDN Configuration (same as original) -->
+  <div style="margin: 20px 0; padding: 15px; background: #fff8e1; border-radius: 6px; border-left: 4px solid #ff9800;">
+    <label style="display: flex; align-items: center; cursor: pointer;">
+      <input type="checkbox" id="useCDN" onchange="reloadHelper()" style="margin-right: 10px; cursor: pointer;">
+      <span>
+        <strong>🌐 Use CDN (jsDelivr)</strong>
+        <span style="font-weight: normal; color: #666; font-size: 0.9em;">(Load from CDN instead of local files)</span>
+      </span>
+    </label>
+    <div id="cacheBustOption" style="display: none; margin-top: 10px; margin-left: 28px;">
+      <label style="display: flex; align-items: center; cursor: pointer;">
+        <input type="checkbox" id="cacheBust" onchange="reloadHelper()" style="margin-right: 10px; cursor: pointer;">
+        <span>
+          <strong>🔄 Cache Busting</strong>
+          <span style="font-weight: normal; color: #666; font-size: 0.85em;">(Development only - adds timestamp to URLs)</span>
+        </span>
+      </label>
+    </div>
+    <div id="loadStatus" style="margin-top: 10px; padding: 8px; background: white; border-radius: 4px; font-size: 0.9em;"></div>
+  </div>
+
+  <div id="output">Click a button to run an example...</div>
+
+  <script>
+    // Keep CDN base same as original example
+    const CDN_BASE_URL = 'https://cdn.jsdelivr.net/gh/or18/RubiksSolverDemo@main/dist/src/2x2solver/';
+    let helper = null;
+    const output = document.getElementById('output');
+
+    window.addEventListener('load', async () => {
+      const useCDN = getParam('cdn') === '1';
+      const cacheBust = getParam('cb') === '1';
+      document.getElementById('useCDN').checked = useCDN;
+      document.getElementById('cacheBust').checked = cacheBust;
+      document.getElementById('cacheBustOption').style.display = useCDN ? 'block' : 'none';
+      await loadHelperScript(useCDN, cacheBust);
+      document.getElementById('useCDN').addEventListener('change', function(e) { reloadWithParams(e.target.checked, false); });
+      document.getElementById('cacheBust').addEventListener('change', function(e) { reloadWithParams(document.getElementById('useCDN').checked, e.target.checked); });
+    });
+
+    function getParam(name) { const params = new URLSearchParams(window.location.search); return params.get(name); }
+    function reloadWithParams(useCDN, cacheBust) { const params = new URLSearchParams(); if (useCDN) params.set('cdn','1'); if (cacheBust) params.set('cb','1'); const query = params.toString(); window.location.href = window.location.pathname + (query ? '?' + query : ''); }
+
+    async function loadHelperScript(useCDN, cacheBust) {
+      const statusDiv = document.getElementById('loadStatus');
+      try {
+        const timestamp = cacheBust ? Date.now() : '';
+        statusDiv.textContent = `⏳ Loading helper${useCDN ? ' from CDN' : ''}${cacheBust ? ` (cache bust: ${timestamp})` : ''}...`;
+        const scriptUrl = useCDN ? CDN_BASE_URL + 'solver-helper.js' + (cacheBust ? `?v=${timestamp}` : '') : 'solver-helper.js';
+        await new Promise((resolve, reject) => { const script = document.createElement('script'); script.src = scriptUrl; script.onload = resolve; script.onerror = () => reject(new Error(`Failed to load: ${scriptUrl}`)); document.head.appendChild(script); });
+        await new Promise(resolve => setTimeout(resolve, 150));
+        if (typeof window.Solver2x2Helper !== 'undefined') { statusDiv.textContent = `✅ Helper loaded${useCDN ? ' from CDN' : ' (local)'}!`; statusDiv.style.color = '#155724'; }
+        else throw new Error('Solver2x2Helper not found after loading');
+      } catch (error) { statusDiv.textContent = `❌ Failed to load helper: ${error.message}`; statusDiv.style.color = '#721c24'; }
+    }
+
+    function log(msg) { output.textContent += msg + '\n'; }
+    function clear() { output.textContent = ''; }
+
+    async function ensureInit() {
+      if (typeof window.Solver2x2Helper === 'undefined') { log('❌ Helper not loaded.'); throw new Error('Helper not loaded'); }
+      if (!helper) { log('Initializing helper...'); helper = new window.Solver2x2Helper(); await helper.init(); log('✅ Helper ready!\n'); }
+    }
+
+    // Structured examples
+    async function structuredBaseline() {
+      clear(); log('=== Structured: Baseline ===\n');
+      try {
+        await ensureInit();
+        const allowedMovesArray = ['U','U2','U\'','R','R2','R\'','F','F2','F\''];
+        log('Solving: R U R\' U\' with allowedMovesArray');
+        const solutions = await helper.solve("R U R' U'", { allowedMovesArray });
+        log(`Found ${solutions.length} solutions:`);
+        solutions.forEach((s,i) => log(`  ${i+1}. ${s}`));
+      } catch (e) { log('❌ Error: ' + e.message); }
+    }
+
+    async function structuredNoF() {
+      clear(); log('=== Structured: Disable F / F2 ===\n');
+      try {
+        await ensureInit();
+        const allowedMovesArray = ['U','U2','U\'','R','R2','R\'','F','F2','F\''];
+        const moveCountMap = { "F'": 0, 'F2': 0 };
+        log('Solving with F moves disabled via moveCountMap');
+        const solutions = await helper.solve("R U R' U'", { allowedMovesArray, moveCountMap, maxSolutions: 3 });
+        log(`Found ${solutions.length} solutions:`);
+        solutions.forEach((s,i) => log(`  ${i+1}. ${s}`));
+      } catch (e) { log('❌ Error: ' + e.message); }
+    }
+
+    async function structuredMoveOrder() {
+      clear(); log('=== Structured: Add [\'R\', \'U\'] pair ===\n');
+      try {
+        await ensureInit();
+        const allowedMovesArray = ['U','U2','U\'','R','R2','R\'','F','F2','F\''];
+        const moveOrderArray = [["R'","U'"]];
+        log('Solving with moveOrderArray pair to flip default behavior');
+        const solutions = await helper.solve("R U R' U'", { allowedMovesArray, moveOrderArray, maxSolutions: 3 });
+        log(`Found ${solutions.length} solutions:`);
+        solutions.forEach((s,i) => log(`  ${i+1}. ${s}`));
+      } catch (e) { log('❌ Error: ' + e.message); }
+    }
+  </script>
+</body>
+</html>

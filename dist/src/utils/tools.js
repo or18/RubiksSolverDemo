@@ -318,15 +318,17 @@ function validateRest(rest, puzzleType = '3x3') {
 	const s = rest.trim();
 	if (s === '') return false; // empty is not meaningful for solver
 
-	// Only allow alphanumerics, hyphen and underscore
-	if (!/^[A-Za-z0-9_\-]+$/.test(s)) return false;
+	// Allow alphanumerics, hyphen, underscore and apostrophe (prime) -
+	// apostrophe will be normalized to hyphen before validation below.
+	if (!/^[A-Za-z0-9_\-']+$/.test(s)) return false;
 
 	const allowedSet = VALID_MOVE_TOKENS[puzzleType] || VALID_MOVE_TOKENS['3x3'];
 
 	const parts = s.split('_');
 	for (const p of parts) {
 		if (!p || p.length === 0) return false; // empty token
-		if (!allowedSet.has(p)) return false;
+		const pNorm = p.replace(/'/g, '-');
+		if (!allowedSet.has(pNorm)) return false;
 	}
 	return true;
 }
@@ -538,8 +540,8 @@ function validateMav(rest, mav, puzzleType = '3x3') {
 	const s = mav.trim();
 	if (s === '') return true;
 
-	// Only allow alphanumerics, underscore, hyphen, tilde, pipe
-	if (!/^[A-Za-z0-9_\-~|]+$/.test(s)) return false;
+	// Allow alphanumerics, underscore, hyphen, apostrophe, tilde, pipe
+	if (!/^[A-Za-z0-9_\-~|']+$/.test(s)) return false;
 
 	// No leading or trailing pipe, and no empty sections
 	if (s.startsWith('|') || s.endsWith('|')) return false;
@@ -551,14 +553,17 @@ function validateMav(rest, mav, puzzleType = '3x3') {
 		if (!sec) return false;
 		const parts = sec.split('~');
 		if (parts.length !== 2) return false; // must be a pair
-		const left = parts[0];
-		const right = parts[1];
+		let left = parts[0];
+		let right = parts[1];
+		// normalize apostrophe to hyphen before checking
+		const leftNorm = left.replace(/'/g, '-');
+		const rightNorm = right.replace(/'/g, '-');
 
 		// left must be either 'EMPTY' or allowed token
-		if (!(left === 'EMPTY' || allowedSet.has(left))) return false;
+		if (!(leftNorm === 'EMPTY' || allowedSet.has(leftNorm))) return false;
 		// right must be allowed token (cannot be EMPTY on right)
-		if (right === 'EMPTY') return false;
-		if (!allowedSet.has(right)) return false;
+		if (rightNorm === 'EMPTY') return false;
+		if (!allowedSet.has(rightNorm)) return false;
 
 		// If left is EMPTY, right must NOT be EMPTY (already enforced)
 	}
@@ -575,8 +580,8 @@ function validateMcv(rest, mcv, puzzleType = '3x3') {
 	const s = mcv.trim();
 	if (s === '') return true;
 
-	// Allowed characters: alnum, underscore, hyphen, colon
-	if (!/^[A-Za-z0-9_\-:]+$/.test(s)) return false;
+	// Allowed characters: alnum, underscore, hyphen, apostrophe, colon
+	if (!/^[A-Za-z0-9_\-:']+$/.test(s)) return false;
 
 	// No leading/trailing underscore
 	if (s.startsWith('_') || s.endsWith('_')) return false;
@@ -594,8 +599,9 @@ function validateMcv(rest, mcv, puzzleType = '3x3') {
 		// count must be a non-negative integer
 		if (!/^\d+$/.test(count)) return false;
 
-		// move must appear in rest (use normalized form for comparison)
-		if (!restTokens.has(move)) return false;
+		// move may be provided with apostrophe; normalize to hyphen
+		const moveNorm = move.replace(/'/g, '-');
+		if (!restTokens.has(moveNorm)) return false;
 	}
 	return true;
 }

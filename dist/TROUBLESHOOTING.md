@@ -1,5 +1,66 @@
 # Troubleshooting Guide
 
+This guide covers common issues encountered when using the solvers distributed under `dist/`. It consolidates cross-solver practical guidance and references solver-specific troubleshooting where appropriate.
+
+## Table of Contents
+
+1. [CDN Cache Issues](#cdn-cache-issues)
+2. [Worker Loading Problems](#worker-loading-problems)
+3. [CORS and Cross-Origin Issues](#cors-and-cross-origin-issues)
+4. [Browser Compatibility](#browser-compatibility)
+5. [Build and Compilation Errors](#build-and-compilation-errors)
+6. [C++ Implementation Bugs (notes)](#c-implementation-bugs)
+
+---
+
+## CDN Cache Issues
+
+### Problem: Old Files Loading from CDN After Push
+
+**Symptom:**
+- Pushed new code to GitHub
+- CDN still serves old version
+
+**Cause:** jsDelivr caches files for a short period; new pushes don't always appear immediately.
+
+**Solution:**
+
+1. Purge CDN cache for the affected paths (see your distribution scripts, e.g. `dist/src/2x2solver/purge-cdn-cache.sh`).
+2. Wait a minute and re-check.
+3. Use cache-busting parameters during development (e.g. `?v=<timestamp>`) instead of purging production caches where possible.
+
+**Verification:**
+
+```bash
+curl -I "https://cdn.jsdelivr.net/gh/or18/RubiksSolverDemo@main/dist/src/2x2solver/solver-helper.js"
+```
+
+---
+
+## Worker Loading Problems
+
+### Common causes
+
+- Worker path resolution errors (relative paths vs script location)
+- Cross-origin restrictions when creating workers from CDN URLs
+- Module vs classic worker execution model differences (`importScripts()` not available in module workers)
+
+### Common fixes and diagnostic steps
+
+- Use the Helper API (`solver-helper.js` / `solver-helper-node.js`) — it auto-detects worker paths, propagates cache-bust parameters, and implements a Blob-runner fallback for CDN scenarios.
+- If you must create workers manually, host `worker_persistent.js`, `solver.js`, and `solver.wasm` on the same origin and ensure correct MIME/CORS headers.
+
+#### Worker path 404 (relative path vs script location)
+
+Symptoms: `GET /worker_persistent.js 404` because the browser resolves the worker path relative to the page, not the helper script.
+
+Fixes:
+
+1. Use the Helper API (auto-detects script location).
+2. Provide an explicit worker path: `new Solver2x2Helper('./dist/src/2x2solver/worker_persistent.js')`.
+
+# Troubleshooting Guide
+
 This guide covers common issues encountered when developing with the 2x2x2 Persistent Solver, with solutions learned from implementing this solver. Useful reference for future solvers in this repository.
 
 ## Table of Contents
@@ -76,16 +137,16 @@ wc -l dist/src/2x2solver/solver-helper.js
 **Solution:**
 
 1. **Disable Browser Cache (DevTools)**
-   - Open DevTools (F12)
-   - Network tab → Check "Disable cache"
-   - Keep DevTools open while testing
+	 - Open DevTools (F12)
+	 - Network tab → Check "Disable cache"
+	 - Keep DevTools open while testing
 
 2. **Use Incognito/Private Window**
-   - Chrome: `Ctrl + Shift + N`
-   - Firefox: `Ctrl + Shift + P`
+	 - Chrome: `Ctrl + Shift + N`
+	 - Firefox: `Ctrl + Shift + P`
 
 3. **Clear Site Data**
-   - DevTools → Application → Clear storage → "Clear site data"
+	 - DevTools → Application → Clear storage → "Clear site data"
 
 ### Problem 3: Cache Busting During Development
 
@@ -134,9 +195,9 @@ https://cdn.jsdelivr.net/gh/or18/RubiksSolverDemo@2x2-solver-v1.0.0/...
 ```javascript
 // solver-helper.js (lines 32-35)
 if (document.currentScript && document.currentScript.src) {
-  const scriptUrl = document.currentScript.src;
-  const queryParams = scriptUrl.includes('?') ? ... : '';
-  this.workerPath = baseUrl + 'worker_persistent.js' + queryParams;  // ✅ Propagates ?v=
+	const scriptUrl = document.currentScript.src;
+	const queryParams = scriptUrl.includes('?') ? ... : '';
+	this.workerPath = baseUrl + 'worker_persistent.js' + queryParams;  // ✅ Propagates ?v=
 }
 ```
 
@@ -177,8 +238,8 @@ const helper = new Solver2x2Helper('./dist/src/2x2solver/worker_persistent.js');
 ```html
 <script src="https://cdn.jsdelivr.net/gh/or18/RubiksSolverDemo@main/dist/src/2x2solver/solver-helper.js"></script>
 <script>
-  // Auto-detects CDN worker path
-  const helper = new Solver2x2Helper();
+	// Auto-detects CDN worker path
+	const helper = new Solver2x2Helper();
 </script>
 ```
 
@@ -201,13 +262,13 @@ GET http://127.0.0.1:3000/worker_persistent.js 404
 ```javascript
 // solver-helper.js (lines 38-47)
 else if (typeof document !== 'undefined') {
-  const scripts = document.getElementsByTagName('script');
-  for (let i = 0; i < scripts.length; i++) {
-    if (scripts[i].src && scripts[i].src.includes('solver-helper.js')) {
-      scriptUrl = scripts[i].src;  // ✅ Finds CDN URL
-      break;
-    }
-  }
+	const scripts = document.getElementsByTagName('script');
+	for (let i = 0; i < scripts.length; i++) {
+		if (scripts[i].src && scripts[i].src.includes('solver-helper.js')) {
+			scriptUrl = scripts[i].src;  // ✅ Finds CDN URL
+			break;
+		}
+	}
 }
 ```
 
@@ -227,29 +288,29 @@ await helper.init();  // ⏳ Hangs forever
 **Debugging:**
 
 1. **Check Worker is Created**
-   ```javascript
-   console.log(helper.worker);  // Should be Worker instance, not null
-   ```
+	 ```javascript
+	 console.log(helper.worker);  // Should be Worker instance, not null
+	 ```
 
 2. **Listen to Worker Messages**
-   ```javascript
-   helper.worker.onmessage = (e) => {
-     console.log('Worker message:', e.data);
-   };
-   helper.worker.onerror = (e) => {
-     console.error('Worker error:', e);
-   };
-   ```
+	 ```javascript
+	 helper.worker.onmessage = (e) => {
+		 console.log('Worker message:', e.data);
+	 };
+	 helper.worker.onerror = (e) => {
+		 console.error('Worker error:', e);
+	 };
+	 ```
 
 3. **Check WASM Loading**
-   - Open DevTools → Network tab
-   - Filter: "wasm"
-   - Verify `solver.wasm` loads (195KB)
-   - Check status code (should be 200)
+	 - Open DevTools → Network tab
+	 - Filter: "wasm"
+	 - Verify `solver.wasm` loads (195KB)
+	 - Check status code (should be 200)
 
 4. **Check for Errors in Worker Context**
-   - Some errors only appear in Worker console
-   - Look for red error messages in main console
+	 - Some errors only appear in Worker console
+	 - Look for red error messages in main console
 
 ---
 
@@ -270,21 +331,21 @@ const worker = new Worker('https://cdn.jsdelivr.net/.../worker_persistent.js');
 
 ```javascript
 async function createWorkerFromCDN(workerUrl) {
-  // 1. Fetch worker code from CDN
-  const response = await fetch(workerUrl);
-  let code = await response.text();
+	// 1. Fetch worker code from CDN
+	const response = await fetch(workerUrl);
+	let code = await response.text();
   
-  // 2. Modify code to point to CDN for solver.js/solver.wasm
-  const baseURL = workerUrl.substring(0, workerUrl.lastIndexOf('/') + 1);
-  code = code.replace(
-    `const scriptPath = self.location.href;
+	// 2. Modify code to point to CDN for solver.js/solver.wasm
+	const baseURL = workerUrl.substring(0, workerUrl.lastIndexOf('/') + 1);
+	code = code.replace(
+		`const scriptPath = self.location.href;
 const baseURL = scriptPath.substring(0, scriptPath.lastIndexOf('/') + 1);`,
-    `const baseURL = '${baseURL}';`
-  );
+		`const baseURL = '${baseURL}';`
+	);
   
-  // 3. Create Worker from Blob URL (same-origin)
-  const blob = new Blob([code], { type: 'application/javascript' });
-  return new Worker(URL.createObjectURL(blob));
+	// 3. Create Worker from Blob URL (same-origin)
+	const blob = new Blob([code], { type: 'application/javascript' });
+	return new Worker(URL.createObjectURL(blob));
 }
 ```
 
@@ -334,23 +395,18 @@ await helper.solve("R U R' U'");  // Takes 15+ seconds
 Check parameters:
 ```javascript
 const solutions = await helper.solve("R U R' U'", {
-  pruneDepth: 8,  // ⚠️ Too deep for URF moves
-  allowedMoves: 'U_U2_U-_D_D2_D-_L_L2_L-_R_R2_R-_F_F2_F-_B_B2_B-'  // ⚠️ Too many moves
+	pruneDepth: 8,  // ⚠️ Too deep for URF moves
+	allowedMoves: 'U_U2_U-_D_D2_D-_L_L2_L-_R_R2_R-_F_F2_F-_B_B2_B-'  // ⚠️ Too many moves
 });
 ```
 
 **Solution:** Use optimal settings for 2x2x2:
 ```javascript
 const solutions = await helper.solve("R U R' U'", {
-  pruneDepth: 1,  // ✅ Sufficient for URF
-  allowedMoves: 'U_U2_U-_R_R2_R-_F_F2_F-'  // ✅ URF complete system
+	pruneDepth: 1,  // ✅ Sufficient for URF
+	allowedMoves: 'U_U2_U-_R_R2_R-_F_F2_F-'  // ✅ URF complete system
 });
 ```
-
-**Performance comparison:**
-- URF + depth=1: ~3-4s
-- Full + depth=8: ~10-15s
-- URF + depth=11: ~5-6s (diminishing returns)
 
 ### Problem 2: Subsequent Solves Still Slow
 
@@ -426,18 +482,18 @@ await helper.solve(...);  // UI stays responsive
 **Solution:**
 
 1. **Check WASM Support**
-   ```javascript
-   if (typeof WebAssembly === 'undefined') {
-     console.error('WASM not supported');
-   }
-   ```
+	 ```javascript
+	 if (typeof WebAssembly === 'undefined') {
+		 console.error('WASM not supported');
+	 }
+	 ```
 
 2. **Check Worker Support**
-   ```javascript
-   if (typeof Worker === 'undefined') {
-     console.error('Web Workers not supported');
-   }
-   ```
+	 ```javascript
+	 if (typeof Worker === 'undefined') {
+		 console.error('Web Workers not supported');
+	 }
+	 ```
 
 3. **Use Modern Safari** (iOS 11.3+ supports WASM + Workers)
 
@@ -460,16 +516,16 @@ Ensure `<script>` tag has correct type:
 <!-- ✅ GOOD: solver-helper.js uses global exports -->
 <script src="solver-helper.js"></script>
 <script>
-  const helper = new Solver2x2Helper();  // Available on window
+	const helper = new Solver2x2Helper();  // Available on window
 </script>
 ```
 
 `solver-helper.js` uses UMD pattern (works everywhere):
 ```javascript
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = Solver2x2Helper;
+	module.exports = Solver2x2Helper;
 } else {
-  window.Solver2x2Helper = Solver2x2Helper;
+	window.Solver2x2Helper = Solver2x2Helper;
 }
 ```
 
@@ -509,14 +565,14 @@ solver.wasm is 2MB (expected ~195KB)
 **Solution:** Use correct compile script:
 ```bash
 em++ solver.cpp -o solver.js \
-  -O3 \              # Maximum optimization ✅
-  -msimd128 \        # SIMD ✅
-  -flto \            # Link-time optimization ✅
-  -s TOTAL_MEMORY=150MB \
-  -s WASM=1 \
-  -s MODULARIZE=1 \
-  -s EXPORT_NAME="createModule" \
-  --bind
+	-O3 \              # Maximum optimization ✅
+	-msimd128 \        # SIMD ✅
+	-flto \            # Link-time optimization ✅
+	-s TOTAL_MEMORY=150MB \
+	-s WASM=1 \
+	-s MODULARIZE=1 \
+	-s EXPORT_NAME="createModule" \
+	--bind
 ```
 
 ### Problem 3: MODULARIZE Compilation Breaks Worker
@@ -533,8 +589,8 @@ em++ solver.cpp -o solver.js \
 importScripts('solver.js');  // Loads createModule() factory
 
 createModule().then(Module => {
-  // Use Module here
-  const solver = new Module.PersistentSolver2x2();
+	// Use Module here
+	const solver = new Module.PersistentSolver2x2();
 });
 ```
 
@@ -555,13 +611,13 @@ createModule().then(Module => {
 **Solution:** Clear vector in `start_search_persistent()`:
 ```cpp
 void start_search_persistent(..., bool reuse = false) {
-  sol.clear();             // Clear solutions
-  move_restrict.clear();   // ✅ CRITICAL: Clear move restrictions
+	sol.clear();             // Clear solutions
+	move_restrict.clear();   // ✅ CRITICAL: Clear move restrictions
   
-  // Rebuild move_restrict from arg_restrict
-  for (std::string name : restrict) {
-    // ...
-  }
+	// Rebuild move_restrict from arg_restrict
+	for (std::string name : restrict) {
+		// ...
+	}
 }
 ```
 
@@ -580,22 +636,22 @@ void start_search_persistent(..., bool reuse = false) {
 **Solution:**
 ```cpp
 struct search {
-  bool prune_table_initialized;
+	bool prune_table_initialized;
   
-  search() {
-    prune_table = std::vector<unsigned char>(88179840, 255);
-    prune_table_initialized = false;
-  }
+	search() {
+		prune_table = std::vector<unsigned char>(88179840, 255);
+		prune_table_initialized = false;
+	}
 };
 
 void start_search_persistent(..., bool reuse = false) {
-  if (!reuse) {
-    create_prune_table(...);
-    prune_table_initialized = true;  // ✅ Set flag
-  } else if (!prune_table_initialized) {
-    create_prune_table(...);
-    prune_table_initialized = true;  // ✅ Set flag
-  }
+	if (!reuse) {
+		create_prune_table(...);
+		prune_table_initialized = true;  // ✅ Set flag
+	} else if (!prune_table_initialized) {
+		create_prune_table(...);
+		prune_table_initialized = true;  // ✅ Set flag
+	}
 }
 ```
 
@@ -612,7 +668,7 @@ void start_search_persistent(..., bool reuse = false) {
 ```javascript
 // Browser
 globalThis.postMessage = function(msg) {
-  console.log(msg);  // Or custom handler
+	console.log(msg);  // Or custom handler
 };
 
 // Then load
@@ -623,11 +679,11 @@ Worker automatically overrides this in `worker_persistent.js`:
 ```javascript
 // worker_persistent.js
 let currentPostMessageHandler = (msg) => {
-  postMessage({ type: 'solution', data: msg });
+	postMessage({ type: 'solution', data: msg });
 };
 
 globalThis.postMessage = function(msg) {
-  currentPostMessageHandler(msg);
+	currentPostMessageHandler(msg);
 };
 ```
 
@@ -641,10 +697,10 @@ globalThis.postMessage = function(msg) {
 // Helper API
 const helper = new Solver2x2Helper();
 helper.worker.onmessage = (e) => {
-  console.log('[DEBUG] Worker message:', e.data);
+	console.log('[DEBUG] Worker message:', e.data);
 };
 helper.worker.onerror = (e) => {
-  console.error('[DEBUG] Worker error:', e);
+	console.error('[DEBUG] Worker error:', e);
 };
 ```
 
@@ -668,17 +724,17 @@ curl -s "https://cdn.jsdelivr.net/gh/or18/RubiksSolverDemo@main/dist/src/2x2solv
 const worker = new Worker('worker_persistent.js');
 
 worker.onmessage = (e) => {
-  console.log('Message:', e.data);
+	console.log('Message:', e.data);
 };
 
 worker.onerror = (e) => {
-  console.error('Error:', e.message, e.filename, e.lineno);
+	console.error('Error:', e.message, e.filename, e.lineno);
 };
 
 worker.postMessage({
-  scramble: "R U R' U'",
-  maxSolutions: 1,
-  maxLength: 11
+	scramble: "R U R' U'",
+	maxSolutions: 1,
+	maxLength: 11
 });
 ```
 

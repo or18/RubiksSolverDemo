@@ -343,7 +343,7 @@ cd dist/src/2x2solver
 ./purge-cdn-cache.sh
 ```
 
-For detailed troubleshooting, see **[Troubleshooting Guide](./src/2x2solver/TROUBLESHOOTING.md)**.
+For detailed troubleshooting, see **[Troubleshooting Guide](./TROUBLESHOOTING.md)**.
 
 ---
 
@@ -362,7 +362,7 @@ For detailed file structure, API reference, and advanced usage, see:
 
 📖 **[Implementation Notes](./src/2x2solver/IMPLEMENTATION_NOTES.md)** - C++ implementation details for developers
 
-📖 **[Troubleshooting Guide](./src/2x2solver/TROUBLESHOOTING.md)** - Common issues and solutions:
+📖 **[Troubleshooting Guide](./TROUBLESHOOTING.md)** - Common issues and solutions:
 - CDN cache problems
 - Worker loading errors
 - CORS issues
@@ -371,13 +371,20 @@ For detailed file structure, API reference, and advanced usage, see:
 
 📖 **[Release Guide](./src/2x2solver/RELEASE_GUIDE.md)** - Publishing and versioning workflow
 
+📖 **[Tools API](./src/utils/TOOLS_API.md)** - Utility functions used by helpers (normalization, builders, validators)
+
 ---
 
 ## 🐛 Troubleshooting
 
 For common issues and detailed debugging:
+**See the consolidated troubleshooting guide first:** [Troubleshooting Guide](./TROUBLESHOOTING.md)
 
-👉 **See [Troubleshooting Guide](./src/2x2solver/TROUBLESHOOTING.md)** for:
+**Worker compatibility / advanced worker notes:** [Worker compatibility guide](./TROUBLESHOOTING_WORKER_COMPAT.md)
+
+The top-level `dist/TROUBLESHOOTING.md` contains cross-solver, practical troubleshooting. The `dist/TROUBLESHOOTING_WORKER_COMPAT.md` contains deeper, worker/module/Blob-runner specific notes that are useful when diagnosing worker loading issues.
+
+👉 **See either guide** for:
 - CDN cache debugging
 - Worker path problems
 - CORS and cross-origin issues
@@ -433,7 +440,7 @@ Note on strict Content Security Policy (CSP) environments
 - **2x2 Solver**:
   - [User Guide & API](./src/2x2solver/README.md)
   - [Implementation Details](./src/2x2solver/IMPLEMENTATION_NOTES.md)
-  - [Troubleshooting](./src/2x2solver/TROUBLESHOOTING.md)
+  - [Troubleshooting](./TROUBLESHOOTING.md)
   - [Release Checklist](./src/2x2solver/RELEASE_GUIDE.md)
 
 ---

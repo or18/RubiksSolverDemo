@@ -222,5 +222,5 @@ No API changes - fully backward compatible with v1.0.0.
 
 - **General Release Process**: [../../RELEASE_GUIDE.md](../../RELEASE_GUIDE.md)
 - **Implementation Details**: [IMPLEMENTATION_NOTES.md](IMPLEMENTATION_NOTES.md)
-- **Troubleshooting**: [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
+- **Troubleshooting**: [TROUBLESHOOTING.md](../../TROUBLESHOOTING.md)
 - **API Reference**: [README.md](README.md)

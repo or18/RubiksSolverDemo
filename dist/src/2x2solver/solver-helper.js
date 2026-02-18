@@ -185,11 +185,16 @@ class Solver2x2Helper {
       maxSolutions = 3,
       maxLength = 11,
       pruneDepth = 1,
+      // legacy string input
       allowedMoves = 'U_U2_U-_R_R2_R-_F_F2_F-',
       preMove = '',
       moveOrder = '',
       moveCount = '',
-      onProgress = null
+      onProgress = null,
+      // structured inputs (preferred)
+      allowedMovesArray = null,
+      moveOrderArray = null,
+      moveCountMap = null
     } = options;
     
     this.currentSolutions = [];
@@ -199,16 +204,52 @@ class Solver2x2Helper {
       this.currentResolve = resolve;
       this.currentReject = reject;
       
+      // Prefer structured inputs and convert them to C++-expected strings using tools.js
+      let tools = null;
+      try {
+        if (typeof require !== 'undefined') {
+          tools = require('../utils/tools.js');
+        }
+      } catch (e) { /* ignore */ }
+      if (!tools) {
+        if (typeof window !== 'undefined' && window.__TOOLS_UTILS_EXPORTS__) tools = window.__TOOLS_UTILS_EXPORTS__;
+        else if (typeof self !== 'undefined' && self.__TOOLS_UTILS_EXPORTS__) tools = self.__TOOLS_UTILS_EXPORTS__;
+      }
+
+      let restStr = '';
+      if (allowedMovesArray !== null && allowedMovesArray !== undefined && tools && typeof tools.buildRestFromArray === 'function') {
+        if (Array.isArray(allowedMovesArray)) restStr = tools.buildRestFromArray(allowedMovesArray);
+        else restStr = tools.normalizeRestForCpp(allowedMovesArray);
+      } else {
+        restStr = (typeof allowedMoves === 'string') ? allowedMoves : '';
+      }
+
+      let moveOrderStr = '';
+      if (moveOrder && typeof moveOrder === 'string' && moveOrder.trim() !== '') {
+        moveOrderStr = moveOrder;
+      } else if (moveOrderArray && tools && typeof tools.buildMavFromPairs === 'function') {
+        moveOrderStr = tools.buildMavFromPairs(restStr, moveOrderArray, '2x2');
+      }
+
+      let moveCountStr = '';
+      if (moveCount && typeof moveCount === 'string' && moveCount.trim() !== '') {
+        moveCountStr = moveCount;
+      } else if (moveCountMap && tools && typeof tools.buildMcvFromObject === 'function') {
+        moveCountStr = tools.buildMcvFromObject(restStr, moveCountMap, '2x2');
+      }
+
+      const allowedMovesToPass = restStr && restStr !== '' ? restStr : allowedMoves;
+
       this.worker.postMessage({
         scramble,
         rotation,
         maxSolutions,
         maxLength,
         pruneDepth,
-        allowedMoves,
+        allowedMoves: allowedMovesToPass,
         preMove,
-        moveOrder,
-        moveCount
+        moveOrder: moveOrderStr,
+        moveCount: moveCountStr
       });
     });
   }
@@ -252,16 +293,42 @@ class Solver2x2Helper {
     }
     
     let code = await res.text();
-    
+
     // Extract base URL from worker URL (strip query params)
     const urlWithoutQuery = workerUrl.split('?')[0];
     const baseURL = urlWithoutQuery.substring(0, urlWithoutQuery.lastIndexOf('/') + 1);
-    
+
     // Replace baseURL calculation in worker code
-    const oldCode = `const scriptPath = self.location.href;
-const baseURL = scriptPath.substring(0, scriptPath.lastIndexOf('/') + 1);`;
+    const oldCode = `const scriptPath = self.location.href;\nconst baseURL = scriptPath.substring(0, scriptPath.lastIndexOf('/') + 1);`;
     const newCode = `const baseURL = '${baseURL}';`;
-    code = code.replace(oldCode, newCode);
+
+    // If worker code includes importScripts (classic pattern) try to inline solver.js
+    // so the worker can run standalone (avoids importScripts errors in module contexts).
+    if (code.includes('importScripts(')) {
+      try {
+        const solverUrl = baseURL + 'solver.js' + (this.cacheBustParams || '');
+        const sres = await fetch(solverUrl);
+        if (sres.ok) {
+          let solverText = await sres.text();
+
+          // Remove importScripts(...) call(s) to avoid module-context errors
+          code = code.replace(/importScripts\([^)]*\);?\n?/g, '');
+
+          // Prepend solver runtime so createModule exists in worker
+          code = solverText + '\n' + code;
+
+          // Ensure baseURL is set to CDN path for locateFile
+          code = code.replace(oldCode, newCode);
+        }
+      } catch (e) {
+        // fallback: leave original code and rely on blob baseURL replacement below
+        console.warn('Inline solver fetch failed:', e);
+        code = code.replace(oldCode, newCode);
+      }
+    } else {
+      // replace baseURL extraction if present
+      code = code.replace(oldCode, newCode);
+    }
     
     // Apply cache busting to solver.js and solver.wasm if present
     if (this.cacheBustParams) {

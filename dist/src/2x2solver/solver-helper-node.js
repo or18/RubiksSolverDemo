@@ -92,19 +92,27 @@ class Solver2x2HelperNode {
       maxSolutions = 3,
       maxLength = 11,
       pruneDepth = 1,
+      // keep legacy string inputs
       allowedMoves = 'U_U2_U-_R_R2_R-_F_F2_F-',
       preMove = '',
       moveOrder = '',
       moveCount = '',
       onProgress = null,
-      onSolution = null
+      onSolution = null,
+      // new structured options (optional)
+      // `allowedMovesArray`: allowed moves as an array (or string)
+      // `moveOrderArray`: move order pairs array
+      // `moveCountMap`: move count mapping object
+      allowedMovesArray = null,
+      moveOrderArray = null,
+      moveCountMap = null
     } = options;
     
     const solutions = [];
-    
+
     // Override globalThis.postMessage to capture output
     const originalPostMessage = globalThis.postMessage;
-    
+
     return new Promise((resolve, reject) => {
       globalThis.postMessage = (msg) => {
         if (typeof msg === 'string') {
@@ -137,19 +145,49 @@ class Solver2x2HelperNode {
           }
         }
       };
-      
+
       try {
-        // Call solver
+        // Use shared tools.js utilities for rest/mav/mcv conversions
+        const tools = require('../utils/tools.js');
+
+        // prefer structured `allowedMovesArray` over legacy allowedMoves string
+        let restStr = '';
+        if (allowedMovesArray !== null && allowedMovesArray !== undefined) {
+          if (Array.isArray(allowedMovesArray)) restStr = tools.buildRestFromArray(allowedMovesArray);
+          else restStr = tools.normalizeRestForCpp(allowedMovesArray);
+        } else {
+          restStr = (typeof allowedMoves === 'string') ? allowedMoves : '';
+        }
+
+        // moveOrder: explicit string preferred, else build from mav
+        let moveOrderStr = '';
+        if (moveOrder && typeof moveOrder === 'string' && moveOrder.trim() !== '') {
+          moveOrderStr = moveOrder;
+        } else if (moveOrderArray) {
+          moveOrderStr = tools.buildMavFromPairs(restStr, moveOrderArray, '2x2');
+        }
+
+        // moveCount: explicit string preferred, else build from mcv
+        let moveCountStr = '';
+        if (moveCount && typeof moveCount === 'string' && moveCount.trim() !== '') {
+          moveCountStr = moveCount;
+        } else if (moveCountMap) {
+          moveCountStr = tools.buildMcvFromObject(restStr, moveCountMap, '2x2');
+        }
+
+        const allowedMovesToPass = restStr && restStr !== '' ? restStr : allowedMoves;
+
+        // Call solver with converted parameters
         this.solver.solve(
           scramble,
           rotation,
           maxSolutions,
           maxLength,
           pruneDepth,
-          allowedMoves,
+          allowedMovesToPass,
           preMove,
-          moveOrder,
-          moveCount
+          moveOrderStr,
+          moveCountStr
         );
       } catch (error) {
         // Restore original postMessage

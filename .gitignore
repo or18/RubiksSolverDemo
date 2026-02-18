@@ -59,3 +59,8 @@ dist/plans/
 .github/
 
 dist/src/utils/node_modules/
+
+node_modules/
+package.json
+package-lock.json
+dist/src/test_2x2solver/
