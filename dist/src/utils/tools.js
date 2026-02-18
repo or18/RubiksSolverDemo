@@ -92,6 +92,15 @@ async function _loadCppFunctionModule(baseUrl) {
 	const normalizedBase = _normalizeBase(resolvedBase);
 	const scriptUrl = normalizedBase + 'cpp-functions/functions.js';
 
+	// Debug: announce module load start when possible
+	try {
+		if (typeof self !== 'undefined' && typeof self.postMessage === 'function') {
+			self.postMessage({ type: 'tools_debug', event: 'load_start', scriptUrl: scriptUrl });
+		} else if (typeof console !== 'undefined' && typeof console.log === 'function') {
+			console.log('tools_debug: load_start', scriptUrl);
+		}
+	} catch (e) { /* ignore debug failures */ }
+
 	_cppFunctionModulePromise = new Promise((resolve, reject) => {
 		// Browser
 		if (typeof window !== 'undefined') {
@@ -99,6 +108,9 @@ async function _loadCppFunctionModule(baseUrl) {
 				const s = document.createElement('script');
 				s.src = scriptUrl;
 				s.onload = () => {
+					try { if (typeof console !== 'undefined' && console.log) console.log('tools_debug: script onload', scriptUrl); } catch (e) {}
+					try { if (typeof self !== 'undefined' && typeof self.postMessage === 'function') self.postMessage({ type: 'tools_debug', event: 'script_onload', scriptUrl: scriptUrl }); } catch (e) {}
+				
 					// Prefer MODULARIZE=1 factory
 					if (typeof createCppFunctionsModule === 'function') {
 						try {
@@ -109,7 +121,10 @@ async function _loadCppFunctionModule(baseUrl) {
 								}
 							};
 							const maybePromise = factory(opts);
-							Promise.resolve(maybePromise).then(m => resolve(m)).catch(reject);
+							Promise.resolve(maybePromise).then(m => {
+								try { if (typeof self !== 'undefined' && typeof self.postMessage === 'function') self.postMessage({ type: 'tools_debug', event: 'factory_resolved' }); else console.log('tools_debug: factory_resolved'); } catch(e){}
+								resolve(m);
+							}).catch(reject);
 						} catch (e) {
 							reject(e);
 						}
@@ -123,6 +138,7 @@ async function _loadCppFunctionModule(baseUrl) {
 							const orig = mod.onRuntimeInitialized;
 							mod.onRuntimeInitialized = function () {
 								try { orig(); } catch (e) { /* ignore */ }
+								try { if (typeof self !== 'undefined' && typeof self.postMessage === 'function') self.postMessage({ type: 'tools_debug', event: 'runtime_initialized' }); else console.log('tools_debug: runtime_initialized'); } catch(e){}
 								resolve(mod);
 							};
 							return;
@@ -132,12 +148,14 @@ async function _loadCppFunctionModule(baseUrl) {
 						const poll = setInterval(() => {
 							if (mod.calledRun || typeof mod.cwrap === 'function') {
 								clearInterval(poll);
+								try { if (typeof self !== 'undefined' && typeof self.postMessage === 'function') self.postMessage({ type: 'tools_debug', event: 'runtime_poll_resolved' }); else console.log('tools_debug: runtime_poll_resolved'); } catch(e){}
 								resolve(mod);
 								return;
 							}
 							if (Date.now() - start > 10000) { // 10s timeout
 								clearInterval(poll);
 								// resolve anyway; caller can handle missing symbols
+								try { if (typeof self !== 'undefined' && typeof self.postMessage === 'function') self.postMessage({ type: 'tools_debug', event: 'runtime_poll_timeout' }); else console.log('tools_debug: runtime_poll_timeout'); } catch(e){}
 								resolve(mod);
 							}
 						}, 50);
