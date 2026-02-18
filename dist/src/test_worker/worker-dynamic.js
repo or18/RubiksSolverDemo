@@ -21,8 +21,17 @@
         send({ type: 'after_importscripts' });
         send({ type: 'tools_global_exists', exists: true });
         send({ type: 'init_started' });
-        await tools.init({ baseUrl: d.baseUrl || '../utils/' });
-        send({ type: 'init_done' });
+        try {
+          const p = tools.init({ baseUrl: d.baseUrl || '../utils/' });
+          if (p && typeof p.then === 'function') {
+            p.then(function(){ send({ type: 'init_done' }); }).catch(function(e){ send({ type: 'init_failed', detail: String(e) }); });
+            await p.catch(function(){ /* handled above */ });
+          } else {
+            send({ type: 'init_done_sync' });
+          }
+        } catch (e) {
+          send({ type: 'init_failed', detail: String(e) });
+        }
         send({ type: 'init', mode: 'dynamic' });
       } catch (e) {
         send({ type: 'error', error: 'init_exception', detail: String(e) });

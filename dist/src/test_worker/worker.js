@@ -35,16 +35,21 @@
 
   // Async init flow with explicit debug messages
   (async function(){
-    try {
-      send({ type: 'after_importscripts' });
-      send({ type: 'tools_global_exists', exists: true });
-      send({ type: 'init_started' });
       try {
-        await tools.init({ baseUrl: '../utils/' });
-        send({ type: 'init_done' });
-      } catch (err) {
-        send({ type: 'init_failed', detail: String(err) });
-      }
+        send({ type: 'after_importscripts' });
+        send({ type: 'tools_global_exists', exists: true });
+        send({ type: 'init_started' });
+        try {
+          const p = tools.init({ baseUrl: '../utils/' });
+          if (p && typeof p.then === 'function') {
+            p.then(function(){ send({ type: 'init_done' }); }).catch(function(err){ send({ type: 'init_failed', detail: String(err) }); });
+            await p.catch(function(){ /* handled above */ });
+          } else {
+            send({ type: 'init_done_sync' });
+          }
+        } catch (err) {
+          send({ type: 'init_failed', detail: String(err) });
+        }
 
       // Basic capability checks
       var hasScrFix = typeof tools.scr_fix === 'function';

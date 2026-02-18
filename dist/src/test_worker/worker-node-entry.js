@@ -12,8 +12,13 @@ const path = require('path');
       parentPort.postMessage({ type: 'init_started' });
       if (typeof tools.init === 'function') {
         try {
-          await tools.init({ baseUrl: path.resolve(__dirname, '..', 'utils') + path.sep });
-          parentPort.postMessage({ type: 'init_done' });
+          const p = tools.init({ baseUrl: path.resolve(__dirname, '..', 'utils') + path.sep });
+          if (p && typeof p.then === 'function') {
+            p.then(function(){ parentPort.postMessage({ type: 'init_done' }); }).catch(function(e){ parentPort.postMessage({ type: 'init_failed', detail: String(e) }); });
+            await p.catch(function(){ /* handled above */ });
+          } else {
+            parentPort.postMessage({ type: 'init_done_sync' });
+          }
         } catch (e) {
           parentPort.postMessage({ type: 'init_failed', detail: String(e) });
         }

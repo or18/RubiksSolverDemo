@@ -16,8 +16,15 @@ function createWorkerFromTools(options = {}) {
         self.postMessage({ type: 'after_importscripts' });
         self.postMessage({ type: 'tools_global_exists', exists: true });
         self.postMessage({ type: 'init_started' });
-        await tools.init({ baseUrl: '${base}' });
-        self.postMessage({ type: 'init_done' });
+        try {
+          const p = tools.init({ baseUrl: '${base}' });
+          if (p && typeof p.then === 'function') {
+            p.then(function(){ self.postMessage({ type: 'init_done' }); }).catch(function(e){ self.postMessage({ type: 'init_failed', detail: String(e) }); });
+            await p.catch(function(){ /* handled above */ });
+          } else {
+            self.postMessage({ type: 'init_done_sync' });
+          }
+        } catch (e) { self.postMessage({ type:'init_failed', detail:String(e) }); }
       } catch(e){ self.postMessage({ type:'init_failed', detail:String(e) }); }
       self.postMessage({ type: 'init', hasScrFix: typeof tools.scr_fix === 'function', hasInvertAlg: typeof tools.invertAlg === 'function' });
       try { if (typeof tools.scr_fix === 'function') self.postMessage({ type: 'scr_fix', output: tools.scr_fix("R U R' U'") }); } catch(e){ self.postMessage({ type:'error', detail:String(e) }); }

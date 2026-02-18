@@ -17,18 +17,23 @@
     return;
   }
 
-  try {
-    send({ type: 'module_imported' });
-    send({ type: 'tools_global_exists', exists: !!(self && self.__TOOLS_UTILS_EXPORTS__) });
-    send({ type: 'init_started' });
     try {
-      await tools.init({ baseUrl: '../utils/' });
-      send({ type: 'init_done' });
-    } catch (e) {
-      send({ type: 'init_failed', detail: String(e) });
-    }
+      send({ type: 'module_imported' });
+      send({ type: 'tools_global_exists', exists: !!(self && self.__TOOLS_UTILS_EXPORTS__) });
+      send({ type: 'init_started' });
+      try {
+        const p = tools.init({ baseUrl: '../utils/' });
+        if (p && typeof p.then === 'function') {
+          p.then(function(){ send({ type: 'init_done' }); }).catch(function(e){ send({ type: 'init_failed', detail: String(e) }); });
+          await p.catch(function(){ /* handled above */ });
+        } else {
+          send({ type: 'init_done_sync' });
+        }
+      } catch (e) {
+        send({ type: 'init_failed', detail: String(e) });
+      }
 
-    send({ type: 'init', mode: 'module', hasScrFix: typeof tools.scr_fix === 'function', hasInvertAlg: typeof tools.invertAlg === 'function' });
+      send({ type: 'init', mode: 'module', hasScrFix: typeof tools.scr_fix === 'function', hasInvertAlg: typeof tools.invertAlg === 'function' });
 
     try {
       if (typeof tools.scr_fix === 'function') {
