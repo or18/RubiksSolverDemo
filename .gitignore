@@ -57,3 +57,5 @@ dist/src/*/test/
 dist/plans/
 
 .github/
+
+dist/src/utils/node_modules/
