@@ -1,0 +1,29 @@
+// Worker that waits for an init message from main providing baseUrl
+// Main should postMessage({ cmd: 'init', baseUrl: '...' }) before other commands
+(function () {
+  'use strict';
+  function send(msg) { try { self.postMessage(msg); } catch (e) {} }
+
+  let tools = null;
+  self.addEventListener('message', async function (ev) {
+    const d = ev.data || {};
+    if (!d || !d.cmd) return;
+    if (d.cmd === 'init') {
+      try {
+        importScripts('../utils/tools.js');
+      } catch (e) {
+        send({ type: 'error', error: 'importScripts_failed', detail: String(e) });
+        return;
+      }
+      tools = (typeof self.__TOOLS_UTILS_EXPORTS__ !== 'undefined') ? self.__TOOLS_UTILS_EXPORTS__ : null;
+      if (!tools) { send({ type: 'error', error: 'no_tools_exports' }); return; }
+      try {
+        await tools.init({ baseUrl: d.baseUrl || '../utils/' }).catch(e => send({ type: 'init_failed', detail: String(e) }));
+        send({ type: 'init', mode: 'dynamic' });
+      } catch (e) {
+        send({ type: 'error', error: 'init_exception', detail: String(e) });
+      }
+    }
+    if (d.cmd === 'ping') send({ type: 'pong' });
+  });
+})();
