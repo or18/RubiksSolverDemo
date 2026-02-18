@@ -18,7 +18,11 @@
       tools = (typeof self.__TOOLS_UTILS_EXPORTS__ !== 'undefined') ? self.__TOOLS_UTILS_EXPORTS__ : null;
       if (!tools) { send({ type: 'error', error: 'no_tools_exports' }); return; }
       try {
-        await tools.init({ baseUrl: d.baseUrl || '../utils/' }).catch(e => send({ type: 'init_failed', detail: String(e) }));
+        send({ type: 'after_importscripts' });
+        send({ type: 'tools_global_exists', exists: true });
+        send({ type: 'init_started' });
+        await tools.init({ baseUrl: d.baseUrl || '../utils/' });
+        send({ type: 'init_done' });
         send({ type: 'init', mode: 'dynamic' });
       } catch (e) {
         send({ type: 'error', error: 'init_exception', detail: String(e) });

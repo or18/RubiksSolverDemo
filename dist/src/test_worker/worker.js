@@ -33,40 +33,45 @@
     return;
   }
 
-  // Ensure the C++ module base is set correctly for this worker.
-  // tools.init accepts `{ baseUrl }` which will be used when loading
-  // cpp-functions/functions.js via importScripts in a worker.
-  Promise.resolve().then(() => {
-    return tools.init({ baseUrl: '../utils/' }).catch(err => {
-      // init may fail if C++ artifacts are absent; report but continue
-      send({ type: 'init_failed', detail: String(err) });
-      return null;
-    });
-  }).then(() => {
-    // Basic capability checks
-    var hasScrFix = typeof tools.scr_fix === 'function';
-    var hasInvert = typeof tools.invertAlg === 'function';
-
-    send({ type: 'init', hasScrFix: hasScrFix, hasInvertAlg: hasInvert });
-
-    // Run small tests
+  // Async init flow with explicit debug messages
+  (async function(){
     try {
-      if (hasScrFix) {
-        var fixed = tools.scr_fix("R U R' U'");
-        send({ type: 'scr_fix', input: "R U R' U'", output: fixed });
+      send({ type: 'after_importscripts' });
+      send({ type: 'tools_global_exists', exists: true });
+      send({ type: 'init_started' });
+      try {
+        await tools.init({ baseUrl: '../utils/' });
+        send({ type: 'init_done' });
+      } catch (err) {
+        send({ type: 'init_failed', detail: String(err) });
       }
-      if (hasInvert) {
-        // invertAlg may be async depending on implementation
-        Promise.resolve(tools.invertAlg("R U R2")).then(function (inv) {
-          send({ type: 'invertAlg', input: "R U R2", output: inv });
-        }).catch(function (e) {
-          send({ type: 'error', error: 'invert_failed', detail: String(e) });
-        });
+
+      // Basic capability checks
+      var hasScrFix = typeof tools.scr_fix === 'function';
+      var hasInvert = typeof tools.invertAlg === 'function';
+      send({ type: 'init', hasScrFix: hasScrFix, hasInvertAlg: hasInvert });
+
+      // Run small tests
+      try {
+        if (hasScrFix) {
+          var fixed = tools.scr_fix("R U R' U'");
+          send({ type: 'scr_fix', input: "R U R' U'", output: fixed });
+        }
+        if (hasInvert) {
+          try {
+            var inv = await Promise.resolve(tools.invertAlg("R U R2"));
+            send({ type: 'invertAlg', input: "R U R2", output: inv });
+          } catch (e) {
+            send({ type: 'error', error: 'invert_failed', detail: String(e) });
+          }
+        }
+      } catch (e) {
+        send({ type: 'error', error: 'test_failed', detail: String(e) });
       }
     } catch (e) {
-      send({ type: 'error', error: 'test_failed', detail: String(e) });
+      send({ type: 'fatal', detail: String(e) });
     }
-  });
+  })();
 
   // Respond to pings from main thread
   self.addEventListener('message', function (ev) {

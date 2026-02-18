@@ -18,23 +18,35 @@
   }
 
   try {
-    await tools.init({ baseUrl: '../utils/' }).catch(e => { send({ type: 'init_failed', detail: String(e) }); });
-  } catch (e) {
-    send({ type: 'init_failed', detail: String(e) });
-  }
-
-  send({ type: 'init', mode: 'module', hasScrFix: typeof tools.scr_fix === 'function', hasInvertAlg: typeof tools.invertAlg === 'function' });
-
-  try {
-    if (typeof tools.scr_fix === 'function') {
-      send({ type: 'scr_fix', output: tools.scr_fix("R U R' U'") });
+    send({ type: 'module_imported' });
+    send({ type: 'tools_global_exists', exists: !!(self && self.__TOOLS_UTILS_EXPORTS__) });
+    send({ type: 'init_started' });
+    try {
+      await tools.init({ baseUrl: '../utils/' });
+      send({ type: 'init_done' });
+    } catch (e) {
+      send({ type: 'init_failed', detail: String(e) });
     }
-    if (typeof tools.invertAlg === 'function') {
-      const inv = await tools.invertAlg('R U R2');
-      send({ type: 'invertAlg', output: inv });
+
+    send({ type: 'init', mode: 'module', hasScrFix: typeof tools.scr_fix === 'function', hasInvertAlg: typeof tools.invertAlg === 'function' });
+
+    try {
+      if (typeof tools.scr_fix === 'function') {
+        send({ type: 'scr_fix', output: tools.scr_fix("R U R' U'") });
+      }
+      if (typeof tools.invertAlg === 'function') {
+        try {
+          const inv = await tools.invertAlg('R U R2');
+          send({ type: 'invertAlg', output: inv });
+        } catch (e) {
+          send({ type: 'error', error: 'invert_failed', detail: String(e) });
+        }
+      }
+    } catch (e) {
+      send({ type: 'error', error: 'test_failed', detail: String(e) });
     }
   } catch (e) {
-    send({ type: 'error', error: 'test_failed', detail: String(e) });
+    send({ type: 'fatal', detail: String(e) });
   }
 
   self.addEventListener('message', ev => {

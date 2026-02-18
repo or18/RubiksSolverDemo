@@ -9,8 +9,14 @@ const path = require('path');
 
     // Attempt to init (may try to load wasm in Node environment)
     try {
+      parentPort.postMessage({ type: 'init_started' });
       if (typeof tools.init === 'function') {
-        await tools.init({ baseUrl: path.resolve(__dirname, '..', 'utils') + path.sep });
+        try {
+          await tools.init({ baseUrl: path.resolve(__dirname, '..', 'utils') + path.sep });
+          parentPort.postMessage({ type: 'init_done' });
+        } catch (e) {
+          parentPort.postMessage({ type: 'init_failed', detail: String(e) });
+        }
       }
     } catch (e) {
       // continue even if init fails

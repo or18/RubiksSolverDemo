@@ -12,7 +12,13 @@ function createWorkerFromTools(options = {}) {
     (async function(){
       const tools = (typeof self.__TOOLS_UTILS_EXPORTS__ !== 'undefined') ? self.__TOOLS_UTILS_EXPORTS__ : null;
       if (!tools) { self.postMessage({ type: 'error', error: 'no_tools_exports' }); return; }
-      try { await tools.init({ baseUrl: '${base}' }).catch(e=>self.postMessage({ type:'init_failed', detail:String(e) })); } catch(e){ self.postMessage({ type:'init_failed', detail:String(e) }); }
+      try {
+        self.postMessage({ type: 'after_importscripts' });
+        self.postMessage({ type: 'tools_global_exists', exists: true });
+        self.postMessage({ type: 'init_started' });
+        await tools.init({ baseUrl: '${base}' });
+        self.postMessage({ type: 'init_done' });
+      } catch(e){ self.postMessage({ type:'init_failed', detail:String(e) }); }
       self.postMessage({ type: 'init', hasScrFix: typeof tools.scr_fix === 'function', hasInvertAlg: typeof tools.invertAlg === 'function' });
       try { if (typeof tools.scr_fix === 'function') self.postMessage({ type: 'scr_fix', output: tools.scr_fix("R U R' U'") }); } catch(e){ self.postMessage({ type:'error', detail:String(e) }); }
       try { if (typeof tools.invertAlg === 'function') { const inv = await tools.invertAlg('R U R2'); self.postMessage({ type:'invertAlg', output: inv }); } } catch(e){ self.postMessage({ type:'error', detail:String(e) }); }
