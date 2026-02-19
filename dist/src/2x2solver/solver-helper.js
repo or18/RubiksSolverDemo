@@ -1,6 +1,6 @@
 /**
  * 2x2x2 Solver Helper - Simplified Promise-based API for Web Workers
- * @version 1.0.0 (2026-02-16) - Initial release
+ * @version 1.1.0 (2026-02-19) - Added tools.js auto-loading and onSolution callback
  * 
  * This helper wraps the Web Worker interface to provide a simple Promise-based API.
  * No need to handle worker.onmessage manually!
@@ -9,9 +9,11 @@
  * - CDN auto-detection (works with both <script src> and dynamic createElement)
  * - Cache busting propagation (?v=timestamp → worker.js + solver.wasm)
  * - CORS bypass via Blob URL for CDN workers
+ * - Auto-loads tools.js for structured input support (v1.1.0+)
+ * - Streaming solution callbacks (onSolution)
  * 
  * @example
- * // Basic usage
+ * // Basic usage (no tools.js import needed!)
  * const helper = new Solver2x2Helper();
  * await helper.init();
  * 
@@ -19,11 +21,13 @@
  * console.log(solutions); // ['U R U\' R\'', 'R\' U\' R\' U R U', ...]
  * 
  * @example
- * // With options
+ * // With structured input (allowedMovesArray)
  * const solutions = await helper.solve("R U R' U'", {
  *   maxSolutions: 5,
  *   maxLength: 12,
- *   onProgress: (depth) => console.log(`Searching depth ${depth}`)
+ *   allowedMovesArray: ['U', 'U2', "U'", 'R', 'R2', "R'", 'F', 'F2', "F'"],
+ *   onProgress: (depth) => console.log(`Searching depth ${depth}`),
+ *   onSolution: (solution) => console.log(`Found: ${solution}`)
  * });
  * 
  * @example
@@ -81,6 +85,7 @@ class Solver2x2Helper {
     this.currentReject = null;
     this.currentSolutions = [];
     this.currentProgressCallback = null;
+    this.currentSolutionCallback = null;
   }
   
   /**
@@ -113,7 +118,10 @@ class Solver2x2Helper {
             resolve();
           } else if (msg.type === 'solution') {
             if (msg.data && this.currentSolutions) {
-              this.currentSolutions.push(msg.data);
+              // Call onSolution callback immediately (streaming)
+              if (this.currentSolutionCallback) {
+                this.currentSolutionCallback(msg.data);
+              }
             }
           } else if (msg.type === 'depth') {
             if (this.currentProgressCallback) {
@@ -129,12 +137,15 @@ class Solver2x2Helper {
               this.currentReject = null;
               this.currentSolutions = [];
               this.currentProgressCallback = null;
+              this.currentSolutionCallback = null;
             }
           } else if (msg.type === 'error') {
             if (this.currentReject) {
               this.currentReject(new Error(msg.data));
               this.currentResolve = null;
               this.currentReject = null;
+              this.currentSolutions = [];
+              this.currentProgressCallback = null;
               this.currentSolutions = [];
               this.currentProgressCallback = null;
             }
@@ -163,6 +174,7 @@ class Solver2x2Helper {
    * @param {string} [options.rotation=''] - Cube rotation (e.g., 'y', 'x2')
    * @param {number} [options.maxSolutions=3] - Max number of solutions (no upper limit)
    * @param {number} [options.maxLength=11] - Max solution length
+   * @param {Function} [options.onSolution] - Solution callback: (solution: string) => void - called as each solution is found
    * @param {number} [options.pruneDepth=1] - Pruning depth (0-20, 1 recommended for URF)
    * @param {string} [options.allowedMoves='U_U2_U-_R_R2_R-_F_F2_F-'] - Allowed moves
    * @param {string} [options.preMove=''] - Moves to prepend to solutions
@@ -191,6 +203,7 @@ class Solver2x2Helper {
       moveOrder = '',
       moveCount = '',
       onProgress = null,
+      onSolution = null,
       // structured inputs (preferred)
       allowedMovesArray = null,
       moveOrderArray = null,
@@ -199,6 +212,7 @@ class Solver2x2Helper {
     
     this.currentSolutions = [];
     this.currentProgressCallback = onProgress;
+    this.currentSolutionCallback = onSolution;
     
     return new Promise((resolve, reject) => {
       this.currentResolve = resolve;
@@ -265,6 +279,7 @@ class Solver2x2Helper {
       this.ready = false;
       this.currentResolve = null;
       this.currentReject = null;
+      this.currentSolutionCallback = null;
       this.currentSolutions = [];
       this.currentProgressCallback = null;
     }
@@ -342,6 +357,47 @@ class Solver2x2Helper {
   }
 }
 
+// Auto-load tools.js if in browser environment and not already loaded
+if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+  if (!window.__TOOLS_UTILS_EXPORTS__) {
+    // Detect base URL from current script
+    let scriptUrl = null;
+    if (document.currentScript && document.currentScript.src) {
+      scriptUrl = document.currentScript.src;
+    } else {
+      const scripts = document.getElementsByTagName('script');
+      for (let i = 0; i < scripts.length; i++) {
+        if (scripts[i].src && scripts[i].src.includes('solver-helper.js')) {
+          scriptUrl = scripts[i].src;
+          break;
+        }
+      }
+    }
+    
+    if (scriptUrl) {
+      const lastSlashIndex = scriptUrl.lastIndexOf('/');
+      const baseUrl = scriptUrl.substring(0, lastSlashIndex + 1);
+      
+      // Extract query parameters for cache busting
+      const queryIndex = scriptUrl.indexOf('?', lastSlashIndex);
+      const queryParams = queryIndex !== -1 ? scriptUrl.substring(queryIndex) : '';
+      
+      // Calculate relative path to tools.js (from 2x2solver/ to utils/)
+      const toolsUrl = baseUrl + '../utils/tools.js' + queryParams;
+      
+      // Load tools.js dynamically
+      const toolsScript = document.createElement('script');
+      toolsScript.src = toolsUrl;
+      toolsScript.async = false; // Load in order
+      document.head.appendChild(toolsScript);
+      
+      if (typeof console !== 'undefined') {
+        console.log('[Solver2x2Helper] Auto-loading tools.js from:', toolsUrl);
+      }
+    }
+  }
+}
+
 // Export for use as module or global
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = Solver2x2Helper;
@@ -349,7 +405,8 @@ if (typeof module !== 'undefined' && module.exports) {
   window.Solver2x2Helper = Solver2x2Helper;
   // Debug info for cache verification
   if (typeof console !== 'undefined') {
-    console.log('[Solver2x2Helper] v1.0.0 loaded from:', 
+    console.log('[Solver2x2Helper] v1.1.0 loaded from:', 
       typeof document !== 'undefined' && document.currentScript ? document.currentScript.src : 'unknown');
   }
 }
+
