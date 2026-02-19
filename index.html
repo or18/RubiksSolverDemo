@@ -4157,12 +4157,11 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                 details.appendChild(spaceElement2);
                 
                 // Create link with current parameters
-                // Use cached normalized URL if available (to avoid timing issues after history.replaceState)
-                const sourceUrl = cachedNormalizedUrl || window.location.href;
-                const currentUrl = new URL(sourceUrl);
+                // Use current window.location.href to get latest parameters
+                const currentUrl = new URL(window.location.href);
                 
-                // Normalize URL if not using cached version (cached is already normalized)
-                const normalizedHref = cachedNormalizedUrl || window.urlParamsCompressor.normalizeUrl(currentUrl.href);
+                // Normalize URL to get full uncompressed parameters
+                const normalizedHref = window.urlParamsCompressor.normalizeUrl(currentUrl.href);
                 const normalizedUrl = new URL(normalizedHref);
                 
                 const linkParams = new URLSearchParams(normalizedUrl.search);
@@ -5641,12 +5640,16 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             const searchParams = new URLSearchParams(window.location.search);
             const restParam = searchParams.get('rest');
             const mavParam = searchParams.get('mav');
+            const crestParam = searchParams.get('crest');
+            const mcvParam = searchParams.get('mcv');
             
             // Check if query parameters are compressed (v3 format)
             // v3: alphanumeric+hyphens, v0: contains underscores/tildes/pipes
             const hasCompressedRest = restParam && !restParam.includes('_');
             const hasCompressedMav = mavParam && !mavParam.includes('~') && !mavParam.includes('|');
-            const hasCompressedQueryParams = hasCompressedRest || hasCompressedMav;
+            const hasCompressedCrest = crestParam && !crestParam.includes('_') && crestParam.length === 6;
+            const hasCompressedMcv = mcvParam && !mcvParam.includes(':');
+            const hasCompressedQueryParams = hasCompressedRest || hasCompressedMav || hasCompressedCrest || hasCompressedMcv;
             
             if (hasHashParams || hasCompressedQueryParams) {
                 try {
