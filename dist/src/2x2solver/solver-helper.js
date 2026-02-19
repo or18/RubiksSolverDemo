@@ -118,6 +118,7 @@ class Solver2x2Helper {
             resolve();
           } else if (msg.type === 'solution') {
             if (msg.data && this.currentSolutions) {
+              this.currentSolutions.push(msg.data);
               // Call onSolution callback immediately (streaming)
               if (this.currentSolutionCallback) {
                 this.currentSolutionCallback(msg.data);
@@ -146,8 +147,7 @@ class Solver2x2Helper {
               this.currentReject = null;
               this.currentSolutions = [];
               this.currentProgressCallback = null;
-              this.currentSolutions = [];
-              this.currentProgressCallback = null;
+              this.currentSolutionCallback = null;
             }
           }
         };
