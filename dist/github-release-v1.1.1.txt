@@ -1,0 +1,60 @@
+# 2x2 Solver v1.1.1 - Web Streaming Support
+
+This release adds real-time solution streaming to the browser helper and simplifies CDN integration.
+
+## ✨ New Features
+
+### Real-time Solution Streaming for Web
+The browser helper (`solver-helper.js`) now supports the `onSolution` callback, enabling real-time solution streaming just like the Node.js version:
+
+```javascript
+const solutions = await helper.solve(scramble, {
+  maxSolutions: 5,
+  allowedMovesArray: ['U', 'U2', "U'", 'R', 'R2', "R'", 'F', 'F2', "F'"],
+  onProgress: (depth) => console.log(`Depth: ${depth}`),
+  onSolution: (solution) => {
+    console.log(`Found: ${solution}`);
+    displaySolution(solution); // Update UI immediately!
+  }
+});
+```
+
+Benefits:
+- Solutions appear immediately as they're found
+- Enables responsive UIs with live updates
+- API consistency between Node.js and browser environments
+
+### Auto-loading tools.js from CDN
+When loading `solver-helper.js` from CDN, `tools.js` is now automatically loaded:
+
+```html
+<!-- Just load solver-helper.js - tools.js loads automatically! -->
+<script src="https://cdn.jsdelivr.net/gh/or18/RubiksSolverDemo@2x2-solver-v1.1.1/dist/src/2x2solver/solver-helper.js"></script>
+```
+
+No need to manually add a `<script>` tag for `tools.js` anymore!
+
+## 🐛 Bug Fixes
+
+- Fixed missing `currentSolutions.push()` in solution handler - solutions now correctly accumulate in the results array
+- Removed duplicate cleanup code in error handler
+
+## 📦 CDN Distribution
+
+```
+https://cdn.jsdelivr.net/gh/or18/RubiksSolverDemo@2x2-solver-v1.1.1/dist/src/2x2solver/solver-helper.js
+https://cdn.jsdelivr.net/gh/or18/RubiksSolverDemo@2x2-solver-v1.1.1/dist/src/2x2solver/worker_persistent.js
+https://cdn.jsdelivr.net/gh/or18/RubiksSolverDemo@2x2-solver-v1.1.1/dist/src/2x2solver/solver.js
+https://cdn.jsdelivr.net/gh/or18/RubiksSolverDemo@2x2-solver-v1.1.1/dist/src/2x2solver/solver.wasm
+https://cdn.jsdelivr.net/gh/or18/RubiksSolverDemo@2x2-solver-v1.1.1/dist/src/utils/tools.js
+```
+
+## 🔄 Compatibility
+
+Fully backward compatible with v1.1.0 and v1.0.0. Existing code continues to work without changes.
+
+## 📚 Documentation
+
+- API Reference: [dist/src/2x2solver/README.md](dist/src/2x2solver/README.md)
+- Tools API: [dist/src/utils/TOOLS_API.md](dist/src/utils/TOOLS_API.md)
+- Full Release Notes: [dist/RELEASE_NOTE.md](dist/RELEASE_NOTE.md)

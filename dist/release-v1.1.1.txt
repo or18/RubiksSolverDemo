@@ -1,0 +1,14 @@
+2x2 Solver v1.1.1 - Web Streaming Support
+
+Improvements:
+- Real-time solution streaming for web (onSolution callback)
+- Auto-loading tools.js from CDN (no manual import needed)
+- API consistency between Node.js and browser
+
+Bug Fixes:
+- Fixed solution array accumulation in streaming mode
+- Cleaned up duplicate error handler code
+
+CDN: https://cdn.jsdelivr.net/gh/or18/RubiksSolverDemo@2x2-solver-v1.1.1/dist/src/2x2solver/
+
+Backward compatible with v1.1.0 and v1.0.0
