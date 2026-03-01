@@ -1,5 +1,6 @@
 #include <emscripten/bind.h>
 #include <emscripten.h>
+#include <emscripten/em_js.h>
 #include <iostream>
 #include <vector>
 #include <algorithm>
@@ -11,6 +12,22 @@
 EM_JS(void, update, (const char *str), {
 	postMessage(UTF8ToString(str));
 });
+
+// --- Cancel support (ASYNCIFY) ---
+// solver_yield: suspends WASM via ASYNCIFY so the JS event loop can process
+//               pending cancel messages (e.g. Module._cancelRequested = true)
+EM_ASYNC_JS(void, solver_yield, (), {
+	await new Promise(function(resolve) { setTimeout(resolve, 0); });
+});
+// solver_is_cancelled: fast synchronous read of the cancel flag (no yield)
+EM_JS(int, solver_is_cancelled, (), {
+	return (Module._cancelRequested === true) ? 1 : 0;
+});
+// solver_clear_cancel: reset the cancel flag at the start of each solve
+EM_JS(void, solver_clear_cancel, (), {
+	Module._cancelRequested = false;
+});
+// --- End cancel support ---
 
 struct State
 {
@@ -473,9 +490,22 @@ void create_prune_table(const std::vector<int> &table1, const std::vector<int> &
 	int num_old = 24;
 	for (int d = 0; d < prune_depth; ++d)
 	{
+		// Yield to JS event loop once per depth so cancel messages can be processed
+		solver_yield();
+		if (solver_is_cancelled())
+		{
+			prune_table.assign(88179840, 255); // reset partial table
+			return;
+		}
 		next_d = d + 1;
 		for (int i = 0; i < size; ++i)
 		{
+			// Check cancel every 100,000 iterations (fast, no yield)
+			if (i % 100000 == 0 && solver_is_cancelled())
+			{
+				prune_table.assign(88179840, 255); // reset partial table
+				return;
+			}
 			if (prune_table[i] == d)
 			{
 				index1_tmp = (i / size2) * 27;
@@ -538,6 +568,18 @@ struct search
 
 	bool depth_limited_search(int arg_index1, int arg_index2, int depth, int aprev)
 	{
+		// Near-root cancel check: yield at depth >= 9 so the Worker's cancel message
+		// can actually be processed (ASYNCIFY suspends WASM → JS sets _cancelRequested).
+		// Once the flag is set, recursion unwinds naturally via the `return true` chain:
+		//   else if (depth_limited_search(...)) { return true; }
+		// For depth < 9, no extra check is needed: the flag propagates upward on the
+		// next depth-9+ call, and start_search_persistent's d-loop catches the rest.
+		// Note: the prune table is NOT cleared here.
+		if (depth >= 9)
+		{
+			solver_yield();
+			if (solver_is_cancelled()) return true;
+		}
 		for (int i : move_restrict)
 		{
 			if (ma2[aprev + i] || mc_tmp[i] >= mc[i])
@@ -721,6 +763,7 @@ struct search
 		{
 			prune_table.assign(88179840, 255); // Reset prune table for a new search
 			create_prune_table(cp_move_table, co_move_table, prune_table, move_restrict_tmp, prune_depth);
+			if (solver_is_cancelled()) { update("Search cancelled."); return; }
 			prune_table_initialized = true;
 		}
 		else
@@ -729,7 +772,9 @@ struct search
 			// (prune_table[0] could be 255 even after initialization depending on move_restrict_tmp)
 			if (!prune_table_initialized)
 			{
+				prune_table.assign(88179840, 255); // Reset before building (safe for partial abort)
 				create_prune_table(cp_move_table, co_move_table, prune_table, move_restrict_tmp, prune_depth);
+				if (solver_is_cancelled()) { update("Search cancelled."); return; }
 				prune_table_initialized = true;
 			}
 		}
@@ -764,6 +809,9 @@ struct search
 			index2 *= 27;
 			for (int d = 1; d <= max_length; d++)
 			{
+				// Yield once per search depth to allow cancel messages to be processed
+				solver_yield();
+				if (solver_is_cancelled()) { update("Search cancelled."); return; }
 				tmp = "depth=" + std::to_string(d);
 				update(tmp.c_str());
 				if (depth_limited_search(index1, index2, d, aprev_tmp * 27))
@@ -1000,6 +1048,7 @@ struct PersistentSolver2x2
 	// Uses start_search_persistent with reuse=true to preserve prune table
 	void solve(std::string scramble, std::string rotation, int num, int len, int prune, std::string move_restrict_string, std::string post_alg, std::string ma2_string, std::string mcString)
 	{
+		solver_clear_cancel(); // Reset cancel flag at the start of each solve
 		std::vector<bool> ma2;
 		std::vector<int> mc;
 		std::vector<std::string> move_restrict;

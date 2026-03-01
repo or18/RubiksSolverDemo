@@ -1,5 +1,48 @@
 # 2x2 Persistent Solver — Release Notes
 
+## v1.2.0 (2026-03-01)
+
+**New Features:**
+
+- **Cooperative Cancel**: Ongoing solves can now be interrupted at any time via `helper.cancel()`
+  - Works for both browser (`Solver2x2Helper`) and Node.js (`Solver2x2HelperNode`) helper APIs
+  - `solve()` resolves immediately with partial solutions collected up to the cancellation point
+  - Optional `onCancel` callback receives the partial solution array
+  - Direct Worker users can send `{ type: 'cancel' }` to the Worker; it responds with `{ type: 'cancelled' }`
+
+**Technical Changes:**
+
+- **Asyncify-based cancel mechanism**: `solver_yield()` (EM_ASYNC_JS) suspends WASM execution for one JS event-loop tick, allowing the Worker's message handler to set `Module._cancelRequested = true`
+  - Cancel checks at `depth >= 9` in `depth_limited_search` (shallower depths unwind via existing `return true` chain)
+  - Per-depth cancel check in `create_prune_table` (partial table reset on cancel)
+  - Post-table-build and per-iteration cancel checks in `start_search_persistent`
+  - `solver_clear_cancel()` called at the start of every `solve()` to avoid flag bleed-over
+- **Compile flag update**: `-s ASYNCIFY=1` added; `-flto` removed (incompatible with Asyncify)
+- **WASM binary size increase**: side-effect of Asyncify instrumentation
+  - `solver.js`: ~45KB → ~51KB
+  - `solver.wasm`: ~195KB → ~344KB
+
+**API Additions:**
+
+| Addition | Description |
+|----------|-------------|
+| `helper.cancel()` | Cancels the current solve; `solve()` resolves with partial solutions |
+| `options.onCancel` | Callback `(partialSolutions: string[]) => void` called on cancel |
+| Worker `{ type: 'cancel' }` (to) | Cancels the ongoing search inside the Worker |
+| Worker `{ type: 'cancelled' }` (from) | Worker response after cancel completes |
+
+**CDN Distribution:**
+
+- CDN: `https://cdn.jsdelivr.net/gh/or18/RubiksSolverDemo@2x2-solver-v1.2.0/dist/src/2x2solver/`
+
+**Compatibility:**
+
+- Fully backward compatible with v1.1.x and v1.0.0
+- Existing code continues to work without changes
+- `cancel()` and `onCancel` are purely additive; unused options have no effect
+
+---
+
 ## v1.1.1 (2026-02-19)
 
 **Improvements:**

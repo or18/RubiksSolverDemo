@@ -80,9 +80,10 @@ class Solver2x2HelperNode {
    * @param {string} [options.moveCount=''] - Move count restrictions
    * @param {Function} [options.onProgress] - Progress callback: (depth: number) => void
    * @param {Function} [options.onSolution] - Solution callback: (solution: string) => void
-   * @returns {Promise<string[]>} Array of solution strings
-   */
-  async solve(scramble, options = {}) {
+ * @param {Function} [options.onCancel] - Cancel callback: (partialSolutions: string[]) => void
+ * @returns {Promise<string[]>} Array of solutions found before cancellation or completion
+ */
+async solve(scramble, options = {}) {
     if (!this.ready) {
       throw new Error('Helper not initialized. Call init() first.');
     }
@@ -99,8 +100,7 @@ class Solver2x2HelperNode {
       moveCount = '',
       onProgress = null,
       onSolution = null,
-      // new structured options (optional)
-      // `allowedMovesArray`: allowed moves as an array (or string)
+      onCancel = null,
       // `moveOrderArray`: move order pairs array
       // `moveCountMap`: move count mapping object
       allowedMovesArray = null,
@@ -119,6 +119,11 @@ class Solver2x2HelperNode {
           if (msg === 'Search finished.') {
             // Restore original postMessage
             globalThis.postMessage = originalPostMessage;
+            resolve(solutions);
+          } else if (msg === 'Search cancelled.') {
+            // Cancelled: resolve with whatever solutions were found so far
+            globalThis.postMessage = originalPostMessage;
+            if (onCancel) onCancel(solutions.slice());
             resolve(solutions);
           } else if (msg.startsWith('Error')) {
             // Restore original postMessage
@@ -197,6 +202,18 @@ class Solver2x2HelperNode {
     });
   }
   
+  /**
+   * Cancel the currently running solve, if any.
+   * The corresponding solve() Promise will resolve with whatever solutions
+   * were found so far, and the onCancel callback (if provided) will be called.
+   * Has no effect if no solve is in progress.
+   */
+  cancel() {
+    if (this.Module) {
+      this.Module._cancelRequested = true;
+    }
+  }
+
   /**
    * Reset the solver instance.
    * This will clear the pruning table and create a new solver.

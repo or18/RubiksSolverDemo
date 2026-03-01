@@ -12,6 +12,7 @@ This library provides WebAssembly-compiled cube solvers with persistent state op
 - 🎯 **Promise-based API** - Modern async/await patterns
 - 🔧 **Web Worker** - Non-blocking UI in browser applications
 - 📦 **Universal Binary** - Single WASM build for Node.js + Browser
+- 🛑 **Cooperative Cancel** - Stop an ongoing solve at any time; partial solutions already found are returned
 
 ---
 
@@ -52,7 +53,10 @@ All examples use the **Helper API** - a Promise-based wrapper that handles Web W
         maxSolutions: 5,
         maxLength: 11,
         pruneDepth: 1
+        // onCancel: (partial) => console.log('Cancelled, solutions so far:', partial)
       });
+      // To cancel while solving, call helper.cancel() from another event handler.
+      // solve() resolves immediately with partial solutions found so far.
       
       // Display results
       document.getElementById('output').innerHTML = 
@@ -84,6 +88,8 @@ async function batchSolve() {
   console.log('✅ Solver initialized\n');
   
   // Solve multiple scrambles (table persists)
+  // To cancel an ongoing solve: call helper.cancel()
+  // → solve() resolves immediately with partial solutions found so far
   const scrambles = [
     "R U R' U'",
     "R2 U2",
@@ -401,6 +407,7 @@ The top-level `dist/TROUBLESHOOTING.md` contains cross-solver, practical trouble
 | Worker not found error | Use Helper API (auto-detection) |
 | Browser hanging | Use Web Worker (Helper API) |
 | Solutions not found | Increase `maxLength`, check `allowedMoves` |
+| Need to cancel a solve | Call `helper.cancel()` — returns partial solutions found so far |
 
 ---
 

@@ -27,6 +27,7 @@
  */
 
 let persistentSolver = null;
+let wasmModule = null; // Save Module instance for cancel support
 
 // CRITICAL: Save original postMessage before overwriting
 const originalPostMessage = self.postMessage.bind(self);
@@ -37,6 +38,11 @@ globalThis.postMessage = function(message) {
 		if (message === 'Search finished.') {
 			originalPostMessage({
 				type: 'done',
+				data: null
+			});
+		} else if (message === 'Search cancelled.') {
+			originalPostMessage({
+				type: 'cancelled',
 				data: null
 			});
 		} else if (message.startsWith('Error')) {
@@ -89,6 +95,7 @@ createModule({
 	}
 }).then(Module => {
 	try {
+		wasmModule = Module; // Save for cancel support
 		persistentSolver = new Module.PersistentSolver2x2();
 		
 		originalPostMessage({
@@ -117,8 +124,15 @@ self.onmessage = async function(event) {
 			});
 			return;
 		}
-		
+
+		// Handle cancel request from helper
 		const data = event.data;
+		if (data && data.type === 'cancel') {
+			if (wasmModule) {
+				wasmModule._cancelRequested = true;
+			}
+			return;
+		}
 		
 		// Extract parameters with defaults
 		const scramble = data.scramble || data.scr || '';

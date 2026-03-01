@@ -53,7 +53,7 @@ Production files ready for release:
 # Core Implementation
 solver.cpp              # C++ source with PersistentSolver2x2
 solver.js               # Compiled WASM module (universal)
-solver.wasm             # WebAssembly binary (~195KB)
+solver.wasm             # WebAssembly binary (~344KB)
 compile.sh              # Build script
 
 # Web Worker
@@ -141,8 +141,8 @@ cd dist/src/2x2solver
 
 # Verify output
 ls -lh solver.js solver.wasm
-# solver.js  ~45KB
-# solver.wasm ~195KB
+# solver.js  ~51KB
+# solver.wasm ~344KB
 ```
 
 **Requirements**:
@@ -176,7 +176,7 @@ Use this when creating GitHub releases (copy to release description):
 
 ## 🔧 Technical Specifications
 
-- **Compiled with**: Emscripten 3.1.69 (MODULARIZE mode)
+- **Compiled with**: Emscripten 3.1.69 (MODULARIZE + ASYNCIFY mode)
 - **Target**: WebAssembly + JavaScript glue code
 - **Prune Depth**: 0-20 (default: 1 for URF)
 - **Max Solutions**: 1 to ∞ (default: 3)

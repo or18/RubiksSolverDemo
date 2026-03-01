@@ -214,6 +214,68 @@ solver.solve(scramble2, ...);  // ✅ Reuses table
 
 ---
 
+### 5. Cancel Support Functions
+
+**Location**: Near top of file (after includes)
+
+```cpp
+// Suspend WASM execution for one JS event loop tick (requires ASYNCIFY)
+EM_ASYNC_JS(void, solver_yield, (), {
+  await new Promise(function(resolve) { setTimeout(resolve, 0); });
+});
+// Sync flag check (no suspension needed)
+EM_JS(int, solver_is_cancelled, (), {
+  return (Module._cancelRequested === true) ? 1 : 0;
+});
+// Reset flag at the start of each solve
+EM_JS(void, solver_clear_cancel, (), {
+  Module._cancelRequested = false;
+});
+```
+
+**Why ASYNCIFY?**  
+`solver_yield()` uses `EM_ASYNC_JS`, which requires `-s ASYNCIFY=1` at compile time.  
+Calling `solver_yield()` suspends the WASM execution stack and yields to the JS event loop for a single `setTimeout(0)` tick. This allows the Worker `onmessage` handler to run and set `Module._cancelRequested = true`, which is then detected on the next `solver_is_cancelled()` call.
+
+> **Note**: `-flto` must be removed when adding `-s ASYNCIFY=1` (they are incompatible).
+
+**Cancel flow in `depth_limited_search` (depth ≥ 9 only)**:
+
+```cpp
+if (depth >= 9)
+{
+    solver_yield();                          // yield to JS event loop
+    if (solver_is_cancelled()) return true;  // abort this subtree
+}
+// Shallower depths: no yield needed.
+// `return true` propagates upward via the existing early-exit chain in each recursive caller.
+```
+
+The d-loop in `start_search_persistent` checks `solver_is_cancelled()` at the top of each iteration,
+skipping all remaining depths once cancel fires.
+
+**Cancel flow in `create_prune_table`**:
+
+```cpp
+// Per-depth yield (outer loop)
+solver_yield();
+if (solver_is_cancelled()) {
+    prune_table.assign(88179840, 255);  // reset — partial table is unusable
+    return;
+}
+// Inner loop: lightweight sync check every 100,000 iterations
+if (i % 100000 == 0 && solver_is_cancelled()) { prune_table.assign(88179840, 255); return; }
+```
+
+`prune_table_initialized` is **not** set to `true` in the cancel path, so the next `solve()` call rebuilds from scratch.
+
+**`start_search_persistent` cancel checks**: post-table-build check + per-depth `solver_yield()` + flag check in the d-loop.
+
+**`PersistentSolver2x2::solve()` reset**: calls `solver_clear_cancel()` at the very start of each solve,
+so previous cancel flags never bleed into a new request.
+
+---
+
 ## Persistent Architecture
 
 ### Memory Lifecycle
@@ -285,7 +347,7 @@ struct search {
 em++ solver.cpp -o solver.js \
   -O3 \                         # Maximum optimization
   -msimd128 \                   # SIMD vectorization
-  -flto \                       # Link-time optimization
+  -s ASYNCIFY=1 \               # Asyncify support (required for cooperative cancel; incompatible with -flto)
   -s TOTAL_MEMORY=150MB \       # Fixed memory (sufficient for 84MB table)
   -s WASM=1 \                   # Enable WebAssembly
   -s MODULARIZE=1 \             # ⬅️ Factory function pattern
@@ -588,6 +650,8 @@ let currentPostMessageHandler = (msg) => {
     postMessage({ type: 'depth', data: msg });
   } else if (msg === 'Search finished.') {
     postMessage({ type: 'done' });
+  } else if (msg === 'Search cancelled.') {
+    postMessage({ type: 'cancelled' });
   } else if (msg !== '') {
     postMessage({ type: 'solution', data: msg });
   }
@@ -606,7 +670,9 @@ const baseURL = scriptPath.substring(0, scriptPath.lastIndexOf('/') + 1);
 
 importScripts(baseURL + 'solver.js');
 
+let wasmModule = null;
 createModule().then(Module => {
+  wasmModule = Module;
   solver = new Module.PersistentSolver2x2();
   postMessage({ type: 'ready' });
 });
@@ -615,6 +681,12 @@ createModule().then(Module => {
 3. **Message Handler:**
 ```javascript
 self.onmessage = function(event) {
+  // Cancel request
+  if (event.data && event.data.type === 'cancel') {
+    if (wasmModule) wasmModule._cancelRequested = true;
+    return;
+  }
+
   const params = event.data;
   
   try {
@@ -718,6 +790,11 @@ class Solver2x2Helper {
       this.currentResolve(this.currentSolutions);  // ✅ Resolve Promise
     } else if (msg.type === 'error') {
       this.currentReject(new Error(msg.data));     // ✅ Reject Promise
+    } else if (msg.type === 'cancelled') {
+      // Cancelled: resolve with partial solutions found so far
+      const partial = this.currentSolutions.slice();
+      if (this.currentCancelCallback) this.currentCancelCallback(partial);
+      this.currentResolve(partial);
     } else if (msg.type === 'depth') {
       if (this.currentProgressCallback) {
         this.currentProgressCallback(msg.data);
@@ -801,12 +878,15 @@ constructor(workerPath = null) {
 3. **Created `PersistentSolver2x2` struct** - Public API for persistence
 4. **Fixed `move_restrict` accumulation bug** - Clear vector each solve
 5. **Added Emscripten bindings** - Export `PersistentSolver2x2` class
+6. **Added cancel support functions** - `solver_yield()` (ASYNCIFY), `solver_is_cancelled()`, `solver_clear_cancel()`
+7. **Cancel hooks throughout search** - `depth_limited_search`, `create_prune_table`, `start_search_persistent`
 
 ### Build System
 
 1. **MODULARIZE compilation** - Universal binary (Node + Browser + Worker)
 2. **Factory function pattern** - `createModule()` instead of global `Module`
-3. **Optimized flags** - `-O3 -msimd128 -flto` for maximum performance
+3. **Optimized flags** - `-O3 -msimd128` for maximum performance
+4. **`-flto` removed, `-s ASYNCIFY=1` added** - Required for `solver_yield()` / `EM_ASYNC_JS` (incompatible with `-flto`)
 
 ### JavaScript Wrapper
 
@@ -815,6 +895,9 @@ constructor(workerPath = null) {
 3. **solver-helper-node.js** - Promise-based API (Node.js)
 4. **CDN support** - Auto-detection + Blob URL for CORS bypass
 5. **Cache busting** - Propagation from helper → worker → wasm
+6. **Cancel support**: `{type:'cancel'}` Worker message, `{type:'cancelled'}` Worker response
+7. **`cancel()` method** on both helper variants (browser + Node.js); posts `{type:'cancel'}` to worker
+8. **`onCancel` callback** option for `solve()` — called with partial solutions on cancel
 
 ### Documentation
 
@@ -842,6 +925,15 @@ When creating persistent versions of other solvers (cross, eocross, pairing, etc
 - [ ] Override `globalThis.postMessage` in Worker
 - [ ] Test with demo.html (local + CDN)
 - [ ] Test batch solving (verify table reuse)
+- [ ] Add `solver_yield()` / `solver_is_cancelled()` / `solver_clear_cancel()` functions (`EM_ASYNC_JS`/`EM_JS`; requires `-s ASYNCIFY=1`)
+- [ ] Add `depth >= N` cancel yield+check in the recursive depth-limited search function
+- [ ] Add cancel yield+check in prune table build loop (per-depth + inner sync check); reset partial table on cancel
+- [ ] Call `solver_clear_cancel()` at the start of each solve entry point
+- [ ] Add `{type:'cancel'}` handler in `worker_persistent.js` (sets `wasmModule._cancelRequested = true`)
+- [ ] Emit `{type:'cancelled'}` in response to `'Search cancelled.'` postMessage string
+- [ ] Add `cancel()` method to Helper (browser + Node.js)
+- [ ] Add `onCancel` option to `solve()` in Helper
+- [ ] Remove `-flto` and add `-s ASYNCIFY=1` in `compile.sh`
 
 ### Common Pitfalls
 

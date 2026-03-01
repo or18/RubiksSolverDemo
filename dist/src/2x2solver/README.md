@@ -103,6 +103,7 @@ const solutions = await helper.solve(scramble, options);
 //   moveCount?: string (default: '')
 //   onProgress?: (depth: string) => void
 //   onSolution?: (solution: string) => void
+//   onCancel?: (partialSolutions: string[]) => void  // Called when solve() is cancelled via helper.cancel()
 // }
 
 // Structured helper options (preferred for programmatic use):
@@ -116,6 +117,7 @@ const solutions = await helper.solve(scramble, options);
 //     - Object mapping moves to allowed counts (e.g. { "F'": 0 }). The helper
 //       converts this to the worker `moveCount` (mcv) string.
 
+helper.cancel();     // Cancel ongoing solve (resolves with partial solutions found so far)
 helper.terminate();  // Clean up Worker
 ```
 
@@ -185,6 +187,9 @@ To Worker (postMessage):
   moveCount: string        // Optional (default: '')
 }
 
+// To cancel an ongoing solve:
+// { type: 'cancel' }
+
 // Helper-only structured inputs (accepted by `Solver2x2Helper` and converted into
 // the worker string fields above before posting):
 {
@@ -201,6 +206,7 @@ From Worker (onmessage):
 { type: 'depth', data: string }      // Search progress
 { type: 'done' }                     // Search complete
 { type: 'error', data: string }      // Error occurred
+{ type: 'cancelled' }                // Search was cancelled; partial solutions already sent via 'solution' messages
 ```
 
 ### CDN Usage (Browser)
@@ -316,7 +322,7 @@ dist/src/2x2solver/
 # Core Implementation
 solver.cpp              # C++ source with PersistentSolver2x2
 solver.js               # Compiled WASM module (universal)
-solver.wasm             # WebAssembly binary (~195KB)
+solver.wasm             # WebAssembly binary (~344KB)
 compile.sh              # Build script
 
 # Web Worker
@@ -374,8 +380,8 @@ cd dist/src/2x2solver
 ```
 
 This produces:
-- `solver.js` (~45KB) - Universal MODULARIZE module
-- `solver.wasm` (~195KB) - WebAssembly binary
+- `solver.js` (~51KB) - Universal MODULARIZE module
+- `solver.wasm` (~344KB) - WebAssembly binary
 
 **Single compilation works for**:
 - ✅ Node.js (CommonJS/ES6)
@@ -390,7 +396,7 @@ This produces:
 em++ solver.cpp -o solver.js \
   -O3 \
   -msimd128 \
-  -flto \
+  -s ASYNCIFY=1 \
   -s TOTAL_MEMORY=150MB \
   -s WASM=1 \
   -s MODULARIZE=1 \
@@ -401,7 +407,7 @@ em++ solver.cpp -o solver.js \
 **Flags**:
 - `-O3`: Maximum optimization
 - `-msimd128`: SIMD vectorization
-- `-flto`: Link-time optimization
+- `-s ASYNCIFY=1`: Asyncify support — enables cooperative cancel via `solver_yield()` (incompatible with `-flto`)
 - `-s TOTAL_MEMORY=150MB`: Fixed memory (sufficient for ~84MB pruning table)
 - `-s MODULARIZE=1`: Factory function pattern (clean API)
 - `-s EXPORT_NAME="createModule"`: Exports `createModule()` factory
@@ -433,7 +439,9 @@ const solutions = await helper.solve("R U R' U'", {
   maxSolutions: 5,
   onProgress: (depth) => console.log(`Searching depth ${depth}`),
   onSolution: (sol) => console.log(`Found: ${sol}`)
+  // onCancel: (partial) => console.log(`Cancelled, found: ${partial.length}`)
 });
+// helper.cancel() aborts the search and resolves with partial solutions.
 
 console.log(`Total: ${solutions.length} solutions`);
 helper.terminate();

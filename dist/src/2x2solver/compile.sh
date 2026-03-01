@@ -7,10 +7,10 @@ set -e
 echo "=== Compiling PersistentSolver2x2 with MODULARIZE ==="
 
 # Load Emscripten environment
-if [ -f "/workspaces/emsdk/emsdk_env.sh" ]; then
-    source /workspaces/emsdk/emsdk_env.sh
+if [ -f "$HOME/emsdk/emsdk_env.sh" ]; then
+    source "$HOME/emsdk/emsdk_env.sh"
 else
-    echo "Error: Emscripten SDK not found at /workspaces/emsdk"
+    echo "Error: Emscripten SDK not found at ~/emsdk"
     echo "Please install emsdk or adjust the path"
     exit 1
 fi
@@ -18,7 +18,8 @@ fi
 # Compile with MODULARIZE
 echo "Compiling solver.cpp..."
 em++ solver.cpp -o solver.js \
-  -O3 -msimd128 -flto \
+  -O3 -msimd128 \
+  -s ASYNCIFY=1 \
   -s TOTAL_MEMORY=150MB \
   -s WASM=1 \
   -s MODULARIZE=1 \

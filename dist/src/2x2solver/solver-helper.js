@@ -86,6 +86,7 @@ class Solver2x2Helper {
     this.currentSolutions = [];
     this.currentProgressCallback = null;
     this.currentSolutionCallback = null;
+    this.currentCancelCallback = null;
   }
   
   /**
@@ -134,20 +135,20 @@ class Solver2x2Helper {
           } else if (msg.type === 'done') {
             if (this.currentResolve) {
               this.currentResolve(this.currentSolutions);
-              this.currentResolve = null;
-              this.currentReject = null;
-              this.currentSolutions = [];
-              this.currentProgressCallback = null;
-              this.currentSolutionCallback = null;
+              this._clearCurrentState();
+            }
+          } else if (msg.type === 'cancelled') {
+            if (this.currentResolve) {
+              if (this.currentCancelCallback) {
+                this.currentCancelCallback(this.currentSolutions.slice());
+              }
+              this.currentResolve(this.currentSolutions);
+              this._clearCurrentState();
             }
           } else if (msg.type === 'error') {
             if (this.currentReject) {
               this.currentReject(new Error(msg.data));
-              this.currentResolve = null;
-              this.currentReject = null;
-              this.currentSolutions = [];
-              this.currentProgressCallback = null;
-              this.currentSolutionCallback = null;
+              this._clearCurrentState();
             }
           }
         };
@@ -181,7 +182,9 @@ class Solver2x2Helper {
    * @param {string} [options.moveOrder=''] - Custom move ordering
    * @param {string} [options.moveCount=''] - Move count restrictions
    * @param {Function} [options.onProgress] - Progress callback: (depth: number) => void
-   * @returns {Promise<string[]>} Array of solution strings
+   * @param {Function} [options.onSolution] - Solution callback: (solution: string) => void
+   * @param {Function} [options.onCancel] - Cancel callback: (partialSolutions: string[]) => void
+   * @returns {Promise<string[]>} Array of solutions found before completion or cancellation
    */
   async solve(scramble, options = {}) {
     if (!this.ready) {
@@ -204,6 +207,7 @@ class Solver2x2Helper {
       moveCount = '',
       onProgress = null,
       onSolution = null,
+      onCancel = null,
       // structured inputs (preferred)
       allowedMovesArray = null,
       moveOrderArray = null,
@@ -213,11 +217,12 @@ class Solver2x2Helper {
     this.currentSolutions = [];
     this.currentProgressCallback = onProgress;
     this.currentSolutionCallback = onSolution;
-    
+    this.currentCancelCallback = onCancel;
+
     return new Promise((resolve, reject) => {
       this.currentResolve = resolve;
       this.currentReject = reject;
-      
+
       // Prefer structured inputs and convert them to C++-expected strings using tools.js
       let tools = null;
       try {
@@ -269,6 +274,28 @@ class Solver2x2Helper {
   }
   
   /**
+   * Cancel the currently running solve, if any.
+   * The solve() Promise will resolve with whatever solutions were found so far,
+   * and the onCancel callback (if provided) will be called.
+   * Has no effect if no solve is in progress.
+   */
+  cancel() {
+    if (this.worker && this.currentResolve) {
+      this.worker.postMessage({ type: 'cancel' });
+    }
+  }
+
+  /** @private */
+  _clearCurrentState() {
+    this.currentResolve = null;
+    this.currentReject = null;
+    this.currentSolutions = [];
+    this.currentProgressCallback = null;
+    this.currentSolutionCallback = null;
+    this.currentCancelCallback = null;
+  }
+
+  /**
    * Terminate the worker and release resources.
    * After calling this, you cannot solve anymore unless you call init() again.
    */
@@ -277,11 +304,7 @@ class Solver2x2Helper {
       this.worker.terminate();
       this.worker = null;
       this.ready = false;
-      this.currentResolve = null;
-      this.currentReject = null;
-      this.currentSolutionCallback = null;
-      this.currentSolutions = [];
-      this.currentProgressCallback = null;
+      this._clearCurrentState();
     }
   }
   
