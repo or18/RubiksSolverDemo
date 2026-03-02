@@ -29,6 +29,20 @@ EM_JS(void, solver_clear_cancel, (), {
 });
 // --- End cancel support ---
 
+// Counter for throttled cancel checks in depth_limited_search.
+// Reset at the start of each start_search_persistent call.
+static int g_cancel_check_counter = 0;
+// Bitmask controlling cancel check frequency: check fires when
+// (++counter & mask) == 0, i.e. every (mask+1) nodes.
+// Benchmarks on this device show the overhead threshold is around
+// 4096-8192 nodes/check; below that solver_is_cancelled() calls add ~6%.
+// Default 0x7FFF = every 32768 nodes gives 2x safety margin here and
+// is still adequate on devices ~4x faster (threshold shifts proportionally
+// because solver_is_cancelled() JS<->WASM boundary cost is fixed per call).
+// Cancel responsiveness is dominated by the d-loop solver_yield() (once per
+// search depth), not by this mask, so increasing it has minimal impact.
+static int g_cancel_check_mask = 0x7FFF;
+
 struct State
 {
 	std::vector<int> cp;
@@ -490,22 +504,9 @@ void create_prune_table(const std::vector<int> &table1, const std::vector<int> &
 	int num_old = 24;
 	for (int d = 0; d < prune_depth; ++d)
 	{
-		// Yield to JS event loop once per depth so cancel messages can be processed
-		solver_yield();
-		if (solver_is_cancelled())
-		{
-			prune_table.assign(88179840, 255); // reset partial table
-			return;
-		}
 		next_d = d + 1;
 		for (int i = 0; i < size; ++i)
 		{
-			// Check cancel every 100,000 iterations (fast, no yield)
-			if (i % 100000 == 0 && solver_is_cancelled())
-			{
-				prune_table.assign(88179840, 255); // reset partial table
-				return;
-			}
 			if (prune_table[i] == d)
 			{
 				index1_tmp = (i / size2) * 27;
@@ -568,17 +569,19 @@ struct search
 
 	bool depth_limited_search(int arg_index1, int arg_index2, int depth, int aprev)
 	{
-		// Near-root cancel check: yield at depth >= 9 so the Worker's cancel message
-		// can actually be processed (ASYNCIFY suspends WASM → JS sets _cancelRequested).
-		// Once the flag is set, recursion unwinds naturally via the `return true` chain:
-		//   else if (depth_limited_search(...)) { return true; }
-		// For depth < 9, no extra check is needed: the flag propagates upward on the
-		// next depth-9+ call, and start_search_persistent's d-loop catches the rest.
+		// Counter-based cancel check: avoids ASYNCIFY overhead by calling only
+		// solver_is_cancelled() (sync), throttled to every (g_cancel_check_mask+1)
+		// nodes at depth >= 9.  Default mask 0x7FFF = every 32768 nodes.
+		// The d-loop in start_search_persistent calls solver_yield() once per depth
+		// level, giving the JS event loop an opportunity to set _cancelRequested;
+		// once set, the flag propagates instantly via the sync reads here.
 		// Note: the prune table is NOT cleared here.
 		if (depth >= 9)
 		{
-			solver_yield();
-			if (solver_is_cancelled()) return true;
+			if ((++g_cancel_check_counter & g_cancel_check_mask) == 0)
+			{
+				if (solver_is_cancelled()) return true;
+			}
 		}
 		for (int i : move_restrict)
 		{
@@ -762,6 +765,8 @@ struct search
 		if (!reuse)
 		{
 			prune_table.assign(88179840, 255); // Reset prune table for a new search
+			solver_yield();
+			if (solver_is_cancelled()) { update("Search cancelled."); return; }
 			create_prune_table(cp_move_table, co_move_table, prune_table, move_restrict_tmp, prune_depth);
 			if (solver_is_cancelled()) { update("Search cancelled."); return; }
 			prune_table_initialized = true;
@@ -773,6 +778,8 @@ struct search
 			if (!prune_table_initialized)
 			{
 				prune_table.assign(88179840, 255); // Reset before building (safe for partial abort)
+				solver_yield();
+				if (solver_is_cancelled()) { update("Search cancelled."); return; }
 				create_prune_table(cp_move_table, co_move_table, prune_table, move_restrict_tmp, prune_depth);
 				if (solver_is_cancelled()) { update("Search cancelled."); return; }
 				prune_table_initialized = true;
@@ -807,6 +814,7 @@ struct search
 		{
 			index1 *= 27;
 			index2 *= 27;
+			g_cancel_check_counter = 0;  // reset before each search
 			for (int d = 1; d <= max_length; d++)
 			{
 				// Yield once per search depth to allow cancel messages to be processed
@@ -1060,9 +1068,18 @@ struct PersistentSolver2x2
 	}
 };
 
+// Set the bitmask used for cancel-check frequency in depth_limited_search.
+// The check fires when (++counter & mask) == 0, i.e. every (mask+1) nodes.
+// Use 0x7FFFFFFF to effectively disable the check (benchmark baseline).
+void setCancelCheckMask(int mask)
+{
+	g_cancel_check_mask = mask;
+}
+
 EMSCRIPTEN_BINDINGS(my_module)
 {
 	emscripten::function("solve", &solve);
+	emscripten::function("setCancelCheckMask", &setCancelCheckMask);
 	
 	// Export persistent solver struct for library use
 	emscripten::class_<PersistentSolver2x2>("PersistentSolver2x2")

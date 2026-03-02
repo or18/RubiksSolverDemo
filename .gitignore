@@ -54,6 +54,7 @@ dist/*/backups/
 dist/*/test/
 dist/src/*/backups/
 dist/src/*/test/
+dist/src/*/plans/
 dist/plans/
 
 .github/

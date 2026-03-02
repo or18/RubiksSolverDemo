@@ -10,6 +10,9 @@ This guide covers common issues encountered when using the solvers distributed u
 4. [Browser Compatibility](#browser-compatibility)
 5. [Build and Compilation Errors](#build-and-compilation-errors)
 6. [C++ Implementation Bugs (notes)](#c-implementation-bugs)
+7. [Multi-Solver Worker Issues (crossSolver)](#multi-solver-worker-issues-crosssolver)
+   - [Problem 7: Slot instances and caching](#problem-7-do-i-need-a-separate-class-instance-or-separate-worker-for-each-slot-pair)
+   - [Problem 8: Cancel behavior and timing](#problem-8-cancel-does-not-take-effect-quickly--cancel-during-prune-table-build)
 
 ---
 
@@ -354,7 +357,7 @@ const baseURL = scriptPath.substring(0, scriptPath.lastIndexOf('/') + 1);`,
 - Modifies code to use CDN paths for dependencies
 - Creates Worker from Blob URL (same-origin, allowed)
 
-See [demo.html](demo.html) lines 470-530 for complete implementation.
+See [demo.html](./src/2x2solver/demo.html) lines 470-530 for complete implementation.
 
 ### Problem 2: WASM Loading from CDN Fails
 
@@ -623,7 +626,7 @@ void start_search_persistent(..., bool reuse = false) {
 
 **Impact:** Performance improved from minutes to seconds for multi-solve scenarios.
 
-**Reference:** [IMPLEMENTATION_NOTES.md](IMPLEMENTATION_NOTES.md) for full details.
+**Reference:** [IMPLEMENTATION_NOTES.md](./src/2x2solver/IMPLEMENTATION_NOTES.md) for full details.
 
 ### Problem 2: prune_table_initialized Flag Not Set
 
@@ -764,6 +767,91 @@ console.timeEnd('solve');
 
 ---
 
+## Multi-Solver Worker Issues (crossSolver)
+
+This section covers problems specific to `dist/src/crossSolver/` which uses a single Web Worker (`worker-persistent.js`) serving eight solver classes.
+
+### Problem 7: Do I Need a Separate Class Instance (or Separate Worker) for Each Slot Pair?
+
+**Question:** `solveXcross` has a `slot` parameter (0–3). Do I need to create a separate `CrossSolverHelper` or launch a new Worker for each slot?
+
+**Answer:** No. A single `CrossSolverHelper` instance (and the single Worker it manages) covers all solver types and slot combinations.
+
+`worker-persistent.js` maintains an internal cache of C++ instances keyed by `"SolverType:slot1:slot2:..."`. For example:
+
+| First call | Cache key | Action |
+|---|---|---|
+| `solveXcross(scr, 0, ...)` | `"Xcross:0"` | Creates `PersistentXcrossSolver(0)`, builds prune table |
+| `solveXcross(scr, 0, ...)` | `"Xcross:0"` | Reuses cached instance — **fast** |
+| `solveXcross(scr, 1, ...)` | `"Xcross:1"` | Creates new `PersistentXcrossSolver(1)`, builds prune table |
+| `solveXxcross(scr, 0, 1, ...)` | `"Xxcross:0:1"` | Creates new `PersistentXxcrossSolver(0,1)`, builds table |
+
+**Memory implications:** Each unique combination holds its own prune table in WASM heap memory for the lifetime of the Worker. Calling all 4 Xcross slots allocates 4 tables (~5.5 MB each). If memory is tight, terminate the helper and create a new one to free all tables.
+
+**When to use separate Workers:** Only if you need true parallel execution (one Worker per CPU core) or want to isolate a failure in one solver from affecting others. In that case, create multiple `CrossSolverHelper` instances — each manages its own Worker and WASM module.
+
+---
+
+### Problem 8: Cancel Does Not Take Effect Quickly / Cancel During Prune-Table Build
+
+#### 8a: Cancel fires slowly during prune-table build (crossSolver)
+
+**Symptom:**
+```javascript
+const helper = new CrossSolverHelper();
+await helper.init();
+setTimeout(() => helper.cancel(), 50);    // cancel after 50 ms
+const sols = await helper.solveXxxcross(scramble, { maxSolutions: 1 });
+// Promise resolves after several seconds, not after 50 ms
+```
+
+**Cause:** In `crossSolver`, `solver_yield()` (the ASYNCIFY yield point that allows the Worker message loop to detect a cancel) is **not** placed inside `create_prune_table`. This is a deliberate BFS optimization (see `crossSolver/IMPLEMENTATION_NOTES.md` §6). As a result, a cancel request posted while the pruning table is being built **will not take effect until the BFS finishes**.
+
+Approximate prune-table build times (Node.js WASM):
+
+| Solver | Build time |
+|---|---|
+| Cross | ~50 ms |
+| Xcross | ~870 ms |
+| Xxcross | ~2–4 s |
+| Xxxcross / Xxxxcross / LL / LLAUF | ~5–32 s |
+
+**Note:** Once the prune table is already built (second and subsequent calls with the same solver/slot), cancel fires quickly — during the IDA\* search phase, `solver_yield()` is called at the start of each depth iteration.
+
+**Workaround:** If you need fast cancel responsiveness during a long prune-table build, consider:
+1. Pre-warming the solver at application startup (`await helper.init()` is not enough — send one dummy solve to trigger table construction before the user fires real solves).
+2. Choosing a solver/slot combination whose table is already built.
+
+#### 8b: Cancel in 2x2solver is faster during BFS
+
+In `2x2solver`, `solver_yield()` IS still present inside `create_prune_table` (per-depth outer-loop yield + every 100,000 inner-loop iterations). So cancel during prune-table build in the 2x2 solver responds within roughly one BFS depth.
+
+#### 8c: Partial table is discarded after cancel during BFS (crossSolver)
+
+**Symptom:**
+```
+First solve (while building) → cancelled → 5 s
+Second solve → still takes 5 s, not instant
+```
+
+**Cause:** When cancel fires during `create_prune_table` in `crossSolver`, `prune_table_initialized` is **not** set to `true`. The next `solve()` call rebuilds the table from scratch. This is correct behavior — a partially built table is unusable.
+
+**Solution:** Either wait for the table to be fully built (avoid cancelling during BFS), or accept that the next first-solve will also be slow.
+
+#### 8d: Cancel flag bleeds into next solve
+
+**Symptom:**
+```javascript
+helper.cancel();          // cancel current solve
+const sols = await helper.solveCross(scr, ...); // immediately resolve with []
+```
+
+**Cause:** `Module._cancelRequested` was left `true` from the previous cancel.
+
+**Diagnosis:** This should **not** happen — each C++ `PersistentXxxSolver::solve()` begins with `solver_clear_cancel()` which resets the flag. If it does happen, check that `worker-persistent.js` routes to the correct solver instance and that `solver_clear_cancel()` is called.
+
+---
+
 ## Getting Help
 
 If you encounter an issue not covered here:
@@ -772,7 +860,7 @@ If you encounter an issue not covered here:
 2. **Test with demo.html** to verify setup
 3. **Compare with example-helper.html** for reference implementation
 4. **Review [README.md](README.md)** for API usage
-5. **Check [IMPLEMENTATION_NOTES.md](IMPLEMENTATION_NOTES.md)** for C++ details
+5. **Check [IMPLEMENTATION_NOTES.md](./src/2x2solver/IMPLEMENTATION_NOTES.md)** for C++ details
 6. **Open GitHub issue** with reproducible example
 
 ---

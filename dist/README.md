@@ -188,6 +188,94 @@ solve();
 </script>
 ```
 
+---
+
+### 3×3 Cross / F2L / LL Solver (Browser, CDN)
+
+```html
+<!DOCTYPE html>
+<html>
+<body>
+  <!-- Load cross solver helper -->
+  <script src="https://cdn.jsdelivr.net/gh/or18/RubiksSolverDemo@main/dist/src/crossSolver/solver-helper.js"></script>
+
+  <script>
+  (async () => {
+    const helper = new CrossSolverHelper();
+    await helper.init(); // WASM module loads; first solve builds prune table
+
+    const scramble = "R U R' U' R' F R2 U' R' U' R U R' F'";
+
+    // --- Cross ---
+    const cross = await helper.solveCross(scramble, { maxSolutions: 3 });
+    console.log('cross:', cross);
+
+    // --- x-cross (slot 0 = Back-Right) ---
+    const xcross = await helper.solveXcross(scramble, 0, { maxSolutions: 2, maxLength: 10 });
+    console.log('xcross BR:', xcross);
+
+    // --- OLL (orient all LL pieces) ---
+    const oll = await helper.solveLLSubsteps(scramble, ['CO', 'EO'], {
+      maxSolutions: 2,
+      allowedMoves: ['U',"U'",'U2','R',"R'",'R2','F',"F'",'F2'],
+    });
+    console.log('OLL:', oll);
+
+    // --- Cancel example ---
+    setTimeout(() => helper.cancel(), 500);
+    const partial = await helper.solveXxxxcross(scramble, {
+      maxSolutions: 1,
+      onCancel: (sols) => console.log('cancelled, partial:', sols),
+    });
+    console.log('partial:', partial);
+
+    helper.terminate();
+  })();
+  </script>
+</body>
+</html>
+```
+
+**Key points:**
+- All 8 solver classes are accessed through one `CrossSolverHelper` instance
+- Each unique solver type / slot combination maintains its own prune table
+- `cancel()` returns partial solutions found so far
+
+### 3×3 Cross / F2L Solver (Node.js)
+
+```javascript
+const CrossSolverHelperNode = require('./dist/src/crossSolver/solver-helper-node.js');
+
+(async () => {
+  const helper = new CrossSolverHelperNode();
+  await helper.init();
+
+  const scrambles = [
+    "R U R' U' R' F R2 U' R' U' R U R' F'",
+    "R U L2 F B2 D R2 U F2 D2 B L2 U2 R B U D2 F R2 U",
+  ];
+
+  for (const scr of scrambles) {
+    // solveCross: prune table built once, reused on subsequent calls
+    const cross = await helper.solveCross(scr, { maxSolutions: 1 });
+    console.log(scr, '->', cross[0]);
+
+    // solveXcross reuses the xcross (slot 0) prune table from the second call onward
+    const xcross = await helper.solveXcross(scr, 0, { maxSolutions: 1 });
+    console.log('xcross:', xcross[0]);
+  }
+
+  helper.terminate();
+})();
+```
+
+**Expected output:**
+```
+R U R' U' ... -> D L' D' B'
+xcross: U R U' ...
+(subsequent solves reuse prune tables, significantly faster)
+```
+
 ### Advanced: Direct Worker Control
 
 For advanced users who need full control over the Web Worker, see the [2x2 Solver Full Documentation](./src/2x2solver/README.md) for Worker API details.
@@ -198,23 +286,28 @@ For advanced users who need full control over the Web Worker, see the [2x2 Solve
 
 ### Parameter Reference
 
-| Parameter | Range | Default | Format | Description |
-|-----------|-------|---------|--------|-------------|
-| maxSolutions | 1 to ∞ | 3 | number | Maximum solutions to find |
-| maxLength | 1 to 30 | 11 | number | Maximum solution length |
-| pruneDepth | 0 to 20 | 1 | number | Pruning table search depth |
-| allowedMoves | string | URF (9 moves) | `'MOVE1_MOVE2_...'` | Allowed move set (underscore-separated) |
-| rotation | string | '' | `'x'`, `'y'`, `'z'`, `'x2'`, etc. | Whole-cube rotation (empty string for none) |
-| preMove | string | '' | `'R U R\' U\''` | Pre-move sequence (space-separated) |
-| moveOrder | string | '' | `'ROW~COL\|ROW~COL\|...'` | Move ordering constraints (see notes) |
-| moveCount | string | '' | `'U:2_R:3_F:1'` | Move count limits (see notes) |
+The table below lists all parameters accepted by both solvers.
+Default values differ between the 2x2 solver (`Solver2x2Helper`) and the 3x3 Cross / F2L / LL solver (`CrossSolverHelper`) — see the **Default** column.
+
+| Parameter | Range | Default (2x2) | Default (3x3 cross) | Format | Description |
+|-----------|-------|--------------|---------------------|--------|-------------|
+| maxSolutions | 1 to ∞ | 3 | 3 | number | Maximum solutions to find |
+| maxLength | 1 to 30 | 11 | solver-specific¹ | number | Maximum solution length |
+| pruneDepth (2x2 only) | 0 to 20 | 1 | — | number | Pruning table search depth |
+| allowedMoves | string | `URF` (9 moves) | all 18 `UDLRFB` moves | `'M1_M2_...'` or `string[]` | Allowed move set. Use `-` for inverse (`U-` = U') or apostrophe (`U'`) |
+| rotation | string | `''` | `''` | `'x'`, `'y'`, `'z'`, `'x2'`, etc. | Whole-cube rotation (empty string for none) |
+| preMove / postAlg | string | `''` | `''` | `'R U R\' U\''` | Pre/post-move sequence (space-separated) |
+| moveOrder / moveAfterMove | string | `''` | `''` | `'ROW~COL\|...'` | Move ordering constraints |
+| moveCount | string | `''` | `''` | `'U:2_R:3'` | Move count limits |
+| centerOffset (3x3 only) | string | — | `''` | `''`, `'y'`, `['','y','y2',"y'"]` | Target face/center orientation |
+| maxRotCount (3x3 only) | number | — | 0 | number | Max rotation moves in solution |
+
+¹ `maxLength` defaults: Cross 8, Xcross 10, Xxcross 12, Xxxcross 14, Xxxxcross / LL / LLAUF 16–20.
 
 **Important Notes:**
-- **allowedMoves**: Moves must be underscore-separated (e.g., `'U_U2_U-_R_R2_R-'`). Use `-` for inverse (e.g., `U-` = U')
-- **rotation**: Only rotations defined in the solver are recognized. Undefined rotations are ignored
-- **preMove**: Standard cube notation with spaces (e.g., `'R U R\' U\''`)
-- **moveOrder**: Advanced feature for move sequence constraints (rarely used)
-- **moveCount**: Limits specific move types (rarely used)
+- **allowedMoves**: Moves must be separated by underscores or passed as an array. Use `-` for inverse (e.g., `U-` = U') or `'` (e.g., `U'`). Both formats accepted by crossSolver; 2x2solver uses `_`-separated string only.
+- **rotation**: Only rotations defined in the solver are recognized. Undefined rotations are ignored.
+- **preMove / postAlg**: Standard cube notation with spaces (e.g., `'R U R\' U\''`).
 
 ### Optimal Settings for 2x2x2
 
@@ -379,6 +472,21 @@ For detailed file structure, API reference, and advanced usage, see:
 
 📖 **[Tools API](./src/utils/TOOLS_API.md)** - Utility functions used by helpers (normalization, builders, validators)
 
+### 3×3 Cross / F2L / LL Solver Files
+
+📖 **[crossSolver Documentation](./src/crossSolver/README.md)** - Complete guide including:
+- All 8 solver classes (Cross, Xcross, Xxcross, Xxxcross, Xxxxcross, LLSubsteps, LL, LLAUF)
+- Helper API reference (`solveCross`, `solveXcross`, `solveLLSubsteps`, …)
+- `ll` parameter for LLSubsteps (CP / CO / EP / EO)
+- Direct Worker API with full message format
+- Compilation instructions and flags
+
+📖 **[crossSolver Implementation Notes](./src/crossSolver/IMPLEMENTATION_NOTES.md)** - C++ architecture:
+- BFS optimization (ASYNCIFY overhead and fix)
+- Cancel support design
+- Multi-class single worker pattern
+- "Adding a New Solver" checklist
+
 ---
 
 ## 🐛 Troubleshooting
@@ -449,6 +557,11 @@ Note on strict Content Security Policy (CSP) environments
   - [Implementation Details](./src/2x2solver/IMPLEMENTATION_NOTES.md)
   - [Troubleshooting](./TROUBLESHOOTING.md)
   - [Release Checklist](./src/2x2solver/RELEASE_GUIDE.md)
+
+- **3×3 Cross / F2L / LL Solver** (`crossSolver`):
+  - [User Guide & API](./src/crossSolver/README.md)
+  - [Implementation Details](./src/crossSolver/IMPLEMENTATION_NOTES.md)
+  - [Troubleshooting](./TROUBLESHOOTING.md)
 
 ---
 

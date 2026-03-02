@@ -6,11 +6,12 @@ This document describes the C++ implementation details and modifications made to
 
 1. [Overview](#overview)
 2. [Key Modifications to solver.cpp](#key-modifications-to-solvercpp)
-3. [Persistent Architecture](#persistent-architecture)
-4. [MODULARIZE Build System](#modularize-build-system)
-5. [Critical Bug Fixes](#critical-bug-fixes)
-6. [Web Worker Integration](#web-worker-integration)
-7. [Helper API Design](#helper-api-design)
+3. [Cancel Support](#cancel-support)
+4. [Persistent Architecture](#persistent-architecture)
+5. [MODULARIZE Build System](#modularize-build-system)
+6. [Critical Bug Fixes](#critical-bug-fixes)
+7. [Web Worker Integration](#web-worker-integration)
+8. [Helper API Design](#helper-api-design)
 
 ---
 
@@ -214,7 +215,9 @@ solver.solve(scramble2, ...);  // ✅ Reuses table
 
 ---
 
-### 5. Cancel Support Functions
+## Cancel Support
+
+### C++ functions
 
 **Location**: Near top of file (after includes)
 
@@ -273,6 +276,19 @@ if (i % 100000 == 0 && solver_is_cancelled()) { prune_table.assign(88179840, 255
 
 **`PersistentSolver2x2::solve()` reset**: calls `solver_clear_cancel()` at the very start of each solve,
 so previous cancel flags never bleed into a new request.
+
+### Comparison with crossSolver
+
+In `crossSolver`, `solver_yield()` was **removed** from `create_prune_table` entirely and placed only in
+`start_search_persistent` (the caller). This *BFS Optimization* avoids ASYNCIFY-instrumented inner
+loop iterations and significantly speeds up prune-table initialization under ASYNCIFY.
+
+In this 2x2solver, `solver_yield()` is **still called inside** `create_prune_table`:
+- Per-depth in the outer BFS loop
+- Every 100,000 iterations in the inner loop (sync flag check, no `await`)
+
+If prune-table initialization shows unexpected slowness, consider applying the same
+optimization — see `crossSolver/IMPLEMENTATION_NOTES.md` Section 6 for details.
 
 ---
 

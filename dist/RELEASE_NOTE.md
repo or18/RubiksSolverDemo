@@ -1,4 +1,108 @@
-# 2x2 Persistent Solver — Release Notes
+# Rubik's Cube Solver Libraries — Release Notes
+
+## crossSolver-v2.0.0 (2026-03-02)
+
+**New Package: 3×3 Cross / F2L / LL Persistent Solver (`dist/src/crossSolver/`)**
+
+This release introduces the crossSolver, a new WebAssembly-based solver for the 3×3 cube covering cross, F2L (x-cross through xxxx-cross), and last-layer substeps — all with persistent pruning tables, cooperative cancel, and a single-worker multi-class architecture.
+
+---
+
+### New Features
+
+**Eight Persistent Solver Classes:**
+
+| JS class | Purpose | Prune table size | Build time (WASM) |
+|---|---|---|---|
+| `PersistentCrossSolver` | Cross (4 edges) | ~0.3 MB | ~50 ms |
+| `PersistentXcrossSolver(slot)` | x-cross (cross + 1 F2L pair) | ~5.5 MB | ~870 ms |
+| `PersistentXxcrossSolver(s1,s2)` | xx-cross | ~11 MB | ~2–4 s |
+| `PersistentXxxcrossSolver(s1,s2,s3)` | xxx-cross | ~22 MB | ~5–8 s |
+| `PersistentXxxxcrossSolver` | xxxx-cross (full F2L) | ~22 MB | ~7–12 s |
+| `PersistentLLSubstepsSolver` | LL substeps (CP/CO/EP/EO) | ~22 MB | ~15–32 s |
+| `PersistentLLSolver` | Full LL solve | ~22 MB | ~15–32 s |
+| `PersistentLLAUFSolver` | LL solve + AUF | ~22 MB | ~15–32 s |
+
+**Single Worker, Multi-Class Architecture:**
+
+`worker-persistent.js` serves all 8 classes in one Web Worker process. Solver instances are cached by key (`"SolverType:slot1:slot2:..."`) so each unique combination builds its prune table only once per Worker lifetime.
+
+**Helper APIs:**
+
+- `solver-helper.js` — browser, Promise-based `CrossSolverHelper` class
+- `solver-helper-node.js` — Node.js, same API (`CrossSolverHelperNode`)
+
+Eight solve methods: `solveCross`, `solveXcross`, `solveXxcross`, `solveXxxcross`, `solveXxxxcross`, `solveLLSubsteps`, `solveLL`, `solveLLAUF`
+
+**`ll` Parameter for LLSubsteps:**
+
+```javascript
+// Orient all LL pieces (OLL)
+helper.solveLLSubsteps(scramble, ['CO', 'EO'], options)
+
+// Permute all LL pieces (PLL)
+helper.solveLLSubsteps(scramble, ['CP', 'EP'], options)
+
+// Full LL solve
+helper.solveLLSubsteps(scramble, ['CP', 'CO', 'EP', 'EO'], options)
+```
+
+**Cooperative Cancel:**
+
+`helper.cancel()` stops an in-flight IDA* search and resolves the Promise with partial solutions. `onCancel` callback receives the partial array. Note: cancel fires in the IDA* search phase; during prune-table BFS build, `solver_yield()` is intentionally omitted (BFS optimization) — see Problem 8 in `TROUBLESHOOTING.md`.
+
+---
+
+### Technical Changes
+
+**BFS Optimization (ASYNCIFY overhead fix):**
+
+ASYNCIFY instruments every call site of `solver_yield()`. Placing `solver_yield()` inside the 4.5M-iteration `create_prune_table` BFS loop instrumented as the entire inner loop and caused measurable slowdown. Fix: `solver_yield()` is called **only** in `start_search_persistent` (before and between BFS calls), not inside `create_prune_table`. BFS now runs at native speed.
+
+**Compilation flags:**
+
+```bash
+em++ solver.cpp -o solver.js \
+  -O3 -msimd128 \
+  -s ASYNCIFY=1 \
+  -s INITIAL_MEMORY=50MB \
+  -s ALLOW_MEMORY_GROWTH=1 \
+  -s MODULARIZE=1 -s EXPORT_NAME="createModule" \
+  --bind
+```
+
+`ALLOW_MEMORY_GROWTH=1` is used instead of a fixed `TOTAL_MEMORY` because multiple large prune tables may be live simultaneously.
+
+**Output sizes:** `solver.js` ~51 KB, `solver.wasm` ~600 KB
+
+---
+
+### Documentation Added / Updated
+
+| File | Change |
+|---|---|
+| `dist/src/crossSolver/README.md` | New — user guide, API reference, all 8 methods, options table, code examples |
+| `dist/src/crossSolver/IMPLEMENTATION_NOTES.md` | New — C++ architecture, BFS optimization, cancel design, "Adding a New Solver" checklist |
+| `dist/README.md` | Updated — crossSolver Quick Start (browser + Node.js), unified Configuration table (2x2 vs 3x3 defaults), crossSolver links |
+| `dist/TROUBLESHOOTING.md` | Updated — Problem 7 (slot-pair caching), Problem 8 (cancel timing during BFS), fixed broken relative links |
+| `dist/src/2x2solver/IMPLEMENTATION_NOTES.md` | Updated — Cancel Support promoted to top-level section, crossSolver BFS comparison note added |
+
+---
+
+### CDN Distribution
+
+```
+https://cdn.jsdelivr.net/gh/or18/RubiksSolverDemo@crossSolver-v2.0.0/dist/src/crossSolver/
+```
+
+---
+
+### Compatibility
+
+- crossSolver is a new, independent package — no breaking changes to 2x2solver
+- Existing `Solver2x2Helper` code continues to work unchanged
+
+---
 
 ## v1.2.0 (2026-03-01)
 
