@@ -266,15 +266,17 @@
 	<div class="section">
 		<h2>Basic Functions and Notes</h2>
 		<ul>
-			<li>The following 14 solvers are currently available:
+			<li>The following 15 solvers are currently available:
 				<ul>
 					<li><b>F2L Lite</b>: Lite solver for cross, XCross, XXCross, XXXCross, and XXXXCross. Analyzer
 						available.</li>
-					<li><b>Pairing</b>: Lite solver for a free pair. Analyzer available.</li>
+					<li><b>Pairing</b>: Lite solver for cross, XCross, XXCross, XXXCross + free pair. Analyzer available.</li>
 					<li><b>Pseudo F2L Lite</b>: Lite solver for pseudo cross, XCross, XXCross, and XXXCross. Analyzer
 						available.</li>
-					<li><b>Pseudo Pairing</b>: Lite solver for a pseudo free pair. Analyzer available.</li>
+					<li><b>Pseudo Pairing</b>: Lite solver for pseudo cross, XCross, XXCross, XXXCross + pseudo free pair. Analyzer available.</li>
 					<li><b>EOCross</b>: Lite solver for EOCross, XEOCross, XXEOCross, XXXEOCross, and XXXXEOCross.
+						Analyzer available.</li>
+					<li><b>F2LEO</b>: Lite solver for F2LEO (Cross, XCross, XXCross, XXXCross + F2L Slots EO).
 						Analyzer available.</li>
 					<li><b>LL Substeps Lite</b>: Lite solver for last layer <b>CP</b>, <b>CO</b>, <b>EP</b>, and
 						<b>EO</b>
@@ -334,6 +336,11 @@
 				<td>EOCross</td>
 				<td>100 MB</td>
 				<td>100 MB</td>
+			</tr>
+			<tr>
+				<td>F2LEO</td>
+				<td>50 MB</td>
+				<td>50 MB</td>
 			</tr>
 			<tr>
 				<td>LL Substeps Lite</td>
@@ -599,6 +606,20 @@
 			</li>
 			<li>XXEOCross (FB). <a
 					href="index.html?scramble=U2_D-_F-_U_R2_L_U-_R_U2_R-_B2_L-_F2_L-_D2_R_F2_B2_D_%252F%252F_setup%250A&index=1&sol=y_L2_F2_R2_U2_L-_U-_F_L2_U-_L_F2_&solver=EOCross&slot3=BL_FL&rot=y">Example</a>
+			</li>
+		</ul>
+		<h3>F2LEO</h3>
+		<p>A set of solvers for F2LEO (Cross, XCross, XXCross, XXXCross + F2L Slots EO). </p>
+		<ul>
+			<li>Cross + F2LEO. <a
+					href="index.html?scramble=L_B2_R_F2_R_B2_L-_B2_D2_F2_U2_F2_B-_R2_F_L2_R-_U_B_L_B2_%252F%252F_setup%250A&solver=F2LEO&index=1&sol=B_U_R_F_B_L2_">Example</a>
+			</li>
+			<li>XCross (BR) + F2LEO. <a
+					href="index.html?scramble=U2_R_F2_D2_L_B2_U2_L2_U2_F2_L-_D2_F_L_U-_F_U_R-_U-_B-_R_%252F%252F_setup%250A&solver=F2LEO&index=1&sol=x2_D2_F-_D2_R_F2_D_L-_B_R-_&rot=x2&slot4=BR">Example</a>
+			</li>
+			<li>XXCross (BL & FL) + F2LEO (<b>Move Restrict</b>: U, D, L, R, r, x; Rotation Start Setup; Custom Move Available Table and Move
+				Count Limit). <a
+					href="index.html?scramble=D-_L-_D2_R-_U_B-_D-_F_B-_R_B2_L-_B2_R_U2_L_D2_F2_D2_F2_R-_%252F%252F_setup%250A&solver=F2LEO&index=1&sol=L-_R_U2_r2_D_R2_U-_r_D-_L_U_r_&slot4=BL_FL&res=UDLRrx&rc=1&rest=ABCDFGHIJKLbcdtuv&mav=A-tuvB-tuvC-tuvD-tuvF-tuvG-tuvH-tuvI-tuvJ-tuvK-tuvL-tuvb-tuvc-tuvd-tuvt-GHIJKLbcdu-GHIJKLbcdv-GHIJKLbcd&mcv=D1F1H2K2c1">Example</a>
 			</li>
 		</ul>
 		<h3>LL Substeps Lite</h3>

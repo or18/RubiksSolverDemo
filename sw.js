@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pwa-cache_v64';
+const CACHE_NAME = 'pwa-cache_v65';
 
 const urlsToPrecache = [
 	'index.html',
@@ -97,7 +97,13 @@ const urlsToCache = [
 	'src/xxcrossTrainer/production/worker_prod.js',
 	'src/xcross_free_pair_trainer/production/solver_prod.js',
 	'src/xcross_free_pair_trainer/production/solver_prod.js',
-	'src/xcross_free_pair_trainer/production/worker_prod.js'
+	'src/xcross_free_pair_trainer/production/worker_prod.js',
+	'src/F2LEOAnalyzer/analyzer.js',
+	'src/F2LEOAnalyzer/analyzer.wasm',
+	'src/F2LEOAnalyzer/worker_analyzer.js',
+	'src/F2LEOSolver/solver.js',
+	'src/F2LEOSolver/solver.wasm',
+	'src/F2LEOSolver/worker.js',
 ];
 
 let precacheDone = false;
