@@ -460,16 +460,22 @@ std::vector<int> create_multi_move_table2(int n, int c, int pn, int size, const 
 	return move_table;
 }
 
-std::vector<unsigned char> create_prune_table(int index1, int index2, int size1, int size2, int depth, const std::vector<int> &table1, const std::vector<int> &table2)
+std::vector<unsigned char> create_prune_table_cross(int depth, const std::vector<int> &table1, const std::vector<int> &table2)
 {
+	int size1 = 528;
+	int size2 = 528;
 	int size = size1 * size2;
 	std::vector<unsigned char> prune_table(size, 255);
-	int start = index1 * size2 + index2;
 	int next_i;
 	int index1_tmp;
 	int index2_tmp;
+	int index1_tmp_end;
+	int index2_tmp_end;
 	int next_d;
-	prune_table[start] = 0;
+	prune_table[416 * size2 + 520] = 0;
+	prune_table[468 * size2 + 428] = 0;
+	prune_table[520 * size2 + 416] = 0;
+	prune_table[428 * size2 + 468] = 0;
 	for (int d = 0; d < depth; ++d)
 	{
 		next_d = d + 1;
@@ -479,10 +485,15 @@ std::vector<unsigned char> create_prune_table(int index1, int index2, int size1,
 			{
 				index1_tmp = (i / size2) * 18;
 				index2_tmp = (i % size2) * 18;
-				for (int j = 0; j < 18; ++j)
+				index1_tmp_end = index1_tmp + 18;
+				index2_tmp_end = index2_tmp + 18;
+				for (int j = index1_tmp, k = index2_tmp; j < index1_tmp_end && k < index2_tmp_end; ++j, ++k)
 				{
-					next_i = table1[index1_tmp + j] * size2 + table2[index2_tmp + j];
-					prune_table[next_i] = prune_table[next_i] == 255 ? next_d : prune_table[next_i];
+					next_i = table1[j] * size2 + table2[k];
+					if (prune_table[next_i] == 255)
+					{
+						prune_table[next_i] = next_d;
+					}
 				}
 			}
 		}
@@ -490,23 +501,22 @@ std::vector<unsigned char> create_prune_table(int index1, int index2, int size1,
 	return prune_table;
 }
 
-void create_prune_table2(int index1, int index2, int size1, int size2, int depth, const std::vector<int> &table1, const std::vector<int> &table2, std::vector<unsigned char> &prune_table)
+void create_prune_table_xcross(int index2, int depth, const std::vector<int> &table1, const std::vector<int> &table2, std::vector<unsigned char> &prune_table)
 {
+	int size1 = 190080;
+	int size2 = 24;
 	int size = size1 * size2;
-	int start = index1 * size2 + index2;
 	int next_i;
 	int index1_tmp;
 	int index2_tmp;
 	int next_d;
-	prune_table[start] = 0;
-	index1_tmp = index1 * 24;
-	index2_tmp = index2 * 18;
-	for (int j = 0; j < 18; ++j)
-	{
-		next_i = table1[index1_tmp + j] + table2[index2_tmp + j];
-		prune_table[next_i] = prune_table[next_i] == 255 ? 1 : prune_table[next_i];
-	}
-	for (int d = 1; d < depth; ++d)
+	std::vector<int> a = {16, 18, 20, 22};
+	int index1 = array_to_index(a, 4, 2, 12);
+	prune_table[index1 * size2 + index2] = 0;
+	prune_table[table1[index1 * 24 + 3] + table2[index2 * 18 + 3]] = 0;
+	prune_table[table1[index1 * 24 + 4] + table2[index2 * 18 + 4]] = 0;
+	prune_table[table1[index1 * 24 + 5] + table2[index2 * 18 + 5]] = 0;
+	for (int d = 0; d < depth; ++d)
 	{
 		next_d = d + 1;
 		for (int i = 0; i < size; ++i)
@@ -580,7 +590,7 @@ struct cross_analyzer
 		multi_move_table = create_multi_move_table(2, 2, 12, 24 * 22, edge_move_table);
 		index1 = 416;
 		index2 = 520;
-		prune_table = create_prune_table(index1, index2, 24 * 22, 24 * 22, 10, multi_move_table, multi_move_table);
+		prune_table = create_prune_table_cross(8, multi_move_table, multi_move_table);
 		ma = create_ma_table();
 	}
 
@@ -682,7 +692,7 @@ struct cross_analyzer
 		return rotations_js[std::distance(rotations.begin(), it)];
 	}
 
-	void start_search(std::string arg_scramble, std::string name, int arg_sol_num, std::vector<std::string> rotations)
+	void start_search(std::string arg_scramble, std::string name, std::string name2, int arg_sol_num, std::vector<std::string> rotations)
 	{
 		scramble = arg_scramble;
 		max_length = 20;
@@ -690,7 +700,7 @@ struct cross_analyzer
 		restrict = move_names;
 		analyzer_count++;
 		std::string count_string = std::to_string(analyzer_count);
-		std::string result = "<tr><th class=\"No\">" + count_string + "</th><th class=\"slot\">None</th>";
+		std::string result = "<tr><th class=\"No\">" + count_string + "</th><th class=\"slot\">None</th><th class=\"pslot\">None</th>";
 		move_restrict.clear();
 		for (std::string name : restrict)
 		{
@@ -745,11 +755,11 @@ struct cross_analyzer
 				std::ostringstream oss;
 				if (arg_sol_num > 1)
 				{
-					oss << "<td class=" << converter_face(rot) << " onclick=\"f2leo_solve(\'" << name << "\', " << converter(rot) << ")\">" << round(double(total_length) * 10 / sol_num) / 10 << "</td>";
+					oss << "<td class=" << converter_face(rot) << " onclick=\"f2leo_psolve(\'" << name << "\', \'" << name2 << "\', " << converter(rot) << ")\">" << round(double(total_length) * 10 / sol_num) / 10 << "</td>";
 				}
 				else
 				{
-					oss << "<td class=" << converter_face(rot) << " onclick=\"f2leo_solve(\'" << name << "\', " << converter(rot) << ")\">" << sol_len[0] << "</td>";
+					oss << "<td class=" << converter_face(rot) << " onclick=\"f2leo_psolve(\'" << name << "\', \'" << name2 << "\', " << converter(rot) << ")\">" << sol_len[0] << "</td>";
 				}
 				result += oss.str();
 			}
@@ -766,6 +776,9 @@ struct xcross_analyzer2
 	int slot1;
 	int slot2;
 	int slot3;
+	int pslot1;
+	int pslot2;
+	int pslot3;
 	int max_length;
 	int sol_num;
 	int count;
@@ -804,12 +817,12 @@ struct xcross_analyzer2
 	int index7_tmp;
 	int index8_tmp;
 	int index9_tmp;
-	int prune1_tmp;
-	int prune2_tmp;
-	int prune3_tmp;
 	int index_eo1_tmp;
 	int index_eo2_tmp;
 	int index_eo3_tmp;
+	int prune1_tmp;
+	int prune2_tmp;
+	int prune3_tmp;
 	int total_length;
 	std::vector<int> sol_len;
 	int current_max_depth;
@@ -822,14 +835,14 @@ struct xcross_analyzer2
 		ma = create_ma_table();
 		std::vector<int> edge_index = {187520, 187520, 187520, 187520};
 		std::vector<int> corner_index = {12, 15, 18, 21};
-		prune_table1 = std::vector<unsigned char>(24 * 22 * 20 * 18 * 24, 255);
-		prune_table2 = std::vector<unsigned char>(24 * 22 * 20 * 18 * 24, 255);
-		prune_table3 = std::vector<unsigned char>(24 * 22 * 20 * 18 * 24, 255);
-		prune_table4 = std::vector<unsigned char>(24 * 22 * 20 * 18 * 24, 255);
-		create_prune_table2(edge_index[0], corner_index[0], 24 * 22 * 20 * 18, 24, 10, multi_move_table, corner_move_table, prune_table1);
-		create_prune_table2(edge_index[1], corner_index[1], 24 * 22 * 20 * 18, 24, 10, multi_move_table, corner_move_table, prune_table2);
-		create_prune_table2(edge_index[2], corner_index[2], 24 * 22 * 20 * 18, 24, 10, multi_move_table, corner_move_table, prune_table3);
-		create_prune_table2(edge_index[3], corner_index[3], 24 * 22 * 20 * 18, 24, 10, multi_move_table, corner_move_table, prune_table4);
+		prune_table1 = std::vector<unsigned char>(190080 * 24, 255);
+		prune_table2 = std::vector<unsigned char>(190080 * 24, 255);
+		prune_table3 = std::vector<unsigned char>(190080 * 24, 255);
+		prune_table4 = std::vector<unsigned char>(190080 * 24, 255);
+		create_prune_table_xcross(corner_index[0], 10, multi_move_table, corner_move_table, prune_table1);
+		create_prune_table_xcross(corner_index[1], 10, multi_move_table, corner_move_table, prune_table2);
+		create_prune_table_xcross(corner_index[2], 10, multi_move_table, corner_move_table, prune_table3);
+		create_prune_table_xcross(corner_index[3], 10, multi_move_table, corner_move_table, prune_table4);
 	}
 
 	bool depth_limited_search_1(int arg_index1, int arg_index2, int arg_index3, int arg_index_eo1, int arg_index_eo2, int arg_index_eo3, int depth, int prev, std::vector<unsigned char> &prune1)
@@ -929,17 +942,18 @@ struct xcross_analyzer2
 		return rotations_js[std::distance(rotations.begin(), it)];
 	}
 
-	void start_search_1(std::string arg_scramble, int arg_slot1, std::vector<unsigned char> &prune1, std::string name, int arg_sol_num, std::vector<std::string> rotations)
+	void start_search_1(std::string arg_scramble, int arg_slot1, int arg_pslot1, std::vector<unsigned char> &prune1, std::string name, std::string name2, int arg_sol_num, std::vector<std::string> rotations)
 	{
 		move_restrict.clear();
 		scramble = arg_scramble;
 		slot1 = arg_slot1;
+		pslot1 = arg_pslot1;
 		max_length = 20;
 		sol_num = arg_sol_num;
 		restrict = move_names;
 		analyzer_count++;
 		std::string count_string = std::to_string(analyzer_count);
-		std::string result = "<tr><th class=\"No\">" + count_string + "</th><th class=\"slot\">" + name + "</th>";
+		std::string result = "<tr><th class=\"No\">" + count_string + "</th><th class=\"slot\">" + name + "</th><th class=\"pslot\">" + name2 + "</th>";
 		std::vector<int> edge_index = {187520, 187520, 187520, 187520};
 		std::vector<int> single_edge_index = {0, 2, 4, 6};
 		std::vector<int> corner_index = {12, 15, 18, 21};
@@ -955,7 +969,7 @@ struct xcross_analyzer2
 			sol_len.clear();
 			count = 0;
 			index1 = edge_index[slot1];
-			index2 = corner_index[slot1];
+			index2 = corner_index[pslot1];
 			index3 = single_edge_index[slot1];
 			edge_solved1 = index3;
 			std::vector<int> eo_indices;
@@ -1004,11 +1018,11 @@ struct xcross_analyzer2
 				std::ostringstream oss;
 				if (arg_sol_num > 1)
 				{
-					oss << "<td class=" << converter_face(rot) << " onclick=\"f2leo_solve(\'" << name << "\', " << converter(rot) << ")\">" << round(double(total_length) * 10 / sol_num) / 10 << "</td>";
+					oss << "<td class=" << converter_face(rot) << " onclick=\"f2leo_psolve(\'" << name << "\', \'" << name2 << "\', " << converter(rot) << ")\">" << round(double(total_length) * 10 / sol_num) / 10 << "</td>";
 				}
 				else
 				{
-					oss << "<td class=" << converter_face(rot) << " onclick=\"f2leo_solve(\'" << name << "\', " << converter(rot) << ")\">" << sol_len[0] << "</td>";
+					oss << "<td class=" << converter_face(rot) << " onclick=\"f2leo_psolve(\'" << name << "\', \'" << name2 << "\', " << converter(rot) << ")\">" << sol_len[0] << "</td>";
 				}
 				result += oss.str();
 			}
@@ -1018,10 +1032,26 @@ struct xcross_analyzer2
 
 	void xcross_analyze(std::string scramble, int arg_sol_num, std::vector<std::string> rotations)
 	{
-		start_search_1(scramble, 0, prune_table1, "BL", arg_sol_num, rotations);
-		start_search_1(scramble, 1, prune_table2, "BR", arg_sol_num, rotations);
-		start_search_1(scramble, 2, prune_table3, "FR", arg_sol_num, rotations);
-		start_search_1(scramble, 3, prune_table4, "FL", arg_sol_num, rotations);
+
+		start_search_1(scramble, 0, 0, prune_table1, "BL", "BL", arg_sol_num, rotations);
+		start_search_1(scramble, 0, 1, prune_table2, "BL", "BR", arg_sol_num, rotations);
+		start_search_1(scramble, 0, 2, prune_table3, "BL", "FR", arg_sol_num, rotations);
+		start_search_1(scramble, 0, 3, prune_table4, "BL", "FL", arg_sol_num, rotations);
+
+		start_search_1(scramble, 1, 0, prune_table1, "BR", "BL", arg_sol_num, rotations);
+		start_search_1(scramble, 1, 1, prune_table2, "BR", "BR", arg_sol_num, rotations);
+		start_search_1(scramble, 1, 2, prune_table3, "BR", "FR", arg_sol_num, rotations);
+		start_search_1(scramble, 1, 3, prune_table4, "BR", "FL", arg_sol_num, rotations);
+
+		start_search_1(scramble, 2, 0, prune_table1, "FR", "BL", arg_sol_num, rotations);
+		start_search_1(scramble, 2, 1, prune_table2, "FR", "BR", arg_sol_num, rotations);
+		start_search_1(scramble, 2, 2, prune_table3, "FR", "FR", arg_sol_num, rotations);
+		start_search_1(scramble, 2, 3, prune_table4, "FR", "FL", arg_sol_num, rotations);
+
+		start_search_1(scramble, 3, 0, prune_table1, "FL", "BL", arg_sol_num, rotations);
+		start_search_1(scramble, 3, 1, prune_table2, "FL", "BR", arg_sol_num, rotations);
+		start_search_1(scramble, 3, 2, prune_table3, "FL", "FR", arg_sol_num, rotations);
+		start_search_1(scramble, 3, 3, prune_table4, "FL", "FL", arg_sol_num, rotations);
 	}
 
 	bool depth_limited_search_2(int arg_index1, int arg_index2, int arg_index4, int arg_index5, int arg_index6, int arg_index_eo1, int arg_index_eo2, int depth, int prev, std::vector<unsigned char> &prune1, std::vector<unsigned char> &prune2)
@@ -1114,18 +1144,20 @@ struct xcross_analyzer2
 		return false;
 	}
 
-	void start_search_2(std::string arg_scramble, int arg_slot1, int arg_slot2, std::vector<unsigned char> &prune1, std::vector<unsigned char> &prune2, std::string name, int arg_sol_num, std::vector<std::string> rotations)
+	void start_search_2(std::string arg_scramble, int arg_slot1, int arg_slot2, int arg_pslot1, int arg_pslot2, std::vector<unsigned char> &prune1, std::vector<unsigned char> &prune2, std::string name, std::string name2, int arg_sol_num, std::vector<std::string> rotations)
 	{
 		move_restrict.clear();
 		scramble = arg_scramble;
 		slot1 = arg_slot1;
 		slot2 = arg_slot2;
+		pslot1 = arg_pslot1;
+		pslot2 = arg_pslot2;
 		max_length = 20;
 		sol_num = arg_sol_num;
 		restrict = move_names;
 		analyzer_count++;
 		std::string count_string = std::to_string(analyzer_count);
-		std::string result = "<tr><th class=\"No\">" + count_string + "</th><th class=\"slot\">" + name + "</th>";
+		std::string result = "<tr><th class=\"No\">" + count_string + "</th><th class=\"slot\">" + name + "</th><th class=\"pslot\">" + name2 + "</th>";
 		std::vector<int> edge_index = {187520, 187520, 187520, 187520};
 		std::vector<int> single_edge_index = {0, 2, 4, 6};
 		std::vector<int> corner_index = {12, 15, 18, 21};
@@ -1141,10 +1173,10 @@ struct xcross_analyzer2
 			sol.clear();
 			sol_len.clear();
 			index1 = edge_index[slot1];
-			index2 = corner_index[slot1];
+			index2 = corner_index[pslot1];
 			index5 = single_edge_index[slot1];
 			edge_solved1 = index5;
-			index4 = corner_index[slot2];
+			index4 = corner_index[pslot2];
 			index6 = single_edge_index[slot2];
 			edge_solved2 = index6;
 			std::vector<int> eo_indices;
@@ -1196,11 +1228,11 @@ struct xcross_analyzer2
 				std::ostringstream oss;
 				if (arg_sol_num > 1)
 				{
-					oss << "<td class=" << converter_face(rot) << " onclick=\"f2leo_solve(\'" << name << "\', " << converter(rot) << ")\">" << round(double(total_length) * 10 / sol_num) / 10 << "</td>";
+					oss << "<td class=" << converter_face(rot) << " onclick=\"f2leo_psolve(\'" << name << "\', \'" << name2 << "\', " << converter(rot) << ")\">" << round(double(total_length) * 10 / sol_num) / 10 << "</td>";
 				}
 				else
 				{
-					oss << "<td class=" << converter_face(rot) << " onclick=\"f2leo_solve(\'" << name << "\', " << converter(rot) << ")\">" << sol_len[0] << "</td>";
+					oss << "<td class=" << converter_face(rot) << " onclick=\"f2leo_psolve(\'" << name << "\', \'" << name2 << "\', " << converter(rot) << ")\">" << sol_len[0] << "</td>";
 				}
 				result += oss.str();
 			}
@@ -1210,12 +1242,48 @@ struct xcross_analyzer2
 
 	void xxcross_analyze(std::string scramble, int arg_sol_num, std::vector<std::string> rotations)
 	{
-		start_search_2(scramble, 0, 1, prune_table1, prune_table2, "BL BR", arg_sol_num, rotations);
-		start_search_2(scramble, 0, 2, prune_table1, prune_table3, "BL FR", arg_sol_num, rotations);
-		start_search_2(scramble, 0, 3, prune_table1, prune_table4, "BL FL", arg_sol_num, rotations);
-		start_search_2(scramble, 1, 2, prune_table2, prune_table3, "BR FR", arg_sol_num, rotations);
-		start_search_2(scramble, 1, 3, prune_table2, prune_table4, "BR FL", arg_sol_num, rotations);
-		start_search_2(scramble, 2, 3, prune_table3, prune_table4, "FR FL", arg_sol_num, rotations);
+
+		start_search_2(scramble, 0, 1, 0, 1, prune_table1, prune_table2, "BL BR", "BL BR", arg_sol_num, rotations);
+		start_search_2(scramble, 0, 1, 0, 2, prune_table1, prune_table3, "BL BR", "BL FR", arg_sol_num, rotations);
+		start_search_2(scramble, 0, 1, 0, 3, prune_table1, prune_table4, "BL BR", "BL FL", arg_sol_num, rotations);
+		start_search_2(scramble, 0, 1, 1, 2, prune_table2, prune_table3, "BL BR", "BR FR", arg_sol_num, rotations);
+		start_search_2(scramble, 0, 1, 1, 3, prune_table2, prune_table4, "BL BR", "BR FL", arg_sol_num, rotations);
+		start_search_2(scramble, 0, 1, 2, 3, prune_table3, prune_table4, "BL BR", "FR FL", arg_sol_num, rotations);
+
+		start_search_2(scramble, 0, 2, 0, 1, prune_table1, prune_table2, "BL FR", "BL BR", arg_sol_num, rotations);
+		start_search_2(scramble, 0, 2, 0, 2, prune_table1, prune_table3, "BL FR", "BL FR", arg_sol_num, rotations);
+		start_search_2(scramble, 0, 2, 0, 3, prune_table1, prune_table4, "BL FR", "BL FL", arg_sol_num, rotations);
+		start_search_2(scramble, 0, 2, 1, 2, prune_table2, prune_table3, "BL FR", "BR FR", arg_sol_num, rotations);
+		start_search_2(scramble, 0, 2, 1, 3, prune_table2, prune_table4, "BL FR", "BR FL", arg_sol_num, rotations);
+		start_search_2(scramble, 0, 2, 2, 3, prune_table3, prune_table4, "BL FR", "FR FL", arg_sol_num, rotations);
+
+		start_search_2(scramble, 0, 3, 0, 1, prune_table1, prune_table2, "BL FL", "BL BR", arg_sol_num, rotations);
+		start_search_2(scramble, 0, 3, 0, 2, prune_table1, prune_table3, "BL FL", "BL FR", arg_sol_num, rotations);
+		start_search_2(scramble, 0, 3, 0, 3, prune_table1, prune_table4, "BL FL", "BL FL", arg_sol_num, rotations);
+		start_search_2(scramble, 0, 3, 1, 2, prune_table2, prune_table3, "BL FL", "BR FR", arg_sol_num, rotations);
+		start_search_2(scramble, 0, 3, 1, 3, prune_table2, prune_table4, "BL FL", "BR FL", arg_sol_num, rotations);
+		start_search_2(scramble, 0, 3, 2, 3, prune_table3, prune_table4, "BL FL", "FR FL", arg_sol_num, rotations);
+
+		start_search_2(scramble, 1, 2, 0, 1, prune_table1, prune_table2, "BR FR", "BL BR", arg_sol_num, rotations);
+		start_search_2(scramble, 1, 2, 0, 2, prune_table1, prune_table3, "BR FR", "BL FR", arg_sol_num, rotations);
+		start_search_2(scramble, 1, 2, 0, 3, prune_table1, prune_table4, "BR FR", "BL FL", arg_sol_num, rotations);
+		start_search_2(scramble, 1, 2, 1, 2, prune_table2, prune_table3, "BR FR", "BR FR", arg_sol_num, rotations);
+		start_search_2(scramble, 1, 2, 1, 3, prune_table2, prune_table4, "BR FR", "BR FL", arg_sol_num, rotations);
+		start_search_2(scramble, 1, 2, 2, 3, prune_table3, prune_table4, "BR FR", "FR FL", arg_sol_num, rotations);
+
+		start_search_2(scramble, 1, 3, 0, 1, prune_table1, prune_table2, "BR FL", "BL BR", arg_sol_num, rotations);
+		start_search_2(scramble, 1, 3, 0, 2, prune_table1, prune_table3, "BR FL", "BL FR", arg_sol_num, rotations);
+		start_search_2(scramble, 1, 3, 0, 3, prune_table1, prune_table4, "BR FL", "BL FL", arg_sol_num, rotations);
+		start_search_2(scramble, 1, 3, 1, 2, prune_table2, prune_table3, "BR FL", "BR FR", arg_sol_num, rotations);
+		start_search_2(scramble, 1, 3, 1, 3, prune_table2, prune_table4, "BR FL", "BR FL", arg_sol_num, rotations);
+		start_search_2(scramble, 1, 3, 2, 3, prune_table3, prune_table4, "BR FL", "FR FL", arg_sol_num, rotations);
+
+		start_search_2(scramble, 2, 3, 0, 1, prune_table1, prune_table2, "FR FL", "BL BR", arg_sol_num, rotations);
+		start_search_2(scramble, 2, 3, 0, 2, prune_table1, prune_table3, "FR FL", "BL FR", arg_sol_num, rotations);
+		start_search_2(scramble, 2, 3, 0, 3, prune_table1, prune_table4, "FR FL", "BL FL", arg_sol_num, rotations);
+		start_search_2(scramble, 2, 3, 1, 2, prune_table2, prune_table3, "FR FL", "BR FR", arg_sol_num, rotations);
+		start_search_2(scramble, 2, 3, 1, 3, prune_table2, prune_table4, "FR FL", "BR FL", arg_sol_num, rotations);
+		start_search_2(scramble, 2, 3, 2, 3, prune_table3, prune_table4, "FR FL", "FR FL", arg_sol_num, rotations);
 	}
 
 	bool depth_limited_search_3(int arg_index1, int arg_index2, int arg_index4, int arg_index6, int arg_index7, int arg_index8, int arg_index9, int arg_index_eo1, int depth, int prev, std::vector<unsigned char> &prune1, std::vector<unsigned char> &prune2, std::vector<unsigned char> &prune3)
@@ -1317,19 +1385,22 @@ struct xcross_analyzer2
 		return false;
 	}
 
-	void start_search_3(std::string arg_scramble, int arg_slot1, int arg_slot2, int arg_slot3, std::vector<unsigned char> &prune1, std::vector<unsigned char> &prune2, std::vector<unsigned char> &prune3, std::string name, int arg_sol_num, std::vector<std::string> rotations)
+	void start_search_3(std::string arg_scramble, int arg_slot1, int arg_slot2, int arg_slot3, int arg_pslot1, int arg_pslot2, int arg_pslot3, std::vector<unsigned char> &prune1, std::vector<unsigned char> &prune2, std::vector<unsigned char> &prune3, std::string name, std::string name2, int arg_sol_num, std::vector<std::string> rotations)
 	{
 		move_restrict.clear();
 		scramble = arg_scramble;
 		slot1 = arg_slot1;
 		slot2 = arg_slot2;
 		slot3 = arg_slot3;
+		pslot1 = arg_pslot1;
+		pslot2 = arg_pslot2;
+		pslot3 = arg_pslot3;
 		max_length = 20;
 		sol_num = arg_sol_num;
 		restrict = move_names;
 		analyzer_count++;
 		std::string count_string = std::to_string(analyzer_count);
-		std::string result = "<tr><th class=\"No\">" + count_string + "</th><th class=\"slot\">" + name + "</th>";
+		std::string result = "<tr><th class=\"No\">" + count_string + "</th><th class=\"slot\">" + name + "</th><th class=\"pslot\">" + name2 + "</th>";
 		std::vector<int> edge_index = {187520, 187520, 187520, 187520};
 		std::vector<int> single_edge_index = {0, 2, 4, 6};
 		std::vector<int> corner_index = {12, 15, 18, 21};
@@ -1345,13 +1416,13 @@ struct xcross_analyzer2
 			sol.clear();
 			sol_len.clear();
 			index1 = edge_index[slot1];
-			index2 = corner_index[slot1];
+			index2 = corner_index[pslot1];
 			index7 = single_edge_index[slot1];
 			edge_solved1 = index7;
-			index4 = corner_index[slot2];
+			index4 = corner_index[pslot2];
 			index8 = single_edge_index[slot2];
 			edge_solved2 = index8;
-			index6 = corner_index[slot3];
+			index6 = corner_index[pslot3];
 			index9 = single_edge_index[slot3];
 			edge_solved3 = index9;
 			std::vector<int> eo_indices;
@@ -1406,11 +1477,11 @@ struct xcross_analyzer2
 				std::ostringstream oss;
 				if (arg_sol_num > 1)
 				{
-					oss << "<td class=" << converter_face(rot) << " onclick=\"f2leo_solve(\'" << name << "\', " << converter(rot) << ")\">" << round(double(total_length) * 10 / sol_num) / 10 << "</td>";
+					oss << "<td class=" << converter_face(rot) << " onclick=\"f2leo_psolve(\'" << name << "\', \'" << name2 << "\', " << converter(rot) << ")\">" << round(double(total_length) * 10 / sol_num) / 10 << "</td>";
 				}
 				else
 				{
-					oss << "<td class=" << converter_face(rot) << " onclick=\"f2leo_solve(\'" << name << "\', " << converter(rot) << ")\">" << sol_len[0] << "</td>";
+					oss << "<td class=" << converter_face(rot) << " onclick=\"f2leo_psolve(\'" << name << "\', \'" << name2 << "\', " << converter(rot) << ")\">" << sol_len[0] << "</td>";
 				}
 				result += oss.str();
 			}
@@ -1420,17 +1491,33 @@ struct xcross_analyzer2
 
 	void xxxcross_analyze(std::string scramble, int arg_sol_num, std::vector<std::string> rotations)
 	{
-		start_search_3(scramble, 0, 1, 2, prune_table1, prune_table2, prune_table3, "BL BR FR", arg_sol_num, rotations);
-		start_search_3(scramble, 0, 1, 3, prune_table1, prune_table2, prune_table4, "BL BR FL", arg_sol_num, rotations);
-		start_search_3(scramble, 0, 2, 3, prune_table1, prune_table3, prune_table4, "BL FR FL", arg_sol_num, rotations);
-		start_search_3(scramble, 1, 2, 3, prune_table2, prune_table3, prune_table4, "BR FR FL", arg_sol_num, rotations);
+
+		start_search_3(scramble, 0, 1, 2, 0, 1, 2, prune_table1, prune_table2, prune_table3, "BL BR FR", "BL BR FR", arg_sol_num, rotations);
+		start_search_3(scramble, 0, 1, 2, 0, 1, 3, prune_table1, prune_table2, prune_table4, "BL BR FR", "BL BR FL", arg_sol_num, rotations);
+		start_search_3(scramble, 0, 1, 2, 0, 2, 3, prune_table1, prune_table3, prune_table4, "BL BR FR", "BL FR FL", arg_sol_num, rotations);
+		start_search_3(scramble, 0, 1, 2, 1, 2, 3, prune_table2, prune_table3, prune_table4, "BL BR FR", "BR FR FL", arg_sol_num, rotations);
+
+		start_search_3(scramble, 0, 1, 3, 0, 1, 2, prune_table1, prune_table2, prune_table3, "BL BR FL", "BL BR FR", arg_sol_num, rotations);
+		start_search_3(scramble, 0, 1, 3, 0, 1, 3, prune_table1, prune_table2, prune_table4, "BL BR FL", "BL BR FL", arg_sol_num, rotations);
+		start_search_3(scramble, 0, 1, 3, 0, 2, 3, prune_table1, prune_table3, prune_table4, "BL BR FL", "BL FR FL", arg_sol_num, rotations);
+		start_search_3(scramble, 0, 1, 3, 1, 2, 3, prune_table2, prune_table3, prune_table4, "BL BR FL", "BR FR FL", arg_sol_num, rotations);
+
+		start_search_3(scramble, 0, 2, 3, 0, 1, 2, prune_table1, prune_table2, prune_table3, "BL FR FL", "BL BR FR", arg_sol_num, rotations);
+		start_search_3(scramble, 0, 2, 3, 0, 1, 3, prune_table1, prune_table2, prune_table4, "BL FR FL", "BL BR FL", arg_sol_num, rotations);
+		start_search_3(scramble, 0, 2, 3, 0, 2, 3, prune_table1, prune_table3, prune_table4, "BL FR FL", "BL FR FL", arg_sol_num, rotations);
+		start_search_3(scramble, 0, 2, 3, 1, 2, 3, prune_table2, prune_table3, prune_table4, "BL FR FL", "BR FR FL", arg_sol_num, rotations);
+
+		start_search_3(scramble, 1, 2, 3, 0, 1, 2, prune_table1, prune_table2, prune_table3, "BR FR FL", "BL BR FR", arg_sol_num, rotations);
+		start_search_3(scramble, 1, 2, 3, 0, 1, 3, prune_table1, prune_table2, prune_table4, "BR FR FL", "BL BR FL", arg_sol_num, rotations);
+		start_search_3(scramble, 1, 2, 3, 0, 2, 3, prune_table1, prune_table3, prune_table4, "BR FR FL", "BL FR FL", arg_sol_num, rotations);
+		start_search_3(scramble, 1, 2, 3, 1, 2, 3, prune_table2, prune_table3, prune_table4, "BR FR FL", "BR FR FL", arg_sol_num, rotations);
 	}
 };
 
 void analyzer(std::string scramble, bool cross, bool x, bool xx, bool xxx, std::string num, std::string rot_set)
 {
 	std::vector<std::string> rotations;
-	std::string table = "<br><table border=\"2\" id=\"f2leo_analyzer_result\" translate=\"no\"><thead><tr><th class=\"sort\" data-sort=\"No\">No</th><th class=\"sort\" data-sort=\"slot\">slot</th>";
+	std::string table = "<br><table border=\"2\" id=\"f2leo_panalyzer_result\" translate=\"no\"><thead><tr><th class=\"sort\" data-sort=\"No\">No</th><th class=\"sort\" data-sort=\"slot\">PSE</th><th class=\"sort\" data-sort=\"pslot\">PSC</th>";
 	for (char c_tmp : rot_set)
 	{
 		std::string c(1, c_tmp);
@@ -1488,21 +1575,21 @@ void analyzer(std::string scramble, bool cross, bool x, bool xx, bool xxx, std::
 	}
 	if (x)
 	{
-		count += 4;
+		count += 16;
 	}
 	if (xx)
 	{
-		count += 6;
+		count += 36;
 	}
 	if (xxx)
 	{
-		count += 4;
+		count += 16;
 	}
 	update((std::to_string(count)).c_str());
 	if (cross)
 	{
 		cross_analyzer cs;
-		cs.start_search(scramble, "", sol_num, rotations);
+		cs.start_search(scramble, "", "", sol_num, rotations);
 	}
 	if (x || xx || xxx)
 	{

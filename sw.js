@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pwa-cache_v65';
+const CACHE_NAME = 'pwa-cache_v66';
 
 const urlsToPrecache = [
 	'index.html',
@@ -104,6 +104,12 @@ const urlsToCache = [
 	'src/F2LEOSolver/solver.js',
 	'src/F2LEOSolver/solver.wasm',
 	'src/F2LEOSolver/worker.js',
+	'src/pseudoF2LEOAnalyzer/pseudo_analyzer.js',
+	'src/pseudoF2LEOAnalyzer/pseudo_analyzer.wasm',
+	'src/pseudoF2LEOAnalyzer/worker_panalyzer.js',
+	'src/pseudoF2LEOSolver/pseudo.js',
+	'src/pseudoF2LEOSolver/pseudo.wasm',
+	'src/pseudoF2LEOSolver/worker3.js',
 ];
 
 let precacheDone = false;

@@ -1599,7 +1599,7 @@ struct xcross_search
             aprev_tmp = 54;
         }
         prune1_tmp = prune_table1[index1 * 24 + index2];
-        if (prune1_tmp == 0 && index3 == edge_solved1)
+        if (prune1_tmp == 0 && index3 == edge_solved1 && index_eo1 % 2 == 0 && index_eo2 % 2 == 0 && index_eo3 % 2 == 0)
         {
             update("Already solved.");
         }
