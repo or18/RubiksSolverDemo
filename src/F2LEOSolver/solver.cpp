@@ -661,9 +661,9 @@ void create_prune_table(int index1, int index2, int size1, int size2, int depth,
                 index1_tmp = (i / size2) * 27;
                 index2_tmp = (i % size2) * 27;
                 center = tmp_array[i];
+                computed.reset();
                 for (int j : move_restrict_move)
                 {
-                    computed.reset();
                     if (j >= 45)
                     {
                         continue;
@@ -680,10 +680,6 @@ void create_prune_table(int index1, int index2, int size1, int size2, int depth,
                         }
                         computed.set(m);
                     }
-                    else
-                    {
-                        continue;
-                    }
                     for (int r : move_restrict_rot)
                     {
                         center_tmp = center_move_table[center][r];
@@ -693,15 +689,11 @@ void create_prune_table(int index1, int index2, int size1, int size2, int depth,
                             next_i = table1[index1_tmp + m] * size2 + table2[index2_tmp + m];
                             if (prune_table[next_i] == 255)
                             {
-                                tmp_array[next_i] = center_move_table[center][j];
+                                tmp_array[next_i] = center_move_table[center_tmp][j];
                                 prune_table[next_i] = next_d;
                                 num += 1;
                             }
                             computed.set(m);
-                        }
-                        else
-                        {
-                            continue;
                         }
                     }
                 }
@@ -942,10 +934,6 @@ struct cross_search
             index_eo3_tmp = arg_index_eo3 / 27;
             index_eo4_tmp = arg_index_eo4 / 27;
             prune_tmp = prune_table[index1_tmp * 528 + index2_tmp];
-            if (prune_tmp != 255 && prune_tmp >= depth)
-            {
-                continue;
-            }
             sol.emplace_back(i);
             mc_tmp[i] += 1;
             if (depth == 1)
@@ -1382,10 +1370,6 @@ struct xcross_search
             index_eo2_tmp = arg_index_eo2 / 27;
             index_eo3_tmp = arg_index_eo3 / 27;
             prune1_tmp = prune_table1[index1_tmp * 24 + index2_tmp];
-            if (prune1_tmp != 255 && prune1_tmp >= depth)
-            {
-                continue;
-            }
             sol.emplace_back(i);
             mc_tmp[i] += 1;
             if (depth == 1)
@@ -1850,17 +1834,9 @@ struct xxcross_search
             index2_tmp = arg_index2 / 27;
             index5_tmp = arg_index5 / 27;
             prune1_tmp = prune_table1[index1_tmp * 24 + index2_tmp];
-            if (prune1_tmp != 255 && prune1_tmp >= depth)
-            {
-                continue;
-            }
             index4_tmp = arg_index4 / 27;
             index6_tmp = arg_index6 / 27;
             prune2_tmp = prune_table2[index1_tmp * 24 + index4_tmp];
-            if (prune2_tmp != 255 && prune2_tmp >= depth)
-            {
-                continue;
-            }
             index_eo1_tmp = arg_index_eo1 / 27;
             index_eo2_tmp = arg_index_eo2 / 27;
             sol.emplace_back(i);
@@ -2357,24 +2333,12 @@ struct xxxcross_search
             index2_tmp = arg_index2 / 27;
             index7_tmp = arg_index7 / 27;
             prune1_tmp = prune_table1[index1_tmp * 24 + index2_tmp];
-            if (prune1_tmp != 255 && prune1_tmp >= depth)
-            {
-                continue;
-            }
             index4_tmp = arg_index4 / 27;
             index8_tmp = arg_index8 / 27;
             prune2_tmp = prune_table2[index1_tmp * 24 + index4_tmp];
-            if (prune2_tmp != 255 && prune2_tmp >= depth)
-            {
-                continue;
-            }
             index6_tmp = arg_index6 / 27;
             index9_tmp = arg_index9 / 27;
             prune3_tmp = prune_table3[index1_tmp * 24 + index6_tmp];
-            if (prune3_tmp != 255 && prune3_tmp >= depth)
-            {
-                continue;
-            }
             index_eo1_tmp = arg_index_eo1 / 27;
             sol.emplace_back(i);
             mc_tmp[i] += 1;
