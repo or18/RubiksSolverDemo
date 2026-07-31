@@ -7,6 +7,7 @@
 #include <string>
 #include <sstream>
 #include <cstdlib>
+#include "../common/pack.h"
 
 EM_JS(void, update, (const char *str), {
 	postMessage(UTF8ToString(str));
@@ -443,6 +444,7 @@ void create_prune_table(const std::vector<int> &table1, const std::vector<int> &
 	int next_d;
 	std::vector<std::string> af = {"", "F2 B2 ", "F' B ", "F B' ", "L R' ", "L' R"};
 	std::vector<std::string> ad = {"U D'", "U2 D2", "U' D"};
+
 	for (int i = 0; i < 6; ++i)
 	{
 		index1_tmp = 0;
@@ -454,7 +456,8 @@ void create_prune_table(const std::vector<int> &table1, const std::vector<int> &
 			index1_tmp = table1[index1_tmp * 27 + k];
 			index2_tmp = table2[index2_tmp * 27 + k];
 		}
-		prune_table[index1_tmp * size2 + index2_tmp] = 0;
+		set_prune(prune_table.data(), index1_tmp * size2 + index2_tmp, 0);
+
 		for (int j = 0; j < 3; ++j)
 		{
 			tmp_scr = ad[j];
@@ -466,27 +469,48 @@ void create_prune_table(const std::vector<int> &table1, const std::vector<int> &
 				index1_tmp2 = table1[index1_tmp2 * 27 + k];
 				index2_tmp2 = table2[index2_tmp2 * 27 + k];
 			}
-			prune_table[index1_tmp2 * size2 + index2_tmp2] = 0;
+			set_prune(prune_table.data(), index1_tmp2 * size2 + index2_tmp2, 0);
 		}
 	}
+
 	int num = 24;
 	int num_old = 24;
+	int byte_size = (size + 3) / 4;
+
 	for (int d = 0; d < prune_depth; ++d)
 	{
 		next_d = d + 1;
-		for (int i = 0; i < size; ++i)
+		unsigned char d_mod3 = d % 3;
+		unsigned char next_d_mod3 = next_d % 3;
+
+		for (int byte_idx = 0; byte_idx < byte_size; ++byte_idx)
 		{
-			if (prune_table[i] == d)
+			unsigned char b = prune_table[byte_idx];
+			if (b == 255)
 			{
-				index1_tmp = (i / size2) * 27;
-				index2_tmp = (i % size2) * 27;
-				for (int j : move_restrict)
+				continue;
+			}
+
+			for (int k = 0; k < 4; ++k)
+			{
+				int i = (byte_idx << 2) + k;
+				if (i >= size)
 				{
-					next_i = table1[index1_tmp + j] * size2 + table2[index2_tmp + j];
-					if (prune_table[next_i] == 255)
+					break;
+				}
+
+				if (((b >> (k << 1)) & 0x03) == d_mod3)
+				{
+					index1_tmp = (i / size2) * 27;
+					index2_tmp = (i % size2) * 27;
+					for (int j : move_restrict)
 					{
-						prune_table[next_i] = next_d;
-						num += 1;
+						next_i = table1[index1_tmp + j] * size2 + table2[index2_tmp + j];
+						if (get_prune(prune_table.data(), next_i) == 3)
+						{
+							set_prune(prune_table.data(), next_i, next_d_mod3);
+							num += 1;
+						}
 					}
 				}
 			}
@@ -495,6 +519,7 @@ void create_prune_table(const std::vector<int> &table1, const std::vector<int> &
 		{
 			break;
 		}
+		num_old = num;
 	}
 }
 
@@ -528,13 +553,13 @@ struct search
 	search()
 	{
 		center_move_table = create_center_move_table();
-		prune_table = std::vector<unsigned char>(88179840, 255);
+		prune_table = std::vector<unsigned char>(22044960, 255);
 		single_cp_move_table = create_cp_move_table();
 		cp_move_table = create_multi_move_table(8, 1, 8, 40320, single_cp_move_table);
 		co_move_table = create_co_move_table();
 	}
 
-	bool depth_limited_search(int arg_index1, int arg_index2, int depth, int aprev)
+	bool depth_limited_search(int arg_index1, int arg_index2, int depth, int aprev, int current_dist, int prune_depth, int root_dist)
 	{
 		for (int i : move_restrict)
 		{
@@ -544,8 +569,23 @@ struct search
 			}
 			index1_tmp = cp_move_table[arg_index1 + i];
 			index2_tmp = co_move_table[arg_index2 + i];
-			prune_tmp = prune_table[index1_tmp * 2187 + index2_tmp];
-			if (prune_tmp != 255 && prune_tmp >= depth)
+			unsigned char next_val = get_prune(prune_table.data(), index1_tmp * 2187 + index2_tmp);
+			int next_dist = -1;
+			
+			if (next_val != 3)
+			{
+				if (current_dist == -1) {
+					next_dist = prune_depth;
+				} else if (next_val == (current_dist + 2) % 3) {
+					next_dist = current_dist - 1;
+				} else if (next_val == current_dist % 3) {
+					next_dist = current_dist;
+				} else {
+					next_dist = current_dist + 1;
+				}
+			}
+
+			if (next_dist != -1 && next_dist >= depth)
 			{
 				continue;
 			}
@@ -553,13 +593,14 @@ struct search
 			mc_tmp[i] += 1;
 			if (depth == 1)
 			{
-				if (prune_tmp == 0)
+				if (next_dist == 0)
 				{
 					bool valid = true;
 					int l = static_cast<int>(sol.size());
 					int c = 0;
 					int index1_tmp2 = index1;
 					int index2_tmp2 = index2;
+					int d_tmp2 = root_dist;
 					for (int j : sol)
 					{
 						if (index1_tmp2 == cp_move_table[index1_tmp2 + j] * 27 && index2_tmp2 == co_move_table[index2_tmp2 + j] * 27)
@@ -572,7 +613,16 @@ struct search
 							c += 1;
 							index1_tmp2 = cp_move_table[index1_tmp2 + j];
 							index2_tmp2 = co_move_table[index2_tmp2 + j];
-							if (c < l && prune_table[index1_tmp2 * 2187 + index2_tmp2] == 0)
+							unsigned char v_tmp = get_prune(prune_table.data(), index1_tmp2 * 2187 + index2_tmp2);
+							if (v_tmp != 3) {
+								if (d_tmp2 == -1) d_tmp2 = prune_depth;
+								else if (v_tmp == (d_tmp2 + 2) % 3) d_tmp2 -= 1;
+								else if (v_tmp == (d_tmp2 + 1) % 3) d_tmp2 += 1;
+							} else {
+								d_tmp2 = -1;
+							}
+							
+							if (c < l && d_tmp2 == 0)
 							{
 								valid = false;
 								break;
@@ -600,7 +650,7 @@ struct search
 					}
 				}
 			}
-			else if (depth_limited_search(index1_tmp * 27, index2_tmp * 27, depth - 1, i * 27))
+			else if (depth_limited_search(index1_tmp * 27, index2_tmp * 27, depth - 1, i * 27, next_dist, prune_depth, root_dist))
 			{
 				return true;
 			}
@@ -661,8 +711,44 @@ struct search
 		{
 			aprev_tmp = 27;
 		}
-		prune_tmp = prune_table[index1 * 2187 + index2];
-		if (prune_tmp == 0)
+		unsigned char root_val = get_prune(prune_table.data(), index1 * 2187 + index2);
+        int root_dist = -1;
+
+        if (root_val != 3)
+        {
+            int curr_i1 = index1;
+            int curr_i2 = index2;
+            unsigned char curr_v = root_val;
+            root_dist = 0;
+
+            while (true)
+            {
+                bool stepped_down = false;
+                for (int i : move_restrict_tmp)
+                {
+                    int next_i1 = cp_move_table[curr_i1 * 27 + i];
+                    int next_i2 = co_move_table[curr_i2 * 27 + i];
+                    unsigned char next_v = get_prune(prune_table.data(), next_i1 * 2187 + next_i2);
+
+                    if (next_v != 3 && next_v == (curr_v + 2) % 3)
+                    {
+                        curr_i1 = next_i1;
+                        curr_i2 = next_i2;
+                        curr_v = next_v;
+                        root_dist += 1;
+                        stepped_down = true;
+                        break;
+                    }
+                }
+
+                if (!stepped_down)
+                {
+                    break;
+                }
+            }
+        }
+
+		if (root_dist == 0)
 		{
 			update("Already solved.");
 		}
@@ -674,7 +760,8 @@ struct search
 			{
 				tmp = "depth=" + std::to_string(d);
 				update(tmp.c_str());
-				if (depth_limited_search(index1, index2, d, aprev_tmp * 27))
+				
+				if (depth_limited_search(index1, index2, d, aprev_tmp * 27, root_dist, prune_depth, root_dist))
 				{
 					break;
 				}
