@@ -70,3 +70,5 @@ FT_optimizer/
 
 dist/github-release*.txt
 dist/*release*.txt
+
+*backup*.cpp

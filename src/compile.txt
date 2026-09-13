@@ -5,7 +5,7 @@ crossAnalyzer
 em++ analyzer.cpp -o analyzer.js -O3 -msimd128 -flto -s TOTAL_MEMORY=50MB -s WASM=1 --bind
 
 crossSolver
-em++ solver.cpp -o solver.js -O3 -msimd128 -flto -s TOTAL_MEMORY=50MB -s WASM=1 --bind
+em++ solver.cpp -o solver.js -O3 -msimd128 -flto -s INITIAL_MEMORY=41943040 -s WASM=1 --bind
 
 crosssTariner
 em++ solver.cpp -o solver.js -O3 -msimd128 -flto -s WASM=1 --bind
@@ -56,7 +56,7 @@ functions
 em++ functions.cpp -o functions.js -O3 -msimd128 -flto -s -s WASM=1 --bind
 
 2x2solver
-em++ solver.cpp -o solver.js -O3 -msimd128 -flto -s TOTAL_MEMORY=50MB -s WASM=1 --bind
+em++ solver.cpp -o solver.js -O3 -msimd128 -flto -s INITIAL_MEMORY=52428800 -s WASM=1 --bind
 
 2x2solverLite
 em++ solver.cpp -o solver.js -O3 -msimd128 -flto -s WASM=1 --bind
