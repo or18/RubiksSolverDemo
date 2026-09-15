@@ -296,8 +296,8 @@ struct f2leo_search
         goal_middle = array_to_index(mg, 4, 2, 12);
 
         // Independent pruning tables for search lower-bounds
-        create_prune_table(goal_cross, SIZE_4E, 8, multi_move_table_4e, prune_table_cross);
-        create_prune_table(goal_middle, SIZE_4E, 8, multi_move_table_4e, prune_table_middle);
+        create_prune_table(goal_cross, SIZE_4E, 10, multi_move_table_4e, prune_table_cross);
+        create_prune_table(goal_middle, SIZE_4E, 10, multi_move_table_4e, prune_table_middle);
 
         ma = create_ma_table();
 
@@ -501,6 +501,34 @@ struct f2leo_search
         }
     }
 
+    // Invert numerical algorithm sequence
+    std::vector<int> invert_alg(const std::vector<int>& alg)
+    {
+        static const int inv_moves[18] = {
+            2, 1, 0,   // U, U2, U' -> U', U2, U
+            5, 4, 3,   // D, D2, D' -> D', D2, D
+            8, 7, 6,   // L, L2, L' -> L', L2, L
+            11, 10, 9, // R, R2, R' -> R', R2, R
+            14, 13, 12,// F, F2, F' -> F', F2, F
+            17, 16, 15 // B, B2, B' -> B', B2, B
+        };
+        std::vector<int> inv;
+        inv.reserve(alg.size());
+        for (auto it = alg.rbegin(); it != alg.rend(); ++it)
+        {
+            inv.push_back(inv_moves[*it]);
+        }
+        return inv;
+    }
+
+    // Invert string algorithm
+    std::string invert_alg_string(const std::string& str)
+    {
+        std::vector<int> alg = StringToAlg(str);
+        std::vector<int> inv = invert_alg(alg);
+        return AlgToString(inv);
+    }
+
     // -------------------------------------------------------------------------
     // Solver: F2L-EO condition (Cross solved + 4 middle edges EO solved)
     // -------------------------------------------------------------------------
@@ -515,7 +543,6 @@ struct f2leo_search
 
             int next_c = multi_move_table_4e[arg_c + i];
 
-            // Strict pruning: if minimum cross distance exceeds remaining moves, prune
             int p_cross = prune_table_cross[next_c];
             if (p_cross >= depth)
             {
@@ -531,18 +558,17 @@ struct f2leo_search
 
             if (depth == 1)
             {
-                // Terminal condition: Cross solved AND middle 4 edges have even orientation
-                if (next_c == goal_cross && 
-                    (next_eo1 % 2 == 0) && (next_eo2 % 2 == 0) && 
+                if (next_c == goal_cross &&
+                    (next_eo1 % 2 == 0) && (next_eo2 % 2 == 0) &&
                     (next_eo3 % 2 == 0) && (next_eo4 % 2 == 0))
                 {
                     tmp = AlgToString(sol);
                     return true;
                 }
             }
-            else if (depth_limited_search_f2leo(next_c * 18, 
-                                                next_eo1 * 18, next_eo2 * 18, 
-                                                next_eo3 * 18, next_eo4 * 18, 
+            else if (depth_limited_search_f2leo(next_c * 18,
+                                                next_eo1 * 18, next_eo2 * 18,
+                                                next_eo3 * 18, next_eo4 * 18,
                                                 depth - 1, i * 18))
             {
                 return true;
@@ -555,8 +581,6 @@ struct f2leo_search
 
     // -------------------------------------------------------------------------
     // Strictly evaluate the true minimal F2L-EO depth
-    // Returns the exact minimal depth required (0 to target_len).
-    // If it requires more than target_len moves, returns target_len + 1.
     // -------------------------------------------------------------------------
     int evaluate_scramble_depth(const std::vector<int>& scramble_alg, int target_len)
     {
@@ -575,159 +599,91 @@ struct f2leo_search
             eo4 = edge_move_table[eo4 * 18 + m];
         }
 
-        // Depth 0 check
         if (c == goal_cross && (eo1 % 2 == 0) && (eo2 % 2 == 0) && (eo3 % 2 == 0) && (eo4 % 2 == 0))
         {
             return 0;
         }
 
-        // Cross lower bound
         int d_min = prune_table_cross[c];
         if (d_min == 0) d_min = 1;
 
-        // If cross alone already requires more moves than target_len, it cannot be solved in target_len
         if (d_min > target_len)
         {
             return target_len + 1;
         }
 
-        // Search strictly from d_min up to target_len
         for (int d = d_min; d <= target_len; ++d)
         {
             sol.clear();
             if (depth_limited_search_f2leo(c * 18, eo1 * 18, eo2 * 18, eo3 * 18, eo4 * 18, d, 324))
             {
-                return d; // Found the true minimal depth!
+                return d;
             }
         }
 
         return target_len + 1;
     }
 
-    // Solve residual displacement from arbitrary state to Origin O
-    std::string start_search_index(int arg_c, int arg_m)
-    {
-        sol.clear();
-        if (arg_c == goal_cross && arg_m == goal_middle)
-        {
-            return "";
-        }
-
-        int d_min = std::max(prune_table_cross[arg_c], prune_table_middle[arg_m]);
-        if (d_min == 0) d_min = 1;
-
-        for (int d = d_min; d <= 14; ++d)
-        {
-            if (depth_limited_search_8e(arg_c * 18, arg_m * 18, d, 324))
-            {
-                break;
-            }
-        }
-        return tmp;
-    }
-
     // -------------------------------------------------------------------------
-    // Target Scramble Generation with Exact Boundary Adjustment
+    // Fast Candidate Generator: Single walk without heavy inner evaluation
     // -------------------------------------------------------------------------
-    std::string get_f2leo_scramble(int len)
+    std::vector<int> generate_raw_walk(int len)
     {
-        if (len < 1 || len > 10)
-        {
-            return "ERROR: Invalid length";
-        }
-
         std::vector<int> walk;
-        walk.reserve(len + 4);
+        walk.reserve(len);
 
-        const int max_attempts = (len >= 9) ? 10000 : 2500;
+        int c = goal_cross;
+        int prev = 18;
 
-        for (int attempt = 0; attempt < max_attempts; ++attempt)
+        for (int step = 0; step < len; ++step)
         {
-            walk.clear();
-            int c = goal_cross;
-            int eo1 = 0, eo2 = 2, eo3 = 4, eo4 = 6;
-            int prev = 18;
-            bool valid_walk = true;
+            std::vector<int> candidate_moves;
+            candidate_moves.reserve(18);
+            int current_dist = prune_table_cross[c];
 
-            for (int step = 0; step < len; ++step)
+            for (int m = 0; m < 18; ++m)
             {
-                std::vector<int> candidate_moves;
-                candidate_moves.reserve(18);
+                if (ma[prev * 18 + m]) continue;
 
-                int current_dist = prune_table_cross[c];
+                int next_c = multi_move_table_4e[c * 18 + m];
+                int next_dist = prune_table_cross[next_c];
 
-                for (int m = 0; m < 18; ++m)
-                {
-                    if (ma[prev * 18 + m]) continue;
-
-                    int next_c = multi_move_table_4e[c * 18 + m];
-                    int next_dist = prune_table_cross[next_c];
-
-                    if (step < 7 && next_dist < current_dist)
-                    {
-                        continue;
-                    }
-
-                    candidate_moves.push_back(m);
-                }
-
-                if (candidate_moves.empty())
-                {
-                    valid_walk = false;
-                    break;
-                }
-
-                std::uniform_int_distribution<size_t> c_dist(0, candidate_moves.size() - 1);
-                int chosen_move = candidate_moves[c_dist(generator)];
-
-                walk.push_back(chosen_move);
-                c = multi_move_table_4e[c * 18 + chosen_move];
-                eo1 = edge_move_table[eo1 * 18 + chosen_move];
-                eo2 = edge_move_table[eo2 * 18 + chosen_move];
-                eo3 = edge_move_table[eo3 * 18 + chosen_move];
-                eo4 = edge_move_table[eo4 * 18 + chosen_move];
-                prev = chosen_move;
+                // Guide away from origin
+                if (step < 7 && next_dist < current_dist) continue;
+                candidate_moves.push_back(m);
             }
 
-            if (!valid_walk) continue;
-            if (prune_table_cross[c] > len) continue;
-
-            int verified_depth = evaluate_scramble_depth(walk, len);
-
-            if (verified_depth == len)
+            if (candidate_moves.empty())
             {
-                // tmp holds the exact minimal F2L-EO solution (length == len)
-                std::string tmp_sol = tmp;
-                std::vector<int> sol_moves = StringToAlg(tmp_sol);
-
-                // Apply sol_moves to the scramble state to track the resulting 8-edge position
-                int cur_c = c;
-                int cur_m = goal_middle;
-                for (int m : walk)
-                {
-                    cur_m = multi_move_table_4e[cur_m * 18 + m];
-                }
-
-                for (int m : sol_moves)
-                {
-                    cur_c = multi_move_table_4e[cur_c * 18 + m];
-                    cur_m = multi_move_table_4e[cur_m * 18 + m];
-                }
-
-                // Calculate adjustment sequence to bridge back strictly to Origin O
-                std::string scramble_adjust = start_search_index(cur_c, cur_m);
-
-                return tmp_sol + " " + scramble_adjust;
+                return {};
             }
+
+            std::uniform_int_distribution<size_t> c_dist(0, candidate_moves.size() - 1);
+            int chosen_move = candidate_moves[c_dist(generator)];
+
+            walk.push_back(chosen_move);
+            c = multi_move_table_4e[c * 18 + chosen_move];
+            prev = chosen_move;
         }
 
-        return "RETRY_NEEDED";
+        return walk;
     }
 
+    // Verify whether a move sequence brings the cube strictly to Origin O
+    bool is_origin(const std::vector<int>& alg)
+    {
+        int c = goal_cross;
+        int m = goal_middle;
+        for (int move : alg)
+        {
+            c = multi_move_table_4e[c * 18 + move];
+            m = multi_move_table_4e[m * 18 + move];
+        }
+        return (c == goal_cross && m == goal_middle);
+    }
 
     // -------------------------------------------------------------------------
-    // 8-Edge Solver (Cross 4-edge EP/EO + Middle 4-edge EP/EO solved)
-    // Brings cube strictly to origin O
+    // 8-Edge Solver with safe 255 guard
     // -------------------------------------------------------------------------
     bool depth_limited_search_8e(int arg_c, int arg_m, int depth, int prev)
     {
@@ -743,8 +699,8 @@ struct f2leo_search
 
             int p_c = prune_table_cross[next_c];
             int p_m = prune_table_middle[next_m];
-            int h = std::max(p_c, p_m);
 
+            int h = std::max((p_c == 255 ? 0 : p_c), (p_m == 255 ? 0 : p_m));
             if (h >= depth)
             {
                 continue;
@@ -790,36 +746,82 @@ struct f2leo_search
             return "";
         }
 
-        int d_min = std::max(prune_table_cross[c], prune_table_middle[m]);
+        int p_c = prune_table_cross[c];
+        int p_m = prune_table_middle[m];
+        int d_min = std::max((p_c == 255 ? 1 : p_c), (p_m == 255 ? 1 : p_m));
         if (d_min == 0) d_min = 1;
 
         for (int d = d_min; d <= 14; ++d)
         {
             if (depth_limited_search_8e(c * 18, m * 18, d, 324))
             {
-                break;
+                return tmp;
             }
         }
-        return tmp;
+        return "";
     }
 
-
     // -------------------------------------------------------------------------
-    // Unified API matching cross_search and xxcross_search specifications
+    // Single-Loop Production Generator: Directly checks final composed cube state
     // -------------------------------------------------------------------------
     std::string func(std::string arg_scramble = "", std::string arg_length = "7")
     {
         int len = std::stoi(arg_length);
 
+        // 1. Solve incoming random scramble R strictly to Origin O
         std::string sol_str = start_search_origin(arg_scramble);
-        std::string gen_str = get_f2leo_scramble(len);
 
-        // ret[0] = arg_scramble + solution (matches standard trainer protocol)
-        // ret[1] = target solution + origin adjustment
+        std::vector<int> r_alg = StringToAlg(arg_scramble);
+        std::vector<int> s_alg = StringToAlg(sol_str);
+
+        // Base sequence: R * S (strictly at Origin O)
+        std::vector<int> rs_alg = r_alg;
+        rs_alg.insert(rs_alg.end(), s_alg.begin(), s_alg.end());
+
+        // Expand search budget for depths 9 and 10 to improve success rate
+        const int max_trials = (len >= 9) ? 10000 : 3000;
+        std::vector<int> chosen_walk;
+
+        for (int trial = 0; trial < max_trials; ++trial)
+        {
+            std::vector<int> candidate_walk = generate_raw_walk(len);
+            if (candidate_walk.empty()) continue;
+
+            // HTML applies: ret[1] + reverse(ret[0])
+            // Inverted by min2phase, the actual scramble applied to the cube is:
+            // X = (candidate_walk * (R * S)^-1)^-1 = (R * S) * candidate_walk^-1
+            std::vector<int> inv_w = invert_alg(candidate_walk);
+
+            std::vector<int> test_composed = rs_alg;
+            test_composed.insert(test_composed.end(), inv_w.begin(), inv_w.end());
+
+            // Directly evaluate the true minimal F2L-EO depth on the final composed state
+            int composed_depth = evaluate_scramble_depth(test_composed, len);
+
+            if (composed_depth == len)
+            {
+                chosen_walk = candidate_walk;
+                break;
+            }
+        }
+
+        std::string gen_str;
+        if (chosen_walk.empty())
+        {
+            // Do not fall back to an unverified walk; trigger client-side retry
+            gen_str = "RETRY_NEEDED";
+        }
+        else
+        {
+            gen_str = AlgToString(chosen_walk);
+        }
+
         std::string ret = arg_scramble + " " + sol_str + "," + gen_str;
         return ret;
     }
 };
+
+
 
 #ifdef __EMSCRIPTEN__
 EMSCRIPTEN_BINDINGS(f2leo_trainer_module)
@@ -829,20 +831,118 @@ EMSCRIPTEN_BINDINGS(f2leo_trainer_module)
         .function("func", &f2leo_search::func);
 }
 #else
+// -------------------------------------------------------------------------
+// Helper to apply rotation to an algorithm (z2: F<->B, U<->D, L<->L, R<->R)
+// -------------------------------------------------------------------------
+std::vector<int> apply_z2_to_alg(const std::vector<int>& alg)
+{
+    // Face mapping under z2:
+    // U(0)->D(1), D(1)->U(0), L(2)->L(2), R(3)->R(3), F(4)->B(5), B(5)->F(4)
+    static const int z2_face_map[6] = {1, 0, 2, 3, 5, 4};
+    std::vector<int> rotated;
+    rotated.reserve(alg.size());
+    for (int m : alg)
+    {
+        int face = m / 3;
+        int rot = m % 3;
+        rotated.push_back(z2_face_map[face] * 3 + rot);
+    }
+    return rotated;
+}
+
 int main()
 {
     std::cout << "Initializing F2L-EO Production Test..." << std::endl;
     f2leo_search trainer;
 
-    for (int len = 7; len <= 10; ++len)
+    std::vector<std::string> raw_scrambles = {
+        "U2 F2 L2 B2 R U2 F' B2 R2 F2 L F2 U2 L D2 R' D2 L D2 F",
+        "D2 U F L2 B' U2 R2 B' R2 F' R2 F' R' U B' R' D' U' B'"
+    };
+
+    std::vector<std::string> ui_solutions = {
+        "F' L2 B' L2 R",
+        "L' R' B' L D'"
+    };
+
+    std::cout << "\n================ [COUNTEREXAMPLE VERIFICATION] ================" << std::endl;
+
+    for (size_t i = 0; i < raw_scrambles.size(); ++i)
     {
-        std::cout << "\n[Test] Generating Length " << len << " Scramble (5 trials)..." << std::endl;
-        for (int t = 1; t <= 5; ++t)
+        std::cout << "\n------------------ Test Case " << (i + 1) << " ------------------" << std::endl;
+        std::cout << "Raw Scramble: " << raw_scrambles[i] << std::endl;
+        std::cout << "UI Solution : " << ui_solutions[i] << " (" << StringToAlg(ui_solutions[i]).size() << " moves)" << std::endl;
+
+        std::vector<int> alg_raw = StringToAlg(raw_scrambles[i]);
+        std::vector<int> alg_z2  = apply_z2_to_alg(alg_raw);
+
+        // 1. Raw Scramble Depth Assessment (Target: 4)
+        int depth_raw = trainer.evaluate_scramble_depth(alg_raw, 6);
+        std::cout << "[Raw Evaluation]  Evaluated Depth: " << depth_raw << std::endl;
+
+        // Check if a <= 4 move solution is actually found
+        for (int d = 1; d <= 4; ++d)
         {
-            std::string sc = trainer.get_f2leo_scramble(len);
-            std::cout << "  Trial " << t << ": " << sc << std::endl;
+            trainer.sol.clear();
+            int c = trainer.goal_cross;
+            int eo1 = 0, eo2 = 2, eo3 = 4, eo4 = 6;
+            for (int m : alg_raw) {
+                c = trainer.multi_move_table_4e[c * 18 + m];
+                eo1 = trainer.edge_move_table[eo1 * 18 + m];
+                eo2 = trainer.edge_move_table[eo2 * 18 + m];
+                eo3 = trainer.edge_move_table[eo3 * 18 + m];
+                eo4 = trainer.edge_move_table[eo4 * 18 + m];
+            }
+            if (trainer.depth_limited_search_f2leo(c * 18, eo1 * 18, eo2 * 18, eo3 * 18, eo4 * 18, d, 324)) {
+                std::cout << "  >>> FOUND <= 4 solution on Raw (depth=" << d << "): " << trainer.tmp << std::endl;
+                break;
+            }
         }
+
+        // 2. z2-Rotated Scramble Depth Assessment
+        int depth_z2 = trainer.evaluate_scramble_depth(alg_z2, 6);
+        std::cout << "[z2 Evaluation]   Evaluated Depth: " << depth_z2 << std::endl;
+
+        for (int d = 1; d <= 4; ++d)
+        {
+            trainer.sol.clear();
+            int c = trainer.goal_cross;
+            int eo1 = 0, eo2 = 2, eo3 = 4, eo4 = 6;
+            for (int m : alg_z2) {
+                c = trainer.multi_move_table_4e[c * 18 + m];
+                eo1 = trainer.edge_move_table[eo1 * 18 + m];
+                eo2 = trainer.edge_move_table[eo2 * 18 + m];
+                eo3 = trainer.edge_move_table[eo3 * 18 + m];
+                eo4 = trainer.edge_move_table[eo4 * 18 + m];
+            }
+            if (trainer.depth_limited_search_f2leo(c * 18, eo1 * 18, eo2 * 18, eo3 * 18, eo4 * 18, d, 324)) {
+                std::cout << "  >>> FOUND <= 4 solution on z2 (depth=" << d << "): " << trainer.tmp << std::endl;
+                break;
+            }
+        }
+
+        // 3. Verify if UI Solution solves the state
+        std::vector<int> ui_alg = StringToAlg(ui_solutions[i]);
+        std::vector<int> test_applied = alg_raw;
+        test_applied.insert(test_applied.end(), ui_alg.begin(), ui_alg.end());
+
+        int cur_c = trainer.goal_cross;
+        int cur_eo1 = 0, cur_eo2 = 2, cur_eo3 = 4, cur_eo4 = 6;
+        for (int m : test_applied) {
+            cur_c = trainer.multi_move_table_4e[cur_c * 18 + m];
+            cur_eo1 = trainer.edge_move_table[cur_eo1 * 18 + m];
+            cur_eo2 = trainer.edge_move_table[cur_eo2 * 18 + m];
+            cur_eo3 = trainer.edge_move_table[cur_eo3 * 18 + m];
+            cur_eo4 = trainer.edge_move_table[cur_eo4 * 18 + m];
+        }
+        bool c_ok = (cur_c == trainer.goal_cross);
+        bool eo_ok = (cur_eo1 % 2 == 0 && cur_eo2 % 2 == 0 && cur_eo3 % 2 == 0 && cur_eo4 % 2 == 0);
+        std::cout << "[UI Solution Validation] Cross: " << (c_ok ? "SOLVED" : "FAILED") 
+                  << " | Middle EO: " << (eo_ok ? "SOLVED" : "FAILED") << std::endl;
     }
+
+    std::cout << "\n================================================================\n" << std::endl;
     return 0;
 }
+
 #endif

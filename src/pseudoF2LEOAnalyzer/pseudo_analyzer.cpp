@@ -629,7 +629,7 @@ struct cross_analyzer
 					int index_eo4_tmp2 = index_eo4;
 					for (int j : sol)
 					{
-						if (index1_tmp2 == multi_move_table[index1_tmp2 + j] * 18 && index2_tmp2 == multi_move_table[index2_tmp2 + j] * 18)
+						if (index1_tmp2 == multi_move_table[index1_tmp2 + j] * 18 && index2_tmp2 == multi_move_table[index2_tmp2 + j] * 18 && index_eo1_tmp2 == edge_move_table[index_eo1_tmp2 + j] * 18 && index_eo2_tmp2 == edge_move_table[index_eo2_tmp2 + j] * 18 && index_eo3_tmp2 == edge_move_table[index_eo3_tmp2 + j] * 18 && index_eo4_tmp2 == edge_move_table[index_eo4_tmp2 + j] * 18)
 						{
 							valid = false;
 							break;
@@ -880,7 +880,7 @@ struct xcross_analyzer2
 					int index_eo3_tmp2 = index_eo3;
 					for (int j : sol)
 					{
-						if (index1_tmp2 == multi_move_table[index1_tmp2 + j] && index2_tmp2 == corner_move_table[index2_tmp2 + j] * 18 && index3_tmp2 == edge_move_table[index3_tmp2 + j] * 18)
+						if (index1_tmp2 == multi_move_table[index1_tmp2 + j] && index2_tmp2 == corner_move_table[index2_tmp2 + j] * 18 && index3_tmp2 == edge_move_table[index3_tmp2 + j] * 18 && index_eo1_tmp2 == edge_move_table[index_eo1_tmp2 + j] * 18 && index_eo2_tmp2 == edge_move_table[index_eo2_tmp2 + j] * 18 && index_eo3_tmp2 == edge_move_table[index_eo3_tmp2 + j] * 18)
 						{
 							valid = false;
 							break;
@@ -1096,7 +1096,7 @@ struct xcross_analyzer2
 					int index_eo2_tmp2 = index_eo2;
 					for (int j : sol)
 					{
-						if (index1_tmp2 == multi_move_table[index1_tmp2 + j] && index2_tmp2 == corner_move_table[index2_tmp2 + j] * 18 && index4_tmp2 == corner_move_table[index4_tmp2 + j] * 18 && index5_tmp2 == edge_move_table[index5_tmp2 + j] * 18 && index6_tmp2 == edge_move_table[index6_tmp2 + j] * 18)
+						if (index1_tmp2 == multi_move_table[index1_tmp2 + j] && index2_tmp2 == corner_move_table[index2_tmp2 + j] * 18 && index4_tmp2 == corner_move_table[index4_tmp2 + j] * 18 && index5_tmp2 == edge_move_table[index5_tmp2 + j] * 18 && index6_tmp2 == edge_move_table[index6_tmp2 + j] * 18 && index_eo1_tmp2 == edge_move_table[index_eo1_tmp2 + j] * 18 && index_eo2_tmp2 == edge_move_table[index_eo2_tmp2 + j] * 18)
 						{
 							valid = false;
 							break;
@@ -1335,7 +1335,7 @@ struct xcross_analyzer2
 					int index_eo1_tmp2 = index_eo1;
 					for (int j : sol)
 					{
-						if (index1_tmp2 == multi_move_table[index1_tmp2 + j] && index2_tmp2 == corner_move_table[index2_tmp2 + j] * 18 && index4_tmp2 == corner_move_table[index4_tmp2 + j] * 18 && index6_tmp2 == corner_move_table[index6_tmp2 + j] * 18 && index7_tmp2 == edge_move_table[index7_tmp2 + j] * 18 && index8_tmp2 == edge_move_table[index8_tmp2 + j] * 18 && index9_tmp2 == edge_move_table[index9_tmp2 + j] * 18)
+						if (index1_tmp2 == multi_move_table[index1_tmp2 + j] && index2_tmp2 == corner_move_table[index2_tmp2 + j] * 18 && index4_tmp2 == corner_move_table[index4_tmp2 + j] * 18 && index6_tmp2 == corner_move_table[index6_tmp2 + j] * 18 && index7_tmp2 == edge_move_table[index7_tmp2 + j] * 18 && index8_tmp2 == edge_move_table[index8_tmp2 + j] * 18 && index9_tmp2 == edge_move_table[index9_tmp2 + j] * 18 && index_eo1_tmp2 == edge_move_table[index_eo1_tmp2 + j] * 18)
 						{
 							valid = false;
 							break;
