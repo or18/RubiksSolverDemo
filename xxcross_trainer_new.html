@@ -395,17 +395,13 @@
 			}
 		});
 	</script>
-
-    <p style="background-color: #f8f9fa; border-left: 4px solid #198754; padding: 10px 14px; margin-bottom: 16px; font-size: 0.95em; line-height: 1.5;">
-		<strong>Tip:</strong> You are currently using the classic edition, which loads Adjacent and Diagonal instances separately for quicker page initialization (depths up to 10).<br>
-		If you want to train on frontier depths 11 and 12, try the high-capacity edition:
-		<a href="xxcross_trainer_new.html" style="font-weight: bold; color: #198754;">xxcross_trainer_new.html (Extended Depths 11-12)</a>.
+    <p style="background-color: #f8f9fa; border-left: 4px solid #0d6efd; padding: 10px 14px; margin-bottom: 16px; font-size: 0.95em; line-height: 1.5;">
+		<strong>Notice:</strong> This new edition unifies Adjacent and Diagonal databases into a single instance to support deep lengths 11 and 12, allocating ~700 MB of RAM locally. Initialization computes both databases sequentially and takes several tens of seconds.<br>
+		If you only practice depths up to 10 and prefer faster startup times, please use the standard edition:
+		<a href="xxcross_trainer.html" style="font-weight: bold; color: #0d6efd;">xxcross_trainer.html (Faster Startup)</a>.
 	</p>
 
-	<a>Warning: This scrambler generates about 600~ MB locally on first run; initial scramble generation may take
-		several
-		tens of seconds to minutes. Note that the bucket model automatically selects the minimum
-		configuration.</a><br><br>
+    <a>Warning: This scrambler precomputes search databases for both Adjacent and Diagonal pairs locally (~700 MB RAM). Initial database construction takes several tens of seconds. Please wait until the process completes.</a><br><br>
 
 	<label for="rot">Rotation: </label>
 	<select translate="no" id="rot">
@@ -447,8 +443,6 @@
 		<option translate="no" value="BR FL">BR FL</option>
 		<option translate="no" value="FR FL">FR FL</option>
 	</select><br>
-	<a>Note: Different search instances are launched for adjacent pairs and diagonal pairs. Initial generation takes
-		time for each.</a><br><br>
 	<label for="len">Length: </label>
 	<select translate="no" id="len">
 		<option translate="no" value="1">1</option>
@@ -461,6 +455,8 @@
 		<option translate="no" value="8">8</option>
 		<option translate="no" value="9">9</option>
 		<option translate="no" value="10">10</option>
+		<option translate="no" value="11">11</option>
+		<option translate="no" value="12">12 (Rare)</option>
 	</select><br>
 	<button id="back" class="button medium" onclick="back()" disabled>Back</button>
 	<button id="next" class="button medium" onclick="genscr()">Next</button><br>
@@ -1205,160 +1201,113 @@
 			'FR FL': "y2"
 		}
 
-		async function genscr() {
-			if (!isFunctionsReady) {
-				alert("The module is still initializing. Please try again in a moment.");
-				return;
-			}
-			if (typeof reverse !== "function" || typeof convert !== "function" || typeof convertMask !== "function" || typeof generateTwoPhaseInput !== "function") {
-				alert("Error: The required function is not initialized. Please reload the page manually.");
-				return "";
-			}
-			if (typeof min2phase === 'undefined' || typeof min2phase.randomCube !== 'function') {
-				try {
-					await window.loadMin2phase();
-					console.log('min2phase loaded');
-				} catch (e) {
-					console.error('Failed to load min2phase:', e);
-					alert('Failed to load solver module. Please check network or try again later.');
-					return;
-				}
-			}
-			if (typeof min2phase === 'undefined' || typeof min2phase.randomCube !== 'function') {
-				console.error('genscr: min2phase still unavailable after load');
-				alert('Solver module not available.');
-				return;
-			}
-			const bucket_model_adjacent = "MOBILE_LOW"; // Adjusted for performance in browser
-			const bucket_model_opposite = "MOBILE_LOW";
-			const sol_len = document.getElementById("len").value;
-			const rot = document.getElementById("rot").value;
-			const slot = document.getElementById("slot").value;
-			const mask_input = getMaskInputsDouble();
-			const convertedMask = convertMask(mask_input.maskInputCenter, mask_input.maskInputEdges, mask_input.maskInputCorners, rot);
-			setMask(convertedMask);
-			let cube;
-			let solution;
-			try {
-				cube = min2phase.randomCube();
-				solution = min2phase.solve(cube);
-			} catch (e) {
-				console.error('genscr error:', e);
-				alert('Failed to generate scramble: see console for details.');
-				return;
-			}
-			let args;
-			const show = document.getElementById('show');
-			let slots_pairs_adjacent = ["BL BR", "BL FL", "BR FR", "FR FL"];
-			let slots_pairs_opposite = ["BL FR", "BR FL"];
-			if (slots_pairs_adjacent.includes(slot)) {
-				console.log('Generating for adjacent pair:', slot);
-				if (!worker2_adjacent) {
-					worker2_adjacent = new Worker('src/xxcrossTrainer/production/worker_prod.js');
-				}
-				args = { scr: solution, len: sol_len, pairType: 'adj', bucketModel: bucket_model_adjacent };
-				worker2_adjacent.onmessage = async function (event) {
-					try {
-						if (event.data === "Error") {
-							throw new Error('Worker reported an error during generating scramble.');
-						} else if (event.data === "Initial Error") {
-							throw new Error('Worker reported an initial database construction error. Please re-initialize the database for the selected slot pair.');
-							isCalculationForAdjFinished = false;
-							document.getElementById("adjacentStatus").innerText = "Initial calculation failed.";
-						}
-						const ret = (event.data).split(",");
-						var scramble = min2phase.solve(generateTwoPhaseInputWrapper(convert(ret[1] + reverse(ret[0]) + slotToRotDouble[slot])[0]));
-						scramble = scr_fix(rot + scramble);
-					const prev = document.getElementById('scr').innerHTML;
-					if (prev && prev.trim() !== "") {
-						scr_old = prev;
-						document.getElementById('back').disabled = false;
-					} else {
-						scr_old = null;
-					}
-						document.getElementById('scr').innerHTML = scramble;
-						try {
-							show.innerHTML = '';
-							const sim = createPlayer(scramble, '');
-							sim.experimentalStickeringMaskOrbits = mask;
-							sim.controlPanel = "none";
-							show.appendChild(sim);
-							return;
-						} catch (syncErr) {
-							console.warn('save: sync createPlayer failed, falling back to async', syncErr);
-						}
-						const placeholder = document.createElement('div');
-						placeholder.className = 'twisty-placeholder';
-						placeholder.textContent = 'Loading preview...';
-						show.appendChild(placeholder);
-						try {
-							const real = await createPlayerLazy(scramble, '');
-							real.experimentalStickeringMaskOrbits = mask;
-							real.controlPanel = "none";
-							placeholder.replaceWith(real);
-						} catch (asyncErr) {
-							console.error('save: async createPlayer failed', asyncErr);
-							placeholder.textContent = 'Warning: Failed to create TwistyPlayer.';
-						}
-					} catch (e) {
-						console.error('worker2_adjacent.onmessage error:', e);
-					}
-				};
-				worker2_adjacent.postMessage(args);
-			}
-			if (slots_pairs_opposite.includes(slot)) {
-				if (!worker2_opposite) {
-					worker2_opposite = new Worker('src/xxcrossTrainer/production/worker_prod.js');
-				}
-				args = { scr: solution, len: sol_len, pairType: 'opp', bucketModel: bucket_model_opposite };
-				worker2_opposite.onmessage = async function (event) {
-					try {
-						if (event.data === "Error") {
-							throw new Error('Worker reported an error during processing.');
-						} else if (event.data === "Initial Error") {
-							throw new Error('Worker reported an initialization error. Please re-initialize the database for the selected slot pair.');
-						}
-						const ret = (event.data).split(",");
-						var scramble = min2phase.solve(generateTwoPhaseInputWrapper(convert(ret[1] + reverse(ret[0]) + slotToRotDouble[slot])[0]));
-						scramble = scr_fix(rot + scramble);
-					const prev = document.getElementById('scr').innerHTML;
-					if (prev && prev.trim() !== "") {
-						scr_old = prev;
-						document.getElementById('back').disabled = false;
-					} else {
-						scr_old = null;
-					}
-						document.getElementById('scr').innerHTML = scramble;
-						try {
-							show.innerHTML = '';
-							const sim = createPlayer(scramble, '');
-							sim.experimentalStickeringMaskOrbits = mask;
-							sim.controlPanel = "none";
-							show.appendChild(sim);
-							return;
-						} catch (syncErr) {
-							console.warn('save: sync createPlayer failed, falling back to async', syncErr);
-						}
-						const placeholder = document.createElement('div');
-						placeholder.className = 'twisty-placeholder';
-						placeholder.textContent = 'Loading preview...';
-						show.appendChild(placeholder);
-						try {
-							const real = await createPlayerLazy(scramble, '');
-							real.experimentalStickeringMaskOrbits = mask;
-							real.controlPanel = "none";
-							placeholder.replaceWith(real);
-						} catch (asyncErr) {
-							console.error('save: async createPlayer failed', asyncErr);
-							placeholder.textContent = 'Warning: Failed to create TwistyPlayer.';
-						}
-					} catch (e) {
-						console.error('worker2_opposite.onmessage error:', e);
-					}
-				};
-				worker2_opposite.postMessage(args);
-			}
-		}
+		let xxcrossWorker = null;
+
+async function genscr() {
+    if (!isFunctionsReady) {
+        alert("The module is still initializing. Please try again in a moment.");
+        return;
+    }
+    if (typeof reverse !== "function" || typeof convert !== "function" || typeof convertMask !== "function" || typeof generateTwoPhaseInput !== "function") {
+        alert("Error: The required function is not initialized. Please reload the page manually.");
+        return "";
+    }
+    if (typeof min2phase === 'undefined' || typeof min2phase.randomCube !== 'function') {
+        try {
+            await window.loadMin2phase();
+            console.log('min2phase loaded');
+        } catch (e) {
+            console.error('Failed to load min2phase:', e);
+            alert('Failed to load solver module. Please check network or try again later.');
+            return;
+        }
+    }
+    if (typeof min2phase === 'undefined' || typeof min2phase.randomCube !== 'function') {
+        console.error('genscr: min2phase still unavailable after load');
+        alert('Solver module not available.');
+        return;
+    }
+
+    const sol_len = document.getElementById("len").value;
+    const rot = document.getElementById("rot").value;
+    const slot = document.getElementById("slot").value;
+    const mask_input = getMaskInputsDouble();
+    const convertedMask = convertMask(mask_input.maskInputCenter, mask_input.maskInputEdges, mask_input.maskInputCorners, rot);
+    setMask(convertedMask);
+
+    let cube;
+    let solution;
+    try {
+        cube = min2phase.randomCube();
+        solution = min2phase.solve(cube);
+    } catch (e) {
+        console.error('genscr error:', e);
+        alert('Failed to generate scramble: see console for details.');
+        return;
+    }
+
+    const show = document.getElementById('show');
+
+    if (!xxcrossWorker) {
+        xxcrossWorker = new Worker('src/xxcrossTrainer_new/worker.js');
+    }
+
+    const args = { scr: solution, len: sol_len, slot: slot };
+
+    xxcrossWorker.onmessage = async function (event) {
+        try {
+            if (event.data === "Error" || (typeof event.data === "string" && event.data.includes("RETRY_NEEDED"))) {
+                alert("Scramble generation timed out or depth frontier reached. Please click Next to try again.");
+                return;
+            } else if (event.data === "Initial Error") {
+                throw new Error('Worker reported an initialization error. Please reload.');
+            }
+
+            const ret = (event.data).split(",");
+            let scramble = min2phase.solve(generateTwoPhaseInputWrapper(convert(ret[1] + reverse(ret[0]) + slotToRotDouble[slot])[0]));
+            scramble = scr_fix(rot + scramble);
+
+            const prev = document.getElementById('scr').innerHTML;
+            if (prev && prev.trim() !== "") {
+                scr_old = prev;
+                document.getElementById('back').disabled = false;
+            } else {
+                scr_old = null;
+            }
+            document.getElementById('scr').innerHTML = scramble;
+
+            try {
+                show.innerHTML = '';
+                const sim = createPlayer(scramble, '');
+                sim.experimentalStickeringMaskOrbits = mask;
+                sim.controlPanel = "none";
+                show.appendChild(sim);
+                return;
+            } catch (syncErr) {
+                console.warn('save: sync createPlayer failed, falling back to async', syncErr);
+            }
+
+            const placeholder = document.createElement('div');
+            placeholder.className = 'twisty-placeholder';
+            placeholder.textContent = 'Loading preview...';
+            show.appendChild(placeholder);
+
+            try {
+                const real = await createPlayerLazy(scramble, '');
+                real.experimentalStickeringMaskOrbits = mask;
+                real.controlPanel = "none";
+                placeholder.replaceWith(real);
+            } catch (asyncErr) {
+                console.error('save: async createPlayer failed', asyncErr);
+                placeholder.textContent = 'Warning: Failed to create TwistyPlayer.';
+            }
+        } catch (e) {
+            console.error('xxcrossWorker.onmessage error:', e);
+        }
+    };
+
+    xxcrossWorker.postMessage(args);
+}
 
         const details_advanced_settings = document.getElementById("advancedSettings");
         const summary_advanced_settings = document.getElementById("summaryAdvancedSettings");
