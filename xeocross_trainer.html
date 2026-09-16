@@ -698,19 +698,21 @@
 			}
 		};
 
-		// XEOCross Masking: Cross=Regular, Target Slot=Regular, Other Edges=Oriented(?), Other Corners=Ignored(I)
+		// XEOCross Masking (6 chars for Edges, 5 chars for Corners)
+		// Edges:   [Cross(4), BL, BR, FR, FL, LL(4)]
+		// Corners: [BL, BR, FR, FL, LL(4)]
 		const slotToEMask = {
-			'BL': '????--??????',
-			'BR': '?-????-?????',
-			'FR': '??-????-????',
-			'FL': '???-????-???'
+			'BL': '--????',
+			'BR': '-?-???',
+			'FR': '-??-??',
+			'FL': '-???-?'
 		};
 
 		const slotToCMask = {
-			'BL': '-IIIIIII',
-			'BR': 'I-IIIIII',
-			'FR': 'II-IIIII',
-			'FL': 'III-IIII'
+			'BL': '-IIII',
+			'BR': 'I-III',
+			'FR': 'II-II',
+			'FL': 'III-I'
 		};
 
 		function getMaskInputs() {
@@ -1183,9 +1185,8 @@
 				}
 			}
 
-			const nextBtn = document.getElementById('next');
-			nextBtn.disabled = true;
 			isGenerating = true;
+			const nextBtn = document.getElementById('next');
 
 			const sol_len = document.getElementById("len").value;
 			const rot = document.getElementById("rot").value;
@@ -1201,8 +1202,8 @@
 			} catch (e) {
 				console.error('genscr error:', e);
 				alert('Failed to generate scramble.');
-				nextBtn.disabled = false;
 				isGenerating = false;
+				nextBtn.focus();
 				return;
 			}
 
@@ -1212,12 +1213,12 @@
 
 			worker2.onmessage = async function (event) {
 				try {
-					const ret = (event.data).split(",");
-					if (ret[1] === "RETRY_NEEDED") {
-						isGenerating = false;
-						genscr();
+					if (event.data === "Error" || event.data.includes("RETRY_NEEDED")) {
+						alert("Scramble generation timed out or depth frontier reached. Please click Next to try again.");
 						return;
 					}
+
+					const ret = (event.data).split(",");
 
 					let base_seq = ret[1] + reverse(ret[0]);
 					let mapped_seq = base_seq;
@@ -1260,8 +1261,8 @@
 				} catch (e) {
 					console.error('worker2.onmessage error:', e);
 				} finally {
-					nextBtn.disabled = false;
 					isGenerating = false;
+					nextBtn.focus();
 				}
 			};
 

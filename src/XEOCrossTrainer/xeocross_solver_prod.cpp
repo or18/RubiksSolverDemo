@@ -971,8 +971,7 @@ struct xeocross_search
         // Fallback: limited trial walk
         if (w_str.empty())
         {
-            // Keep trial budget small to prevent thread blocking (especially for frontier depth 12)
-            const int max_trials = (len >= 12) ? 100 : ((len >= 11) ? 500 : 1000);
+            const int max_trials = (len >= 11) ? 5000 : 1000;
             for (int trial = 0; trial < max_trials; ++trial)
             {
                 std::vector<int> candidate_walk = generate_raw_walk(len);
@@ -1000,9 +999,8 @@ struct xeocross_search
         }
         else
         {
-            std::vector<int> w_alg = StringToAlg(w_str);
-            std::vector<int> inv_w = invert_alg(w_alg);
-            gen_str = AlgToString(inv_w);
+            // Do NOT invert w_str here. HTML's min2phase solver handles the inversion.
+            gen_str = w_str;
         }
 
         return arg_scramble + " " + sol_str + "," + gen_str;
