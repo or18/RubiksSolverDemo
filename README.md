@@ -12,6 +12,7 @@ Also, the following trainers are available.
 - [**F2LEO Cross trainer**](https://or18.github.io/RubiksSolverDemo/f2leo_cross_trainer)
 - [**XCross trainer**](https://or18.github.io/RubiksSolverDemo/xcross_trainer)
 - [**XXCross trainer**](https://or18.github.io/RubiksSolverDemo/xxcross_trainer)
+- [**XXXCross trainer**](https://or18.github.io/RubiksSolverDemo/xxxcross_trainer)
 - [**Free Pair trainer**](https://or18.github.io/RubiksSolverDemo/pairing_trainer)
 - [**XCross Free Pair trainer**](https://or18.github.io/RubiksSolverDemo/xcross_pairing_trainer)
 - [**Pseudo XCross trainer**](https://or18.github.io/RubiksSolverDemo/pseudo_xcross_trainer)
