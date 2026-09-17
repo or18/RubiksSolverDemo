@@ -262,32 +262,134 @@ void create_multi_move_table(int n, int c, int pn, int size, const std::vector<i
     }
 }
 
-void create_prune_table2(int index1, int index2, int size1, int size2, int depth,
-                         const std::vector<int> &table1, const std::vector<int> &table2,
-                         std::vector<unsigned char> &prune_table)
+// 1. Cross 4 Edges prune table
+void create_prune_table_4e(int goal_index, int size, int depth,
+                           const std::vector<int> &table,
+                           std::vector<unsigned char> &prune_table)
 {
-    int size = size1 * size2;
     prune_table = std::vector<unsigned char>(size, 255);
-    prune_table[index1 * size2 + index2] = 0;
-    int next_i;
-    int index1_tmp;
-    int index2_tmp;
-    int next_d;
+    prune_table[goal_index] = 0;
     int num_filled = 1;
     int num_old = 1;
 
     for (int d = 0; d < depth; ++d)
     {
-        next_d = d + 1;
+        int next_d = d + 1;
         for (int i = 0; i < size; ++i)
         {
             if (prune_table[i] == d)
             {
-                index1_tmp = (i / size2) * 18;
-                index2_tmp = (i % size2) * 18;
+                int index_tmp = i * 18;
                 for (int j = 0; j < 18; ++j)
                 {
-                    next_i = table1[index1_tmp + j] * size2 + table2[index2_tmp + j];
+                    int next_i = table[index_tmp + j];
+                    if (prune_table[next_i] == 255)
+                    {
+                        prune_table[next_i] = next_d;
+                        num_filled++;
+                    }
+                }
+            }
+        }
+        if (num_filled == num_old)
+        {
+            break;
+        }
+        num_old = num_filled;
+    }
+}
+
+// 2. Slot 2E * 2C prune table (Origin only: 1 fully solved state)
+void create_prune_table_2e2c_origin(int target_2e, int target_2c, int size2c, int depth,
+                                    const std::vector<int> &table_2e,
+                                    const std::vector<int> &table_2c,
+                                    std::vector<unsigned char> &prune_table)
+{
+    int size = table_2e.size() / 18 * size2c;
+    prune_table = std::vector<unsigned char>(size, 255);
+    prune_table[target_2e * size2c + target_2c] = 0;
+    int num_filled = 1;
+    int num_old = 1;
+
+    for (int d = 0; d < depth; ++d)
+    {
+        int next_d = d + 1;
+        for (int i = 0; i < size; ++i)
+        {
+            if (prune_table[i] == d)
+            {
+                int idx_2e = (i / size2c) * 18;
+                int idx_2c = (i % size2c) * 18;
+                for (int j = 0; j < 18; ++j)
+                {
+                    int next_i = table_2e[idx_2e + j] * size2c + table_2c[idx_2c + j];
+                    if (prune_table[next_i] == 255)
+                    {
+                        prune_table[next_i] = next_d;
+                        num_filled++;
+                    }
+                }
+            }
+        }
+        if (num_filled == num_old)
+        {
+            break;
+        }
+        num_old = num_filled;
+    }
+}
+
+// 3. Slot 2E * 2C prune table (Free Pair: 1 origin + 16 floating pair variations)
+void create_prune_table_2e2c_free(int target_2e, int target_2c, int size2c, int depth,
+                                  const std::vector<int> &table_2e,
+                                  const std::vector<int> &table_2c,
+                                  std::vector<unsigned char> &prune_table)
+{
+    int size = table_2e.size() / 18 * size2c;
+    prune_table = std::vector<unsigned char>(size, 255);
+
+    // 1. Origin
+    prune_table[target_2e * size2c + target_2c] = 0;
+    int num_filled = 1;
+
+    // 2. 16 Free Pair variations
+    static const std::vector<std::string> appl_moves = {"L U L'", "L U' L'", "B' U B", "B' U' B"};
+    static const std::vector<std::string> auf = {"", "U", "U2", "U'"};
+
+    for (int i = 0; i < 4; ++i)
+    {
+        for (int j = 0; j < 4; ++j)
+        {
+            int cur_2e = target_2e;
+            int cur_2c = target_2c;
+            for (int m : StringToAlg(appl_moves[i] + " " + auf[j]))
+            {
+                cur_2e = table_2e[cur_2e * 18 + m];
+                cur_2c = table_2c[cur_2c * 18 + m];
+            }
+            int idx = cur_2e * size2c + cur_2c;
+            if (prune_table[idx] == 255)
+            {
+                prune_table[idx] = 0;
+                num_filled++;
+            }
+        }
+    }
+
+    int num_old = num_filled;
+
+    for (int d = 0; d < depth; ++d)
+    {
+        int next_d = d + 1;
+        for (int i = 0; i < size; ++i)
+        {
+            if (prune_table[i] == d)
+            {
+                int idx_2e = (i / size2c) * 18;
+                int idx_2c = (i % size2c) * 18;
+                for (int j = 0; j < 18; ++j)
+                {
+                    int next_i = table_2e[idx_2e + j] * size2c + table_2c[idx_2c + j];
                     if (prune_table[next_i] == 255)
                     {
                         prune_table[next_i] = next_d;
@@ -346,13 +448,17 @@ struct xxcross_search
     std::vector<int> multi_move_table_2e; // Slot 2 Edges
     std::vector<int> multi_move_table_2c; // Slot 2 Corners
 
-    // Dual Pruning tables (Shared between Adjacent and Diagonal)
-    // h1: Cross 4E * Corner 1 (DLB)
-    // h2_adj: Cross 4E * Corner 2 (DBR)
-    // h2_diag: Cross 4E * Corner 2 (DFR)
-    std::vector<unsigned char> prune_table_4e_c_bl;
-    std::vector<unsigned char> prune_table_4e_c_br;
-    std::vector<unsigned char> prune_table_4e_c_fr;
+    // Pruning tables
+    // 1. Cross 4 Edges (Shared)
+    std::vector<unsigned char> prune_table_4e;
+
+    // 2. Slot 2E * 2C (Free Pair: 17 states at depth 0)
+    std::vector<unsigned char> prune_table_2e2c_free_adj;
+    std::vector<unsigned char> prune_table_2e2c_free_diag;
+
+    // 3. Slot 2E * 2C (Origin: 1 solved state at depth 0)
+    std::vector<unsigned char> prune_table_2e2c_origin_adj;
+    std::vector<unsigned char> prune_table_2e2c_origin_diag;
 
     // Search databases
     std::vector<std::vector<uint64_t>> index_pairs_adj;
@@ -369,16 +475,20 @@ struct xxcross_search
     static constexpr uint64_t SIZE_C = 24ULL;      // 8 * 3
     static constexpr uint64_t SIZE_2E_2C = SIZE_2E * SIZE_2C; // 528 * 504 = 266112ULL
 
-    // Goal states
+    // Goal states (Origin: fully solved XXCross state)
     int goal_4e;
 
-    // Adjacent: BL (edge=0, c=4) & BR (edge=1, c=5)
+    // Adjacent origin: BL (edge=0, c=4) & BR (edge=1, c=5)
     int goal_2e_adj;
     int goal_2c_adj;
 
-    // Diagonal: BL (edge=0, c=4) & FR (edge=2, c=6)
+    // Diagonal origin: BL (edge=0, c=4) & FR (edge=2, c=6)
     int goal_2e_diag;
     int goal_2c_diag;
+
+    // 17 Goal states for Free Pair (1 solved origin + 16 free pair variations)
+    std::vector<uint64_t> goals_composite_adj;
+    std::vector<uint64_t> goals_composite_diag;
 
     xxcross_search()
     {
@@ -402,31 +512,74 @@ struct xxcross_search
         std::vector<int> cross_edges = {8 * 2 + 0, 9 * 2 + 0, 10 * 2 + 0, 11 * 2 + 0};
         goal_4e = array_to_index(cross_edges, 4, 2, 12);
 
-        // Adjacent goals: BL(0), BR(1) / Corners: DLB(4), DBR(5)
+        // Adjacent origin: BL(0), BR(1) / Corners: DLB(4), DBR(5)
         std::vector<int> adj_edges = {0 * 2 + 0, 1 * 2 + 0};
         std::vector<int> adj_corners = {4 * 3 + 0, 5 * 3 + 0};
         goal_2e_adj = array_to_index(adj_edges, 2, 2, 12);
         goal_2c_adj = array_to_index(adj_corners, 2, 3, 8);
 
-        // Diagonal goals: BL(0), FR(2) / Corners: DLB(4), DFR(6)
+        // Diagonal origin: BL(0), FR(2) / Corners: DLB(4), DFR(6)
         std::vector<int> diag_edges = {0 * 2 + 0, 2 * 2 + 0};
         std::vector<int> diag_corners = {4 * 3 + 0, 6 * 3 + 0};
         goal_2e_diag = array_to_index(diag_edges, 2, 2, 12);
         goal_2c_diag = array_to_index(diag_corners, 2, 3, 8);
 
-        // Pruning tables: Cross 4E * Single Corner (depth limit 8)
-        int goal_c_bl = 4 * 3 + 0; // DLB
-        int goal_c_br = 5 * 3 + 0; // DBR
-        int goal_c_fr = 6 * 3 + 0; // DFR
+        // Helper lambda to generate 17 composite goal states
+        auto generate_17_goals = [&](int target_2e, int target_2c) -> std::vector<uint64_t>
+        {
+            std::vector<uint64_t> list;
+            list.reserve(17);
 
-        create_prune_table2(goal_4e, goal_c_bl, SIZE_4E, SIZE_C, 10,
-                            multi_move_table_4e, corner_move_table, prune_table_4e_c_bl);
+            // 1. Fully solved origin
+            uint64_t origin_node = static_cast<uint64_t>(goal_4e) * SIZE_2E_2C +
+                                   static_cast<uint64_t>(target_2e) * SIZE_2C +
+                                   target_2c;
+            list.push_back(origin_node);
 
-        create_prune_table2(goal_4e, goal_c_br, SIZE_4E, SIZE_C, 10,
-                            multi_move_table_4e, corner_move_table, prune_table_4e_c_br);
+            // 2. 16 Free Pair variations in U layer (4 take-out algs x 4 AUF)
+            // Cross edges remain solved; moves only apply to F2L slot pieces
+            static const std::vector<std::string> appl_moves = {"L U L'", "L U' L'", "B' U B", "B' U' B"};
+            static const std::vector<std::string> auf = {"", "U", "U2", "U'"};
 
-        create_prune_table2(goal_4e, goal_c_fr, SIZE_4E, SIZE_C, 10,
-                            multi_move_table_4e, corner_move_table, prune_table_4e_c_fr);
+            for (int i = 0; i < 4; ++i)
+            {
+                for (int j = 0; j < 4; ++j)
+                {
+                    int cur_2e = target_2e;
+                    int cur_2c = target_2c;
+                    for (int m : StringToAlg(appl_moves[i] + " " + auf[j]))
+                    {
+                        cur_2e = multi_move_table_2e[cur_2e * 18 + m];
+                        cur_2c = multi_move_table_2c[cur_2c * 18 + m];
+                    }
+                    uint64_t fp_node = static_cast<uint64_t>(goal_4e) * SIZE_2E_2C +
+                                       static_cast<uint64_t>(cur_2e) * SIZE_2C +
+                                       cur_2c;
+                    list.push_back(fp_node);
+                }
+            }
+            return list;
+        };
+
+        goals_composite_adj = generate_17_goals(goal_2e_adj, goal_2c_adj);
+        goals_composite_diag = generate_17_goals(goal_2e_diag, goal_2c_diag);
+
+        // 1. Cross 4 Edges prune table (depth 8)
+        create_prune_table_4e(goal_4e, SIZE_4E, 8, multi_move_table_4e, prune_table_4e);
+
+        // 2. Slot 2E * 2C Free Pair prune tables (depth 10)
+        create_prune_table_2e2c_free(goal_2e_adj, goal_2c_adj, SIZE_2C, 10,
+                                     multi_move_table_2e, multi_move_table_2c, prune_table_2e2c_free_adj);
+
+        create_prune_table_2e2c_free(goal_2e_diag, goal_2c_diag, SIZE_2C, 10,
+                                     multi_move_table_2e, multi_move_table_2c, prune_table_2e2c_free_diag);
+
+        // 3. Slot 2E * 2C Origin prune tables (depth 10)
+        create_prune_table_2e2c_origin(goal_2e_adj, goal_2c_adj, SIZE_2C, 10,
+                                       multi_move_table_2e, multi_move_table_2c, prune_table_2e2c_origin_adj);
+
+        create_prune_table_2e2c_origin(goal_2e_diag, goal_2c_diag, SIZE_2C, 10,
+                                       multi_move_table_2e, multi_move_table_2c, prune_table_2e2c_origin_diag);
 
         ma = create_ma_table();
 
@@ -531,27 +684,33 @@ struct xxcross_search
         }
     }
 
-    void build_single_database(uint64_t goal_composite,
+    void build_single_database(const std::vector<uint64_t> &goals_composite,
                                std::vector<std::vector<uint64_t>> &target_pairs,
                                std::vector<int> &target_num_list,
                                const std::string &label)
     {
-        target_pairs.resize(13);
-        target_num_list.resize(13, 0);
+        // Allocate depths 0 to 11
+        target_pairs.resize(12);
+        target_num_list.resize(12, 0);
 
-        target_pairs[0].push_back(goal_composite);
-        target_num_list[0] = 1;
+        target_pairs[0] = goals_composite;
+        target_num_list[0] = static_cast<int>(goals_composite.size());
 
-        std::cout << "\n=== Phase 1: Full BFS (Depths 1-6) [" << label << "] ===" << std::endl;
+        std::cout << "\n=== Phase 1: Full BFS (Depths 1-5) [" << label << "] ===" << std::endl;
+        std::cout << "Depth 0: " << target_num_list[0] << " nodes" << std::endl;
 
         tsl::robin_set<uint64_t> prev_set, cur_set, next_set;
         prev_set.max_load_factor(LOAD_FACTOR);
         cur_set.max_load_factor(LOAD_FACTOR);
         next_set.max_load_factor(LOAD_FACTOR);
 
-        cur_set.insert(goal_composite);
+        for (uint64_t g : goals_composite)
+        {
+            cur_set.insert(g);
+        }
 
-        for (int d = 1; d <= 6; ++d)
+        // Full BFS up to Depth 5
+        for (int d = 1; d <= 5; ++d)
         {
             next_set.clear();
             for (uint64_t node : cur_set)
@@ -600,11 +759,23 @@ struct xxcross_search
 
         std::cout << "\n=== Phase 2: Local Expansion [" << label << "] ===" << std::endl;
 
-        tsl::robin_set<uint64_t> depth6_set = std::move(cur_set);
+        tsl::robin_set<uint64_t> depth5_set = std::move(cur_set);
 
-        // Depth 7: 2M bucket
-        expand_depth_partial(6, 7, depth6_set, target_pairs[6], nullptr,
+        // Depth 6: 2M bucket from Depth 5
+        expand_depth_partial(5, 6, depth5_set, target_pairs[5], nullptr,
                              BUCKET_2M, TARGET_NODES_2M, target_pairs, target_num_list);
+
+        // Depth 7: 2M bucket with Depth 5 backtrace check
+        tsl::robin_set<uint64_t> depth6_set;
+        depth6_set.max_load_factor(LOAD_FACTOR);
+        depth6_set.insert(target_pairs[6].begin(), target_pairs[6].end());
+        expand_depth_partial(6, 7, depth6_set, target_pairs[6], &depth5_set,
+                             BUCKET_2M, TARGET_NODES_2M, target_pairs, target_num_list);
+
+        {
+            tsl::robin_set<uint64_t> temp;
+            depth5_set.swap(temp);
+        }
 
         // Depth 8: 2M bucket with Depth 6 backtrace check
         tsl::robin_set<uint64_t> depth7_set;
@@ -635,14 +806,14 @@ struct xxcross_search
         depth9_set.max_load_factor(LOAD_FACTOR);
         depth9_set.insert(target_pairs[9].begin(), target_pairs[9].end());
         expand_depth_partial(9, 10, depth9_set, target_pairs[9], &depth8_set,
-                             BUCKET_2M, TARGET_NODES_2M, target_pairs, target_num_list);
+                             BUCKET_1M, TARGET_NODES_1M, target_pairs, target_num_list);
 
         {
             tsl::robin_set<uint64_t> temp;
             depth8_set.swap(temp);
         }
 
-        // Depth 11: 1M bucket with Depth 9 backtrace check
+        // Depth 11: 1M bucket with Depth 9 backtrace check (Frontier Rare Depth)
         tsl::robin_set<uint64_t> depth10_set;
         depth10_set.max_load_factor(LOAD_FACTOR);
         depth10_set.insert(target_pairs[10].begin(), target_pairs[10].end());
@@ -653,49 +824,29 @@ struct xxcross_search
             tsl::robin_set<uint64_t> temp;
             depth9_set.swap(temp);
         }
-
-        // Depth 12: 1M bucket with Depth 10 backtrace check
-        tsl::robin_set<uint64_t> depth11_set;
-        depth11_set.max_load_factor(LOAD_FACTOR);
-        depth11_set.insert(target_pairs[11].begin(), target_pairs[11].end());
-        expand_depth_partial(11, 12, depth11_set, target_pairs[11], &depth10_set,
-                             BUCKET_1M, TARGET_NODES_1M, target_pairs, target_num_list);
-
         {
             tsl::robin_set<uint64_t> temp;
             depth10_set.swap(temp);
-        }
-        {
-            tsl::robin_set<uint64_t> temp;
-            depth11_set.swap(temp);
         }
     }
 
     void build_database()
     {
-        // 1. Build Adjacent Database (BL-BR)
-        uint64_t goal_adj = static_cast<uint64_t>(goal_4e) * SIZE_2E_2C +
-                            static_cast<uint64_t>(goal_2e_adj) * SIZE_2C +
-                            goal_2c_adj;
+        // 1. Build Adjacent Database (BL-BR) from 17 Free Pair goals
+        build_single_database(goals_composite_adj, index_pairs_adj, num_list_adj, "Adjacent");
 
-        build_single_database(goal_adj, index_pairs_adj, num_list_adj, "Adjacent");
-
-        // 2. Build Diagonal Database (BL-FR)
-        uint64_t goal_diag = static_cast<uint64_t>(goal_4e) * SIZE_2E_2C +
-                             static_cast<uint64_t>(goal_2e_diag) * SIZE_2C +
-                             goal_2c_diag;
-
-        build_single_database(goal_diag, index_pairs_diag, num_list_diag, "Diagonal");
+        // 2. Build Diagonal Database (BL-FR) from 17 Free Pair goals
+        build_single_database(goals_composite_diag, index_pairs_diag, num_list_diag, "Diagonal");
     }
 
     static constexpr int GOAL_C_BL = 4 * 3 + 0; // 12 (DLB)
     static constexpr int GOAL_C_BR = 5 * 3 + 0; // 15 (DBR)
     static constexpr int GOAL_C_FR = 6 * 3 + 0; // 18 (DFR)
 
-    bool depth_limited_search(int arg_4e, int arg_2e, int arg_c1, int arg_c2,
-                              int depth, int prev,
-                              int target_goal_2e, int target_goal_c2,
-                              const std::vector<unsigned char> &prune_table_2nd)
+    // 1. Free Pair search (uses prune_table_2e2c_free)
+    bool depth_limited_search_free(int arg_4e, int arg_2e, int arg_c1, int arg_c2,
+                                   int depth, int prev,
+                                   const std::vector<unsigned char> &prune_table_free)
     {
         for (int i = 0; i < 18; ++i)
         {
@@ -705,42 +856,92 @@ struct xxcross_search
             }
 
             int next_4e = multi_move_table_4e[arg_4e + i];
-            int next_c1 = corner_move_table[arg_c1 + i];
-
-            int p1 = prune_table_4e_c_bl[next_4e * SIZE_C + next_c1];
+            int p1 = prune_table_4e[next_4e];
             int h1 = (p1 == 255) ? 11 : p1;
             if (h1 >= depth)
             {
                 continue;
             }
 
+            int next_2e = multi_move_table_2e[arg_2e + i];
+            int next_c1 = corner_move_table[arg_c1 + i];
             int next_c2 = corner_move_table[arg_c2 + i];
 
-            int p2 = prune_table_2nd[next_4e * SIZE_C + next_c2];
+            std::vector<int> next_c_arr = {next_c1, next_c2};
+            int idx_2c = array_to_index(next_c_arr, 2, 3, 8);
+            int p2 = prune_table_free[next_2e * SIZE_2C + idx_2c];
             int h2 = (p2 == 255) ? 11 : p2;
             if (h2 >= depth)
             {
                 continue;
             }
 
-            // Look up 2 slot edges only after passing both dual pruning tests
-            int next_2e = multi_move_table_2e[arg_2e + i];
-
             sol.emplace_back(i);
 
             if (depth == 1)
             {
-                if (next_4e == goal_4e && next_2e == target_goal_2e &&
-                    next_c1 == GOAL_C_BL && next_c2 == target_goal_c2)
+                if (p1 == 0 && p2 == 0) // Any of the 17 Free Pair goals
                 {
                     tmp = AlgToString(sol);
                     return true;
                 }
             }
-            else if (depth_limited_search(next_4e * 18, next_2e * 18, next_c1 * 18, next_c2 * 18,
-                                          depth - 1, i * 18,
-                                          target_goal_2e, target_goal_c2,
-                                          prune_table_2nd))
+            else if (depth_limited_search_free(next_4e * 18, next_2e * 18, next_c1 * 18, next_c2 * 18,
+                                               depth - 1, i * 18, prune_table_free))
+            {
+                return true;
+            }
+
+            sol.pop_back();
+        }
+        return false;
+    }
+
+    // 2. Origin search (uses prune_table_2e2c_origin)
+    bool depth_limited_search_origin(int arg_4e, int arg_2e, int arg_c1, int arg_c2,
+                                     int depth, int prev,
+                                     const std::vector<unsigned char> &prune_table_origin)
+    {
+        for (int i = 0; i < 18; ++i)
+        {
+            if (ma[prev + i])
+            {
+                continue;
+            }
+
+            int next_4e = multi_move_table_4e[arg_4e + i];
+            int p1 = prune_table_4e[next_4e];
+            int h1 = (p1 == 255) ? 11 : p1;
+            if (h1 >= depth)
+            {
+                continue;
+            }
+
+            int next_2e = multi_move_table_2e[arg_2e + i];
+            int next_c1 = corner_move_table[arg_c1 + i];
+            int next_c2 = corner_move_table[arg_c2 + i];
+
+            std::vector<int> next_c_arr = {next_c1, next_c2};
+            int idx_2c = array_to_index(next_c_arr, 2, 3, 8);
+            int p2 = prune_table_origin[next_2e * SIZE_2C + idx_2c];
+            int h2 = (p2 == 255) ? 11 : p2;
+            if (h2 >= depth)
+            {
+                continue;
+            }
+
+            sol.emplace_back(i);
+
+            if (depth == 1)
+            {
+                if (p1 == 0 && p2 == 0) // Exact fully solved XXCross origin
+                {
+                    tmp = AlgToString(sol);
+                    return true;
+                }
+            }
+            else if (depth_limited_search_origin(next_4e * 18, next_2e * 18, next_c1 * 18, next_c2 * 18,
+                                                 depth - 1, i * 18, prune_table_origin))
             {
                 return true;
             }
@@ -755,16 +956,13 @@ struct xxcross_search
         sol.clear();
         std::vector<int> alg = StringToAlg(arg_scramble);
 
-        int target_goal_2e = is_adjacent ? goal_2e_adj : goal_2e_diag;
-        int target_goal_c2 = is_adjacent ? GOAL_C_BR : GOAL_C_FR;
-        const auto &prune_table_2nd = is_adjacent ? prune_table_4e_c_br : prune_table_4e_c_fr;
+        const auto &prune_table_origin = is_adjacent ? prune_table_2e2c_origin_adj : prune_table_2e2c_origin_diag;
 
         int idx_4e = goal_4e;
-        int idx_2e = target_goal_2e;
-        int c1 = GOAL_C_BL;
-        int c2 = target_goal_c2;
+        int idx_2e = is_adjacent ? goal_2e_adj : goal_2e_diag;
+        int c1 = 4 * 3 + 0; // DLB
+        int c2 = is_adjacent ? (5 * 3 + 0) : (6 * 3 + 0); // DBR or DFR
 
-        // Apply incoming scramble
         for (int move : alg)
         {
             idx_4e = multi_move_table_4e[idx_4e * 18 + move];
@@ -773,26 +971,52 @@ struct xxcross_search
             c2 = corner_move_table[c2 * 18 + move];
         }
 
-        if (idx_4e == goal_4e && idx_2e == target_goal_2e &&
-            c1 == GOAL_C_BL && c2 == target_goal_c2)
+        std::vector<int> c_arr = {c1, c2};
+        int idx_2c = array_to_index(c_arr, 2, 3, 8);
+        int p1 = prune_table_4e[idx_4e];
+        int p2 = prune_table_origin[idx_2e * SIZE_2C + idx_2c];
+
+        if (p1 == 0 && p2 == 0)
         {
             return "";
         }
 
-        int p1 = prune_table_4e_c_bl[idx_4e * SIZE_C + c1];
-        int p2 = prune_table_2nd[idx_4e * SIZE_C + c2];
         int d_min = std::max((p1 == 255 ? 1 : p1), (p2 == 255 ? 1 : p2));
-        if (d_min == 0)
-        {
-            d_min = 1;
-        }
+        if (d_min == 0) d_min = 1;
 
         for (int d = d_min; d <= max_depth; ++d)
         {
-            if (depth_limited_search(idx_4e * 18, idx_2e * 18, c1 * 18, c2 * 18,
-                                     d, 18 * 18,
-                                     target_goal_2e, target_goal_c2,
-                                     prune_table_2nd))
+            if (depth_limited_search_origin(idx_4e * 18, idx_2e * 18, c1 * 18, c2 * 18,
+                                            d, 18 * 18, prune_table_origin))
+            {
+                return tmp;
+            }
+        }
+        return "";
+    }
+
+    std::string start_search_index(int idx_4e, int idx_2e, int c1, int c2, bool is_adjacent, int max_depth = 14)
+    {
+        sol.clear();
+        const auto &prune_table_origin = is_adjacent ? prune_table_2e2c_origin_adj : prune_table_2e2c_origin_diag;
+
+        std::vector<int> c_arr = {c1, c2};
+        int idx_2c = array_to_index(c_arr, 2, 3, 8);
+        int p1 = prune_table_4e[idx_4e];
+        int p2 = prune_table_origin[idx_2e * SIZE_2C + idx_2c];
+
+        if (p1 == 0 && p2 == 0)
+        {
+            return "";
+        }
+
+        int d_min = std::max((p1 == 255 ? 1 : p1), (p2 == 255 ? 1 : p2));
+        if (d_min == 0) d_min = 1;
+
+        for (int d = d_min; d <= max_depth; ++d)
+        {
+            if (depth_limited_search_origin(idx_4e * 18, idx_2e * 18, c1 * 18, c2 * 18,
+                                            d, 18 * 18, prune_table_origin))
             {
                 return tmp;
             }
@@ -824,14 +1048,12 @@ struct xxcross_search
         std::vector<int> walk;
         walk.reserve(len);
 
-        int target_goal_2e = is_adjacent ? goal_2e_adj : goal_2e_diag;
-        int target_goal_c2 = is_adjacent ? GOAL_C_BR : GOAL_C_FR;
-        const auto &prune_table_2nd = is_adjacent ? prune_table_4e_c_br : prune_table_4e_c_fr;
+        const auto &prune_table_free = is_adjacent ? prune_table_2e2c_free_adj : prune_table_2e2c_free_diag;
 
         int idx_4e = goal_4e;
-        int idx_2e = target_goal_2e;
-        int c1 = GOAL_C_BL;
-        int c2 = target_goal_c2;
+        int idx_2e = is_adjacent ? goal_2e_adj : goal_2e_diag;
+        int c1 = 4 * 3 + 0; // DLB
+        int c2 = is_adjacent ? (5 * 3 + 0) : (6 * 3 + 0); // DBR or DFR
         int prev = 18;
 
         for (int step = 0; step < len; ++step)
@@ -839,8 +1061,10 @@ struct xxcross_search
             std::vector<int> candidate_moves;
             candidate_moves.reserve(18);
 
-            int p1 = prune_table_4e_c_bl[idx_4e * SIZE_C + c1];
-            int p2 = prune_table_2nd[idx_4e * SIZE_C + c2];
+            std::vector<int> c_arr = {c1, c2};
+            int idx_2c = array_to_index(c_arr, 2, 3, 8);
+            int p1 = prune_table_4e[idx_4e];
+            int p2 = prune_table_free[idx_2e * SIZE_2C + idx_2c];
             int cur_dist = std::max((p1 == 255 ? 11 : p1), (p2 == 255 ? 11 : p2));
 
             for (int m = 0; m < 18; ++m)
@@ -851,14 +1075,17 @@ struct xxcross_search
                 }
 
                 int next_4e = multi_move_table_4e[idx_4e * 18 + m];
+                int next_2e = multi_move_table_2e[idx_2e * 18 + m];
                 int next_c1 = corner_move_table[c1 * 18 + m];
                 int next_c2 = corner_move_table[c2 * 18 + m];
 
-                int np1 = prune_table_4e_c_bl[next_4e * SIZE_C + next_c1];
-                int np2 = prune_table_2nd[next_4e * SIZE_C + next_c2];
+                std::vector<int> next_c_arr = {next_c1, next_c2};
+                int next_2c = array_to_index(next_c_arr, 2, 3, 8);
+                int np1 = prune_table_4e[next_4e];
+                int np2 = prune_table_free[next_2e * SIZE_2C + next_2c];
                 int next_dist = std::max((np1 == 255 ? 11 : np1), (np2 == 255 ? 11 : np2));
 
-                // Suppress backtracking in early steps to spread nodes into deep space
+                // Suppress backtracking towards any Free Pair goal in early steps
                 if (step < 7 && next_dist < cur_dist)
                 {
                     continue;
@@ -888,18 +1115,15 @@ struct xxcross_search
     std::string get_xxcross_scramble(int len, bool is_adjacent)
     {
         const auto &target_pairs = is_adjacent ? index_pairs_adj : index_pairs_diag;
+        const auto &prune_table_free = is_adjacent ? prune_table_2e2c_free_adj : prune_table_2e2c_free_diag;
 
         if (len <= 0 || len >= static_cast<int>(target_pairs.size()) || target_pairs[len].empty())
         {
             return "";
         }
 
-        const int max_attempts = 1000;
+        const int max_attempts = (len >= 11) ? 200 : 500;
         std::uniform_int_distribution<size_t> dist(0, target_pairs[len].size() - 1);
-
-        int target_goal_2e = is_adjacent ? goal_2e_adj : goal_2e_diag;
-        int target_goal_c2 = is_adjacent ? GOAL_C_BR : GOAL_C_FR;
-        const auto &prune_table_2nd = is_adjacent ? prune_table_4e_c_br : prune_table_4e_c_fr;
 
         for (int attempt = 0; attempt < max_attempts; ++attempt)
         {
@@ -911,27 +1135,21 @@ struct xxcross_search
             int idx_2e = static_cast<int>(rem / SIZE_2C);
             int idx_2c = static_cast<int>(rem % SIZE_2C);
 
-            // Decode 2 corners into separate corners
             std::vector<int> corners_arr(2);
             index_to_array(corners_arr, idx_2c, 2, 3, 8);
             int c1 = corners_arr[0] / 18;
             int c2 = corners_arr[1] / 18;
 
-            int p1 = prune_table_4e_c_bl[idx_4e * SIZE_C + c1];
-            int p2 = prune_table_2nd[idx_4e * SIZE_C + c2];
+            int p1 = prune_table_4e[idx_4e];
+            int p2 = prune_table_free[idx_2e * SIZE_2C + idx_2c];
             int d_min = std::max((p1 == 255 ? 1 : p1), (p2 == 255 ? 1 : p2));
-            if (d_min == 0)
-            {
-                d_min = 1;
-            }
+            if (d_min == 0) d_min = 1;
 
             int actual_depth = -1;
             for (int d = d_min; d <= len; ++d)
             {
-                if (depth_limited_search(idx_4e * 18, idx_2e * 18, c1 * 18, c2 * 18,
-                                         d, 18 * 18,
-                                         target_goal_2e, target_goal_c2,
-                                         prune_table_2nd))
+                if (depth_limited_search_free(idx_4e * 18, idx_2e * 18, c1 * 18, c2 * 18,
+                                              d, 18 * 18, prune_table_free))
                 {
                     actual_depth = d;
                     break;
@@ -940,10 +1158,28 @@ struct xxcross_search
 
             if (actual_depth == len)
             {
-                return AlgToString(sol);
+                std::string tmp_sol = tmp;
+                
+                // Advance the state using the verified solution to reach the Free Pair state
+                int cur_4e = idx_4e;
+                int cur_2e = idx_2e;
+                int cur_c1 = c1;
+                int cur_c2 = c2;
+                
+                for (int move : sol)
+                {
+                    cur_4e = multi_move_table_4e[cur_4e * 18 + move];
+                    cur_2e = multi_move_table_2e[cur_2e * 18 + move];
+                    cur_c1 = corner_move_table[cur_c1 * 18 + move];
+                    cur_c2 = corner_move_table[cur_c2 * 18 + move];
+                }
+
+                // Resolve from the Free Pair state back to the Origin
+                std::string scramble_adjust = start_search_index(cur_4e, cur_2e, cur_c1, cur_c2, is_adjacent);
+                
+                return tmp_sol + scramble_adjust;
             }
         }
-
         return "";
     }
 
@@ -953,9 +1189,7 @@ struct xxcross_search
     {
         int len = std::stoi(arg_length);
 
-        // Determine slot adjacency:
-        // Adjacent slot combinations (e.g., "BL BR", "BR FR", "FR FL", "FL BL", or flag "adjacent")
-        // Diagonal slot combinations (e.g., "BL FR", "BR FL", or flag "diagonal")
+        // Determine slot adjacency
         bool is_adjacent = true;
         if (arg_slot.find("BL FR") != std::string::npos ||
             arg_slot.find("FR BL") != std::string::npos ||
@@ -967,16 +1201,18 @@ struct xxcross_search
             is_adjacent = false;
         }
 
-        // 1. Solve incoming random scramble R to origin O
+        // 1. Solve incoming random scramble R to fully solved origin O
         std::string sol_str = start_search(arg_scramble, is_adjacent);
 
-        // 2. Obtain exact-depth XXCross solution W from precomputed database
+        // 2. Obtain exact-depth Free Pair solution (W_free + W_adjust) from database
         std::string w_str = get_xxcross_scramble(len, is_adjacent);
 
         // 3. Fallback: trial random walk
         if (w_str.empty())
         {
             const int max_trials = (len >= 11) ? 200 : 500;
+            const auto &prune_table_free = is_adjacent ? prune_table_2e2c_free_adj : prune_table_2e2c_free_diag;
+
             for (int trial = 0; trial < max_trials; ++trial)
             {
                 std::vector<int> candidate_walk = generate_raw_walk(len, is_adjacent);
@@ -985,13 +1221,52 @@ struct xxcross_search
                     continue;
                 }
 
-                std::string walk_scramble = AlgToString(candidate_walk);
-                std::string verified_sol = start_search(walk_scramble, is_adjacent, len);
-                std::vector<int> sol_alg = StringToAlg(verified_sol);
+                // Simulate walk from origin to find terminal state
+                int cur_4e = goal_4e;
+                int cur_2e = is_adjacent ? goal_2e_adj : goal_2e_diag;
+                int cur_c1 = 4 * 3 + 0;
+                int cur_c2 = is_adjacent ? (5 * 3 + 0) : (6 * 3 + 0);
 
-                if (static_cast<int>(sol_alg.size()) == len)
+                for (int m : candidate_walk)
                 {
-                    w_str = verified_sol;
+                    cur_4e = multi_move_table_4e[cur_4e * 18 + m];
+                    cur_2e = multi_move_table_2e[cur_2e * 18 + m];
+                    cur_c1 = corner_move_table[cur_c1 * 18 + m];
+                    cur_c2 = corner_move_table[cur_c2 * 18 + m];
+                }
+
+                std::vector<int> cur_c_arr = {cur_c1, cur_c2};
+                int cur_2c = array_to_index(cur_c_arr, 2, 3, 8);
+                int p1 = prune_table_4e[cur_4e];
+                int p2 = prune_table_free[cur_2e * SIZE_2C + cur_2c];
+                int d_min = std::max((p1 == 255 ? 1 : p1), (p2 == 255 ? 1 : p2));
+                if (d_min == 0) d_min = 1;
+
+                int actual_depth = -1;
+                sol.clear();
+                for (int d = d_min; d <= len; ++d)
+                {
+                    if (depth_limited_search_free(cur_4e * 18, cur_2e * 18, cur_c1 * 18, cur_c2 * 18,
+                                                  d, 18 * 18, prune_table_free))
+                    {
+                        actual_depth = d;
+                        break;
+                    }
+                }
+
+                if (actual_depth == len)
+                {
+                    std::string tmp_sol = tmp;
+                    int f_4e = cur_4e, f_2e = cur_2e, f_c1 = cur_c1, f_c2 = cur_c2;
+                    for (int move : sol)
+                    {
+                        f_4e = multi_move_table_4e[f_4e * 18 + move];
+                        f_2e = multi_move_table_2e[f_2e * 18 + move];
+                        f_c1 = corner_move_table[f_c1 * 18 + move];
+                        f_c2 = corner_move_table[f_c2 * 18 + move];
+                    }
+                    std::string scramble_adjust = start_search_index(f_4e, f_2e, f_c1, f_c2, is_adjacent);
+                    w_str = tmp_sol + scramble_adjust;
                     break;
                 }
             }
@@ -1013,7 +1288,7 @@ struct xxcross_search
 };
 
 #ifdef __EMSCRIPTEN__
-EMSCRIPTEN_BINDINGS(xxcross_trainer_module)
+EMSCRIPTEN_BINDINGS(xcross_free_pair_trainer_module)
 {
     emscripten::class_<xxcross_search>("xxcross_search")
         .constructor<>()
