@@ -412,16 +412,15 @@
 		});
 	</script>
 
-    <p style="background-color: #f8f9fa; border-left: 4px solid #198754; padding: 10px 14px; margin-bottom: 16px; font-size: 0.95em; line-height: 1.5;">
-		<strong>Tip:</strong> You are currently using the classic edition, which loads Adjacent and Diagonal instances separately for quicker page initialization (depths up to 10).<br>
-		If you want to train on frontier depths 11 and 12, try the high-capacity edition:
-		<a href="xxcross_trainer_new.html" style="font-weight: bold; color: #198754;">xxcross_trainer_new.html (Extended Depths 11-12)</a>.
-	</p>
+    <div style="background-color: #1e2621; border-left: 4px solid #198754; padding: 10px 14px; margin-bottom: 12px; font-size: 0.95em; line-height: 1.5; color: #e0e0e0;">
+		<strong style="color: #4ade80;">Tip:</strong> You are currently using the classic edition, which loads Adjacent and Diagonal databases separately for faster startup (supports depths up to 10).<br>
+		For higher-depth training (depths 11–12), use the extended edition:
+		<a href="xxcross_trainer_new.html" style="font-weight: bold; color: #4ade80; text-decoration: underline;">xxcross_trainer_new.html (Extended Depths 11–12)</a>.
+	</div>
 
-	<a>Warning: This scrambler generates about 600~ MB locally on first run; initial scramble generation may take
-		several
-		tens of seconds to minutes. Note that the bucket model automatically selects the minimum
-		configuration.</a><br><br>
+	<div style="background-color: #26221a; border-left: 4px solid #d97706; padding: 10px 14px; margin-bottom: 20px; font-size: 0.95em; line-height: 1.5; color: #e0e0e0;">
+		<strong style="color: #fbbf24;">Warning:</strong> This scrambler allocates ~600 MB of memory (RAM) locally on first run. Initial initialization may take from several tens of seconds up to a few minutes depending on your device. The solver automatically selects the optimal database configuration.
+	</div>
 
 	<label for="rot">Rotation: </label>
 	<select translate="no" id="rot">

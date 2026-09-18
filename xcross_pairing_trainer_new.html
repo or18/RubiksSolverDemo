@@ -407,13 +407,15 @@
 			}
 		});
 	</script>
-	<p style="background-color: #f8f9fa; border-left: 4px solid #0d6efd; padding: 10px 14px; margin-bottom: 16px; font-size: 0.95em; line-height: 1.5; color: #1e1e1e;">
-		<strong>Notice:</strong> This new edition unifies Adjacent and Diagonal databases into a single instance to support deep lengths 10 and 11, allocating ~700 MB of RAM locally. Initialization computes both databases sequentially and takes several tens of seconds.<br>
+	<div style="background-color: #1a2332; border-left: 4px solid #3b82f6; padding: 10px 14px; margin-bottom: 12px; font-size: 0.95em; line-height: 1.5; color: #e0e0e0;">
+		<strong style="color: #60a5fa;">Notice:</strong> This extended edition unifies Adjacent and Diagonal databases to support deep lengths 10 and 11.<br>
 		If you only practice depths up to 9 and prefer faster startup times, please use the standard edition:
-		<a href="xcross_pairing_trainer.html" style="font-weight: bold; color: #0d6efd;">xcross_pairing_trainer.html (Faster Startup)</a>.
-	</p>
+		<a href="xcross_pairing_trainer.html" style="font-weight: bold; color: #60a5fa; text-decoration: underline;">xcross_pairing_trainer.html (Faster Startup)</a>.
+	</div>
 
-	<a>Warning: This scrambler precomputes search databases for both Adjacent and Diagonal pairs locally (~700 MB RAM). Initial database construction takes several tens of seconds. Please wait until the process completes.</a><br><br>
+	<div style="background-color: #26221a; border-left: 4px solid #d97706; padding: 10px 14px; margin-bottom: 20px; font-size: 0.95em; line-height: 1.5; color: #e0e0e0;">
+		<strong style="color: #fbbf24;">Warning:</strong> This scrambler precomputes search databases locally (~700 MB RAM). Initial construction takes several tens of seconds. Please wait until the process completes.
+	</div>
 
 	<label for="rot">Rotation: </label>
 	<select translate="no" id="rot">

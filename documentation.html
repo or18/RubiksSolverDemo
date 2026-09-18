@@ -235,8 +235,7 @@
 		});
 	</script>
 	<div class="section">
-		<p>Solvers for 3x3x3 Rubik's cube: cross, xcross, free pair, pseudo F2L, EOCross, and last layer. 2x2x2 cube
-			solver is also available. Each solver comes with a Visual Cube State Editor.</p>
+		<p>A collection of specialized Rubik's Cube solvers covering 3x3x3 stages (Cross, XCross, Free Pair, Pseudo F2L, EOCross, and Last Layer) and 2x2x2. Each solver includes an interactive Visual Cube State Editor.</p>
 		<p>
 			<a href="index.html">3x3x3 Solver</a><br>
 			<a href="2x2x2.html">2x2x2 Solver</a><br>
@@ -245,77 +244,57 @@
 	</div>
 	<div class="section">
 		<h2>Trainers</h2>
-		<p>Also, the following trainers are available.</p>
+		<p>The following practice trainers are also available:</p>
 		<ul>
 			<li><a href="cross_trainer.html">Cross trainer</a></li>
-            <li><a href="f2leo_cross_trainer.html">F2LEO Cross trainer</a></li>
+			<li><a href="f2leo_cross_trainer.html">F2LEO Cross trainer</a></li>
 			<li><a href="xcross_trainer.html">XCross trainer</a></li>
 			<li><a href="xxcross_trainer.html">XXCross trainer</a></li>
-            <li><a href="xxxcross_trainer.html">XXXCross trainer</a></li>
+			<li><a href="xxxcross_trainer.html">XXXCross trainer</a></li>
 			<li><a href="pairing_trainer.html">Free Pair trainer</a></li>
 			<li><a href="xcross_pairing_trainer.html">XCross Free Pair trainer</a></li>
 			<li><a href="pseudo_xcross_trainer.html">Pseudo XCross trainer</a></li>
 			<li><a href="pseudo_pairing_trainer.html">Pseudo Free Pair trainer</a></li>
 			<li><a href="eocross_trainer.html">EOCross trainer</a></li>
-            <li><a href="xeocross_trainer.html">XEOCross trainer</a></li>
-            <li><a href="xxeocross_trainer.html">XXEOCross trainer</a><li>
+			<li><a href="xeocross_trainer.html">XEOCross trainer</a></li>
+			<li><a href="xxeocross_trainer.html">XXEOCross trainer</a></li>
 		</ul>
 	</div>
 	<div>
-		<p>PWA (Progressive Web App) support is available for this solver. You can install it from your browser on your
-			device. Solvers and trainers can be used offline after installation.</p>
+		<p>This site supports Progressive Web Apps (PWA). You can install it directly from your browser to run solvers and trainers offline.</p>
 	</div>
 	<div class="section">
 		<h2>Solver Overview</h2>
-		<p>This is an solver for speedcubers that uses specific methods such as CFOP and ZZ. It is designed to
-			perform solution searches for techniques like cross, XCross, and EOCross. Additionally, it supports the
-			search for some algorithms for the last layer.</p>
+		<p>These solvers are designed for speedcubers using methods such as CFOP and ZZ. They search for optimal or efficient solutions for Cross, XCross, and EOCross variations, as well as selected Last Layer algorithmic substeps.</p>
 	</div>
 	<div class="section">
 		<h2>Basic Functions and Notes</h2>
 		<ul>
 			<li>The following 16 solvers are currently available:
 				<ul>
-					<li><b>F2L Lite</b>: Lite solver for cross, XCross, XXCross, XXXCross, and XXXXCross. Analyzer
-						available.</li>
-					<li><b>Pairing</b>: Lite solver for cross, XCross, XXCross, XXXCross + free pair. Analyzer available.</li>
-					<li><b>Pseudo F2L Lite</b>: Lite solver for pseudo cross, XCross, XXCross, and XXXCross. Analyzer
-						available.</li>
-					<li><b>Pseudo Pairing</b>: Lite solver for pseudo cross, XCross, XXCross, XXXCross + pseudo free pair. Analyzer available.</li>
-					<li><b>EOCross</b>: Lite solver for EOCross, XEOCross, XXEOCross, XXXEOCross, and XXXXEOCross.
-						Analyzer available.</li>
-					<li><b>F2LEO</b>: Lite solver for F2LEO (Cross, XCross, XXCross, XXXCross + F2L Slots EO).
-						Analyzer available.</li>
-					<li><b>Pseudo F2LEO</b>: Lite solver for Pseudo F2LEO (Pseudo Cross, XCross, XXCross, XXXCross + F2L Slots EO).
-						Analyzer available.</li>
-					<li><b>LL Substeps Lite</b>: Lite solver for last layer <b>CP</b>, <b>CO</b>, <b>EP</b>, and
-						<b>EO</b>
-					</li>
-					<li><b>LL Lite</b>: Lite solver for last layer</li>
-					<li><b>LL AUF Lite</b>: Lite solver for last layer and AUF</li>
-					<li><b>Two Phase</b>: Two Phase solver using <a
-							href="https://github.com/cs0x7f/min2phase.js">min2phase.js</a></li>
-					<li><b>F2L</b>: Solver for cross, XCross, XXCross, XXXCross, and XXXXCross. <b>Recommended for use
-							with PC</b>. Analyzer available.</li>
-					<li><b>LL Substeps</b>: Solver for last layer <b>CP</b>, <b>CO</b>, <b>EP</b>, and <b>EO</b>.
-						<b>Recommended for use with PC</b>.
-					</li>
-					<li><b>LL</b>: Solver for last layer. <b>Recommended for use with PC</b>.</li>
-					<li><b>LL AUF</b>: Solver for last layer and AUF. <b>Recommended for use with PC</b>.</li>
-					<li><b>2x2x2</b>: Solver for 2x2x2 cube. <b>Note that this is on a separate page.</b></li>
+					<li><b>F2L Lite</b>: Lightweight solver for Cross, XCross, XXCross, XXXCross, and complete F2L. Includes a step analyzer.</li>
+					<li><b>Pairing</b>: Lightweight solver for Cross / XCross / XXCross / XXXCross + Free Pair. Includes a step analyzer.</li>
+					<li><b>Pseudo F2L Lite</b>: Lightweight solver for Pseudo Cross, Pseudo XCross, Pseudo XXCross, and Pseudo XXXCross. Includes a step analyzer.</li>
+					<li><b>Pseudo Pairing</b>: Lightweight solver for Pseudo Cross / XCross / XXCross / XXXCross + Pseudo Free Pair. Includes a step analyzer.</li>
+					<li><b>EOCross</b>: Lightweight solver for EOCross, XEOCross, XXEOCross, XXXEOCross, and XXXXEOCross. Includes a step analyzer.</li>
+					<li><b>F2LEO</b>: Lightweight solver for F2LEO (Cross / XCross / XXCross / XXXCross with preserved F2L slot edge orientations). Includes a step analyzer.</li>
+					<li><b>Pseudo F2LEO</b>: Lightweight solver for Pseudo F2LEO (Pseudo Cross / XCross / XXCross / XXXCross with preserved F2L slot edge orientations). Includes a step analyzer.</li>
+					<li><b>LL Substeps Lite</b>: Lightweight solver for Last Layer CP, CO, EP, and EO subsets.</li>
+					<li><b>LL Lite</b>: Lightweight solver for full Last Layer states.</li>
+					<li><b>LL AUF Lite</b>: Lightweight solver for full Last Layer states with AUF (Adjust Upper Face).</li>
+					<li><b>Two Phase</b>: Two-Phase full 3x3x3 solver powered by <a href="https://github.com/cs0x7f/min2phase.js">min2phase.js</a>.</li>
+					<li><b>F2L</b>: High-speed full-table solver for Cross, XCross, XXCross, XXXCross, and complete F2L. <b>Recommended for desktop/PC due to high memory usage.</b> Includes a step analyzer.</li>
+					<li><b>LL Substeps</b>: High-speed full-table solver for Last Layer CP, CO, EP, and EO. <b>Recommended for desktop/PC.</b></li>
+					<li><b>LL</b>: High-speed full-table solver for full Last Layer states. <b>Recommended for desktop/PC.</b></li>
+					<li><b>LL AUF</b>: High-speed full-table solver for full Last Layer states with AUF. <b>Recommended for desktop/PC.</b></li>
+					<li><b>2x2x2</b>: Optimal solver for the 2x2x2 cube. <b>Note that this is hosted on a separate page.</b></li>
 				</ul>
 			</li>
-			<li><b>F2L, LL Substeps, LL, LL AUF</b> solver can search much faster than their
-				corresponding lite solver, but they require more
-				memory and take longer to set up.</li>
-			<li>Some solvers come with an analyzer that solves for each pattern one at a time and displays the shortest
-				number of moves in HTM in a table. The numbered cells in this table act as buttons to start the search
-				with that condition. You can click the header to sort the table by its columns. Also, you can select the
-				faces to analyze from <b>U</b>, <b>D</b>, <b>L</b>, <b>R</b>, <b>F</b>, and <b>B</b>.</li>
+			<li>The full solvers (<b>F2L, LL Substeps, LL, LL AUF</b>) search significantly faster than their <b>Lite</b> counterparts, but require substantial RAM and take longer to initialize.</li>
+			<li>Solvers with an <b>Analyzer</b> evaluate each configuration sequentially and display the shortest solution lengths (in HTM) in a table. Clicking any numeric cell launches a search with that specific condition. Click column headers to sort the table. You can also select which faces (<b>U</b>, <b>D</b>, <b>L</b>, <b>R</b>, <b>F</b>, <b>B</b>) to analyze.</li>
 		</ul>
 		<h3>Memory Requirements Table</h3>
-		<p>This table summarizes the memory requirements for each solver. If memory is insufficient, the page may crash.
-		</p>
+		<p>Memory requirements for each solver are summarized below. The browser tab may crash if device memory is insufficient.</p>
 		<table>
 			<tr>
 				<th>Solver</th>
@@ -402,41 +381,32 @@
 	<div class="section">
 		<h2>Usage and Features</h2>
 		<ul>
-			<li>Scramble history navigation with [⬅️] and [➡️] buttons.</li>
-			<li>[Clear] button clears the Scramble.</li>
-			<li>[Reverse] button reverses the alg of each row.</li>
-			<li>[Mirror] button mirrors the alg of each row.</li>
-			<li>[Random] button generates a random scramble using min2phase.js.</li>
-			<li>[Start] button begins the search; [End] stops it.</li>
-			<li>Solutions are shown in real time, with Twisty Player and links.</li>
-			<li>Query parameters update automatically with input changes.</li>
-			<li>Functions exported by Emscripten may require manual reload if not initialized.</li>
+			<li>Navigate scramble history with the [⬅️] and [➡️] buttons.</li>
+			<li>The [Clear] button resets the current scramble field.</li>
+			<li>The [Reverse] button reverses the algorithm on each line.</li>
+			<li>The [Mirror] button mirrors the algorithm on each line.</li>
+			<li>The [Random] button generates a random scramble using min2phase.js.</li>
+			<li>The [Start] button begins the search, and [End] terminates it.</li>
+			<li>Solutions are displayed in real time, accompanied by a Twisty Player preview and external links.</li>
+			<li>URL query parameters update automatically as inputs change.</li>
+			<li>If exported Emscripten functions fail to load, please reload the page manually.</li>
 		</ul>
 	</div>
 	<div class="section">
 		<h2>Input Description</h2>
 		<ul>
-			<li><b>Cube Editor</b>: Visual cube-state editor.
+			<li><b>Cube Editor</b>: Interactive visual cube-state editor.
 				<ul>
-					<li>In <b>Swap</b> mode, you can swap two pieces by clicking
-						them; their orientations will be rotated so the selected stickers exchange positions. </li>
-					<li>In <b>Flip</b>
-						mode, clicking a piece will rotate its orientation. </li>
-					<li>The <b>Get Scramble</b> button generates a
-						scramble
-						for the shown state (rotations are not included; edit if needed). If the state is unsolvable, an
-						alert
-						will be shown.</li>
-					<li>Pre-Rotations can be selected. For 2x2x2 solver, this can be selected automatically if <b>Auto
-							Set</b> is checked.</li>
-					<li>Color of each face can be selected from White, Yellow, Blue, Green, Red, and Orange. Custom
-						colors can also be defined.</li>
+					<li>In <b>Swap</b> mode, click two pieces to swap their positions; their orientations adjust so the clicked stickers exchange places.</li>
+					<li>In <b>Flip</b> mode, clicking a piece cycles its orientation.</li>
+					<li>The <b>Get Scramble</b> button generates a scramble algorithm that yields the current displayed state (cube rotations are not included; edit manually if needed). If the state is unsolvable, an alert will be displayed.</li>
+					<li>Pre-rotations can be configured manually. For the 2x2x2 solver, orientation can be selected automatically when <b>Auto Set</b> is checked.</li>
+					<li>Facelet colors can be chosen from the standard palette (White, Yellow, Blue, Green, Red, Orange), or customized with custom color values.</li>
 				</ul>
 			</li>
-			<li><b>Scramble</b>: Describes the state of a Rubik's Cube using standard notations. You can add comments
-				using "//". The following notations are available:<br>
+			<li><b>Scramble</b>: Defines the initial state of the cube using standard WCA notation. Comments can be added using "//".
 				<ul style="margin-top:8px;margin-bottom:8px;">
-					<li>The following Rubik's Cube notations are available:
+					<li>Supported notation includes:
 						<ul>
 							<li>Face Turns:
 								<ul>
@@ -475,73 +445,44 @@
 						</ul>
 					</li>
 				</ul>
-				<span style="display:block;margin-top:8px;">Comments can be written using "//". It is recommended to
-					place "// setup" comments on the appropriate line. When viewing on alg.cubing.net or cubedb.net, the
-					line with "// setup" and above will be included in the Setup or Scramble section, while the lines
-					below will be included in the Moves section.</span>
+				<span style="display:block;margin-top:8px;">Lines containing comments can be added with "//". It is recommended to place a <code>// setup</code> comment on the scramble line. When opening generated links on alg.cubing.net or cubedb.net, content up to the line with <code>// setup</code> will be placed in the Setup/Scramble field, while subsequent lines will be placed in the Moves field.</span>
 			</li>
-			<li><b>Rotation</b>: Select a rotation algorithm before starting the search. Instead of selecting here,
-				you can directly include them in <b>Scrambles</b>.
-			</li>
-			<li><b>Slot</b>: Select F2L slots (BL, BR, FR, FL) or None for cross solver.</li>
-			<li><b>Free Pair</b>: Select a slot for solving the free pair.</li>
-			<li><b>Pseudo Slot Edge/Corner</b>: Select pseudo slots for pseudo cross/slotting.</li>
-			<li><b>Last Layer Option</b>: CP, CO, EP, EO, or None for XXXXCross solver.</li>
-			<li><b>Max Length/Count</b>: Set max moves and solutions.</li>
-			<li><b>Move restrict</b>: Restricts the moves used in the search. For example, if U, R, F is
-				selected, only
-				U, U2, U', R, R2, R', F, F2, F' are allowed. <br>
-				Note: <b>Advanced settings</b> allow more detailed configuration.
-				If you
-				select rotations (x, y, z), set <b>Center Restrict</b> and <b>Max Rotation Count</b> in the <b>Advanced
-					settings</b>.
+			<li><b>Rotation</b>: Select an initial cube rotation before running the search. Alternatively, rotations can be written directly into the <b>Scramble</b> field.</li>
+			<li><b>Slot</b>: Select target F2L slots (BL, BR, FR, FL), or None for Cross-only searches.</li>
+			<li><b>Free Pair</b>: Select the target slot to form an arbitrary free pair.</li>
+			<li><b>Pseudo Slot Edge/Corner</b>: Select pseudo slot targets for Pseudo Cross and pseudo-slotting.</li>
+			<li><b>Last Layer Option</b>: Select CP, CO, EP, EO, or None for the XXXXCross solver.</li>
+			<li><b>Max Length / Count</b>: Set the maximum search depth (move count) and maximum number of solutions to find.</li>
+			<li><b>Move Restrict</b>: Restricts the move generator used during search. For example, selecting U, R, and F permits only turns of those three faces (U, U2, U', R, R2, R', F, F2, F').<br>
+				Note: Detailed turn constraints can be configured under <b>Advanced Settings</b>. When rotations (x, y, z) are enabled, you must also configure <b>Center Restrict</b> and <b>Max Rotation Count</b> in the <b>Advanced Settings</b>.
 			</li>
 		</ul>
 	</div>
 	<div class="section">
 		<h2>Advanced Settings</h2>
 		<ul>
-			<li><b>Pre Move</b>: A preliminary algorithm executed before search. This enables the search to solutions
-				beginning with the algorithm set here. If you set algorithm here that rotate the center, such as wide,
-				slice, or rotation, you must also configure Center Restrict accordingly.</li>
-			<li><b>Move Available Table</b>: A table of checkboxes that lets you decide whether a particular ordering of
-				moves—e.g., allowing the order A→B—is permitted in the solution. The rows represent preceding rotations,
-				and the columns represent subsequent rotations. The bottom row (A=empty) corresponds to the first move
-				setting. This table is normally generated automatically based on the configured Move Restrict. If you
-				would like to set custom rules (such as requiring the first move to be a rotation), you must configure
-				this table appropriately.</li>
-			<li><b>Center Restrict</b>: Center rotation settings. By default only Empty-Empty is checked, which means
-				the center must return to the initial state—the state of the center after the user-defined
-				<b>Scramble</b> and
-				<b>Rotation.</b>
-			</li>
-			<li><b>Max Rotation Count</b>: The maximum number of times rotations (x, y, z) are used, excluding
-				user-defined <b>Rotation</b> and <b>Pre Move</b>. The default value is 0. If rotations (x, y, z)
-				are permitted in Move
-				Restrict, this must be set to 1 or higher.</li>
-			<li><b>Max Move Count</b>: A table of maximum move counts allowed by the Move Restrict. Note that the
-				algorithm specified in <b>Pre Move</b> is not counted.</li>
+			<li><b>Pre Move</b>: A fixed preliminary algorithm executed before the search begins. This forces solutions to start with the specified sequence. If the pre-move contains moves that rotate center orientations (such as wide moves, slice moves, or cube rotations), you must configure <b>Center Restrict</b> accordingly.</li>
+			<li><b>Move Available Table</b>: A transition matrix of checkboxes specifying allowed consecutive move sequences (e.g., whether move B is permitted immediately after move A). Rows represent the preceding move/rotation, and columns represent the subsequent move/rotation. The bottom row (A = empty) defines allowable first moves. This table is populated automatically based on <b>Move Restrict</b>, but custom rules (such as forcing the first move to be a cube rotation) can be configured manually.</li>
+			<li><b>Center Restrict</b>: Constrains allowable center orientation offsets. By default, only <code>EMPTY_EMPTY</code> is selected, requiring centers to return exactly to the state determined by the user's <b>Scramble</b> and initial <b>Rotation</b>.</li>
+			<li><b>Max Rotation Count</b>: Sets the maximum number of cube rotations (x, y, z) permitted in a solution, excluding any user-defined initial <b>Rotation</b> and <b>Pre Move</b>. Defaults to 0. If rotations are enabled in <b>Move Restrict</b>, this must be set to 1 or higher.</li>
+			<li><b>Max Move Count</b>: Sets limits on how many times specific moves can appear in a solution. Moves executed in <b>Pre Move</b> are excluded from this count.</li>
 		</ul>
 	</div>
 	<div class="section">
 		<h2>Stickering Settings</h2>
-		<p>Configure the stickering options for the solution preview in Twisty Player. You can choose from below.</p>
+		<p>Configures facelet stickering modes for solution previews in Twisty Player. The available display modes are:</p>
 		<ul>
-			<li><b>Regular</b>: Show all stickers of the parts.</li>
-			<li><b>Oriented</b>: Show only one sticker of the parts.</li>
-			<li><b>Dim</b>: Show dimmed stickers of the parts.</li>
-			<li><b>Disable</b>: Show no stickers of the parts.</li>
+			<li><b>Regular</b>: Displays all stickers normally on the piece.</li>
+			<li><b>Oriented</b>: Displays only the reference orientation sticker on the piece.</li>
+			<li><b>Dim</b>: Displays the piece stickers in a dimmed shade.</li>
+			<li><b>Disable</b>: Hides all stickers on the piece completely.</li>
 		</ul>
-		<p>You can check how the stickering options affect the solution preview in Twisty Player. If <b>Auto Stickering
-				Setting</b> was checked, the stickering options will be applied automatically based on the solver
-			settings.</p>
+		<p>You can preview the stickering mask directly in Twisty Player. When <b>Auto Stickering Setting</b> is enabled, stickering masks are applied automatically to match the chosen solver configuration.</p>
 	</div>
 	<div class="section">
 		<h2>Solver Descriptions and Examples</h2>
 		<h3>F2L Lite</h3>
-		<p>A set of solvers for Rubik's Cube cross, XCross, XXCross, XXXCross, and XXXXCross. It is used to search
-			solutions for cross, XCross, F2L, multi-slotting, and more. The <b>F2L</b> solver can perform the same
-			search. Here are some examples. </p>
+		<p>A solver suite for Cross, XCross, XXCross, XXXCross, and full F2L. It searches for optimal solutions for Cross, first pairs, multi-slotting, and complete F2L states. The <b>F2L</b> full solver covers the same problem domain at higher search speeds.</p>
 		<ul>
 			<li>Yellow cross. <a
 					href="index.html?scramble=U-_B_R-_L-_F_U-_F2_D_R2_D2_B_L2_F2_U2_D2_F_D2_F-_U2_R2_%252F%252F_setup%250A&index=1&sol=B2_U-_L_F-_D2_L_">Example</a>
@@ -572,8 +513,7 @@
 			</li>
 		</ul>
 		<h3>Pairing</h3>
-		<p>A set of solvers for a free pair. It is used to search solutions for cross with a free pair, advanced F2L
-			setup, and more. Here are some examples. </p>
+		<p>A specialized solver for forming arbitrary free pairs. It finds solutions for Cross with a preserved free pair, advanced F2L setups, and multi-slot pair preservation.</p>
 		<ul>
 			<li>Cross with a free pair. <a
 					href="index.html?scramble=L2_D_R_F_L2_F2_D2_L-_F-_B2_U-_L2_D_B2_L2_D_L2_B2_U2_B2_R-_%252F%252F_setup%250A&index=1&sol=B2_U2_L2_R_F_D_&solver=F2L_pair">Example</a>
@@ -583,8 +523,7 @@
 			</li>
 		</ul>
 		<h3>Pseudo F2L Lite</h3>
-		<p>A set of solvers for pseudo cross, XCross, XXCross, and XXXCross. It is used to search solutions for pseudo
-			XCross, pseudo slotting, and more. Here are some examples.</p>
+		<p>A solver suite for Pseudo Cross, Pseudo XCross, Pseudo XXCross, and Pseudo XXXCross. It is designed to explore non-standard blockbuilding and pseudo-slotting opportunities.</p>
 		<ul>
 			<li>Pseudo XCross. <a
 					href="index.html?scramble=L2_F_L-_F_R2_D-_L_U2_B_L-_D2_B2_R2_L_D2_R_U2_D2_F2_U2_R_%252F%252F_setup%250A&index=1&sol=U-_F2_L_U_R_B2_D2_B_&solver=PF2L&pse=BL">Example</a>
@@ -597,8 +536,7 @@
 			</li>
 		</ul>
 		<h3>Pseudo Pairing</h3>
-		<p>A set of solvers for a pseudo free pair. It is used to search solutions for pseudo cross with a pseudo free
-			pair, some advanced pseudo slotting, and more. Here are some examples. </p>
+		<p>A solver suite for forming pseudo free pairs alongside Cross or multi-slot states, enabling unconventional F2L transitions and advanced blockbuilding.</p>
 		<ul>
 			<li>Pseudo cross with a pseudo free pair. <a
 					href="index.html?scramble=L_U2_L_B_D2_R_F-_B2_U2_L2_D-_B2_U_B2_R2_U-_R2_F2_R2_B_U2_%252F%252F_setup%250A&index=1&sol=D_B_L-_B2_D_R_&solver=PF2L_pair&apsc=BR">Example</a>
@@ -608,7 +546,7 @@
 			</li>
 		</ul>
 		<h3>EOCross</h3>
-		<p>A set of solvers for EOcross, XEOcross, XXEOcross, XXXEOcross, and XXXXEOCross. Here are some examples.</p>
+		<p>A solver suite for EOCross, XEOCross, XXEOCross, XXXEOCross, and complete F2L with full edge orientation (ZZ method foundations).</p>
 		<ul>
 			<li>EOCross (LR). <a
 					href="index.html?scramble=R-_F_D-_B_D2_L2_B2_D-_L-_D2_B_U2_L2_F-_L2_F-_R2_F_L2_U2_B_%252F%252F_setup%250A&index=1&sol=z2_F-_D-_B-_D2_L-_B_L2_&solver=EOCross&rot=z2">Example</a>
@@ -624,7 +562,7 @@
 			</li>
 		</ul>
 		<h3>F2LEO</h3>
-		<p>A set of solvers for F2LEO (Cross, XCross, XXCross, XXXCross + F2L Slots EO). </p>
+		<p>A solver suite for Cross, XCross, XXCross, and XXXCross that simultaneously preserves the orientation of designated F2L slot edges (F2L edge orientation control).</p>
 		<ul>
 			<li>Cross + F2LEO. <a
 					href="index.html?scramble=L_B2_R_F2_R_B2_L-_B2_D2_F2_U2_F2_B-_R2_F_L2_R-_U_B_L_B2_%252F%252F_setup%250A&solver=F2LEO&index=1&sol=B_U_R_F_B_L2_">Example</a>
@@ -638,7 +576,7 @@
 			</li>
 		</ul>
 		<h3>Pseudo F2LEO</h3>
-		<p>A set of solvers for pseudo F2LEO (pseudo Cross, XCross, XXCross, XXXCross + F2L Slots EO). </p>
+		<p>A solver suite combining pseudo-slotting with edge orientation control across Pseudo Cross, Pseudo XCross, Pseudo XXCross, and Pseudo XXXCross.</p>
 		<ul>
 			<li>Pseudo XCross (BR and BL) + F2LEO. <a
 					href="index.html?solver=PF2LEO&scramble=U2_L_B2_D2_R-_F2_D2_R_U2_L-_F2_L2_B_U2_L_D2_L_B2_D-_L-_D-_%252F%252F_setup%250A&psef=BR&index=1&sol=B-_D2_R2_F_R-_U_L2_">Example</a>
@@ -649,9 +587,7 @@
 			</li>
 		</ul>
 		<h3>LL Substeps Lite</h3>
-		<p>A solver for last layer CP, CO, EP, and EO. It is used to search solutions for OLL, COLL, ZBLS, and more. The
-			<b>LL Substeps</b> solver can perform the same search.
-		</p>
+		<p>A solver targeting Last Layer substeps defined by CP, CO, EP, and EO subsets. It searches for algorithms and setups for sets such as OLL, COLL, and ZBLS. The <b>LL Substeps</b> full solver performs the same search.</p>
 		<ul>
 			<li>OLL (<b>Move Restrict</b>: U, R, F). <a
 					href="index.html?scramble=R_F_R2_F-_R_U_R2_U_F2_L2_B2_D-_B2_L2_F2_U_R2_%252F%252F_setup%250A&index=1&sol=R-_F_U_F2_U_F2_U2_F-_U_R_&solver=LS&ll=CO_EO&res=URF">Example</a>
@@ -670,8 +606,7 @@
 					href="index.html?scramble=z2_%252F%252F_Pre_Rotations%250AF2_R2_F2_R2_F2_U-_F2_U2_R2_F2_R2_U_R-_F_U2_F_U2_F-_R_F2_%252F%252F_setup%250A&solver=LS&ll=CP_CO_EO&res=URFy&rest=U_U2_U-_R_R2_R-_F_F2_F-_y_y2_y-&mav=U%7Ey%7CU%7Ey2%7CU%7Ey-%7CU2%7EF2%7CU2%7Ey%7CU2%7Ey2%7CU2%7Ey-%7CU-%7Ey%7CU-%7Ey2%7CU-%7Ey-%7CR%7Ey%7CR%7Ey2%7CR%7Ey-%7CR2%7Ey%7CR2%7Ey2%7CR2%7Ey-%7CR-%7Ey%7CR-%7Ey2%7CR-%7Ey-%7CF%7Ey%7CF%7Ey2%7CF%7Ey-%7CF2%7EU2%7CF2%7Ey%7CF2%7Ey2%7CF2%7Ey-%7CF-%7Ey%7CF-%7Ey2%7CF-%7Ey-%7Cy%7EF2%7Cy2%7EF2%7Cy-%7EF2%7CEMPTY%7EU%7CEMPTY%7EU2%7CEMPTY%7EU-%7CEMPTY%7EF2&mcv=U2%3A1_R2%3A2_F%3A1_F2%3A1_F-%3A1_y%3A1_y2%3A1_y-%3A1&index=1&sol=y2_R-_U_R_U-_R-_U_R_U_R-_U_F-_U2_F_R_&rc=1&crest=EMPTY_EMPTY%7CEMPTY_y%7CEMPTY_y2%7CEMPTY_y-">Example</a>
 		</ul>
 		<h3>LL Lite</h3>
-		<p>A solver for last layer. Note that AUF can remain. It is used to search solutions for PLL, 2GLL, ZBLL, 1LLL,
-			and more Here are some examples. The <b>LL</b> solver can perform the same search.</p>
+		<p>A solver for full Last Layer states (pre- and post-AUF are preserved or handled automatically). It is useful for generating and verifying algorithms for PLL, 2GLL, ZBLL, and 1LLL. The <b>LL</b> full solver performs the same search.</p>
 		<ul>
 			<li>PLL (<b>Move Restrict</b>: U, R, F). <a
 					href="index.html?scramble=F2_D_B2_D-_L2_U_B2_D_B2_U-_F2_U_L_R-_U2_L-_R-_%252F%252F_setup%250A&index=1&sol=U_R2_U-_R2_U-_R2_U_F_U_F-_R2_F_U-_F-_&solver=LL&res=URF">Example</a>
@@ -692,9 +627,9 @@
 					href="index.html?scramble=R-_F-_R-_U-_R_F_R-_U2_F2_L2_B2_D-_B2_L2_F2_U2_R2_%252F%252F_setup&solver=LL&res=URF&rest=U_U2_U-_R_R2_R-_F_F2_F-&index=1&sol=R-_F-_U2_F_R_U-_R-_F-_U-_F_U-_R_&mcv=U2%3A2_R2%3A1_F%3A2_F2%3A1_F-%3A2&mav=U2%7EF2%7CF2%7EU2%7CEMPTY%7EF2">Example</a>
 		</ul>
 		<h3>LL AUF Lite</h3>
-		<p>Last layer and AUF. Recommended to use <b>LL Lite</b> or <b>LL</b> solver.</p>
+		<p>A specialized Last Layer solver that explicitly searches solutions including pre- and post-AUF alignment. Using <b>LL Lite</b> or the full <b>LL</b> solver is generally recommended for faster execution.</p>
 		<h3>2x2x2</h3>
-		<p>A solver for 2x2x2 cube. It is used to search 2x2x2 algorithms such as CLL and EG.</p>
+		<p>An optimal solver for the 2x2x2 pocket cube. It generates short, efficient algorithmic solutions for methods such as CLL and EG (EG-1, EG-2).</p>
 		<ul>
 			<li>CLL (<b>Move Restrict</b>: U, R, F; Remove F2; Custom Move Available table; Custom Move Count Limit).
 				<a
@@ -713,8 +648,7 @@
 	</div>
 	<div class="section">
 		<h2>Trainers Overview</h2>
-		<p>Random pattern generator based on min2phase.js. 12 trainers are available.
-			Scrambles can be generated with parameters(Rotation, Slots, Length), and solutions can be checked instantly.</p>
+		<p>Random pattern generators powered by min2phase.js. A total of 12 specialized trainers are available. Scrambles can be generated with custom constraints (Rotation, Slots, Length), and solutions can be verified immediately.</p>
 		<ul>
 			<li>Cross trainer</li>
             <li>F2LEO Cross trainer</li>
@@ -729,8 +663,7 @@
             <li>XEOCross trainer</li>
             <li>XEOCross trainer</li>
 		</ul>
-		<p>Each trainer comes with a corresponding solver. <b>[Next]</b> generates the next scramble, and <b>[Solve]</b>
-			checks the solution.</p>
+		<p>Each trainer integrates with its corresponding solver. Click <b>[Next]</b> to generate a new scramble, and <b>[Solve]</b> to view step-by-step solutions.</p>
 		<h3>Pattern Statistics</h3>
 		<h4>Cross</h4>
 		<table>
