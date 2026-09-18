@@ -305,6 +305,20 @@
 			overscroll-behavior: contain;
 			touch-action: pan-y;
 		}
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.2);
+            border-top-color: #ffffff;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            vertical-align: middle;
+            margin-right: 8px;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
 	</style>
 
 </head>
@@ -341,6 +355,7 @@
 				<a href="pseudo_pairing_trainer.html" rel="noopener noreferrer" translate="no">Pseudo Free Pair</a>
 				<a href="eocross_trainer.html" rel="noopener noreferrer" translate="no">EOCross</a>
                 <a href="xeocross_trainer.html" rel="noopener noreferrer" translate="no">XEOCross</a>
+                <a href="xxeocross_trainer.html" rel="noopener noreferrer" translate="no">XXEOCross</a>
 				<a href="algTrainer.html" rel="noopener noreferrer" translate="no">Alg Trainer</a>
 				<a href="jsonEditor.html" rel="noopener noreferrer" translate="no">JSON Editor</a>
 				<span style="font-weight:bold;margin-top:12px;display:block;color:#fff;">External tools:</span>
@@ -447,6 +462,9 @@
 	</select><br>
 	<button id="back" class="button medium" onclick="back()" disabled>Back</button>
 	<button id="next" class="button medium" onclick="genscr()">Next</button><br>
+    <div id="spinner" style="display:none; color:#aaa; font-size:20px; margin-bottom:8px;">
+        <span class="spinner"></span>Generating scramble...
+    </div>
 	<h2 id="scr"></h2>
 	<div id="show"></div>
 	<details id="advancedSettings">
@@ -1205,6 +1223,8 @@
 				alert('Solver module not available.');
 				return;
 			}
+            document.getElementById('spinner').style.display = 'block';
+
 			const sol_len = document.getElementById("len").value;
 			const rot = document.getElementById("rot").value;
 			const slot = document.getElementById("slot").value;
@@ -1228,6 +1248,7 @@
 			const show = document.getElementById('show');
 			worker2.onmessage = async function (event) {
 				try {
+                    document.getElementById('spinner').style.display = 'none';
 					const ret = (event.data).split(",");
 					var scramble = min2phase.solve(generateTwoPhaseInputWrapper(convert(ret[1] + reverse(ret[0]) + slotToRot[slot])[0]));
 					scramble = scr_fix(rot + scramble);

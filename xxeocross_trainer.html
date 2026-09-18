@@ -5,10 +5,10 @@
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<link rel="manifest" href="manifest.json">
-	<title>Rubik's Cube XCross + Free Pair Trainer - Customizable Scrambler & Advanced Solver</title>
-	<meta name="description" content="Generate random XCross & Free Pair scrambles with specific conditions (length, faces, slots). Includes built-in advanced 3x3 solver. ">
+	<title>Rubik's Cube XXEOCross Trainer - Customizable Scrambler & Advanced Solver</title>
+	<meta name="description" content="Generate random XXEOCross scrambles with specific conditions (length, faces, slots). Includes built-in advanced 3x3 solver.">
 	<script src="analytics.js" defer></script>
-    <script src="url_params_compressor_simple.js" defer></script>
+	<script src="url_params_compressor_simple.js" defer></script>
 	<style>
 		header {
 			padding: 2px;
@@ -78,6 +78,7 @@
 			border: none;
 			border-radius: 4px;
 			cursor: pointer;
+			margin-bottom: 4px;
 		}
 
 		.medium {
@@ -189,7 +190,7 @@
 			cursor: pointer;
 			font-size: 20px;
 			color: #ffffff;
-			margin-right: 10x;
+			margin-right: 10px;
 		}
 
 		.custom-checkbox+label:before {
@@ -220,7 +221,6 @@
 			border-width: 0 2px 2px 0;
 			transform: rotate(45deg);
 		}
-
 
 		.drawer-overlay {
 			position: fixed;
@@ -321,12 +321,11 @@
             to { transform: rotate(360deg); }
         }
 	</style>
-
 </head>
 
 <body>
 	<header id="header" style="margin-left:48px;margin-top:10px;position:relative;z-index:10;">
-		<h1>Rubik's Cube XCross + Free Pair Trainer</h1>
+		<h1>Rubik's Cube XXEOCross Trainer</h1>
 	</header>
 	<div id="hamburger-menu-container">
 		<button id="hamburger-menu-btn" aria-label="Open menu"
@@ -346,16 +345,16 @@
 				<a href="documentation.html" translate="no">Documentation</a>
 				<span style="font-weight:bold;margin-top:12px;display:block;color:#fff;">Trainers:</span>
 				<a href="cross_trainer.html" rel="noopener noreferrer" translate="no">Cross</a>
-                <a href="f2leo_cross_trainer.html" rel="noopener noreferrer" translate="no">F2LEO Cross</a>
+				<a href="f2leo_cross_trainer.html" rel="noopener noreferrer" translate="no">F2LEO Cross</a>
 				<a href="xcross_trainer.html" rel="noopener noreferrer" translate="no">XCross</a>
 				<a href="xxcross_trainer.html" rel="noopener noreferrer" translate="no">XXCross</a>
                 <a href="xxxcross_trainer.html" rel="noopener noreferrer" translate="no">XXXCross</a>
 				<a href="pairing_trainer.html" rel="noopener noreferrer" translate="no">Free Pair</a>
-                <a href="xcross_pairing_trainer.html" rel="noopener noreferrer" translate="no">XCross Free Pair</a>
+				<a href="xcross_pairing_trainer.html" rel="noopener noreferrer" translate="no">XCross Free Pair</a>
 				<a href="pseudo_xcross_trainer.html" rel="noopener noreferrer" translate="no">Pseudo XCross</a>
 				<a href="pseudo_pairing_trainer.html" rel="noopener noreferrer" translate="no">Pseudo Free Pair</a>
 				<a href="eocross_trainer.html" rel="noopener noreferrer" translate="no">EOCross</a>
-                <a href="xeocross_trainer.html" rel="noopener noreferrer" translate="no">XEOCross</a>
+				<a href="xeocross_trainer.html" rel="noopener noreferrer" translate="no">XEOCross</a>
                 <a href="xxeocross_trainer.html" rel="noopener noreferrer" translate="no">XXEOCross</a>
 				<a href="algTrainer.html" rel="noopener noreferrer" translate="no">Alg Trainer</a>
 				<a href="jsonEditor.html" rel="noopener noreferrer" translate="no">JSON Editor</a>
@@ -407,13 +406,8 @@
 			}
 		});
 	</script>
-	<p style="background-color: #f8f9fa; border-left: 4px solid #0d6efd; padding: 10px 14px; margin-bottom: 16px; font-size: 0.95em; line-height: 1.5; color: #1e1e1e;">
-		<strong>Notice:</strong> This new edition unifies Adjacent and Diagonal databases into a single instance to support deep lengths 10 and 11, allocating ~700 MB of RAM locally. Initialization computes both databases sequentially and takes several tens of seconds.<br>
-		If you only practice depths up to 9 and prefer faster startup times, please use the standard edition:
-		<a href="xcross_pairing_trainer.html" style="font-weight: bold; color: #0d6efd;">xcross_pairing_trainer.html (Faster Startup)</a>.
-	</p>
-
-	<a>Warning: This scrambler precomputes search databases for both Adjacent and Diagonal pairs locally (~700 MB RAM). Initial database construction takes several tens of seconds. Please wait until the process completes.</a><br><br>
+	<a>Warning: This scrambler generates about 700 MB locally on first run; initial scramble generation may take several
+		seconds to tens of seconds.</a><br><br>
 
 	<label for="rot">Rotation: </label>
 	<select translate="no" id="rot">
@@ -447,18 +441,13 @@
 		<option translate="no" value="x y'">x y'</option>
 	</select><br>
 	<label for="slot">Slot: </label>
-	<select translate="no" id="slot" onchange="updateDropdown2()">
-		<option translate="no" value="BL">BL</option>
-		<option translate="no" value="BR">BR</option>
-		<option translate="no" value="FR">FR</option>
-		<option translate="no" value="FL">FL</option>
-	</select><br>
-	<label for="pair_slot">Free Pair: </label>
-	<select translate="no" id="pair_slot">
-		<option translate="no" value="BL">BL</option>
-		<option translate="no" value="BR">BR</option>
-		<option translate="no" value="FR">FR</option>
-		<option translate="no" value="FL">FL</option>
+	<select translate="no" id="slot">
+		<option translate="no" value="BL BR" selected>BL BR</option>
+		<option translate="no" value="BL FL">BL FL</option>
+		<option translate="no" value="BL FR">BL FR</option>
+		<option translate="no" value="BR FR">BR FR</option>
+		<option translate="no" value="BR FL">BR FL</option>
+		<option translate="no" value="FR FL">FR FL</option>
 	</select><br>
 	<label for="len">Length: </label>
 	<select translate="no" id="len">
@@ -468,11 +457,14 @@
 		<option translate="no" value="4">4</option>
 		<option translate="no" value="5">5</option>
 		<option translate="no" value="6">6</option>
-		<option translate="no" value="7" selected>7</option>
-		<option translate="no" value="8">8</option>
+		<option translate="no" value="7">7</option>
+		<option translate="no" value="8" selected>8</option>
 		<option translate="no" value="9">9</option>
-        <option translate="no" value="10">10</option>
-		<option translate="no" value="11">11 (Rare)</option>
+		<option translate="no" value="10">10</option>
+		<option translate="no" value="11">11</option>
+		<option translate="no" value="12">12</option>
+		<option translate="no" value="13">13 (Rare)</option>
+		<option translate="no" value="14">14 (Frontier)</option>
 	</select><br>
 	<button id="back" class="button medium" onclick="back()" disabled>Back</button>
 	<button id="next" class="button medium" onclick="genscr()">Next</button><br>
@@ -483,98 +475,91 @@
 	<div id="show"></div>
 	<details id="advancedSettings">
 		<summary id="summaryAdvancedSettings">Show Advanced Settings</summary><br>
-		        <label for="res">Move Restrict: </label>
-        <div translate="no" id="res">
-
-            <table class="checkbox-table">
-                <tbody>
-                    <tr>
-                        <td>
-                            <input type="checkbox" id="checkboxU_restrict" class="custom-checkbox restrict" value="U"
-                                checked>
-                            <label translate="no" for="checkboxU_restrict">U</label>
-                        </td>
-                        <td>
-                            <input type="checkbox" id="checkboxD_restrict" class="custom-checkbox restrict" value="D"
-                                checked>
-                            <label translate="no" for="checkboxD_restrict">D</label>
-                        </td>
-                        <td>
-                            <input type="checkbox" id="checkboxL_restrict" class="custom-checkbox restrict" value="L"
-                                checked>
-                            <label translate="no" for="checkboxL_restrict">L</label>
-                        </td>
-                        <td>
-                            <input type="checkbox" id="checkboxR_restrict" class="custom-checkbox restrict" value="R"
-                                checked>
-                            <label translate="no" for="checkboxR_restrict">R</label>
-                        </td>
-                        <td>
-                            <input type="checkbox" id="checkboxF_restrict" class="custom-checkbox restrict" value="F"
-                                checked>
-                            <label translate="no" for="checkboxF_restrict">F</label>
-                        </td>
-                        <td>
-                            <input type="checkbox" id="checkboxB_restrict" class="custom-checkbox restrict" value="B"
-                                checked>
-                            <label translate="no" for="checkboxB_restrict">B</label>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>
-                            <input type="checkbox" id="checkboxu_restrict" class="custom-checkbox restrict" value="u">
-                            <label translate="no" for="checkboxu_restrict">u</label>
-                        </td>
-                        <td>
-                            <input type="checkbox" id="checkboxd_restrict" class="custom-checkbox restrict" value="d">
-                            <label translate="no" for="checkboxd_restrict">d</label>
-                        </td>
-                        <td>
-                            <input type="checkbox" id="checkboxl_restrict" class="custom-checkbox restrict" value="l">
-                            <label translate="no" for="checkboxl_restrict">l</label>
-                        </td>
-                        <td>
-                            <input type="checkbox" id="checkboxr_restrict" class="custom-checkbox restrict" value="r">
-                            <label translate="no" for="checkboxr_restrict">r</label>
-                        </td>
-                        <td>
-                            <input type="checkbox" id="checkboxf_restrict" class="custom-checkbox restrict" value="f">
-                            <label translate="no" for="checkboxf_restrict">f</label>
-                        </td>
-                        <td>
-                            <input type="checkbox" id="checkboxb_restrict" class="custom-checkbox restrict" value="b">
-                            <label translate="no" for="checkboxb_restrict">b</label>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>
-                            <input type="checkbox" id="checkboxM_restrict" class="custom-checkbox restrict" value="M">
-                            <label translate="no" for="checkboxM_restrict">M</label>
-                        </td>
-                        <td>
-                            <input type="checkbox" id="checkboxE_restrict" class="custom-checkbox restrict" value="E">
-                            <label translate="no" for="checkboxE_restrict">E</label>
-                        </td>
-                        <td>
-                            <input type="checkbox" id="checkboxS_restrict" class="custom-checkbox restrict" value="S">
-                            <label translate="no" for="checkboxS_restrict">S</label>
-                        </td>
-                        <td>
-                            <input type="checkbox" id="checkboxx_restrict" class="custom-checkbox restrict" value="x">
-                            <label translate="no" for="checkboxx_restrict">x</label>
-                        </td>
-                        <td>
-                            <input type="checkbox" id="checkboxy_restrict" class="custom-checkbox restrict" value="y">
-                            <label translate="no" for="checkboxy_restrict">y</label>
-                        </td>
-                        <td>
-                            <input type="checkbox" id="checkboxz_restrict" class="custom-checkbox restrict" value="z">
-                            <label translate="no" for="checkboxz_restrict">z</label>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-        </div><br>
+		<label for="res">Move Restrict: </label>
+		<div translate="no" id="res">
+			<table class="checkbox-table">
+				<tbody>
+					<tr>
+						<td>
+							<input type="checkbox" id="checkboxU_restrict" class="custom-checkbox restrict" value="U" checked>
+							<label translate="no" for="checkboxU_restrict">U</label>
+						</td>
+						<td>
+							<input type="checkbox" id="checkboxD_restrict" class="custom-checkbox restrict" value="D" checked>
+							<label translate="no" for="checkboxD_restrict">D</label>
+						</td>
+						<td>
+							<input type="checkbox" id="checkboxL_restrict" class="custom-checkbox restrict" value="L" checked>
+							<label translate="no" for="checkboxL_restrict">L</label>
+						</td>
+						<td>
+							<input type="checkbox" id="checkboxR_restrict" class="custom-checkbox restrict" value="R" checked>
+							<label translate="no" for="checkboxR_restrict">R</label>
+						</td>
+						<td>
+							<input type="checkbox" id="checkboxF_restrict" class="custom-checkbox restrict" value="F" checked>
+							<label translate="no" for="checkboxF_restrict">F</label>
+						</td>
+						<td>
+							<input type="checkbox" id="checkboxB_restrict" class="custom-checkbox restrict" value="B" checked>
+							<label translate="no" for="checkboxB_restrict">B</label>
+						</td>
+					</tr>
+					<tr>
+						<td>
+							<input type="checkbox" id="checkboxu_restrict" class="custom-checkbox restrict" value="u">
+							<label translate="no" for="checkboxu_restrict">u</label>
+						</td>
+						<td>
+							<input type="checkbox" id="checkboxd_restrict" class="custom-checkbox restrict" value="d">
+							<label translate="no" for="checkboxd_restrict">d</label>
+						</td>
+						<td>
+							<input type="checkbox" id="checkboxl_restrict" class="custom-checkbox restrict" value="l">
+							<label translate="no" for="checkboxl_restrict">l</label>
+						</td>
+						<td>
+							<input type="checkbox" id="checkboxr_restrict" class="custom-checkbox restrict" value="r">
+							<label translate="no" for="checkboxr_restrict">r</label>
+						</td>
+						<td>
+							<input type="checkbox" id="checkboxf_restrict" class="custom-checkbox restrict" value="f">
+							<label translate="no" for="checkboxf_restrict">f</label>
+						</td>
+						<td>
+							<input type="checkbox" id="checkboxb_restrict" class="custom-checkbox restrict" value="b">
+							<label translate="no" for="checkboxb_restrict">b</label>
+						</td>
+					</tr>
+					<tr>
+						<td>
+							<input type="checkbox" id="checkboxM_restrict" class="custom-checkbox restrict" value="M">
+							<label translate="no" for="checkboxM_restrict">M</label>
+						</td>
+						<td>
+							<input type="checkbox" id="checkboxE_restrict" class="custom-checkbox restrict" value="E">
+							<label translate="no" for="checkboxE_restrict">E</label>
+						</td>
+						<td>
+							<input type="checkbox" id="checkboxS_restrict" class="custom-checkbox restrict" value="S">
+							<label translate="no" for="checkboxS_restrict">S</label>
+						</td>
+						<td>
+							<input type="checkbox" id="checkboxx_restrict" class="custom-checkbox restrict" value="x">
+							<label translate="no" for="checkboxx_restrict">x</label>
+						</td>
+						<td>
+							<input type="checkbox" id="checkboxy_restrict" class="custom-checkbox restrict" value="y">
+							<label translate="no" for="checkboxy_restrict">y</label>
+						</td>
+						<td>
+							<input type="checkbox" id="checkboxz_restrict" class="custom-checkbox restrict" value="z">
+							<label translate="no" for="checkboxz_restrict">z</label>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+		</div><br>
 		<label for="premove">Pre Move: </label>
 		<input type="text" id="premove"><br>
 		<input type="checkbox" id="ignorePremoveCenter" class="custom-checkbox">
@@ -584,19 +569,17 @@
 	<button id="solveButton" class="button medium" onclick="startWorker()">Solve</button><br>
 	<label for="countLine">Number of solutions: </label>
 	<input type="text" id="countLine" value="0" readonly><br>
-    <label for="currentDepth">Current Depth: </label>
-    <input type="text" id="currentDepth" value="-1" readonly>
+	<label for="currentDepth">Current Depth: </label>
+	<input type="text" id="currentDepth" value="-1" readonly>
 	<div id="result"></div>
 
-	<script type="module">
+    <script type="module">
 		let twistyPromise = null;
 		function ensureTwisty() {
 			if (!twistyPromise) {
 				twistyPromise = import('https://cdn.cubing.net/v0/js/cubing/twisty')
 					.then(mod => {
-						console.log('Twisty module loaded exports:', Object.keys(mod || {}));
 						const Ctor = mod.TwistyPlayer || mod.default || (mod.default && mod.default.TwistyPlayer) || window.TwistyPlayer || null;
-						console.log('Resolved TwistyPlayer constructor:', Ctor);
 						window.__TwistyModule = mod;
 						window.__TwistyPlayerCtor = Ctor;
 						return mod;
@@ -662,6 +645,7 @@
 
 	<script>
 		let reverse;
+		let mirror;
 		let convert;
 		let generateTwoPhaseInput;
 		let convertMask;
@@ -673,29 +657,24 @@
 			const Module = await window.loadFunctionsJs();
 			reverse = function (scr) {
 				const scr_fixed = scr_fix2(scr);
-				if (scr_fixed === "") {
-					return;
-				}
+				if (scr_fixed === "") return "";
 				const lines = scr_fixed.split('\n');
 				const processedLines = [];
 				for (let i = lines.length - 1; i >= 0; i--) {
 					const line = lines[i];
 					const [alg, comment] = line.split('//');
-					const alg_revresed = Module.scr_reverse(alg.trim());
+					const alg_reversed = Module.scr_reverse(alg.trim());
 					if (comment) {
-						processedLines.push(`${alg_revresed} // ${comment.trim()}`);
+						processedLines.push(`${alg_reversed} // ${comment.trim()}`);
 					} else {
-						processedLines.push(alg_revresed);
+						processedLines.push(alg_reversed);
 					}
 				}
-				const result = processedLines.join('\n');
-				return result.trim() + "\n";
+				return processedLines.join('\n').trim() + "\n";
 			};
 			mirror = function (scr) {
 				const scr_fixed = scr_fix2(scr);
-				if (scr_fixed === "") {
-					return;
-				}
+				if (scr_fixed === "") return "";
 				const lines = scr_fixed.split('\n');
 				const processedLines = [];
 				for (let i = 0; i < lines.length; i++) {
@@ -708,25 +687,20 @@
 						processedLines.push(alg_mirrored);
 					}
 				}
-				const result = processedLines.join('\n');
-				return result.trim() + "\n";
+				return processedLines.join('\n').trim() + "\n";
 			};
 			convert = function (scramble) {
 				const result = Module.scr_converter(scramble);
-				const resultArray = result.split(',');
-				return resultArray.map(part => part.trim());
+				return result.split(',').map(part => part.trim());
 			};
 			generateTwoPhaseInput = function (scramble) {
-				const result = Module.ScrambleToState(scramble);
-				return result;
+				return Module.ScrambleToState(scramble);
 			};
 			convertMask = function (center_input, edge_input, corner_input, rotation_alg) {
-				const result = Module.convertMask(center_input, edge_input, corner_input, rotation_alg);
-				return result;
+				return Module.convertMask(center_input, edge_input, corner_input, rotation_alg);
 			};
 			get_center = function (pm) {
-				const result = Module.get_center(pm);
-				return result;
+				return Module.get_center(pm);
 			};
 			isFunctionsReady = true;
 		}
@@ -738,82 +712,42 @@
 		}
 
 		let worker;
-		let worker2_adjacent = null;
-		let worker2_opposite = null;
+		let worker2;
 		let messageCount = 0;
 		let mask = {
 			orbits: {
-				EDGES: {
-					pieces: [
-						{ facelets: ["regular", "regular"] },
-						{ facelets: ["regular", "regular"] },
-						{ facelets: ["regular", "regular"] },
-						{ facelets: ["regular", "regular"] },
-						{ facelets: ["regular", "regular"] },
-						{ facelets: ["regular", "regular"] },
-						{ facelets: ["regular", "regular"] },
-						{ facelets: ["regular", "regular"] },
-						{ facelets: ["regular", "regular"] },
-						{ facelets: ["regular", "regular"] },
-						{ facelets: ["regular", "regular"] },
-						{ facelets: ["regular", "regular"] },
-					],
-				},
-				CORNERS: {
-					pieces: [
-						{ facelets: ["regular", "regular", "regular"] },
-						{ facelets: ["regular", "regular", "regular"] },
-						{ facelets: ["regular", "regular", "regular"] },
-						{ facelets: ["regular", "regular", "regular"] },
-						{ facelets: ["regular", "regular", "regular"] },
-						{ facelets: ["regular", "regular", "regular"] },
-						{ facelets: ["regular", "regular", "regular"] },
-						{ facelets: ["regular", "regular", "regular"] },
-					],
-				},
-				CENTERS: {
-					pieces: [
-						{ facelets: ["regular"] },
-						{ facelets: ["regular"] },
-						{ facelets: ["regular"] },
-						{ facelets: ["regular"] },
-						{ facelets: ["regular"] },
-						{ facelets: ["regular"] },
-					],
-				},
-			},
+				EDGES: { pieces: Array(12).fill({ facelets: ["regular", "regular"] }) },
+				CORNERS: { pieces: Array(8).fill({ facelets: ["regular", "regular", "regular"] }) },
+				CENTERS: { pieces: Array(6).fill({ facelets: ["regular"] }) }
+			}
 		};
 
+		// XXEOCross Masking (6 chars for Edges, 5 chars for Corners)
+		// Edges:   [Cross(4), BL, BR, FR, FL, LL(4)]
+		// Corners: [BL, BR, FR, FL, LL(4)]
 		const slotToEMaskDouble = {
-			'BL BR': '---III',
-			'BL FR': '--I-II',
-			'BL FL': '--II-I',
-			'BR FR': '-I--II',
-			'BR FL': '-I-I-I',
-			'FR FL': '-II--I'
+			'BL BR': '---???',
+			'BL FL': '--??-?',
+			'BL FR': '--?-??',
+			'BR FR': '-?--??',
+			'BR FL': '-?-?-?',
+			'FR FL': '-??--?'
 		};
+
 		const slotToCMaskDouble = {
 			'BL BR': '--III',
-			'BL FR': '-I-II',
 			'BL FL': '-II-I',
+			'BL FR': '-I-II',
 			'BR FR': 'I--II',
 			'BR FL': 'I-I-I',
 			'FR FL': 'II--I'
 		};
 
-		function getMaskInputsDouble() {
+		function getMaskInputs() {
 			const slot = document.getElementById("slot").value;
-			const pair_slot = document.getElementById("pair_slot").value;
-			const order = { BL: 0, BR: 1, FR: 2, FL: 3 };
-			let slots;
-			if (!(slot in order) || !(pair_slot in order)) {
-				slots = slot + ' ' + pair_slot;
-			} else {
-				slots = order[slot] <= order[pair_slot] ? `${slot} ${pair_slot}` : `${pair_slot} ${slot}`;
-			}
-			const maskInputCenter = "--";
-			const maskInputEdges = slotToEMaskDouble[slots];
-			const maskInputCorners = slotToCMaskDouble[slots];
+			const maskInputCenter = "-";
+			const maskInputEdges = slotToEMaskDouble[slot];
+			const maskInputCorners = slotToCMaskDouble[slot];
 			return { maskInputCenter, maskInputEdges, maskInputCorners };
 		}
 
@@ -848,30 +782,23 @@
 			}
 			mask = {
 				orbits: {
-					EDGES: {
-						pieces: edges,
-					},
-					CORNERS: {
-						pieces: corners,
-					},
-					CENTERS: {
-						pieces: centers,
-					},
-				},
+					EDGES: { pieces: edges },
+					CORNERS: { pieces: corners },
+					CENTERS: { pieces: centers }
+				}
 			};
 		}
 
 		function scr_fix(scr) {
 			const fixed_scr = scr_fix2(scr);
-			const output = fixed_scr.split('\n')
+			return fixed_scr.split('\n')
 				.map(line => line.split('//')[0].trim())
 				.filter(line => line.length > 0)
 				.join('\n');
-			return output;
 		}
 
 		function scr_fix2(scr) {
-			const outputString = scr.split('\n').map(line => {
+			return scr.split('\n').map(line => {
 				const commentIndex = line.indexOf('//');
 				if (commentIndex !== -1) {
 					const beforeComment = insertSpaces(line.slice(0, commentIndex));
@@ -881,14 +808,12 @@
 					return insertSpaces(line);
 				}
 			}).join('\n');
-			return outputString;
 		}
 
 		function insertSpaces(input) {
 			const keys = ["U", "U2", "U2'", "U'", "D", "D2", "D2'", "D'", "L", "L2", "L2'", "L'", "R", "R2", "R2'", "R'", "F", "F2", "F2'", "F'", "B", "B2", "B2'", "B'", "u", "u2", "u2'", "u'", "d", "d2", "d2'", "d'", "l", "l2", "l2'", "l'", "r", "r2", "r2'", "r'", "f", "f2", "f2'", "f'", "b", "b2", "b2'", "b'", "Uw", "Uw2", "Uw2'", "Uw'", "Dw", "Dw2", "Dw2'", "Dw'", "Lw", "Lw2", "Lw2'", "Lw'", "Rw", "Rw2", "Rw2'", "Rw'", "Fw", "Fw2", "Fw2'", "Fw'", "Bw", "Bw2", "Bw2'", "Bw'", "M", "M2", "M2'", "M'", "S", "S2", "S2'", "S'", "E", "E2", "E2'", "E'", "x", "x2", "x2'", "x'", "y", "y2", "y2'", "y'", "z", "z2", "z2'", "z'"];
 			const regex = new RegExp(`(${keys.join('|')})`, 'g');
-			return input.replace(regex, ' $1').trim()
-				.replace(/\s+/g, ' ');
+			return input.replace(regex, ' $1').trim().replace(/\s+/g, ' ');
 		}
 
 		function replaceCharacters(input) {
@@ -924,7 +849,7 @@
 		}
 
 		function getRestrictString() {
-            const restrictFieldset = document.getElementById('res');
+			const restrictFieldset = document.getElementById('res');
 			const basicMoves = ['U', 'D', 'L', 'R', 'F', 'B'];
 			let restString = "U_U2_U-_D_D2_D-_L_L2_L-_R_R2_R-_F_F2_F-_B_B2_B-";
 			const resChecked = restrictFieldset.querySelectorAll('input[type="checkbox"]:checked');
@@ -941,7 +866,7 @@
 		}
 
 		function getMoveCountString() {
-			const restrictFieldset = document.getElementById('res')
+			const restrictFieldset = document.getElementById('res');
 			const basicMoves = ['U', 'D', 'L', 'R', 'F', 'B'];
 			let mcString = '';
 			const resChecked = Array.from(restrictFieldset.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
@@ -953,48 +878,48 @@
 			return mcString;
 		}
 
-        function getMavString() {
-            const restrictFieldset = document.getElementById('res');
-            const basicMoves = ['U', 'D', 'L', 'R', 'F', 'B'];
+		function getMavString() {
+			const restrictFieldset = document.getElementById('res');
+			const basicMoves = ['U', 'D', 'L', 'R', 'F', 'B'];
 			const AXIS_Y = ['U', 'D', 'E', 'u', 'd', 'y'];
-            const AXIS_X = ['L', 'R', 'M', 'l', 'r', 'x'];
-            const AXIS_Z = ['F', 'B', 'S', 'f', 'b', 'z'];
-            const activeMoves = new Set(basicMoves);
-            const resChecked = restrictFieldset.querySelectorAll('input[type="checkbox"]:checked');
-            resChecked.forEach(cb => activeMoves.add(cb.value));
-            const changes = [];
-            const rotations = ['x', 'y', 'z'];
+			const AXIS_X = ['L', 'R', 'M', 'l', 'r', 'x'];
+			const AXIS_Z = ['F', 'B', 'S', 'f', 'b', 'z'];
+			const activeMoves = new Set(basicMoves);
+			const resChecked = restrictFieldset.querySelectorAll('input[type="checkbox"]:checked');
+			resChecked.forEach(cb => activeMoves.add(cb.value));
+			const changes = [];
+			const rotations = ['x', 'y', 'z'];
 
 			const getAxis = (move) => {
-                if (AXIS_X.includes(move)) return 'x';
-                if (AXIS_Y.includes(move)) return 'y';
-                if (AXIS_Z.includes(move)) return 'z';
-                return null;
-            };
+				if (AXIS_X.includes(move)) return 'x';
+				if (AXIS_Y.includes(move)) return 'y';
+				if (AXIS_Z.includes(move)) return 'z';
+				return null;
+			};
 
-            rotations.forEach(rotMove => {
-                if (!activeMoves.has(rotMove)) return;
+			rotations.forEach(rotMove => {
+				if (!activeMoves.has(rotMove)) return;
 				const rotAxis = getAxis(rotMove);
 
-                activeMoves.forEach(move => {
-                    if (move == rotMove) return;
-                    if (rotations.includes(move)) return;
-                    changes.push(`${move}~${rotMove}|${move}2~${rotMove}|${move}-~${rotMove}`);
-                    changes.push(`${move}~${rotMove}2|${move}2~${rotMove}2|${move}-~${rotMove}2`);
-                    changes.push(`${move}~${rotMove}-|${move}2~${rotMove}-|${move}-~${rotMove}-`);
+				activeMoves.forEach(move => {
+					if (move == rotMove) return;
+					if (rotations.includes(move)) return;
+					changes.push(`${move}~${rotMove}|${move}2~${rotMove}|${move}-~${rotMove}`);
+					changes.push(`${move}~${rotMove}2|${move}2~${rotMove}2|${move}-~${rotMove}2`);
+					changes.push(`${move}~${rotMove}-|${move}2~${rotMove}-|${move}-~${rotMove}-`);
 
 					const moveAxis = getAxis(move);
-                    const isSameAxis = (rotAxis && moveAxis && rotAxis === moveAxis);
+					const isSameAxis = (rotAxis && moveAxis && rotAxis === moveAxis);
 					if (!isSameAxis) return;
-                    changes.push(`${rotMove}~${move}|${rotMove}2~${move}|${rotMove}-~${move}`);
-                    changes.push(`${rotMove}~${move}2|${rotMove}2~${move}2|${rotMove}-~${move}2`);
-                    changes.push(`${rotMove}~${move}-|${rotMove}2~${move}-|${rotMove}-~${move}-`);
-                });
-            });
-            return changes.join('|');
-        }
+					changes.push(`${rotMove}~${move}|${rotMove}2~${move}|${rotMove}-~${move}`);
+					changes.push(`${rotMove}~${move}2|${rotMove}2~${move}2|${rotMove}-~${move}2`);
+					changes.push(`${rotMove}~${move}-|${rotMove}2~${move}-|${rotMove}-~${move}-`);
+				});
+			});
+			return changes.join('|');
+		}
 
-		function startWorker() {
+        function startWorker() {
 			try {
 				if (worker) {
 					worker.terminate();
@@ -1003,13 +928,13 @@
 					const content = document.createElement('a');
 					content.innerHTML = "Search terminated.<br>";
 					element.appendChild(content);
-                    document.getElementById("solveButton").textContent = "Start";
+					document.getElementById("solveButton").textContent = "Start";
 					return;
 				}
 
 				if (!isFunctionsReady) {
 					alert("The module is still initializing. Please try again in a moment.");
-                    document.getElementById("solveButton").textContent = "Start";
+					document.getElementById("solveButton").textContent = "Start";
 					return;
 				}
 				if (typeof convert !== "function" || typeof generateTwoPhaseInput !== "function" || typeof convertMask !== "function") {
@@ -1018,17 +943,16 @@
 					const content = document.createElement('a');
 					content.innerHTML = "Error: Search terminated due an error.<br>";
 					element.appendChild(content);
-                    document.getElementById("solveButton").textContent = "Start";
+					document.getElementById("solveButton").textContent = "Start";
 					return;
 				}
 				document.getElementById("countLine").value = 0;
 				document.getElementById("currentDepth").value = -1;
-                document.getElementById("result").innerHTML = "";
+				document.getElementById("result").innerHTML = "";
 				messageCount = 0;
 				const scr = scr_fix(document.getElementById("scr").innerHTML);
 				const premove = scr_fix(document.getElementById('premove').value);
 				const slot = document.getElementById("slot").value;
-				const pair_slot = document.getElementById("pair_slot").value;
 				const len = "20";
 				const num = "100";
 				const center_offset_from_premove = get_center(premove);
@@ -1042,15 +966,31 @@
 				const [resID, restrict] = getRestrictString();
 				const ma = getMavString();
 				const mcString = getMoveCountString();
-                document.getElementById("solveButton").textContent = "End";
+				document.getElementById("solveButton").textContent = "End";
 				const convertResult = convert(scr);
 				const result_moves = convertResult[0];
 				const result_rotation = convertResult[1];
-				const mask_input = getMaskInputsDouble();
+				const mask_input = getMaskInputs();
 				const convertedMask = convertMask(mask_input.maskInputCenter, mask_input.maskInputEdges, mask_input.maskInputCorners, result_rotation);
 				setMask(convertedMask);
-				const args = { scr: result_moves, rot: "", slot: slot, pslot: pair_slot, num: parseInt(num, 10), len: parseInt(len, 10), move_restrict: restrict, post_alg: premove, center_offset: center_offset, max_rot_count: parseInt('2', 10), ma2: ma, mcString: mcString };
-				worker = new Worker('src/F2L_PairingSolver/worker_pairing.js');
+
+				// Call EOCross solver with selected slot
+				const args = {
+					solver: "EOCross",
+					scr: result_moves,
+					rot: "",
+					slot: slot,
+					ll: "",
+					num: parseInt(num, 10),
+					len: parseInt(len, 10),
+					move_restrict: restrict,
+					post_alg: premove,
+					center_offset: center_offset,
+					max_rot_count: parseInt('2', 10),
+					ma2: ma,
+					mcString: mcString
+				};
+				worker = new Worker('src/EOCrossSolver/worker.js');
 				worker.postMessage(args);
 				if (worker) {
 					worker.onmessage = function (event) {
@@ -1076,7 +1016,7 @@
 			const regex = /^depth\s*=\s*(\d+)/;
 			const match = sol.trim().match(regex);
 			const element = document.getElementById('result');
-			if (sol == "Search finished." || sol == "Already solved." || sol == "Error") {
+			if (sol == "Search finished." || sol == "Already solved." || sol == "Error" || sol == "Unsolvable.") {
 				if (worker) {
 					worker.terminate();
 				}
@@ -1093,11 +1033,11 @@
 					content.innerHTML = "Unsolvable.<br>";
 				}
 				element.appendChild(content);
-                document.getElementById("solveButton").textContent = "Start";
+				document.getElementById("solveButton").textContent = "Start";
 				return;
 			} else if (match && match[1]) {
-                const depthNumber = match[1];
-                document.getElementById('currentDepth').value = depthNumber;
+				const depthNumber = match[1];
+				document.getElementById('currentDepth').value = depthNumber;
 				return;
 			} else {
 				messageCount++;
@@ -1105,7 +1045,16 @@
 				const summary = document.createElement('summary');
 				summary.textContent = messageCount + ": " + sol;
 				summary.setAttribute('translate', 'no');
+
+				const copyBtn = document.createElement('button');
+				copyBtn.classList.add('button', 'medium');
+				copyBtn.textContent = 'Copy';
+				copyBtn.onclick = function () {
+					navigator.clipboard.writeText(sol);
+				};
+				details.appendChild(copyBtn);
 				details.appendChild(summary);
+
 				try {
 					const sim = createPlayer(scr, sol);
 					sim.experimentalStickeringMaskOrbits = mask;
@@ -1143,10 +1092,12 @@
 				var spaceElement2 = document.createElement('a');
 				spaceElement2.innerHTML = "&nbsp;";
 				details.appendChild(spaceElement2);
+
 				const normalizedHref = window.urlParamsCompressor.normalizeUrl(window.location.href);
 				const currentUrl = new URL("index.html", normalizedHref);
+				currentUrl.searchParams.set('solver', 'EOCross');
 				currentUrl.searchParams.set('scramble', (scr + " // setup\n").replace(/ /g, '_').replace(/'/g, '-'));
-				if (premove !== "") {
+				if (pm !== "") {
 					currentUrl.searchParams.set('premove', pm.replace(/ /g, '_').replace(/'/g, '-'));
 				}
 				currentUrl.searchParams.set('rc', '2');
@@ -1166,23 +1117,19 @@
 					currentUrl.searchParams.set('crest', center_offset);
 				}
 				const slot = document.getElementById("slot").value;
-				const pair_slot = document.getElementById("pair_slot").value;
-				currentUrl.searchParams.set('solver', 'F2L_pair');
-				currentUrl.searchParams.set('slot2', `${slot}`);
-				currentUrl.searchParams.set('aslot', `${pair_slot}`);
+				currentUrl.searchParams.set('slot3', `${slot}`);
 				currentUrl.searchParams.set('index', `${messageCount}`);
 				currentUrl.searchParams.set('sol', sol.replace(/ /g, '_').replace(/'/g, '-'));
-				
-// Compress the link for sharing (v3: query parameters)
-			let finalLinkUrl = currentUrl.href;
-			if (typeof window.urlParamsCompressor !== 'undefined') {
-				try {
-					finalLinkUrl = window.urlParamsCompressor.createCompressedQueryUrl(currentUrl.href);
+
+				let finalLinkUrl = currentUrl.href;
+				if (typeof window.urlParamsCompressor !== 'undefined') {
+					try {
+						finalLinkUrl = window.urlParamsCompressor.createCompressedQueryUrl(currentUrl.href);
 					} catch (error) {
 						console.error('Link compression error:', error);
 					}
 				}
-				
+
 				var link_element3 = document.createElement('a');
 				link_element3.href = finalLinkUrl;
 				link_element3.target = '_blank';
@@ -1242,220 +1189,132 @@
 			}
 		}
 
-		let currentDropdownPairSlotOptions = [];
+        let isGenerating = false;
 
-		function areOptionArraysEqual(arr1, arr2) {
-			if (arr1.length !== arr2.length) return false;
-			return arr1.every((option, index) =>
-				option.value === arr2[index].value && option.text === arr2[index].text
-			);
-		}
-
-		function getFilteredOptions(selectedValue) {
-			const allOptions = [{ value: "BL", text: "BL" }, { value: "BR", text: "BR" }, { value: "FR", text: "FR" }, { value: "FL", text: "FL" }];
-			const selectedValueArray = selectedValue.split(" ");
-			return allOptions.filter(option => !selectedValueArray.includes(option.value));
-		}
-
-		function updateDropdown2() {
-			const dropdownA = document.getElementById("slot");
-			const dropdownB = document.getElementById("pair_slot");
-			const selectedValueA = dropdownA.value;
-			const newOptions = getFilteredOptions(selectedValueA);
-			if (areOptionArraysEqual(currentDropdownPairSlotOptions, newOptions)) return;
-			const previousSelectionB = dropdownB.value;
-			dropdownB.innerHTML = "";
-			newOptions.forEach(option => {
-				const newOption = document.createElement("option");
-				newOption.value = option.value;
-				newOption.textContent = option.text;
-				dropdownB.appendChild(newOption);
-			});
-			currentDropdownPairSlotOptions = newOptions;
-			if (newOptions.some(option => option.value === previousSelectionB)) {
-				dropdownB.value = previousSelectionB;
+		async function genscr() {
+			if (isGenerating) {
+				return;
 			}
-		}
+			if (!isFunctionsReady) {
+				alert("The module is still initializing. Please try again in a moment.");
+				return;
+			}
+			if (typeof reverse !== "function" || typeof mirror !== "function" || typeof convert !== "function" || typeof convertMask !== "function" || typeof generateTwoPhaseInput !== "function") {
+				alert("Error: The required function is not initialized. Please reload the page manually.");
+				return;
+			}
+			if (typeof min2phase === 'undefined' || typeof min2phase.randomCube !== 'function') {
+				try {
+					await window.loadMin2phase();
+				} catch (e) {
+					console.error('Failed to load min2phase:', e);
+					alert('Failed to load solver module. Please check network or try again later.');
+					return;
+				}
+			}
 
-		const slotToRotDouble = {
-			'BL BR': "",
-			'BR BL': "",
-			'BL FR': "",
-			'FR BL': "y2",
-			'BL FL': "y'",
-			'FL BL': "y'",
-			'BR FR': "y",
-			'FR BR': "y",
-			'BR FL': "y",
-			'FL BR': "y'",
-			'FR FL': "y2",
-			'FL FR': "y2"
-		};
-
-		const mirrorSlotPairs = { // free pair + xcross slot
-			'BL BR': false,
-			'BR BL': true,
-			'BL FR': false,
-			'FR BL': false,
-			'BL FL': true,
-			'FL BL': false,
-			'BR FR': false,
-			'FR BR': true,
-			'BR FL': false,
-			'FL BR': false,
-			'FR FL': false,
-			'FL FR': true
-		}
-
-		let xcrossFreePairWorker = null;
-
-        async function genscr() {
-            if (!isFunctionsReady) {
-                alert("The module is still initializing. Please try again in a moment.");
-                return;
-            }
-            if (typeof mirror !== "function" || typeof reverse !== "function" || typeof convert !== "function" || typeof convertMask !== "function" || typeof generateTwoPhaseInput !== "function") {
-                alert("Error: The required function is not initialized. Please reload the page manually.");
-                return "";
-            }
-            if (typeof min2phase === 'undefined' || typeof min2phase.randomCube !== 'function') {
-                try {
-                    await window.loadMin2phase();
-                    console.log('min2phase loaded');
-                } catch (e) {
-                    console.error('Failed to load min2phase:', e);
-                    alert('Failed to load solver module. Please check network or try again later.');
-                    return;
-                }
-            }
-            if (typeof min2phase === 'undefined' || typeof min2phase.randomCube !== 'function') {
-                console.error('genscr: min2phase still unavailable after load');
-                alert('Solver module not available.');
-                return;
-            }
-
+			isGenerating = true;
             document.getElementById('spinner').style.display = 'block';
+			const nextBtn = document.getElementById('next');
 
-            const sol_len = document.getElementById("len").value;
-            const rot = document.getElementById("rot").value;
-            const slot = document.getElementById("slot").value;
-            const pair_slot = document.getElementById("pair_slot").value;
+			const sol_len = document.getElementById("len").value;
+			const rot = document.getElementById("rot").value;
+			const slot = document.getElementById("slot").value;
+			const mask_input = getMaskInputs();
+			const convertedMask = convertMask(mask_input.maskInputCenter, mask_input.maskInputEdges, mask_input.maskInputCorners, rot);
+			setMask(convertedMask);
 
-            // Asymmetric slot handling: pair_slot (Free Pair) + slot (XCross)
-            const final_slot = pair_slot + " " + slot;
+			let cube, solution;
+			try {
+				cube = min2phase.randomCube();
+				solution = min2phase.solve(cube);
+			} catch (e) {
+				console.error('genscr error:', e);
+				alert('Failed to generate scramble.');
+				isGenerating = false;
+				nextBtn.focus();
+				return;
+			}
 
-            const mask_input = getMaskInputsDouble();
-            const convertedMask = convertMask(mask_input.maskInputCenter, mask_input.maskInputEdges, mask_input.maskInputCorners, rot);
-            setMask(convertedMask);
+			if (!worker2) {
+				worker2 = new Worker('src/XXEOCrossTrainer/worker.js');
+			}
 
-            let cube;
-            let solution;
-            try {
-                cube = min2phase.randomCube();
-                solution = min2phase.solve(cube);
-            } catch (e) {
-                document.getElementById('spinner').style.display = 'none';
-                console.error('genscr error:', e);
-                alert('Failed to generate scramble: see console for details.');
-                return;
-            }
+			worker2.onmessage = async function (event) {
+				try {
+					if (event.data === "Error" || (typeof event.data === "string" && event.data.includes("RETRY_NEEDED"))) {
+						alert("Scramble generation timed out or depth frontier reached. Please click Next to try again.");
+						return;
+					}
 
-            const show = document.getElementById('show');
+					const ret = (event.data).split(",");
+					if (ret.length < 2) {
+						alert("Invalid response from solver. Please try again.");
+						return;
+					}
 
-            // Initialize unified single worker
-            if (!xcrossFreePairWorker) {
-                xcrossFreePairWorker = new Worker('src/xcross_free_pair_trainer_new/worker.js');
-            }
+					let base_seq = ret[1] + reverse(ret[0]);
+					let mapped_seq = base_seq;
 
-            const args = { scr: solution, len: sol_len, slot: final_slot };
+					// Parallel: BL-BR / Orthogonal: BL-FL / Diagonal: BL-FR
+					if (slot === 'FR FL') {
+						mapped_seq = base_seq + " y2";
+					} else if (slot === 'BR FR' || slot === 'BR FL') {
+						mapped_seq = mirror(base_seq);
+					}
 
-            xcrossFreePairWorker.onmessage = async function (event) {
-                try {
+					const converted = convert(mapped_seq)[0];
+					const twoPhaseInput = generateTwoPhaseInputWrapper(converted);
+					let scramble = min2phase.solve(twoPhaseInput);
+					scramble = scr_fix(rot + scramble);
+
+					const prev = document.getElementById('scr').innerHTML;
+					if (prev && prev.trim() !== "") {
+						scr_old = prev;
+						document.getElementById('back').disabled = false;
+					} else {
+						scr_old = null;
+					}
+
+					document.getElementById('scr').innerHTML = scramble;
+
+					const show = document.getElementById('show');
+					show.innerHTML = '';
+					try {
+						const sim = createPlayer(scramble, '');
+						sim.experimentalStickeringMaskOrbits = mask;
+						sim.controlPanel = "none";
+						show.appendChild(sim);
+					} catch (syncErr) {
+						const real = await createPlayerLazy(scramble, '');
+						real.experimentalStickeringMaskOrbits = mask;
+						real.controlPanel = "none";
+						show.appendChild(real);
+					}
+				} catch (e) {
+					console.error('worker2.onmessage error:', e);
+				} finally {
                     document.getElementById('spinner').style.display = 'none';
-                    if (event.data === "Error" || (typeof event.data === "string" && event.data.includes("RETRY_NEEDED"))) {
-                        alert("Scramble generation timed out or depth frontier reached. Please click Next to try again.");
-                        return;
-                    } else if (event.data === "Initial Error") {
-                        throw new Error('Worker reported an initialization error. Please reload.');
-                    }
+					isGenerating = false;
+					nextBtn.focus();
+				}
+			};
 
-                    const ret = (event.data).split(",");
-
-                    // 1. Mirror transformation for inverted slot pair combinations
-                    if (mirrorSlotPairs[final_slot]) {
-                        ret[0] = mirror(ret[0]);
-                        ret[1] = mirror(ret[1]);
-                    }
-
-                    // 2. Solve through min2phase with rotation adjustment
-                    let scramble = min2phase.solve(
-                        generateTwoPhaseInputWrapper(
-                            convert(ret[1] + reverse(ret[0]) + slotToRotDouble[final_slot])[0]
-                        )
-                    );
-                    scramble = scr_fix(rot + convert(scramble)[0]);
-
-                    // 3. Save to history for Back button
-                    const prev = document.getElementById('scr').innerHTML;
-                    if (prev && prev.trim() !== "") {
-                        scr_old = prev;
-                        document.getElementById('back').disabled = false;
-                    } else {
-                        scr_old = null;
-                    }
-                    document.getElementById('scr').innerHTML = scramble;
-
-                    // 4. Render preview player
-                    try {
-                        show.innerHTML = '';
-                        const sim = createPlayer(scramble, '');
-                        sim.experimentalStickeringMaskOrbits = mask;
-                        sim.controlPanel = "none";
-                        show.appendChild(sim);
-                        return;
-                    } catch (syncErr) {
-                        console.warn('save: sync createPlayer failed, falling back to async', syncErr);
-                    }
-
-                    const placeholder = document.createElement('div');
-                    placeholder.className = 'twisty-placeholder';
-                    placeholder.textContent = 'Loading preview...';
-                    show.appendChild(placeholder);
-
-                    try {
-                        const real = await createPlayerLazy(scramble, '');
-                        real.experimentalStickeringMaskOrbits = mask;
-                        real.controlPanel = "none";
-                        placeholder.replaceWith(real);
-                    } catch (asyncErr) {
-                        console.error('save: async createPlayer failed', asyncErr);
-                        placeholder.textContent = 'Warning: Failed to create TwistyPlayer.';
-                    }
-                } catch (e) {
-                    console.error('xcrossFreePairWorker.onmessage error:', e);
-                }
-            };
-
-            xcrossFreePairWorker.postMessage(args);
-        }
-
-		window.onload = function () {
-			updateDropdown2();
+			worker2.postMessage({ scr: solution, len: sol_len, slot: slot });
 		}
 
-        const details_advanced_settings = document.getElementById("advancedSettings");
-        const summary_advanced_settings = document.getElementById("summaryAdvancedSettings");
+		const details_advanced_settings = document.getElementById("advancedSettings");
+		const summary_advanced_settings = document.getElementById("summaryAdvancedSettings");
 		details_advanced_settings.addEventListener('toggle', () => {
-            if (details_advanced_settings.open) {
-                summary_advanced_settings.textContent = "Hide Advanced Settings";
-            } else {
-                summary_advanced_settings.textContent = "Show Advanced Settings";
-            }
-        });
+			if (details_advanced_settings.open) {
+				summary_advanced_settings.textContent = "Hide Advanced Settings";
+			} else {
+				summary_advanced_settings.textContent = "Show Advanced Settings";
+			}
+		});
 
 	</script>
 	<script src="sw-register.js" defer></script>
-
 </body>
 
 </html>

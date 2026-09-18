@@ -19,6 +19,7 @@ Also, the following trainers are available.
 - [**Pseudo Free Pair trainer**](https://or18.github.io/RubiksSolverDemo/pseudo_pairing_trainer)
 - [**EOCross trainer**](https://or18.github.io/RubiksSolverDemo/eocross_trainer)
 - [**XEOCross trainer**](https://or18.github.io/RubiksSolverDemo/xeocross_trainer)
+- [**XXEOCross trainer**](https://or18.github.io/RubiksSolverDemo/xxeocross_trainer)
 
 Detailed explanations and example searches are available in the [**documentation**](https://or18.github.io/RubiksSolverDemo/documentation.html)
 
