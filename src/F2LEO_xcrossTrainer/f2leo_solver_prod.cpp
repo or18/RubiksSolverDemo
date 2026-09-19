@@ -357,7 +357,7 @@ struct f2leo_xcross_search
         goal_corner = 4 * 3 + 0;
 
         // 4. Heuristic Pruning tables
-        create_prune_table(goal_5e, SIZE_5E, 9, multi_move_table_5e, prune_table_5e);
+        create_prune_table(goal_5e, SIZE_5E, 10, multi_move_table_5e, prune_table_5e);
         create_prune_table(goal_middle, SIZE_4E, 10, multi_move_table_4e, prune_table_middle);
 
         ma = create_ma_table();
@@ -858,9 +858,10 @@ struct f2leo_xcross_search
     }
 
     // -------------------------------------------------------------------------
-    // Main Scramble Generator for F2LEO XCross (BL Slot)
+    // Single-Loop Production Generator for F2LEO XCross (BL Slot)
+    // Directly checks final composed cube state to guarantee exact depth
     // -------------------------------------------------------------------------
-    std::string func(std::string arg_scramble = "", std::string arg_length = "7", std::string arg_slot = "BL")
+    std::string func(std::string arg_scramble = "", std::string arg_length = "7")
     {
         int len = std::stoi(arg_length);
 
@@ -874,79 +875,44 @@ struct f2leo_xcross_search
         std::vector<int> rs_alg = r_alg;
         rs_alg.insert(rs_alg.end(), s_alg.begin(), s_alg.end());
 
-        std::vector<int> chosen_w;
+        // Search budget: Expand trials for high depths (9, 10, 11)
+        const int max_trials = 100;
+        std::vector<int> chosen_walk;
 
-        // Phase A: Sample from precomputed database bucket
-        if (len < static_cast<int>(index_pairs.size()) && !index_pairs[len].empty())
+        for (int trial = 0; trial < max_trials; ++trial)
         {
-            const auto& bucket = index_pairs[len];
-            std::uniform_int_distribution<size_t> dist(0, bucket.size() - 1);
+            std::vector<int> candidate_walk = generate_raw_walk(len);
+            if (candidate_walk.empty()) continue;
 
-            const int max_db_attempts = 50;
-            for (int attempt = 0; attempt < max_db_attempts; ++attempt)
+            // HTML applies: mapped_seq based on ret[1] + reverse(ret[0])
+            // Inverted by min2phase, the actual scramble applied to the cube is:
+            // X = (candidate_walk * (R * S)^-1)^-1 = (R * S) * candidate_walk^-1
+            std::vector<int> inv_w = invert_alg(candidate_walk);
+
+            std::vector<int> test_composed = rs_alg;
+            test_composed.insert(test_composed.end(), inv_w.begin(), inv_w.end());
+
+            // Directly evaluate true minimal F2LEO XCross depth on composed state
+            int composed_depth = evaluate_scramble_depth(test_composed, len);
+
+            if (composed_depth == len)
             {
-                uint64_t node = bucket[dist(generator)];
-
-                uint64_t rem = node / SIZE_4E;
-                int m_idx = static_cast<int>(node % SIZE_4E);
-                int c_idx = static_cast<int>(rem % 24);
-                int e5_idx = static_cast<int>(rem / 24);
-
-                // Find the sequence W (length len) that brings state node back to Origin O
-                sol.clear();
-                if (depth_limited_search_origin(e5_idx * 18, m_idx * 18, c_idx * 18, len, 324))
-                {
-                    std::vector<int> w_alg = StringToAlg(tmp);
-                    if (static_cast<int>(w_alg.size()) == len)
-                    {
-                        // Synthesized scramble: (R * S) * W^-1
-                        std::vector<int> inv_w = invert_alg(w_alg);
-                        std::vector<int> test_composed = rs_alg;
-                        test_composed.insert(test_composed.end(), inv_w.begin(), inv_w.end());
-
-                        // Strictly verify minimal F2LEO XCross depth
-                        if (evaluate_scramble_depth(test_composed, len) == len)
-                        {
-                            chosen_w = w_alg;
-                            break;
-                        }
-                    }
-                }
-            }
-        }
-
-        // Phase B: Fallback using random walk if database sampling yields shortcuts
-        if (chosen_w.empty())
-        {
-            const int max_walk_trials = (len >= 9) ? 1000 : 300;
-            for (int trial = 0; trial < max_walk_trials; ++trial)
-            {
-                std::vector<int> candidate_walk = generate_raw_walk(len);
-                if (candidate_walk.empty()) continue;
-
-                std::vector<int> inv_w = invert_alg(candidate_walk);
-                std::vector<int> test_composed = rs_alg;
-                test_composed.insert(test_composed.end(), inv_w.begin(), inv_w.end());
-
-                if (evaluate_scramble_depth(test_composed, len) == len)
-                {
-                    chosen_w = candidate_walk;
-                    break;
-                }
+                chosen_walk = candidate_walk;
+                break;
             }
         }
 
         std::string gen_str;
-        if (chosen_w.empty())
+        if (chosen_walk.empty())
         {
             gen_str = "RETRY_NEEDED";
         }
         else
         {
-            gen_str = AlgToString(chosen_w);
+            gen_str = AlgToString(chosen_walk);
         }
 
-        // ret[0]: R * S (Origin sequence), ret[1]: W (length len)
+        // ret[0]: R * S (Origin sequence), ret[1]: candidate_walk (length len)
         std::string ret = arg_scramble + " " + sol_str + "," + gen_str;
         return ret;
     }
