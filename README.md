@@ -12,7 +12,6 @@ It provides IDA* search and precomputed pattern database solvers for 3x3x3 stage
 ### Practice Trainers
 Customizable scrambler and trainer tools targeting specific solve stages:
 - [**Cross Trainer**](https://or18.github.io/RubiksSolverDemo/cross_trainer)
-- [**F2LEO Cross Trainer**](https://or18.github.io/RubiksSolverDemo/f2leo_cross_trainer)
 - [**XCross Trainer**](https://or18.github.io/RubiksSolverDemo/xcross_trainer)
 - [**XXCross Trainer**](https://or18.github.io/RubiksSolverDemo/xxcross_trainer)
 - [**XXXCross Trainer**](https://or18.github.io/RubiksSolverDemo/xxxcross_trainer)
@@ -20,6 +19,8 @@ Customizable scrambler and trainer tools targeting specific solve stages:
 - [**XCross Free Pair Trainer**](https://or18.github.io/RubiksSolverDemo/xcross_pairing_trainer)
 - [**Pseudo XCross Trainer**](https://or18.github.io/RubiksSolverDemo/pseudo_xcross_trainer)
 - [**Pseudo Free Pair Trainer**](https://or18.github.io/RubiksSolverDemo/pseudo_pairing_trainer)
+- [**F2LEO Cross Trainer**](https://or18.github.io/RubiksSolverDemo/f2leo_cross_trainer)
+- [**F2LEO XCross Trainer**](https://or18.github.io/RubiksSolverDemo/f2leo_xcross_trainer)
 - [**EOCross Trainer**](https://or18.github.io/RubiksSolverDemo/eocross_trainer)
 - [**XEOCross Trainer**](https://or18.github.io/RubiksSolverDemo/xeocross_trainer)
 - [**XXEOCross Trainer**](https://or18.github.io/RubiksSolverDemo/xxeocross_trainer)

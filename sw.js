@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pwa-cache_v79';
+const CACHE_NAME = 'pwa-cache_v80';
 
 const urlsToPrecache = [
 	'index.html',
@@ -15,6 +15,7 @@ const urlsToCache = [
 	'2x2x2.html',
 	'cross_trainer.html',
     'f2leo_cross_trainer.html',
+    'f2leo_xcross_trainer.html',
 	'documentation.html',
 	'eocross_trainer.html',
     'xeocross_trainer.html',
@@ -128,6 +129,9 @@ const urlsToCache = [
     'src/F2LEO_crossTrainer/f2leo_solver.js',
     'src/F2LEO_crossTrainer/f2leo_solver.wasm',
     'src/F2LEO_crossTrainer/worker.js',
+    'src/F2LEO_xcrossTrainer/f2leo_xcross_solver.js',
+    'src/F2LEO_xcrossTrainer/f2leo_xcross_solver.wasm',
+    'src/F2LEO_xcrossTrainer/worker.js',
 	'src/pseudoF2LEOAnalyzer/pseudo_analyzer.js',
 	'src/pseudoF2LEOAnalyzer/pseudo_analyzer.wasm',
 	'src/pseudoF2LEOAnalyzer/worker_panalyzer.js',

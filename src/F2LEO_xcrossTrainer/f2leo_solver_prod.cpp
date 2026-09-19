@@ -345,11 +345,11 @@ struct f2leo_xcross_search
         create_multi_move_table(4, 2, 12, SIZE_4E, edge_move_table, multi_move_table_4e);
 
         // 3. Goal state definitions
-        // Cross edges: DF=8(16), DL=9(18), DB=10(20), DR=11(22), BL edge: BL=2(4)
-        std::vector<int> cg5 = {16, 18, 20, 22, 4};
+        // Cross edges: DF=8(16), DL=9(18), DB=10(20), DR=11(22), BL edge: BL=0(0)
+        std::vector<int> cg5 = {16, 18, 20, 22, 0};
         goal_5e = array_to_index(cg5, 5, 2, 12);
 
-        // Middle edges: FR=0(0), FL=1(2), BL=2(4), BR=3(6)
+        // Middle edges: FR=0(0), FL=1(2), BL=2(4), BR=3(6)  ---> BL=0, BR=1, FR=2, FL=3
         std::vector<int> mg = {0, 2, 4, 6};
         goal_middle = array_to_index(mg, 4, 2, 12);
 
@@ -431,7 +431,7 @@ struct f2leo_xcross_search
             prev_set.swap(temp);
         }
 
-        std::cout << "\n=== Phase 2: Local Expansion (2M / 2M / 1M / 1M / 1M) ===" << std::endl;
+        std::cout << "\n=== Phase 2: Local Expansion (2M / 2M / 2M / 1M / 1M) ===" << std::endl;
 
         tsl::robin_set<uint64_t> depth6_set = std::move(cur_set);
 
@@ -450,11 +450,11 @@ struct f2leo_xcross_search
             depth6_set.swap(temp);
         }
 
-        // Depth 9: 1M bucket with Depth 7 backtrace check
+        // Depth 9: 2M bucket with Depth 7 backtrace check
         tsl::robin_set<uint64_t> depth8_set;
         depth8_set.max_load_factor(LOAD_FACTOR);
         depth8_set.insert(index_pairs[8].begin(), index_pairs[8].end());
-        expand_depth_partial(8, 9, depth8_set, index_pairs[8], &depth7_set, BUCKET_1M, TARGET_NODES_1M);
+        expand_depth_partial(8, 9, depth8_set, index_pairs[8], &depth7_set, BUCKET_2M, TARGET_NODES_2M);
 
         // Release depth7_set
         {
@@ -625,12 +625,8 @@ struct f2leo_xcross_search
         return AlgToString(inv);
     }
 
-    // -------------------------------------------------------------------------
-    // Solver: F2LEO XCross condition
-    // (Cross 4 edges + BL edge + DBL corner solved, remaining 3 middle edges EO solved)
-    // -------------------------------------------------------------------------
-    bool depth_limited_search_f2leo_xcross(int arg_5e, int arg_c, 
-                                           int eo_fr, int eo_fl, int eo_br, 
+    bool depth_limited_search_f2leo_xcross(int arg_5e, int arg_c,
+                                           int eo_br, int eo_fr, int eo_fl,
                                            int depth, int prev)
     {
         for (int i = 0; i < 18; ++i)
@@ -642,7 +638,6 @@ struct f2leo_xcross_search
 
             int next_5e = multi_move_table_5e[arg_5e + i];
 
-            // Pruning lower-bound via 5-edge table
             int p_5e = prune_table_5e[next_5e];
             if (p_5e >= depth)
             {
@@ -650,23 +645,23 @@ struct f2leo_xcross_search
             }
 
             int next_c  = corner_move_table[arg_c + i];
+            int next_br = edge_move_table[eo_br + i];
             int next_fr = edge_move_table[eo_fr + i];
             int next_fl = edge_move_table[eo_fl + i];
-            int next_br = edge_move_table[eo_br + i];
 
             sol.emplace_back(i);
 
             if (depth == 1)
             {
                 if (next_5e == goal_5e && next_c == goal_corner &&
-                    (next_fr % 2 == 0) && (next_fl % 2 == 0) && (next_br % 2 == 0))
+                    (next_br % 2 == 0) && (next_fr % 2 == 0) && (next_fl % 2 == 0))
                 {
                     tmp = AlgToString(sol);
                     return true;
                 }
             }
             else if (depth_limited_search_f2leo_xcross(next_5e * 18, next_c * 18,
-                                                       next_fr * 18, next_fl * 18, next_br * 18,
+                                                       next_br * 18, next_fr * 18, next_fl * 18,
                                                        depth - 1, i * 18))
             {
                 return true;
@@ -685,22 +680,22 @@ struct f2leo_xcross_search
         int cur_5e = goal_5e;
         int cur_c  = goal_corner;
 
-        // Middle edge initial states (FR=0, FL=2, BR=6)
-        int cur_fr = 0;
-        int cur_fl = 2;
-        int cur_br = 6;
+        // Correct Middle edge initial states (BR=2, FR=4, FL=6)
+        int cur_br = 2;
+        int cur_fr = 4;
+        int cur_fl = 6;
 
         for (int m : scramble_alg)
         {
             cur_5e = multi_move_table_5e[cur_5e * 18 + m];
             cur_c  = corner_move_table[cur_c * 18 + m];
+            cur_br = edge_move_table[cur_br * 18 + m];
             cur_fr = edge_move_table[cur_fr * 18 + m];
             cur_fl = edge_move_table[cur_fl * 18 + m];
-            cur_br = edge_move_table[cur_br * 18 + m];
         }
 
         if (cur_5e == goal_5e && cur_c == goal_corner &&
-            (cur_fr % 2 == 0) && (cur_fl % 2 == 0) && (cur_br % 2 == 0))
+            (cur_br % 2 == 0) && (cur_fr % 2 == 0) && (cur_fl % 2 == 0))
         {
             return 0;
         }
@@ -717,7 +712,7 @@ struct f2leo_xcross_search
         {
             sol.clear();
             if (depth_limited_search_f2leo_xcross(cur_5e * 18, cur_c * 18,
-                                                  cur_fr * 18, cur_fl * 18, cur_br * 18,
+                                                  cur_br * 18, cur_fr * 18, cur_fl * 18,
                                                   d, 324))
             {
                 return d;
