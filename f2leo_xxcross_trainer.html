@@ -5,8 +5,8 @@
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<link rel="manifest" href="manifest.json">
-	<title>Rubik's Cube F2LEO XCross Trainer - Customizable Scrambler & Advanced Solver</title>
-	<meta name="description" content="Generate random F2LEO XCross scrambles with guaranteed minimal move counts. Includes built-in advanced solver.">
+	<title>Rubik's Cube F2LEO XXCross Trainer - Customizable Scrambler & Advanced Solver</title>
+	<meta name="description" content="Generate random F2LEO XXCross scrambles with guaranteed minimal move counts. Includes built-in advanced solver.">
 	<script src="analytics.js" defer></script>
     <script src="url_params_compressor_simple.js" defer></script>
 	<style>
@@ -325,7 +325,7 @@
 
 <body>
 	<header id="header" style="margin-left:48px;margin-top:10px;position:relative;z-index:10;">
-		<h1>Rubik's Cube F2LEO XCross Trainer</h1>
+		<h1>Rubik's Cube F2LEO XXCross Trainer</h1>
 	</header>
 	<div id="hamburger-menu-container">
 		<button id="hamburger-menu-btn" aria-label="Open menu"
@@ -443,12 +443,14 @@
 		<option translate="no" value="x y2">x y2</option>
 		<option translate="no" value="x y'">x y'</option>
 	</select><br>
-	<label for="slot">Slot: </label>
+	<label for="slot">Slots: </label>
 	<select translate="no" id="slot">
-		<option translate="no" value="BL">BL</option>
-		<option translate="no" value="BR">BR</option>
-		<option translate="no" value="FR">FR</option>
-		<option translate="no" value="FL">FL</option>
+		<option translate="no" value="BL BR" selected>BL BR</option>
+		<option translate="no" value="FR FL">FR FL</option>
+		<option translate="no" value="BL FL">BL FL</option>
+		<option translate="no" value="BR FR">BR FR</option>
+		<option translate="no" value="BL FR">BL FR</option>
+		<option translate="no" value="BR FL">BR FL</option>
 	</select><br>
 	<label for="len">Length: </label>
 	<select translate="no" id="len">
@@ -462,7 +464,8 @@
 		<option translate="no" value="8">8</option>
 		<option translate="no" value="9">9</option>
 		<option translate="no" value="10">10</option>
-		<option translate="no" value="11">11 (Frontier)</option>
+		<option translate="no" value="11">11</option>
+		<option translate="no" value="12">12 (Frontier)</option>
 	</select><br>
 	<button id="back" class="button medium" onclick="back()" disabled>Back</button>
 	<button id="next" class="button medium" onclick="genscr()">Next</button><br>
@@ -770,34 +773,38 @@
 			},
 		};
 
-		// F2LEO XCross Masking
+		// F2LEO XXCross Masking
 		// Edges:   [Cross(4), BL, BR, FR, FL, LL(4)]
 		//   - Cross: '-'
-		//   - Target Slot Edge: '-'
-		//   - Remaining 3 Middle Edges: '?'
+		//   - 2 Solved Slot Edges: '-'
+		//   - Remaining 2 Middle Edges: '?'
 		//   - LL Edges: 'II'
 		// Corners: [BL, BR, FR, FL, LL(4)]
-		//   - Target Slot Corner: '-'
-		//   - Others: 'I'
+		//   - 2 Solved Slot Corners: '-'
+		//   - Remaining 2 Middle Corners & LL Corners: 'I'
 		const slotToEMask = {
-			'BL': '--???II', // BL is '-', BR/FR/FL are '?'
-			'BR': '-?-??II', // BR is '-', BL/FR/FL are '?'
-			'FR': '-??-?II', // FR is '-', BL/BR/FL are '?'
-			'FL': '-???-II'  // FL is '-', BL/BR/FR are '?'
+			'BL BR': '---??II', // BL, BR = '-', FR, FL = '?'
+			'BL FL': '--??-II', // BL, FL = '-', BR, FR = '?'
+			'BL FR': '--?-?II', // BL, FR = '-', BR, FL = '?'
+			'BR FR': '-?--?II', // BR, FR = '-', BL, FL = '?'
+			'BR FL': '-?-?-II', // BR, FL = '-', BL, FR = '?'
+			'FR FL': '-??--II'  // FR, FL = '-', BL, BR = '?'
 		};
 
 		const slotToCMask = {
-			'BL': '-IIII',   // BL is '-', others 'I'
-			'BR': 'I-III',   // BR is '-', others 'I'
-			'FR': 'II-II',   // FR is '-', others 'I'
-			'FL': 'III-I'    // FL is '-', others 'I'
+			'BL BR': '--III',   // BL(0), BR(1) = '-'
+			'BL FL': '-II-I',   // BL(0), FL(3) = '-'
+			'BL FR': '-I-II',   // BL(0), FR(2) = '-'
+			'BR FR': 'I--II',   // BR(1), FR(2) = '-'
+			'BR FL': 'I-I-I',   // BR(1), FL(3) = '-'
+			'FR FL': 'II--I'    // FR(2), FL(3) = '-'
 		};
 
 		function getMaskInputs() {
 			const slot = document.getElementById("slot").value;
 			const maskInputCenter = "-";
-			const maskInputEdges = slotToEMask[slot] || slotToEMask['BL'];
-			const maskInputCorners = slotToCMask[slot] || slotToCMask['BL'];
+			const maskInputEdges = slotToEMask[slot] || slotToEMask['BL BR'];
+			const maskInputCorners = slotToCMask[slot] || slotToCMask['BL BR'];
 			return { maskInputCenter, maskInputEdges, maskInputCorners };
 		}
 
@@ -1284,9 +1291,9 @@
 			}
 
 			if (!worker2) {
-				worker2 = new Worker('src/F2LEO_xcrossTrainer/worker.js');
+				worker2 = new Worker('src/F2LEO_xxcrossTrainer/worker.js');
 			}
-			var args = { scr: solution, len: sol_len };
+			var args = { scr: solution, len: sol_len, slot: slot };
 			const show = document.getElementById('show');
 
 			worker2.onmessage = async function (event) {
@@ -1299,17 +1306,15 @@
 
 					const ret = (event.data).split(",");
 
-					// Base sequence on BL slot: ret[1] + reverse(ret[0])
+					// Base sequence on base slot pair: ret[1] + reverse(ret[0])
 					let base_seq = ret[1] + reverse(ret[0]);
 					let mapped_seq = base_seq;
 
 					// Geometric mapping preserving EO definition
-					if (slot === 'FR') {
+					if (slot === 'FR FL') {
 						mapped_seq = base_seq + " y2";
-					} else if (slot === 'BR') {
+					} else if (slot === 'BR FR' || slot === 'BR FL') {
 						mapped_seq = mirror(base_seq);
-					} else if (slot === 'FL') {
-						mapped_seq = mirror(base_seq + " y2");
 					}
 
 					var scramble = min2phase.solve(generateTwoPhaseInputWrapper(convert(mapped_seq)[0]));

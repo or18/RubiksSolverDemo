@@ -21,6 +21,7 @@ Customizable scrambler and trainer tools targeting specific solve stages:
 - [**Pseudo Free Pair Trainer**](https://or18.github.io/RubiksSolverDemo/pseudo_pairing_trainer)
 - [**F2LEO Cross Trainer**](https://or18.github.io/RubiksSolverDemo/f2leo_cross_trainer)
 - [**F2LEO XCross Trainer**](https://or18.github.io/RubiksSolverDemo/f2leo_xcross_trainer)
+- [**F2LEO XXCross Trainer**](https://or18.github.io/RubiksSolverDemo/f2leo_xxcross_trainer)
 - [**EOCross Trainer**](https://or18.github.io/RubiksSolverDemo/eocross_trainer)
 - [**XEOCross Trainer**](https://or18.github.io/RubiksSolverDemo/xeocross_trainer)
 - [**XXEOCross Trainer**](https://or18.github.io/RubiksSolverDemo/xxeocross_trainer)
