@@ -1032,6 +1032,176 @@
 			</tr>
 		</table>
 	</div>
+
+    <hr style="border: 0; border-top: 1px solid #41417f; margin: 60px 0 40px 0;">
+
+    <div class="section dev-notes" style="line-height: 1.8; color: #d0d0e0; margin-top: 50px;">
+    <h2 style="color: #ffffff; border-bottom: 2px solid #5a5ab5; padding-bottom: 10px; margin-bottom: 24px; font-size: 24px;">
+        Developer Notes: Rethinking Modern Speedcubing
+    </h2>
+        <p style="font-style: italic; color: #a0a0c0; margin-bottom: 35px; font-size: 15px;">
+            From memorizing single solutions to navigating search spaces. Why these solvers and trainers were built.
+        </p>
+
+        <!-- Chapter 1 -->
+        <h3 style="color: #ffffff; font-size: 20px; margin-top: 30px; margin-bottom: 16px;">
+            1. The Trap of Single-Answer Learning
+        </h3>
+        <p>
+            In modern speedcubing, nearly every learning path begins with algorithmic memorization. Solvers consult algorithm sheets for F2L, OLL, and PLL, practicing a strict one-to-one stimulus-response model: identify a specific case on the cube, then execute the memorized move sequence. As a pedagogical entry point, this approach is undeniably effective. It provides the fastest route to solving the Rubik's cube without visual aids and comfortably propels solvers toward intermediate milestones like sub-30 or sub-20 averages.
+        </p>
+        <p>
+            However, over-reliance on this model ingrains a subtle, damaging mindset: the subconscious belief that every cube state has only a single "correct" answer. The physical puzzle ceases to be an open problem space for dynamic reasoning and is reduced to a passive trigger mechanism for recalling stored muscle memory.
+        </p>
+        <p>
+            This mindset inevitably breeds an overemphasis on raw execution speed, or turns per second (TPS). When cubers search for alternative algorithms, the primary motive is almost always: <em>"Which one can I execute the fastest?"</em> Consequently, the fastest-turning sequence is crowned the best solution.
+        </p>
+        <p>
+            Yet, local efficiency rarely translates into global solve efficiency. The isolated execution speed of an algorithm is fundamentally decoupled from the total solve time. A lightning-fast F2L sequence provides zero competitive advantage if it rotates the next target pair into a blind spot on the back layers, forces an awkward regrip or y-rotation, or prematurely shatters another pre-paired piece in the top layer. In such cases, the pause required to re-identify the next pieces completely wipes out the milliseconds saved by high TPS.
+        </p>
+        <p>
+            The problem is not memorization itself. Rather, it is the inability to outgrow the single-answer paradigm when advancing to elite performance. Speedcubing is not simply a contest of executing pre-packaged algorithms as fast as possible; it is an ongoing process of evaluating tradeoffs across the entire solve.
+        </p>
+
+        <!-- Chapter 2 -->
+        <h3 style="color: #ffffff; font-size: 20px; margin-top: 36px; margin-bottom: 16px;">
+            2. From Knowing Answers to Choosing Answers
+        </h3>
+        <p>
+            The consequence of the single-answer mindset is a complete absence of meaningful choice, even in stages of the solve where flexibility is paramount. In F2L (First Two Layers), where algorithmic solutions are heavily cataloged, solvers frequently execute a single default sequence the instant they recognize a piece formation.
+        </p>
+        <p>
+            Yet, solving an F2L slot is rarely an isolated problem. For any given slot and pair state, there are multiple viable solutions, each with distinct trade-offs:
+        </p>
+        <ul style="margin-left: 20px; margin-bottom: 16px; color: #b8b8d8;">
+            <li>A strictly minimal-move solution that reduces turn count at the expense of difficult fingertricks.</li>
+            <li>A slightly longer rotationless solution using <span style="font-family: monospace; color: #a5b4fc;">&lt;R, U&gt;</span> or <span style="font-family: monospace; color: #a5b4fc;">&lt;L, U&gt;</span> that entirely avoids a <span style="font-family: monospace; color: #a5b4fc;">y</span>-rotation.</li>
+            <li>An alternative insertion that bumps a trapped piece from an unsolved slot directly into the top layer.</li>
+            <li>A sequence deliberately chosen because it leaves a visible, pre-formed pair in the front two slots intact.</li>
+        </ul>
+        <p>
+            Rather than dynamically selecting the procedure best suited to the context of the solve, solvers often settle for the single representative algorithm they originally memorized.
+        </p>
+        <p>
+            Even more revealing is that this exact trap appears in the Cross—a stage characterized by immense intuitive freedom. During the 15-second inspection, intermediate and even advanced cubers routinely fall victim to a persistent habit: stopping their search the exact second they spot any viable Cross solution.
+        </p>
+        <p>
+            For any random scramble, there are typically dozens of valid Cross paths ranging from 5 to 8 moves. Settling for the first functional sequence encountered is a missed opportunity. The first Cross discovered is rarely the shortest, and even when it happens to be minimal, it may leave the first F2L pair scattered across difficult angles, hidden in back slots, or requiring an immediate rotation upon completion.
+        </p>
+        <p>
+            Knowing an answer—or finding a single workable path—is merely the prerequisite to playing the game. The true progression in speedcubing lies not in expanding your catalog of answers, but in cultivating the discipline to generate multiple candidates and evaluate which one creates the most favorable continuation for the solve.
+        </p>
+
+        <!-- Chapter 3 -->
+        <h3 style="color: #ffffff; font-size: 20px; margin-top: 36px; margin-bottom: 16px;">
+            3. The Missing Step in XCross: Comparing Base Crosses
+        </h3>
+        <p>
+            The pedagogical flaws of the single-answer model become glaringly evident in how XCross (extended cross) is conventionally taught. Nearly every tutorial and walkthrough begins with a pre-selected, exceptionally convenient Cross. From there, the instructor explains keyhole techniques, pseudo-slotting, or blockbuilding insertions to fold an extra F2L pair into the Cross execution.
+        </p>
+        <p>
+            These tutorials showcase the finishing touches of a successful solve, but they systematically omit discarded drafts and failed attempts. They rarely demonstrate the "bad" Cross candidates that lead nowhere, completely glossing over the most cognitively demanding step of real-world inspection: <strong>Which baseline Cross should you build in the first place?</strong>
+        </p>
+        <p>
+            In actual competition solves, the bottleneck is almost never the insertion technique itself. It is the initial selection process. Cubers attempting to learn XCross struggle not because they fail to understand blockbuilding, but because they are never taught the comparative evaluation that precedes it. They are left trying to force-feed algorithmic insertion tricks into whatever random Cross they happen to see first.
+        </p>
+        <p>
+            A strictly minimal Cross—say, a 5-move solution—frequently scatters F2L pieces or isolates corners from their corresponding edges. Conversely, a Cross that intentionally takes a one- or two-move detour (such as a 6- or 7-move solution) might naturally preserve a pre-made block or set up an effortless three-move insert. When solvers fixate purely on minimizing the move count of the Cross in isolation, these high-value transitions remain completely invisible.
+        </p>
+        <p>
+            XCross is not an advanced execution trick for cramming an extra pair into a predetermined Cross. Fundamentally, it is <strong>the skill of generating multiple Cross candidates in parallel and identifying which base Cross naturally aligns with the first F2L pair.</strong> The true barrier to mastering XCross is not lack of blockbuilding knowledge; it is the refusal to compare base solutions.
+        </p>
+
+
+        <!-- Chapter 4 -->
+        <h3 style="color: #ffffff; font-size: 20px; margin-top: 36px; margin-bottom: 16px;">
+            4. Redefining Look Ahead: Next-Pair Tracking Over Omniscience
+        </h3>
+        <p>
+            Few concepts in speedcubing are as heavily romanticized—and routinely misunderstood—as Look Ahead. Taken literally, the phrase implies foresight bordering on omniscience: <em>"Execute the current F2L pair at maximum speed while simultaneously scanning the entire puzzle to identify the exact position, orientation, and relationship of the next pair."</em>
+        </p>
+        <p>
+            Framed this way, the cognitive burden is staggering. Solvers attempt to force an impossible multitasking feat, quickly conclude that human working memory cannot sustain it, and walk away frustrated.
+        </p>
+        <p>
+            In reality, Look Ahead is not clairvoyance; it is an exercise in deliberate environmental control. It would be far more accurately described as <strong>Continuous F2L</strong> or <strong>Next-Pair Tracking</strong>. Elite solvers do not peer into the future through brute perceptual force; they simply configure the present so that visual continuity is never interrupted:
+        </p>
+        <ul style="margin-left: 20px; margin-bottom: 16px; color: #b8b8d8;">
+            <li>They decide on the next visual search target <em>before</em> initiating the current pair's insertion.</li>
+            <li>They select algorithms specifically designed to keep target pieces in the upper layers and front faces.</li>
+            <li>They deliberately regulate their turning speed to remain synchronized with visual processing rather than outrunning recognition.</li>
+            <li>They maintain a systematic, pre-planned search order for recovering lost pieces without panicking.</li>
+        </ul>
+        <p>
+            This reveals a crucial insight: <strong>solving during F2L and planning during inspection are the exact same skill.</strong>
+        </p>
+        <p>
+            Cubers traditionally treat inspection planning and mid-solve Look Ahead as completely unrelated competencies. Yet their underlying architecture is identical. In inspection, an advanced solver rejects a crude Cross in favor of a candidate that yields a free pair, sets up an ergonomic 3-move insert, or effortlessly links into an XCross. In the middle of F2L, that same solver bypasses a lightning-fast insertion in favor of an alternate sequence that keeps the next corner-edge pair directly in line of sight.
+        </p>
+        <p>
+            Neither scenario requires psychic abilities. Both simply demand an intentional present choice that prevents the subsequent search from collapsing. Look Ahead is not about predicting the unknown; it is about steering the present so that the future remains effortless to follow.
+        </p>
+
+
+        <!-- Chapter 5 -->
+        <h3 style="color: #ffffff; font-size: 20px; margin-top: 36px; margin-bottom: 16px;">
+            5. Why a Multi-Solver Workbench? (Visualizing Search Spaces)
+        </h3>
+        <p>
+            Most conventional Rubik's Cube solvers output a single optimal solution. The engine performs an exhaustive search, isolates the absolute minimal move sequence, and prints it in one clean line. To a human user, however, this presentation reinforces the single-answer illusion: it creates the impression that the machine has delivered the one "true" way to solve the puzzle.
+        </p>
+        <p>
+            The trouble is that a computer's optimal solution is completely decoupled from human intuition. It often depends on unintuitive finger-tricks, unnatural slice turns, or awkward angle changes. More critically, it provides zero context: the solver has no way of knowing which baseline Cross that sequence was derived from, making it nearly impossible to assimilate into real inspection habits.
+        </p>
+        <p>
+            This reveals why calibrating scrambles to an exact move count is often misunderstood. Some solvers question whether knowing the move count in advance acts as a "spoiler" or an artificial hint. That objection only makes sense within the single-answer paradigm, where solving is treated as a guessing game with a score.
+        </p>
+        <p>
+            In practice, the move count is not a hint; it is a <strong>calibration metric</strong> for the search space. It defines the boundary of acceptable detours: <em>"How many extra moves must be spent before a favorable structure (such as an XCross or oriented pair) emerges?"</em> Once a cuber shifts from hunting for a single correct string to comparing viable candidates, knowing this parameter simply anchors their evaluation within realistic human bounds.
+        </p>
+        <p>
+            This is also why human solvers need access to dozens—or hundreds—of simultaneous solutions. When a beginner who only sees one basic Cross inspects an isolated, computer-generated XCross, the sequence looks like black magic. Without knowing the underlying baseline, they cannot reverse-engineer the logic. They try to force their familiar "bad Cross" into an XCross using clumsy, high-move insertions, never learning what makes an efficient solution tick.
+        </p>
+        <p>
+            When an entire spectrum of solutions is displayed side-by-side, the structure of the puzzle suddenly becomes transparent:
+        </p>
+        <ul style="margin-left: 20px; margin-bottom: 16px; color: #b8b8d8;">
+            <li>You realize that a brilliant 6-move XCross is actually just a subtle modification of a discarded 5-move Cross.</li>
+            <li>You see how granting a single move of slack naturally preserves an entire corner-edge pair.</li>
+            <li>You observe which degrees of freedom (such as D-layer alignment or slot order) were sacrificed to keep key pieces oriented.</li>
+        </ul>
+        <p>
+            A multi-solver workbench is not an answer key; it is a <strong>cartography tool for the search space</strong>. By comparing alternative baselines against their resulting extensions, solvers transition from passively tracing computer outputs to actively recognizing patterns they can choose for themselves.
+        </p>
+
+
+        <!-- Chapter 6 -->
+        <h3 style="color: #ffffff; font-size: 20px; margin-top: 36px; margin-bottom: 16px;">
+            6. The Philosophy of Calibrated Move-Count Trainers
+        </h3>
+        <p>
+            Speedcubers exploring these tools often notice a conscious design omission: there is no stopwatch. In an ecosystem where almost every practice utility revolves around timers, these tools strip away time measurement entirely, pairing only a specialized scrambler with an analytical multi-solver.
+        </p>
+        <p>
+            This omission is deliberate. The second a running clock appears on screen, human cognition shifts from exploration to panic. Confronted by milliseconds ticking away, solvers instinctively default to their oldest habits: locking onto the first workable Cross they spot and turning as fast as possible to salvage their average. A timer enforces the very stimulus-response loop this project aims to break. True evaluation requires unpressured space to test alternatives, verify hypotheses, and steadily raise the resolution of your mental planning.
+        </p>
+        <p>
+            A similar principle governs the move-count calibration. The scramblers do not produce states solvable in <em>"at most N moves"</em>; they guarantee an <strong>exact minimal move count of N</strong> via exhaustive search verification.
+        </p>
+        <p>
+            Allowing loose upper bounds introduces accidental shortcuts—lucky 3- or 4-move solutions that undermine deliberate practice. When a solver knows with absolute mathematical certainty that an 8-move solution exists and that nothing shorter is possible, the nature of their search changes. It is no longer an idle guessing game. The move count ceases to be a cheat; it becomes a structured constraint that grants solvers the conviction to look beyond superficial pairings and hunt for structural interactions they would otherwise overlook.
+        </p>
+        <p>
+            This context clarifies the purpose behind seemingly impossible tools like the <strong>XXCross</strong>, <strong>XXXCross</strong>, and <strong>XXEOCross</strong> trainers. These targets were never designed under the expectation that an average human would plan three complete F2L slots and full edge orientation within a standard 15-second WCA inspection.
+        </p>
+        <p>
+            Instead, they serve as cognitive sandboxes. Under extreme, hyper-dense constraints, the fundamental mechanics of piece interference, orientation conservation, and slot independence are magnified. By examining how three slots can be harmonized simultaneously—or how middle-layer EO can be preserved without sacrificing cross efficiency—solvers develop a wider conceptual perspective. When they return to ordinary single-slot XCrosses or standard crosses in real competition, the search space no longer feels overwhelming; it feels spacious.
+        </p>
+        <p>
+            These trainers are not competitive arenas meant for logging fast splits. They are <strong>laboratories for decision-making</strong>—built to help cubers transcend mechanical repetition and rediscover the Rubik's Cube as an evolving landscape of conscious choice.
+        </p>
+    </section>
+
 	<script src="sw-register.js" defer></script>
 </body>
 
