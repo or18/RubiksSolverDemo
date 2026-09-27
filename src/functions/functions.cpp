@@ -6,6 +6,7 @@
 #include <unordered_map>
 #include <string>
 #include <sstream>
+#include <queue>
 
 std::vector<std::string> move_names = {"U", "U2", "U'", "D", "D2", "D'", "L", "L2", "L'", "R", "R2", "R'", "F", "F2", "F'", "B", "B2", "B'"};
 std::unordered_map<std::string, std::string> move_convert =
@@ -978,6 +979,77 @@ std::vector<std::vector<int>> rotationMapReverse =
 		{12, 13, 14, 15, 16, 17, 9, 10, 11, 6, 7, 8, 0, 1, 2, 3, 4, 5, 30, 31, 32, 33, 34, 35, 27, 28, 29, 24, 25, 26, 18, 19, 20, 21, 22, 23, 38, 37, 36, 44, 43, 42, 41, 40, 39, 47, 46, 45, 51, 52, 53, 48, 49, 50},
 		{12, 13, 14, 15, 16, 17, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 30, 31, 32, 33, 34, 35, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 41, 40, 39, 44, 43, 42, 36, 37, 38, 50, 49, 48, 51, 52, 53, 47, 46, 45}};
 
+
+std::vector<int> converter = {
+    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17,
+    3, 4, 5, 0, 1, 2, 9, 10, 11, 6, 7, 8, 15, 16, 17, 12, 13, 14,
+    18, 19, 20, 21, 22, 23, 24, 25, 26
+};
+
+std::vector<int> create_edge_move_table()
+{
+    std::vector<int> move_table(24 * 27, -1);
+    int index;
+    for (int i = 0; i < 24; ++i)
+    {
+        std::vector<int> ep(12, -1);
+        std::vector<int> eo(12, -1);
+        std::vector<int> cp(8, 0);
+        std::vector<int> co(8, 0);
+        std::vector<int> center = {0, 1, 2, 3, 4, 5};
+        ep[i / 2] = i / 2;
+        eo[i / 2] = i % 2;
+        State_center state(cp, co, ep, eo, center);
+        for (int j = 0; j < 18; ++j)
+        {
+            State_center new_state = state.apply_move_edge(moves2[move_names2[j]], i / 2);
+            auto it = std::find(new_state.ep.begin(), new_state.ep.end(), i / 2);
+            index = std::distance(new_state.ep.begin(), it);
+            move_table[27 * i + j] = 2 * index + new_state.eo[index];
+        }
+        for (int j = 0; j < 9; ++j)
+        {
+            State_center new_state = state.apply_move_edge(moves2[move_names2[36 + j]], i / 2);
+            auto it = std::find(new_state.ep.begin(), new_state.ep.end(), i / 2);
+            index = std::distance(new_state.ep.begin(), it);
+            move_table[27 * i + 18 + j] = 2 * index + new_state.eo[index];
+        }
+    }
+    return move_table;
+}
+
+std::vector<int> create_corner_move_table()
+{
+    std::vector<int> move_table(24 * 27, -1);
+    int index;
+    for (int i = 0; i < 24; ++i)
+    {
+        std::vector<int> ep(12, 0);
+        std::vector<int> eo(12, 0);
+        std::vector<int> cp(8, -1);
+        std::vector<int> co(8, -1);
+        std::vector<int> center = {0, 1, 2, 3, 4, 5};
+        cp[i / 3] = i / 3;
+        co[i / 3] = i % 3;
+        State_center state(cp, co, ep, eo, center);
+        for (int j = 0; j < 18; ++j)
+        {
+            State_center new_state = state.apply_move_corner(moves2[move_names2[j]], i / 3);
+            auto it = std::find(new_state.cp.begin(), new_state.cp.end(), i / 3);
+            index = std::distance(new_state.cp.begin(), it);
+            move_table[27 * i + j] = 3 * index + new_state.co[index];
+        }
+        for (int j = 0; j < 9; ++j)
+        {
+            State_center new_state = state.apply_move_corner(moves2[move_names2[36 + j]], i / 3);
+            auto it = std::find(new_state.cp.begin(), new_state.cp.end(), i / 3);
+            index = std::distance(new_state.cp.begin(), it);
+            move_table[27 * i + 18 + j] = 3 * index + new_state.co[index];
+        }
+    }
+    return move_table;
+}
+
 std::vector<std::vector<int>> create_center_move_table()
 {
 	std::vector<std::vector<int>> move_table(24, std::vector<int>(54, 0));
@@ -1011,6 +1083,236 @@ std::string get_center_offset_param(const std::string premove)
 	return center_offset_strings[initial_center];
 }
 
+std::vector<int> edge_move_table = create_edge_move_table();
+std::vector<int> corner_move_table = create_corner_move_table();
+
+// 0: Block, 1: Free, 2: Broken
+std::vector<std::vector<std::vector<std::vector<int>>>> create_pair_distance_tables() {
+    std::vector<std::vector<std::vector<std::vector<int>>>> dist_tables(
+        4, std::vector<std::vector<std::vector<int>>>(
+            3, std::vector<std::vector<int>>(24, std::vector<int>(24, 2))));
+
+    const int init_c[4] = {12, 15, 18, 21}; // BL(DBL), BR(DBR), FR(DFR), FL(DFL)
+
+    // [slot][0:E, 1:D1, 2:D2]
+    const int init_e[4][3] = {
+        {0, 16, 22}, // BL: E=BL(0),  D1=DB(16), D2=DL(22)
+        {2, 16, 18}, // BR: E=BR(2),  D1=DB(16), D2=DR(18)
+        {4, 20, 18}, // FR: E=FR(4),  D1=DF(20), D2=DR(18)
+        {6, 20, 22}  // FL: E=FL(6),  D1=DF(20), D2=DL(22)
+    };
+
+    const std::vector<int> face_corners[6] = {
+        {0, 1, 2, 3}, // U
+        {4, 5, 6, 7}, // D
+        {0, 3, 4, 7}, // L
+        {1, 2, 5, 6}, // R
+        {2, 3, 6, 7}, // F
+        {0, 1, 4, 5}  // B
+    };
+    const std::vector<int> face_edges[6] = {
+        {4, 5, 6, 7},  // U
+        {8, 9, 10, 11},// D
+        {0, 3, 7, 11}, // L
+        {1, 2, 5, 9},  // R
+        {2, 3, 6, 10}, // F
+        {0, 1, 4, 8}   // B
+    };
+
+    auto contains = [](const std::vector<int>& vec, int val) {
+        return std::find(vec.begin(), vec.end(), val) != vec.end();
+    };
+
+    for (int slot = 0; slot < 4; ++slot) {
+        int start_c = init_c[slot];
+
+        for (int type = 0; type < 3; ++type) {
+            int start_e = init_e[slot][type];
+
+            std::queue<std::pair<int, int>> q;
+            dist_tables[slot][type][start_c][start_e] = 0;
+            q.push({start_c, start_e});
+
+            while (!q.empty()) {
+                auto [c, e] = q.front();
+                q.pop();
+
+                int cp = c / 3;
+                int ep = e / 2;
+
+                for (int f = 0; f < 6; ++f) {
+                    if (contains(face_corners[f], cp) && contains(face_edges[f], ep)) {
+                        for (int amount = 0; amount < 3; ++amount) {
+                            int m = 3 * f + amount;
+                            int next_c = corner_move_table[c * 27 + m];
+                            int next_e = edge_move_table[e * 27 + m];
+
+                            if (dist_tables[slot][type][next_c][next_e] == 2) {
+                                dist_tables[slot][type][next_c][next_e] = 0;
+                                q.push({next_c, next_e});
+                            }
+                        }
+                    }
+                }
+            }
+
+            for (int c = 0; c < 24; ++c) {
+                for (int e = 0; e < 24; ++e) {
+                    if (dist_tables[slot][type][c][e] == 0) {
+                        int cp = c / 3;
+                        int ep = e / 2;
+
+                        for (int f = 0; f < 6; ++f) {
+                            bool c_in_face = contains(face_corners[f], cp);
+                            bool e_in_face = contains(face_edges[f], ep);
+
+                            if (c_in_face != e_in_face) {
+                                for (int amount = 0; amount < 3; ++amount) {
+                                    int m = 3 * f + amount;
+                                    int next_c = corner_move_table[c * 27 + m];
+                                    int next_e = edge_move_table[e * 27 + m];
+
+                                    if (dist_tables[slot][type][next_c][next_e] == 2) {
+                                        dist_tables[slot][type][next_c][next_e] = 1;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return dist_tables;
+}
+
+std::vector<std::vector<std::vector<std::vector<int>>>> pair_dist_tables = create_pair_distance_tables();
+
+
+std::string classify_timeline(const std::vector<int>& dists) {
+    int n = dists.size() - 1;
+    if (n <= 0) return "";
+
+    int end_val = dists[n];
+    if (end_val > 1) return "";
+
+    std::string prefix = (end_val == 0) ? "B" : "F";
+
+    if (dists[n - 1] != end_val) {
+        return prefix + "_End";
+    }
+
+    int from = n;
+    while (from > 0 && dists[from - 1] == end_val) {
+        from--;
+    }
+
+    if (from == 0) {
+        return prefix;
+    }
+
+    return prefix + "_M" + std::to_string(from);
+}
+
+std::string analyze_pairs(std::string scramble, std::string solution) {
+    const int init_c[4] = {12, 15, 18, 21};
+    const int init_e[4][3] = {
+        {0, 16, 22},
+        {2, 16, 18},
+        {4, 20, 18},
+        {6, 20, 22}
+    };
+
+    std::vector<int> cur_c(4);
+    std::vector<std::vector<int>> cur_e(4, std::vector<int>(3));
+    for (int s = 0; s < 4; ++s) {
+        cur_c[s] = init_c[s];
+        for (int t = 0; t < 3; ++t) {
+            cur_e[s][t] = init_e[s][t];
+        }
+    }
+
+    std::vector<int> scr_alg = StringToAlg2(scramble);
+    int center = 0;
+    for (int m : scr_alg) {
+        if (m >= 45) {
+            center = center_move_table[center][m];
+            continue;
+        }
+        int base_m = converter[rotationMapReverse[center][m]];
+        center = center_move_table[center][m];
+        for (int s = 0; s < 4; ++s) {
+            cur_c[s] = corner_move_table[cur_c[s] * 27 + base_m];
+            for (int t = 0; t < 3; ++t) {
+                cur_e[s][t] = edge_move_table[cur_e[s][t] * 27 + base_m];
+            }
+        }
+    }
+
+    center = 0;
+    std::vector<int> sol_alg = StringToAlg2(solution);
+
+    std::vector<std::vector<std::vector<int>>> timelines(4, std::vector<std::vector<int>>(3));
+    for (int s = 0; s < 4; ++s) {
+        for (int t = 0; t < 3; ++t) {
+            timelines[s][t].push_back(pair_dist_tables[s][t][cur_c[s]][cur_e[s][t]]);
+        }
+    }
+
+    for (int m : sol_alg) {
+        if (m >= 45) {
+            center = center_move_table[center][m];
+        } else {
+            int base_m = converter[rotationMapReverse[center][m]];
+            center = center_move_table[center][m];
+            for (int s = 0; s < 4; ++s) {
+                cur_c[s] = corner_move_table[cur_c[s] * 27 + base_m];
+                for (int t = 0; t < 3; ++t) {
+                    cur_e[s][t] = edge_move_table[cur_e[s][t] * 27 + base_m];
+                }
+            }
+        }
+        for (int s = 0; s < 4; ++s) {
+            for (int t = 0; t < 3; ++t) {
+                timelines[s][t].push_back(pair_dist_tables[s][t][cur_c[s]][cur_e[s][t]]);
+            }
+        }
+    }
+
+    const std::string slot_names[4] = {"BL", "BR", "FR", "FL"};
+    const std::string edge_names[4][3] = {
+        {"E", "DB", "DL"},
+        {"E", "DB", "DR"},
+        {"E", "DF", "DR"},
+        {"E", "DF", "DL"}
+    };
+
+    std::string result = "";
+    bool first_slot = true;
+
+    for (int s = 0; s < 4; ++s) {
+        std::string inner = "";
+        bool first_edge = true;
+
+        for (int t = 0; t < 3; ++t) {
+            std::string st = classify_timeline(timelines[s][t]);
+            if (!st.empty()) {
+                if (!first_edge) inner += ",";
+                inner += edge_names[s][t] + ":" + st;
+                first_edge = false;
+            }
+        }
+
+        if (!inner.empty()) {
+            if (!first_slot) result += ";";
+            result += slot_names[s] + "[" + inner + "]";
+            first_slot = false;
+        }
+    }
+
+    return result;
+}
+
 EMSCRIPTEN_BINDINGS(my_module)
 {
 	emscripten::function("scr_mirror", &MirrorScramble);
@@ -1019,4 +1321,5 @@ EMSCRIPTEN_BINDINGS(my_module)
 	emscripten::function("ScrambleToState", &ScrambleToState);
 	emscripten::function("convertMask", &convertMask);
 	emscripten::function("get_center", &get_center_offset_param);
+    emscripten::function("analyze_pairs", &analyze_pairs);
 }

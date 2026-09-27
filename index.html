@@ -1893,6 +1893,7 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
         let convert;
         let generateTwoPhaseInput;
         let convertMask;
+        let analyzePairs;
         let isFunctionsReady = false;
 
         async function InitializeFunctions() {
@@ -1950,6 +1951,9 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                 convertMask = function (center_input, edge_input, corner_input, rotation_alg) {
                     const result = Module.convertMask(center_input, edge_input, corner_input, rotation_alg);
                     return result;
+                };
+                analyzePairs = function(scramble, solution) {
+                    return Module.analyze_pairs(scramble, solution);
                 };
                 isFunctionsReady = true;
             } catch (e) {
@@ -4336,6 +4340,103 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                 };
                 details.appendChild(button2);
                 details.appendChild(summary);
+
+                const currentSolver = document.getElementById("solver").value;
+                const targetSolvers = new Set([
+                    "F2L",
+                    "F2L_pair",
+                    "EOCross",
+                    "F2LEO",
+                    "F2L2",
+                    "LS",
+                    "LS2"
+                ]);
+
+                if (targetSolvers.has(currentSolver) && typeof analyzePairs === "function") {
+                    try {
+                        const pairAnalysis = analyzePairs(scr_fix(scr), sol);
+
+                        if (pairAnalysis && pairAnalysis !== "") {
+                            const badgeContainer = document.createElement('span');
+                            badgeContainer.style.cssText = 'display:inline-flex; flex-wrap:wrap; gap:6px; margin-left:10px; font-size:12px; font-family:monospace; vertical-align:middle;';
+
+                            const formatStatus = (st) => {
+                                if (st === "B") return "🔒";
+                                if (st === "B_End") return "🔒End";
+                                if (st.startsWith("B_M")) return "🔒" + st.slice(2);
+                                if (st === "F") return "⚡";
+                                if (st === "F_End") return "⚡End";
+                                if (st.startsWith("F_M")) return "⚡" + st.slice(2);
+                                return st;
+                            };
+
+                            const getTimelineOrder = (st) => {
+                                if (st === "B" || st === "F") return 0;
+                                if (st.includes("_M")) {
+                                    const m = parseInt(st.split("_M")[1], 10);
+                                    return isNaN(m) ? 50 : m;
+                                }
+                                if (st.endsWith("_End")) return 999;
+                                return 100;
+                            };
+
+                            const slotEntries = pairAnalysis.split(';');
+
+                            slotEntries.forEach(entry => {
+                                const openIdx = entry.indexOf('[');
+                                const closeIdx = entry.indexOf(']');
+                                if (openIdx === -1 || closeIdx === -1) return;
+
+                                const slotName = entry.slice(0, openIdx);
+                                const innerContent = entry.slice(openIdx + 1, closeIdx);
+
+                                const rawItems = innerContent.split(',').map(item => {
+                                    const [edge, status] = item.split(':');
+                                    return { edge, status };
+                                });
+
+                                rawItems.sort((a, b) => getTimelineOrder(a.status) - getTimelineOrder(b.status));
+
+                                const edgeElements = rawItems.map(item => {
+                                    const stText = formatStatus(item.status);
+                                    if (item.edge === "E") {
+                                        return `<strong style="text-decoration: underline; text-underline-offset: 2px;">E</strong>: ${stText}`;
+                                    }
+                                    return `${item.edge}: ${stText}`;
+                                });
+
+                                const badge = document.createElement('span');
+                                badge.innerHTML = `${slotName}[${edgeElements.join(', ')}]`;
+                                badge.style.cssText = 'padding: 2px 7px; border-radius: 4px; font-weight: bold; line-height: 1.4;';
+
+                                const hasE_Block = rawItems.some(x => x.edge === "E" && x.status.startsWith("B"));
+                                const hasE_Free  = rawItems.some(x => x.edge === "E" && x.status.startsWith("F"));
+
+                                if (hasE_Block) {
+                                    badge.style.backgroundColor = '#1e3a2f';
+                                    badge.style.color = '#4ade80';
+                                    badge.style.border = '1px solid #22c55e';
+                                } else if (hasE_Free) {
+                                    badge.style.backgroundColor = '#1e293b';
+                                    badge.style.color = '#38bdf8';
+                                    badge.style.border = '1px solid #0284c7';
+                                } else {
+                                    badge.style.backgroundColor = '#2e2618';
+                                    badge.style.color = '#facc15';
+                                    badge.style.border = '1px solid #ca8a04';
+                                }
+
+                                badgeContainer.appendChild(badge);
+                            });
+
+                            if (badgeContainer.children.length > 0) {
+                                summary.appendChild(badgeContainer);
+                            }
+                        }
+                    } catch (err) {
+                        console.warn("Pair tracking analysis error:", err);
+                    }
+                }
                 try {
                     const sim = createPlayer(scr, sol);
                     sim.experimentalStickeringMaskOrbits = mask;
