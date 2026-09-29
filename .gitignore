@@ -72,4 +72,5 @@ dist/github-release*.txt
 dist/*release*.txt
 
 *back*.cpp
+*archive*/
 

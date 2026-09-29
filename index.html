@@ -1687,6 +1687,11 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             </div><br>
         </details>
         <br>
+        <div id="option_for_pair_analysis">
+            <input type="checkbox" id="CheckboxPairAnalysis" class="custom-checkbox" checked>
+            <label for="CheckboxPairAnalysis">Show Pair Analysis</label>
+        </div>
+        <br>
         <input type="checkbox" id="CheckboxAutoMaskSetting" class="custom-checkbox" checked>
         <label for="CheckboxAutoMaskSetting">Auto Stickering Setting </label>
 
@@ -1952,8 +1957,8 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                     const result = Module.convertMask(center_input, edge_input, corner_input, rotation_alg);
                     return result;
                 };
-                analyzePairs = function(scramble, solution) {
-                    return Module.analyze_pairs(scramble, solution);
+                analyzePairs = function(scramble, rot, solution) {
+                    return Module.analyze_pairs(scramble, rot, solution);
                 };
                 isFunctionsReady = true;
             } catch (e) {
@@ -4349,16 +4354,29 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                     "F2LEO",
                     "F2L2",
                     "LS",
-                    "LS2"
+                    "LS2",
+                    "LL",
+                    "LL2",
+                    "LU",
+                    "LU2"
                 ]);
 
-                if (targetSolvers.has(currentSolver) && typeof analyzePairs === "function") {
+                const pairCheckbox = document.getElementById("CheckboxPairAnalysis");
+                const isPairAnalysisEnabled = pairCheckbox ? pairCheckbox.checked : true;
+
+                if (isPairAnalysisEnabled &&targetSolvers.has(currentSolver) && typeof analyzePairs === "function") {
                     try {
-                        const pairAnalysis = analyzePairs(scr_fix(scr), sol);
+                        const convertResult = convert(scr_fix(scr));
+                        const result_moves = convertResult[0];
+
+                        const rotElement = document.getElementById("rot");
+                        const currentRot = (rotElement && rotElement.value) ? rotElement.value.trim() : "";
+
+                        const pairAnalysis = analyzePairs(result_moves, currentRot, sol);
 
                         if (pairAnalysis && pairAnalysis !== "") {
                             const badgeContainer = document.createElement('span');
-                            badgeContainer.style.cssText = 'display:inline-flex; flex-wrap:wrap; gap:6px; margin-left:10px; font-size:12px; font-family:monospace; vertical-align:middle;';
+                            badgeContainer.style.cssText = 'display:inline-flex; flex-wrap:wrap; gap:6px; margin-left:10px; font-size:14px; font-family:monospace; vertical-align:middle;';
 
                             const formatStatus = (st) => {
                                 if (st === "B") return "🔒";
@@ -4390,10 +4408,14 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                                 const slotName = entry.slice(0, openIdx);
                                 const innerContent = entry.slice(openIdx + 1, closeIdx);
 
-                                const rawItems = innerContent.split(',').map(item => {
+                                let rawItems = innerContent.split(',').map(item => {
                                     const [edge, status] = item.split(':');
                                     return { edge, status };
                                 });
+
+                                rawItems = rawItems.filter(item => !(item.edge !== "E" && item.status.startsWith("F")));
+
+                                if (rawItems.length === 0) return;
 
                                 rawItems.sort((a, b) => getTimelineOrder(a.status) - getTimelineOrder(b.status));
 
@@ -4417,13 +4439,13 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
                                     badge.style.color = '#4ade80';
                                     badge.style.border = '1px solid #22c55e';
                                 } else if (hasE_Free) {
-                                    badge.style.backgroundColor = '#1e293b';
-                                    badge.style.color = '#38bdf8';
-                                    badge.style.border = '1px solid #0284c7';
-                                } else {
                                     badge.style.backgroundColor = '#2e2618';
                                     badge.style.color = '#facc15';
                                     badge.style.border = '1px solid #ca8a04';
+                                } else {
+                                    badge.style.backgroundColor = '#1e293b';
+                                    badge.style.color = '#38bdf8';
+                                    badge.style.border = '1px solid #0284c7';
                                 }
 
                                 badgeContainer.appendChild(badge);
@@ -4569,6 +4591,29 @@ Write the //setup comment in the appropriate position when viewing on alg.cubing
             } else if (selectedValue === "PF2LEO") {
                 document.getElementById("option_for_PF2LEO").classList.remove("hidden");
                 document.getElementById("f2leo_panalyze").classList.remove("hidden");
+            }
+            
+            const currentSolver = document.getElementById("solver").value;
+            const targetSolvers = new Set([
+                "F2L",
+                "F2L_pair",
+                "EOCross",
+                "F2LEO",
+                "F2L2",
+                "LS",
+                "LS2",
+                "LL",
+                "LL2",
+                "LU",
+                "LU2"
+            ]);
+            const pairOptDiv = document.getElementById("option_for_pair_analysis");
+            if (pairOptDiv) {
+                if (targetSolvers.has(selectedValue)) {
+                    pairOptDiv.classList.remove("hidden");
+                } else {
+                    pairOptDiv.classList.add("hidden");
+                }
             }
         }
 

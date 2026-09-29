@@ -479,6 +479,34 @@
 			<li><b>Max Move Count</b>: Sets limits on how many times specific moves can appear in a solution. Moves executed in <b>Pre Move</b> are excluded from this count.</li>
 		</ul>
 	</div>
+    <div class="section">
+		<h2>Pair Analysis</h2>
+		<p>Evaluates the transition and final state of F2L pairs and cross-edge connections along the solution steps for each of the 4 F2L slots (BL, BR, FR, FL). When enabled, analysis badges are displayed alongside each solution.</p>
+
+		<h3>Pair Types</h3>
+		<ul>
+			<li><b><ins>E</ins> (F2L Slot Edge)</b>: The dedicated middle-layer edge piece corresponding to that slot.</li>
+			<li><b>D-side Edges (DF, DR, DB, DL)</b>: The cross edges adjacent to that slot's bottom corner.</li>
+		</ul>
+
+		<h3>State Classifications</h3>
+		<ul>
+			<li><b>🔒 (Block / Connected)</b>: The corner and edge are correctly connected in rigid-body alignment with matching facelet colors (dist = 0).</li>
+			<li><b>⚡ (Free Pair)</b>: The corner and edge are separated by exactly one move from a connected rigid block (dist = 1). In the default interface, this tag is displayed only for middle-layer slot edges (<code>E</code>).</li>
+		</ul>
+
+		<h3>Timing Notation</h3>
+		<p>Indicates when a Block or Free state is formed and sustained continuously until the final move of the solution:</p>
+		<ul>
+			<li><code>🔒</code> / <code>⚡</code>: Formed and maintained from inspection / move 0 throughout the entire solution.</li>
+			<li><code>🔒M{k}</code> / <code>⚡M{k}</code>: Formed at move <i>k</i> and preserved without interruption through the final move.</li>
+			<li><code>🔒End</code> / <code>⚡End</code>: Formed specifically on the final move of the solution.</li>
+		</ul>
+
+		<h3>Important Note on Move Numbering</h3>
+		<p><b>Exclusion of the dropdown rotation prefix:</b> In the main solver (<code>index.html</code>), if an orientation is selected in the <b>Rotation</b> dropdown, it is prepended to the beginning of the displayed solution string (which may consist of one or two turns, such as <code>z2</code> or <code>z2 y</code>). This dropdown rotation prefix is <b>excluded from the move count</b>.</p>
+		<p>Move 1 (<code>M1</code>) begins immediately after this prefix. Any cube rotations (<code>x</code>, <code>y</code>, <code>z</code>) that appear within the generated solution sequence itself are counted as standard moves.</p>
+	</div>
 	<div class="section">
 		<h2>Stickering Settings</h2>
 		<p>Configures facelet stickering modes for solution previews in Twisty Player. The available display modes are:</p>

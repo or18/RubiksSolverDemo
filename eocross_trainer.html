@@ -568,6 +568,11 @@
 		<label for="ignorePremoveCenter">Ignore Pre-move Center</label>
 	</details>
 	<br>
+    <div id="option_for_pair_analysis">
+		<input type="checkbox" id="CheckboxPairAnalysis" class="custom-checkbox" checked>
+		<label for="CheckboxPairAnalysis">Show Pair Analysis</label>
+	</div>
+    <br>
 	<button id="solveButton" class="button medium" onclick="startWorker()">Solve</button><br>
 	<label for="countLine">Number of solutions: </label>
 	<input type="text" id="countLine" value="0" readonly><br>
@@ -653,6 +658,7 @@
 		let generateTwoPhaseInput;
 		let convertMask;
 		let get_center;
+        let analyzePairs;
 		let isFunctionsReady = false;
 		let scr_old = null;
 
@@ -694,6 +700,12 @@
 			get_center = function (pm) {
 				const result = Module.get_center(pm);
 				return result;
+			};
+            analyzePairs = function (scramble, rot, solution) {
+				if (typeof Module.analyze_pairs === "function") {
+					return Module.analyze_pairs(scramble, rot, solution);
+				}
+				return "";
 			};
 			isFunctionsReady = true;
 		}
@@ -1043,6 +1055,102 @@
 				const summary = document.createElement('summary');
 				summary.textContent = messageCount + ": " + sol;
 				summary.setAttribute('translate', 'no');
+                const pairCheckbox = document.getElementById("CheckboxPairAnalysis");
+				const isPairAnalysisEnabled = pairCheckbox ? pairCheckbox.checked : true;
+
+				if (isPairAnalysisEnabled && typeof analyzePairs === "function") {
+					try {
+						const convertResult = convert(scr_fix(scr));
+						const result_moves = convertResult[0];
+						const rotElement = document.getElementById("rot");
+						const currentRot = "";
+
+						const pairAnalysis = analyzePairs(result_moves, currentRot, sol);
+
+						if (pairAnalysis && pairAnalysis !== "") {
+							const badgeContainer = document.createElement('span');
+							badgeContainer.style.cssText = 'display:inline-flex; flex-wrap:wrap; gap:6px; margin-left:10px; font-size:14px; font-family:monospace; vertical-align:middle;';
+
+							const formatStatus = (st) => {
+								if (st === "B") return "🔒";
+								if (st === "B_End") return "🔒End";
+								if (st.startsWith("B_M")) return "🔒" + st.slice(2);
+								if (st === "F") return "⚡";
+								if (st === "F_End") return "⚡End";
+								if (st.startsWith("F_M")) return "⚡" + st.slice(2);
+								return st;
+							};
+
+							const getTimelineOrder = (st) => {
+								if (st === "B" || st === "F") return 0;
+								if (st.includes("_M")) {
+									const m = parseInt(st.split("_M")[1], 10);
+									return isNaN(m) ? 50 : m;
+								}
+								if (st.endsWith("_End")) return 999;
+								return 100;
+							};
+
+							const slotEntries = pairAnalysis.split(';');
+
+							slotEntries.forEach(entry => {
+								const openIdx = entry.indexOf('[');
+								const closeIdx = entry.indexOf(']');
+								if (openIdx === -1 || closeIdx === -1) return;
+
+								const slotName = entry.slice(0, openIdx);
+								const innerContent = entry.slice(openIdx + 1, closeIdx);
+
+								let rawItems = innerContent.split(',').map(item => {
+									const [edge, status] = item.split(':');
+									return { edge, status };
+								});
+
+								rawItems = rawItems.filter(item => !(item.edge !== "E" && item.status.startsWith("F")));
+								if (rawItems.length === 0) return;
+
+								rawItems.sort((a, b) => getTimelineOrder(a.status) - getTimelineOrder(b.status));
+
+								const edgeElements = rawItems.map(item => {
+									const stText = formatStatus(item.status);
+									if (item.edge === "E") {
+										return `<strong style="text-decoration: underline; text-underline-offset: 2px;">E</strong>: ${stText}`;
+									}
+									return `${item.edge}: ${stText}`;
+								});
+
+								const badge = document.createElement('span');
+								badge.innerHTML = `${slotName}[${edgeElements.join(', ')}]`;
+								badge.style.cssText = 'padding: 2px 7px; border-radius: 4px; font-weight: bold; line-height: 1.4;';
+
+								const hasE_Block = rawItems.some(x => x.edge === "E" && x.status.startsWith("B"));
+								const hasE_Free  = rawItems.some(x => x.edge === "E" && x.status.startsWith("F"));
+
+								if (hasE_Block) {
+									badge.style.backgroundColor = '#1e3a2f';
+									badge.style.color = '#4ade80';
+									badge.style.border = '1px solid #22c55e';
+								} else if (hasE_Free) {
+									badge.style.backgroundColor = '#2e2618';
+									badge.style.color = '#facc15';
+									badge.style.border = '1px solid #ca8a04';
+								} else {
+									badge.style.backgroundColor = '#1e293b';
+									badge.style.color = '#38bdf8';
+									badge.style.border = '1px solid #0284c7';
+								}
+
+								badgeContainer.appendChild(badge);
+							});
+
+							if (badgeContainer.children.length > 0) {
+								summary.appendChild(badgeContainer);
+							}
+						}
+					} catch (err) {
+						console.warn("Pair tracking analysis error:", err);
+					}
+				}
 				details.appendChild(summary);
 				try {
 					const sim = createPlayer(scr, sol);

@@ -7,6 +7,7 @@
 #include <string>
 #include <sstream>
 #include <queue>
+#include <set>
 
 std::vector<std::string> move_names = {"U", "U2", "U'", "D", "D2", "D'", "L", "L2", "L'", "R", "R2", "R'", "F", "F2", "F'", "B", "B2", "B'"};
 std::unordered_map<std::string, std::string> move_convert =
@@ -1086,107 +1087,211 @@ std::string get_center_offset_param(const std::string premove)
 std::vector<int> edge_move_table = create_edge_move_table();
 std::vector<int> corner_move_table = create_corner_move_table();
 
-// 0: Block, 1: Free, 2: Broken
-std::vector<std::vector<std::vector<std::vector<int>>>> create_pair_distance_tables() {
-    std::vector<std::vector<std::vector<std::vector<int>>>> dist_tables(
-        4, std::vector<std::vector<std::vector<int>>>(
-            3, std::vector<std::vector<int>>(24, std::vector<int>(24, 2))));
+static const int CORNER_STICKERS[8][3][2] = {
+    {{0, 0}, {5, 47}, {4, 36}}, // 0: UBL (U1, B3, L1)
+    {{0, 2}, {1, 11}, {5, 45}}, // 1: UBR (U3, R3, B1)
+    {{0, 8}, {2, 20}, {1, 9}},  // 2: UFR (U9, F3, R1)
+    {{0, 6}, {4, 38}, {2, 18}}, // 3: UFL (U7, L3, F1)
+    {{3, 33}, {4, 42}, {5, 53}},// 4: DBL (D7, L7, B9)
+    {{3, 35}, {5, 51}, {1, 17}},// 5: DBR (D9, B7, R9)
+    {{3, 29}, {1, 15}, {2, 26}},// 6: DFR (D3, R7, F9)
+    {{3, 27}, {2, 24}, {4, 44}} // 7: DFL (D1, F7, L9)
+};
 
-    const int init_c[4] = {12, 15, 18, 21}; // BL(DBL), BR(DBR), FR(DFR), FL(DFL)
+static const int EDGE_STICKERS[12][2][2] = {
+    {{5, 50}, {4, 39}}, // 0: BL (B6, L4)
+    {{5, 48}, {1, 14}}, // 1: BR (B4, R6)
+    {{2, 23}, {1, 12}}, // 2: FR (F6, R4)
+    {{2, 21}, {4, 41}}, // 3: FL (F4, L6)
+    {{0, 1}, {5, 46}},  // 4: UB (U2, B2)
+    {{0, 5}, {1, 10}},  // 5: UR (U6, R2)
+    {{0, 7}, {2, 19}},  // 6: UF (U8, F2)
+    {{0, 3}, {4, 37}},  // 7: UL (U4, L2)
+    {{3, 34}, {5, 52}}, // 8: DB (D8, B8)
+    {{3, 32}, {1, 16}}, // 9: DR (D6, R8)
+    {{3, 28}, {2, 25}}, // 10: DF (D2, F8)
+    {{3, 30}, {4, 43}}  // 11: DL (D4, L8)
+};
 
-    // [slot][0:E, 1:D1, 2:D2]
-    const int init_e[4][3] = {
-        {0, 16, 22}, // BL: E=BL(0),  D1=DB(16), D2=DL(22)
-        {2, 16, 18}, // BR: E=BR(2),  D1=DB(16), D2=DR(18)
-        {4, 20, 18}, // FR: E=FR(4),  D1=DF(20), D2=DR(18)
-        {6, 20, 22}  // FL: E=FL(6),  D1=DF(20), D2=DL(22)
+static inline int get_sticker_face_color(int sticker_idx) {
+    if (sticker_idx < 9) return 0;       // U
+    if (sticker_idx < 18) return 1;      // R
+    if (sticker_idx < 27) return 2;      // F
+    if (sticker_idx < 36) return 3;      // D
+    if (sticker_idx < 45) return 4;      // L
+    return 5;                            // B
+}
+
+// Slot 0 (BL): c=12 (DBL), e=0 (BL)
+// Slot 1 (BR): c=15 (DBR), e=2 (BR)
+// Slot 2 (FR): c=18 (DFR), e=4 (FR)
+// Slot 3 (FL): c=21 (DFL), e=6 (FL)
+static const std::pair<int, int> F2L_SEEDS[4] = {
+    {12, 0}, {15, 2}, {18, 4}, {21, 6}
+};
+
+static const std::pair<int, int> CROSS_RIGHT_SEEDS[4] = {
+    {12, 16}, {15, 18}, {18, 20}, {21, 22}
+};
+
+static const std::pair<int, int> CROSS_LEFT_SEEDS[4] = {
+    {12, 22}, {15, 16}, {18, 18}, {21, 20}
+};
+
+std::vector<std::vector<int>> build_single_pair_table(std::pair<int, int> seed) {
+    std::vector<std::vector<int>> table(24, std::vector<int>(24, 2));
+
+    const int cp_faces[8][3] = {
+        {0, 2, 5}, {0, 3, 5}, {0, 3, 4}, {0, 2, 4},
+        {1, 2, 5}, {1, 3, 5}, {1, 3, 4}, {1, 2, 4}
+    };
+    const int ep_faces[12][2] = {
+        {2, 5}, {3, 5}, {3, 4}, {2, 4}, // 0..3: BL, BR, FR, FL
+        {0, 5}, {0, 3}, {0, 4}, {0, 2}, // 4..7: UB, UR, UF, UL
+        {1, 5}, {1, 3}, {1, 4}, {1, 2}  // 8..11: DB, DR, DF, DL
     };
 
-    const std::vector<int> face_corners[6] = {
-        {0, 1, 2, 3}, // U
-        {4, 5, 6, 7}, // D
-        {0, 3, 4, 7}, // L
-        {1, 2, 5, 6}, // R
-        {2, 3, 6, 7}, // F
-        {0, 1, 4, 5}  // B
-    };
-    const std::vector<int> face_edges[6] = {
-        {4, 5, 6, 7},  // U
-        {8, 9, 10, 11},// D
-        {0, 3, 7, 11}, // L
-        {1, 2, 5, 9},  // R
-        {2, 3, 6, 10}, // F
-        {0, 1, 4, 8}   // B
-    };
+    int seed_c = seed.first;
+    int seed_e = seed.second;
 
-    auto contains = [](const std::vector<int>& vec, int val) {
-        return std::find(vec.begin(), vec.end(), val) != vec.end();
-    };
+    std::vector<std::vector<int>> c_face_color(24, std::vector<int>(6, -1));
+    std::vector<std::vector<int>> e_face_color(24, std::vector<int>(6, -1));
 
-    for (int slot = 0; slot < 4; ++slot) {
-        int start_c = init_c[slot];
+    {
+        std::vector<bool> vis_c(24, false);
+        std::vector<State> state_c(24);
+        std::queue<int> qc;
+        qc.push(seed_c);
+        vis_c[seed_c] = true;
+        state_c[seed_c] = State();
 
-        for (int type = 0; type < 3; ++type) {
-            int start_e = init_e[slot][type];
-
-            std::queue<std::pair<int, int>> q;
-            dist_tables[slot][type][start_c][start_e] = 0;
-            q.push({start_c, start_e});
-
-            while (!q.empty()) {
-                auto [c, e] = q.front();
-                q.pop();
-
-                int cp = c / 3;
-                int ep = e / 2;
-
-                for (int f = 0; f < 6; ++f) {
-                    if (contains(face_corners[f], cp) && contains(face_edges[f], ep)) {
-                        for (int amount = 0; amount < 3; ++amount) {
-                            int m = 3 * f + amount;
-                            int next_c = corner_move_table[c * 27 + m];
-                            int next_e = edge_move_table[e * 27 + m];
-
-                            if (dist_tables[slot][type][next_c][next_e] == 2) {
-                                dist_tables[slot][type][next_c][next_e] = 0;
-                                q.push({next_c, next_e});
-                            }
-                        }
-                    }
-                }
+        while (!qc.empty()) {
+            int curr = qc.front();
+            qc.pop();
+            int cp = curr / 3;
+            for (int k = 0; k < 3; ++k) {
+                int f = CORNER_STICKERS[cp][k][0];
+                int st = CORNER_STICKERS[cp][k][1];
+                c_face_color[curr][f] = get_sticker_face_color(state_c[curr].sc[st]);
             }
-
-            for (int c = 0; c < 24; ++c) {
-                for (int e = 0; e < 24; ++e) {
-                    if (dist_tables[slot][type][c][e] == 0) {
-                        int cp = c / 3;
-                        int ep = e / 2;
-
-                        for (int f = 0; f < 6; ++f) {
-                            bool c_in_face = contains(face_corners[f], cp);
-                            bool e_in_face = contains(face_edges[f], ep);
-
-                            if (c_in_face != e_in_face) {
-                                for (int amount = 0; amount < 3; ++amount) {
-                                    int m = 3 * f + amount;
-                                    int next_c = corner_move_table[c * 27 + m];
-                                    int next_e = edge_move_table[e * 27 + m];
-
-                                    if (dist_tables[slot][type][next_c][next_e] == 2) {
-                                        dist_tables[slot][type][next_c][next_e] = 1;
-                                    }
-                                }
-                            }
-                        }
-                    }
+            for (int m = 0; m < 18; ++m) {
+                int next_c = corner_move_table[curr * 27 + m];
+                if (!vis_c[next_c]) {
+                    vis_c[next_c] = true;
+                    State ns = state_c[curr];
+                    ns.apply_move(moves[move_names[m]]);
+                    state_c[next_c] = ns;
+                    qc.push(next_c);
                 }
             }
         }
     }
-    return dist_tables;
+
+    {
+        std::vector<bool> vis_e(24, false);
+        std::vector<State> state_e(24);
+        std::queue<int> qe;
+        qe.push(seed_e);
+        vis_e[seed_e] = true;
+        state_e[seed_e] = State();
+
+        while (!qe.empty()) {
+            int curr = qe.front();
+            qe.pop();
+            int ep = curr / 2;
+            for (int k = 0; k < 2; ++k) {
+                int f = EDGE_STICKERS[ep][k][0];
+                int st = EDGE_STICKERS[ep][k][1];
+                e_face_color[curr][f] = get_sticker_face_color(state_e[curr].sc[st]);
+            }
+            for (int m = 0; m < 18; ++m) {
+                int next_e = edge_move_table[curr * 27 + m];
+                if (!vis_e[next_e]) {
+                    vis_e[next_e] = true;
+                    State ns = state_e[curr];
+                    ns.apply_move(moves[move_names[m]]);
+                    state_e[next_e] = ns;
+                    qe.push(next_e);
+                }
+            }
+        }
+    }
+
+    std::vector<std::pair<int, int>> true_blocks;
+    for (int c = 0; c < 24; ++c) {
+        for (int e = 0; e < 24; ++e) {
+            int shared_face_count = 0;
+            int match_count = 0;
+
+            for (int f = 0; f < 6; ++f) {
+                if (c_face_color[c][f] != -1 && e_face_color[e][f] != -1) {
+                    shared_face_count++;
+                    if (c_face_color[c][f] == e_face_color[e][f]) {
+                        match_count++;
+                    }
+                }
+            }
+
+            if (shared_face_count == 2 && match_count == 2) {
+                table[c][e] = 0;
+                true_blocks.push_back({c, e});
+            }
+        }
+    }
+
+    for (const auto& [c, e] : true_blocks) {
+        int cp = c / 3;
+        int ep = e / 2;
+
+        for (int m = 0; m < 18; ++m) {
+            int face = m / 3;
+            bool c_on = (cp_faces[cp][0] == face || cp_faces[cp][1] == face || cp_faces[cp][2] == face);
+            bool e_on = (ep_faces[ep][0] == face || ep_faces[ep][1] == face);
+
+            if (c_on == e_on) continue;
+
+            if (e_on && (face == 4 || face == 5) && (m % 3 != 1)) {
+                continue;
+            }
+
+            int nc = corner_move_table[c * 27 + m];
+            int ne = edge_move_table[e * 27 + m];
+
+            if (table[nc][ne] == 2) {
+                table[nc][ne] = 1;
+            }
+        }
+    }
+
+    return table;
 }
 
-std::vector<std::vector<std::vector<std::vector<int>>>> pair_dist_tables = create_pair_distance_tables();
+struct SlotPairTables {
+    std::vector<std::vector<int>> slot[4];
+    std::vector<int> block_e[4];
+};
+
+SlotPairTables create_all_slot_tables(const std::pair<int, int> seeds[4]) {
+    SlotPairTables res;
+    for (int s = 0; s < 4; ++s) {
+        res.slot[s] = build_single_pair_table(seeds[s]);
+        res.block_e[s].assign(24, -1);
+        for (int c = 0; c < 24; ++c) {
+            for (int e = 0; e < 24; ++e) {
+                if (res.slot[s][c][e] == 0) {
+                    res.block_e[s][c] = e;
+                    break;
+                }
+            }
+        }
+    }
+    return res;
+}
+
+const SlotPairTables f2l_tables = create_all_slot_tables(F2L_SEEDS);
+const SlotPairTables cross_right_tables = create_all_slot_tables(CROSS_RIGHT_SEEDS);
+const SlotPairTables cross_left_tables = create_all_slot_tables(CROSS_LEFT_SEEDS);
+
 
 
 std::string classify_timeline(const std::vector<int>& dists) {
@@ -1198,10 +1303,6 @@ std::string classify_timeline(const std::vector<int>& dists) {
 
     std::string prefix = (end_val == 0) ? "B" : "F";
 
-    if (dists[n - 1] != end_val) {
-        return prefix + "_End";
-    }
-
     int from = n;
     while (from > 0 && dists[from - 1] == end_val) {
         from--;
@@ -1211,16 +1312,22 @@ std::string classify_timeline(const std::vector<int>& dists) {
         return prefix;
     }
 
+    if (from == n) {
+        return prefix + "_End";
+    }
+
     return prefix + "_M" + std::to_string(from);
 }
 
-std::string analyze_pairs(std::string scramble, std::string solution) {
-    const int init_c[4] = {12, 15, 18, 21};
+
+
+std::string analyze_pairs(std::string scramble, std::string rot, std::string solution) {
+    const int init_c[4] = {12, 15, 18, 21}; // BL, BR, FR, FL
     const int init_e[4][3] = {
-        {0, 16, 22},
-        {2, 16, 18},
-        {4, 20, 18},
-        {6, 20, 22}
+        {0, 16, 22}, // BL: E=BL(0),  D1=DB(16), D2=DL(22)
+        {2, 16, 18}, // BR: E=BR(2),  D1=DB(16), D2=DR(18)
+        {4, 20, 18}, // FR: E=FR(4),  D1=DF(20), D2=DR(18)
+        {6, 20, 22}  // FL: E=FL(6),  D1=DF(20), D2=DL(22)
     };
 
     std::vector<int> cur_c(4);
@@ -1233,33 +1340,67 @@ std::string analyze_pairs(std::string scramble, std::string solution) {
     }
 
     std::vector<int> scr_alg = StringToAlg2(scramble);
-    int center = 0;
-    for (int m : scr_alg) {
-        if (m >= 45) {
-            center = center_move_table[center][m];
-            continue;
-        }
-        int base_m = converter[rotationMapReverse[center][m]];
-        center = center_move_table[center][m];
-        for (int s = 0; s < 4; ++s) {
-            cur_c[s] = corner_move_table[cur_c[s] * 27 + base_m];
-            for (int t = 0; t < 3; ++t) {
-                cur_e[s][t] = edge_move_table[cur_e[s][t] * 27 + base_m];
+    std::vector<int> rot_alg = StringToAlg2(rot);
+    std::vector<int> sol_alg = StringToAlg2(solution);
+
+    std::vector<int> alg = AlgRotation(scr_alg, rot);
+
+    for (int m : alg) {
+        if (m < 45) {
+            int base_m = converter[m];
+            for (int s = 0; s < 4; ++s) {
+                cur_c[s] = corner_move_table[cur_c[s] * 27 + base_m];
+                for (int t = 0; t < 3; ++t) {
+                    cur_e[s][t] = edge_move_table[cur_e[s][t] * 27 + base_m];
+                }
             }
         }
     }
 
-    center = 0;
-    std::vector<int> sol_alg = StringToAlg2(solution);
+    auto get_pair_dist = [](int slot, int type, int c, int e) {
+        if (type == 0) {
+            return f2l_tables.slot[slot][c][e];
+        }
+
+        bool is_right = false;
+        if (slot == 0) is_right = (type == 1);
+        else if (slot == 1) is_right = (type == 2);
+        else if (slot == 2) is_right = (type == 1);
+        else if (slot == 3) is_right = (type == 2);
+
+        if (is_right) {
+            return cross_right_tables.slot[slot][c][e];
+        } else {
+            return cross_left_tables.slot[slot][c][e];
+        }
+    };
 
     std::vector<std::vector<std::vector<int>>> timelines(4, std::vector<std::vector<int>>(3));
+
     for (int s = 0; s < 4; ++s) {
         for (int t = 0; t < 3; ++t) {
-            timelines[s][t].push_back(pair_dist_tables[s][t][cur_c[s]][cur_e[s][t]]);
+            timelines[s][t].push_back(get_pair_dist(s, t, cur_c[s], cur_e[s][t]));
         }
     }
 
-    for (int m : sol_alg) {
+    size_t rot_len = rot_alg.size();
+    size_t start_idx = 0;
+    if (sol_alg.size() >= rot_len) {
+        bool rot_match = true;
+        for (size_t r = 0; r < rot_len; ++r) {
+            if (sol_alg[r] != rot_alg[r]) {
+                rot_match = false;
+                break;
+            }
+        }
+        if (rot_match) {
+            start_idx = rot_len;
+        }
+    }
+
+    int center = 0;
+    for (size_t i = start_idx; i < sol_alg.size(); ++i) {
+        int m = sol_alg[i];
         if (m >= 45) {
             center = center_move_table[center][m];
         } else {
@@ -1272,9 +1413,10 @@ std::string analyze_pairs(std::string scramble, std::string solution) {
                 }
             }
         }
+
         for (int s = 0; s < 4; ++s) {
             for (int t = 0; t < 3; ++t) {
-                timelines[s][t].push_back(pair_dist_tables[s][t][cur_c[s]][cur_e[s][t]]);
+                timelines[s][t].push_back(get_pair_dist(s, t, cur_c[s], cur_e[s][t]));
             }
         }
     }
